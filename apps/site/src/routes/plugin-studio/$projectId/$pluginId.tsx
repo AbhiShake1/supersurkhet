@@ -1,5 +1,32 @@
+import { flattenSchemaWorkflows } from '@supersurkhet/sdk';
+import { useMutation } from '@tanstack/react-query';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import deepEqual from 'fast-deep-equal';
+import * as LucideIcons from 'lucide-react';
+import {
+  ArrowLeft,
+  BadgePlus,
+  CloudUpload,
+  GripVertical,
+  type LucideIcon,
+  Pencil,
+  Plus,
+  Trash2,
+  Wand2,
+} from 'lucide-react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { toast } from 'sonner';
+import { z } from 'zod';
 import { useAuth } from '@/components/auth-provider';
 import { AutoAdmin } from '@/components/auto-admin';
+import { PluginStudioEditableAutoAdmin } from '@/components/auto-admin/auto-admin-plugin-studio-editable';
 import { useConfetti } from '@/components/confetti-provider';
 import {
   AlertDialog,
@@ -74,26 +101,19 @@ import {
   compileDerivedFieldToDeriveIr,
   DERIVED_FIELD_OPERATION_OPTIONS,
   DERIVED_FIELD_SOURCE_OPTIONS,
-  parseDerivedFieldsFromSchemaDoc,
   type DerivedFieldOperation,
+  parseDerivedFieldsFromSchemaDoc,
   type SchemaBuilderDerivedField,
 } from '@/features/plugin-builder/workspace/tabs/derived-fields';
-import {
-  WorkflowGraphEditor,
-} from '@/features/plugin-builder/workspace/tabs/workflow-graph-editor';
 import { PluginStudioV3Tabs } from '@/features/plugin-builder/workspace/tabs/plugin-studio-v3-tabs';
+import { WorkflowGraphEditor } from '@/features/plugin-builder/workspace/tabs/workflow-graph-editor';
 import { api } from '@/lib/api';
 import { toDraftRevisionRowId } from '@/lib/plugins/draft-revision-row-id';
-import { evaluateV3PublishGates } from '@/lib/plugins/v3-gates';
 import {
   mergeMarketplaceReleasesWithSeed,
   parseReleaseId,
 } from '@/lib/plugins/marketplace-seed';
 import { compileSchemaDoc } from '@/lib/plugins/schema-compiler';
-import { ContextDataStore } from '@/lib/ui-builder/context/context-data-store';
-import { complexComponentDefinitions } from '@/lib/ui-builder/registry/complex-component-definitions';
-import { classNameFieldOverrides } from '@/lib/ui-builder/registry/form-field-overrides';
-import { primitiveComponentDefinitions } from '@/lib/ui-builder/registry/primitive-component-definitions';
 import type {
   ActionManifestDoc,
   AdminTabDoc,
@@ -107,53 +127,32 @@ import type {
   SchemaWorkflowDoc,
   WorkflowDoc,
 } from '@/lib/plugins/types';
-import { flattenSchemaWorkflows } from '@supersurkhet/sdk';
-import { useMutation } from '@tanstack/react-query';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import deepEqual from 'fast-deep-equal';
-import * as LucideIcons from 'lucide-react';
-import {
-  ArrowLeft,
-  BadgePlus,
-  CloudUpload,
-  GripVertical,
-  Pencil,
-  Plus,
-  Trash2,
-  Wand2,
-  type LucideIcon,
-} from 'lucide-react';
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { toast } from 'sonner';
-import { z } from 'zod';
+import { evaluateV3PublishGates } from '@/lib/plugins/v3-gates';
+import { ContextDataStore } from '@/lib/ui-builder/context/context-data-store';
+import { complexComponentDefinitions } from '@/lib/ui-builder/registry/complex-component-definitions';
+import { primitiveComponentDefinitions } from '@/lib/ui-builder/registry/primitive-component-definitions';
 import { publishPluginRelease } from '@/server-functions/plugins';
-import { readAutoAdminRootFocusedConfig } from '@/config/business-config';
 import { throwOnFailedPersistenceWrites } from '../-plugin-studio-persistence';
-import {
-  resolvePluginStudioPluginId,
-} from '../-plugin-studio-plugin-id';
+import { resolvePluginStudioPluginId } from '../-plugin-studio-plugin-id';
 import { toProjectScopedDraftId } from '../-plugin-studio-project-draft-id';
 import { parseStoredSchemaDoc } from '../-plugin-studio-schema-doc';
 
-const optionalSearchStringSchema = z.preprocess(
-  (value) => {
-    if (typeof value !== 'string') return undefined;
-    const normalized = value.trim();
-    return normalized.length > 0 ? normalized : undefined;
-  },
-  z.string().optional(),
-);
+const optionalSearchStringSchema = z.preprocess((value) => {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : undefined;
+}, z.string().optional());
 
 const pluginStudioSearchSchema = z.object({
   pluginId: optionalSearchStringSchema,
   draftId: optionalSearchStringSchema,
   sortBy: optionalSearchStringSchema,
   subdomain: optionalSearchStringSchema,
-  sortOrder: z
-    .preprocess(
-      (value) => (typeof value === 'string' ? value.trim().toLowerCase() : undefined),
-      z.enum(['asc', 'desc']).optional(),
-    ),
+  sortOrder: z.preprocess(
+    (value) =>
+      typeof value === 'string' ? value.trim().toLowerCase() : undefined,
+    z.enum(['asc', 'desc']).optional(),
+  ),
 });
 
 export const Route = createFileRoute('/plugin-studio/$projectId/$pluginId')({
@@ -319,7 +318,8 @@ const SUBDOMAIN_STUDIO_SHORTCUTS = {
 const DRAFT_GROUP_SENTINEL_SCHEMA_PREFIX = '__plugin_studio_group__/';
 const DRAFT_SYSTEM_SENTINEL_SCHEMA_PREFIX = '__plugin_studio_system__/';
 const DRAFT_SUBDOMAIN_SENTINEL_SCHEMA_PREFIX = '__plugin_studio_subdomain__/';
-const DRAFT_SUBDOMAIN_UI_SENTINEL_SCHEMA_PREFIX = '__plugin_studio_subdomain_ui__/';
+const DRAFT_SUBDOMAIN_UI_SENTINEL_SCHEMA_PREFIX =
+  '__plugin_studio_subdomain_ui__/';
 const DRAFT_DNS_SENTINEL_SCHEMA_ID = '__plugin_studio_dns__/cloudflare';
 type SubdomainUiProjectKind = 'index' | 'admin' | 'custom';
 type SubdomainPipelineState = Array<{
@@ -386,7 +386,10 @@ function toErrorMessage(error: unknown) {
     }
     if (Array.isArray(record.issues)) {
       const firstIssue = record.issues[0] as { message?: unknown } | undefined;
-      if (typeof firstIssue?.message === 'string' && firstIssue.message.trim()) {
+      if (
+        typeof firstIssue?.message === 'string' &&
+        firstIssue.message.trim()
+      ) {
         return firstIssue.message.trim();
       }
     }
@@ -471,10 +474,15 @@ function appendActorUserIdAliases(
   }
 }
 
-function buildActorUserIdAliases(user: {
-  pub?: string;
-  _?: { soul?: string };
-} | null | undefined): string[] {
+function buildActorUserIdAliases(
+  user:
+    | {
+        pub?: string;
+        _?: { soul?: string };
+      }
+    | null
+    | undefined,
+): string[] {
   const aliases = new Set<string>();
   appendActorUserIdAliases(aliases, user?.pub);
   appendActorUserIdAliases(aliases, user?._?.soul);
@@ -604,7 +612,9 @@ function isSubdomainSentinelSchemaId(schemaId: unknown): boolean {
 
 function parseSubdomainSentinelSchemaId(schemaId: unknown): string | null {
   if (!isSubdomainSentinelSchemaId(schemaId)) return null;
-  const value = schemaId.slice(DRAFT_SUBDOMAIN_SENTINEL_SCHEMA_PREFIX.length).trim();
+  const value = schemaId
+    .slice(DRAFT_SUBDOMAIN_SENTINEL_SCHEMA_PREFIX.length)
+    .trim();
   return value.length > 0 ? value : null;
 }
 
@@ -659,7 +669,9 @@ function normalizeSubdomainName(value: string | undefined): string {
 function normalizeSubdomainBasePath(value: string | undefined): string {
   const normalized = (value ?? '').trim();
   if (!normalized) return '/';
-  const withLeadingSlash = normalized.startsWith('/') ? normalized : `/${normalized}`;
+  const withLeadingSlash = normalized.startsWith('/')
+    ? normalized
+    : `/${normalized}`;
   const compact = withLeadingSlash.replace(/\/{2,}/g, '/');
   return compact || '/';
 }
@@ -668,7 +680,9 @@ function parseSubdomainUiSentinelSchemaId(schemaId: string): string | null {
   if (!schemaId.startsWith(DRAFT_SUBDOMAIN_UI_SENTINEL_SCHEMA_PREFIX)) {
     return null;
   }
-  const value = schemaId.slice(DRAFT_SUBDOMAIN_UI_SENTINEL_SCHEMA_PREFIX.length).trim();
+  const value = schemaId
+    .slice(DRAFT_SUBDOMAIN_UI_SENTINEL_SCHEMA_PREFIX.length)
+    .trim();
   if (!value) return null;
   return normalizeSubdomainName(value);
 }
@@ -695,16 +709,37 @@ function toBlankSubdomainUiLayers(subdomain: string): ComponentLayer[] {
 function toAdminInjectedSubdomainUiLayers(subdomain: string): ComponentLayer[] {
   return [
     {
-      id: `${subdomain}-admin-root`,
-      name: 'Auto Admin',
-      type: 'AutoAdminRoot',
+      id: `${subdomain}-page-root`,
+      name: `${subdomain} page`,
+      type: 'div',
       props: {
         className:
-          'min-h-screen w-full bg-background text-foreground',
+          'min-h-screen w-full bg-background px-8 py-10 text-foreground',
       },
-      children: [],
+      children: [
+        {
+          id: `${subdomain}-admin-root`,
+          name: 'Auto Admin',
+          type: 'AutoAdmin',
+          props: {},
+          children: [],
+        },
+      ],
     },
   ];
+}
+
+function normalizeAdminCanvasLayers(
+  subdomain: string,
+  layers: ComponentLayer[],
+): ComponentLayer[] {
+  if (layers.length !== 1) return layers;
+  const [single] = layers;
+  if (!single) return layers;
+  if (single.type !== 'AutoAdmin' && single.type !== 'AutoAdminRoot') {
+    return layers;
+  }
+  return toAdminInjectedSubdomainUiLayers(subdomain);
 }
 
 function parseStoredSubdomainUiLayers(
@@ -740,7 +775,10 @@ function computeOrderedTabTokens({
     const systemKey = parseSystemTabOrderToken(token);
     if (systemKey) {
       const normalizedToken = toSystemTabOrderToken(systemKey);
-      if (!seen.has(normalizedToken) && validSystemTokens.has(normalizedToken)) {
+      if (
+        !seen.has(normalizedToken) &&
+        validSystemTokens.has(normalizedToken)
+      ) {
         normalized.push(normalizedToken);
         seen.add(normalizedToken);
       }
@@ -812,7 +850,9 @@ function serializeDraftAdminTabs({
     ]),
   );
   const subdomainSentinels: AdminTabDoc[] = subdomains.map((entry) => ({
-    schema: toSubdomainSentinelSchemaId(normalizeSubdomainName(entry.subdomain)),
+    schema: toSubdomainSentinelSchemaId(
+      normalizeSubdomainName(entry.subdomain),
+    ),
     title: normalizeSubdomainBasePath(entry.basePath),
     group: entry.uiProject,
     icon: entry.autoAdminInjected ? 'autoadmin' : 'none',
@@ -939,8 +979,8 @@ function deserializeDraftAdminTabs(
         basePath: normalizeSubdomainBasePath(tab.title),
         uiProject:
           normalizedProject === 'index' ||
-            normalizedProject === 'admin' ||
-            normalizedProject === 'custom'
+          normalizedProject === 'admin' ||
+          normalizedProject === 'custom'
             ? normalizedProject
             : 'custom',
         autoAdminInjected: tab.icon?.trim() === 'autoadmin',
@@ -991,15 +1031,15 @@ function deserializeDraftAdminTabs(
 }
 
 function toRouteSegmentFromSchemaId(schemaId: string) {
-  return schemaId
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '') || 'tab';
+  return (
+    schemaId
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'tab'
+  );
 }
 
-function toDraftRoutesFromAdminTabs(
-  adminTabs: readonly AdminTabDoc[],
-): Array<{
+function toDraftRoutesFromAdminTabs(adminTabs: readonly AdminTabDoc[]): Array<{
   id: string;
   schema: string;
   title: string;
@@ -1027,12 +1067,12 @@ function toDraftRoutesFromAdminTabs(
 function toAdminTabsFromDraftRoutes(
   routes:
     | Array<{
-      schema: string;
-      title: string;
-      group?: string | null;
-      order: number;
-      iconName?: string;
-    }>
+        schema: string;
+        title: string;
+        group?: string | null;
+        order: number;
+        iconName?: string;
+      }>
     | undefined,
 ): AdminTabDoc[] {
   if (!routes || routes.length === 0) return DEFAULT_DRAFT_ADMIN_TABS;
@@ -1498,7 +1538,9 @@ function setJsonOptionPairsEntry(
   if (normalizedPairs.length === 0) {
     delete next[key];
   } else {
-    next[key] = normalizedPairs.map((pair) => [pair.value, pair.label] as const);
+    next[key] = normalizedPairs.map(
+      (pair) => [pair.value, pair.label] as const,
+    );
   }
 
   return stringifyJsonInput(next);
@@ -1801,8 +1843,7 @@ type BlocklyRuntime = {
   };
 };
 
-type BuilderFieldType =
-  (typeof BUILDER_FIELD_TYPES)[number];
+type BuilderFieldType = (typeof BUILDER_FIELD_TYPES)[number];
 
 type BuilderLeafFieldType = (typeof BUILDER_LEAF_FIELD_TYPES)[number];
 
@@ -1899,23 +1940,25 @@ function StringListEditor({
 
         return (
           <div key={rowId} className="grid gap-2 md:grid-cols-[1fr_auto]">
-          <Input
-            value={value}
-            onChange={(event) => {
-              const nextValues = [...values];
-              nextValues[index] = event.target.value;
-              onChange(nextValues);
-            }}
-            placeholder={itemPlaceholder}
-          />
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            onClick={() => onChange(values.filter((_, itemIndex) => itemIndex !== index))}
-          >
-            <Trash2 className="size-4 text-destructive" />
-          </Button>
+            <Input
+              value={value}
+              onChange={(event) => {
+                const nextValues = [...values];
+                nextValues[index] = event.target.value;
+                onChange(nextValues);
+              }}
+              placeholder={itemPlaceholder}
+            />
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={() =>
+                onChange(values.filter((_, itemIndex) => itemIndex !== index))
+              }
+            >
+              <Trash2 className="size-4 text-destructive" />
+            </Button>
           </div>
         );
       })}
@@ -2016,45 +2059,45 @@ function toSchemaFieldDoc(
     fieldConfig,
     ...(compiledDerivations.length > 0
       ? {
-        derivations: compiledDerivations,
-      }
+          derivations: compiledDerivations,
+        }
       : {}),
     ...(field.fieldRefinements && field.fieldRefinements.length > 0
       ? {
-        refinements: field.fieldRefinements.map((refinement) => ({
-          code: 'custom' as const,
-          path: field.key ? [field.key] : undefined,
-          message: refinement.message || 'Validation failed',
-          when: {
-            kind: 'op' as const,
-            op: 'not' as const,
-            args: [
-              {
-                kind: 'op' as const,
-                op: refinement.operator,
-                args: [
-                  {
-                    kind: 'ref' as const,
-                    source: 'payload' as const,
-                    path: [field.key],
-                  },
-                  refinement.rightKind === 'payloadField'
-                    ? {
+          refinements: field.fieldRefinements.map((refinement) => ({
+            code: 'custom' as const,
+            path: field.key ? [field.key] : undefined,
+            message: refinement.message || 'Validation failed',
+            when: {
+              kind: 'op' as const,
+              op: 'not' as const,
+              args: [
+                {
+                  kind: 'op' as const,
+                  op: refinement.operator,
+                  args: [
+                    {
                       kind: 'ref' as const,
                       source: 'payload' as const,
-                      path:
-                        toSinglePayloadFieldPath(refinement.rightPath)
-                          .length > 0
-                          ? toSinglePayloadFieldPath(refinement.rightPath)
-                          : toSinglePayloadFieldPath(field.key),
-                    }
-                    : toExpressionLiteral(refinement.rightLiteral),
-                ],
-              },
-            ],
-          },
-        })),
-      }
+                      path: [field.key],
+                    },
+                    refinement.rightKind === 'payloadField'
+                      ? {
+                          kind: 'ref' as const,
+                          source: 'payload' as const,
+                          path:
+                            toSinglePayloadFieldPath(refinement.rightPath)
+                              .length > 0
+                              ? toSinglePayloadFieldPath(refinement.rightPath)
+                              : toSinglePayloadFieldPath(field.key),
+                        }
+                      : toExpressionLiteral(refinement.rightLiteral),
+                  ],
+                },
+              ],
+            },
+          })),
+        }
       : {}),
   };
 
@@ -2070,22 +2113,22 @@ function toSchemaFieldDoc(
     itemType:
       field.type === 'array'
         ? {
-          type: field.arrayItemType ?? 'string',
-          enumValues: isChoiceFieldType(field.arrayItemType)
-            ? normalizeStringArray(field.arrayItemEnumValues)
-            : undefined,
-          behavior: {
-            fieldConfig: {
-              fieldType: field.arrayItemType ?? 'string',
+            type: field.arrayItemType ?? 'string',
+            enumValues: isChoiceFieldType(field.arrayItemType)
+              ? normalizeStringArray(field.arrayItemEnumValues)
+              : undefined,
+            behavior: {
+              fieldConfig: {
+                fieldType: field.arrayItemType ?? 'string',
+              },
             },
-          },
-        }
+          }
         : undefined,
     fields:
       field.type === 'object'
         ? (field.objectFields ?? []).map((nestedField) =>
-          toObjectFieldDoc(nestedField),
-        )
+            toObjectFieldDoc(nestedField),
+          )
         : undefined,
     behavior,
     rules: [
@@ -2389,10 +2432,10 @@ function toBuilderField(field: SchemaFieldDoc): BuilderField {
     objectFields:
       normalizedType === 'object'
         ? (field.fields ?? [])
-          .filter(
-            (nested) => nested.type !== 'object' && nested.type !== 'array',
-          )
-          .map(toBuilderObjectField)
+            .filter(
+              (nested) => nested.type !== 'object' && nested.type !== 'array',
+            )
+            .map(toBuilderObjectField)
         : undefined,
     fieldRefinements: toBuilderFieldRefinements(
       stringifyJsonInput(extraBehavior),
@@ -2527,7 +2570,9 @@ function PluginStudioRoute() {
     );
   }
 
-  return <PluginStudioPresenter user={user} isAuthenticated={isAuthenticated} />;
+  return (
+    <PluginStudioPresenter user={user} isAuthenticated={isAuthenticated} />
+  );
 }
 
 function PluginStudioPresenter({
@@ -2538,13 +2583,17 @@ function PluginStudioPresenter({
   const { fire: fireConfetti } = useConfetti();
   const params = Route.useParams();
   const search = Route.useSearch();
-  const actorUserIdAliases = useMemo(() => buildActorUserIdAliases(user), [user]);
+  const actorUserIdAliases = useMemo(
+    () => buildActorUserIdAliases(user),
+    [user],
+  );
   const actorUserId = actorUserIdAliases[0] ?? '';
   const actorUserIdSet = useMemo(
     () => new Set(actorUserIdAliases),
     [actorUserIdAliases],
   );
-  const isActorIdentityReady = !isAuthenticated || actorUserIdAliases.length > 0;
+  const isActorIdentityReady =
+    !isAuthenticated || actorUserIdAliases.length > 0;
   const projectId = params.projectId;
   const requestedPluginId = params.pluginId;
   const draftId = useMemo(
@@ -2638,9 +2687,9 @@ function PluginStudioPresenter({
   const logicComposerFieldId = `${blocklyWorkspaceId}-logic-composer-field`;
   const [blocklyMountElement, setBlocklyMountElement] =
     useState<HTMLDivElement | null>(null);
-  const schemaEditorOpenTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
+  const schemaEditorOpenTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
   const blocklyRuntimeRef = useRef<BlocklyRuntime | null>(null);
   const blocklyRightFieldOptionsRef = useRef<[string, string][]>([
     ['No compatible fields', ''],
@@ -2653,10 +2702,10 @@ function PluginStudioPresenter({
   const lastAutosaveErrorAtRef = useRef<number>(0);
   const lastPersistenceErrorAtRef = useRef<number>(0);
   const isSidebarTabPersistInFlightRef = useRef(false);
-  const pendingSidebarTabPersistRef = useRef<readonly AdminTabDoc[] | null>(null);
-  const [hydratedDraftKey, setHydratedDraftKey] = useState<string | null>(
+  const pendingSidebarTabPersistRef = useRef<readonly AdminTabDoc[] | null>(
     null,
   );
+  const [hydratedDraftKey, setHydratedDraftKey] = useState<string | null>(null);
   const handleBlocklyContainerRef = useCallback(
     (node: HTMLDivElement | null) => {
       setBlocklyMountElement((current) => (current === node ? current : node));
@@ -2669,7 +2718,10 @@ function PluginStudioPresenter({
     isLoading: isReleaseLoading,
     refetch: refetchReleases,
   } = api.pluginRelease.useGet();
-  const releases = useMemo(() => releaseRows as PluginReleaseDoc[], [releaseRows]);
+  const releases = useMemo(
+    () => releaseRows as PluginReleaseDoc[],
+    [releaseRows],
+  );
   const marketplaceReleases = useMemo(
     () => mergeMarketplaceReleasesWithSeed(releases),
     [releases],
@@ -2713,24 +2765,20 @@ function PluginStudioPresenter({
   const activeDraftTitle = toDisplayPluginTitle(activeDraft?.title, pluginId);
   const activeDraftDescription = activeDraft?.description?.trim() || '';
   const draftDocScopeKeys = useMemo(() => [draftId], [draftId]);
-  const {
-    data: schemaDocRows = [],
-    refetch: refetchSchemaDocs,
-  } = api.pluginSchemaDoc.useGet({
-    keys: draftDocScopeKeys,
-  });
+  const { data: schemaDocRows = [], refetch: refetchSchemaDocs } =
+    api.pluginSchemaDoc.useGet({
+      keys: draftDocScopeKeys,
+    });
   const {
     data: actionManifestDocRows = [],
     refetch: refetchActionManifestDocs,
   } = api.pluginActionManifestDoc.useGet({
     keys: draftDocScopeKeys,
   });
-  const {
-    data: routesTabsConfigRows = [],
-    refetch: refetchRoutesTabsConfig,
-  } = api.pluginRoutesTabsConfig.useGet({
-    keys: draftDocScopeKeys,
-  });
+  const { data: routesTabsConfigRows = [], refetch: refetchRoutesTabsConfig } =
+    api.pluginRoutesTabsConfig.useGet({
+      keys: draftDocScopeKeys,
+    });
   const {
     data: draftRevisionRows = [],
     isLoading: isDraftRevisionLoading,
@@ -2758,15 +2806,21 @@ function PluginStudioPresenter({
   const deleteSchemaDocMutation = api.pluginSchemaDoc.useDelete({
     keys: draftDocScopeKeys,
   });
-  const createActionManifestDocMutation = api.pluginActionManifestDoc.useCreate({
-    keys: draftDocScopeKeys,
-  });
-  const updateActionManifestDocMutation = api.pluginActionManifestDoc.useUpdate({
-    keys: draftDocScopeKeys,
-  });
-  const deleteActionManifestDocMutation = api.pluginActionManifestDoc.useDelete({
-    keys: draftDocScopeKeys,
-  });
+  const createActionManifestDocMutation = api.pluginActionManifestDoc.useCreate(
+    {
+      keys: draftDocScopeKeys,
+    },
+  );
+  const updateActionManifestDocMutation = api.pluginActionManifestDoc.useUpdate(
+    {
+      keys: draftDocScopeKeys,
+    },
+  );
+  const deleteActionManifestDocMutation = api.pluginActionManifestDoc.useDelete(
+    {
+      keys: draftDocScopeKeys,
+    },
+  );
   const createRoutesTabsConfigMutation = api.pluginRoutesTabsConfig.useCreate({
     keys: draftDocScopeKeys,
   });
@@ -2825,10 +2879,7 @@ function PluginStudioPresenter({
   }, [actionManifestDocRows, latestActiveDraftRevision?.actionManifest]);
 
   const canonicalRoutesTabsConfigId = draftId;
-  const legacyRoutesTabsConfigId = useMemo(
-    () => `${draftId}@live`,
-    [draftId],
-  );
+  const legacyRoutesTabsConfigId = useMemo(() => `${draftId}@live`, [draftId]);
 
   const activeRoutesTabsConfigRow = useMemo(() => {
     const rows = routesTabsConfigRows as Array<{
@@ -2855,7 +2906,9 @@ function PluginStudioPresenter({
     );
     if (canonical) return canonical;
 
-    const legacy = candidates.find((row) => row.id === legacyRoutesTabsConfigId);
+    const legacy = candidates.find(
+      (row) => row.id === legacyRoutesTabsConfigId,
+    );
     if (legacy) return legacy;
 
     return candidates.find((row) => row.revisionId === 'live') ?? null;
@@ -2900,7 +2953,9 @@ function PluginStudioPresenter({
         cloudflareDnsAutoConfigured,
         tabOrder: storedTabOrder,
       } = deserializeDraftAdminTabs(parsedDraftAdminTabs);
-      const schemaIdSet = new Set(schemaDocs.map((schemaDoc) => schemaDoc.schemaId));
+      const schemaIdSet = new Set(
+        schemaDocs.map((schemaDoc) => schemaDoc.schemaId),
+      );
       const storedSchemaOrder = storedSchemaTabs
         .map((tab) => tab.schema)
         .filter((schemaId) => schemaIdSet.has(schemaId));
@@ -2915,19 +2970,23 @@ function PluginStudioPresenter({
         schemaDocs.map((schemaDoc) => [
           schemaDoc.schemaId,
           schemaDoc.title ??
-          tabBySchema.get(schemaDoc.schemaId)?.title ??
-          schemaDoc.schemaId,
+            tabBySchema.get(schemaDoc.schemaId)?.title ??
+            schemaDoc.schemaId,
         ]),
       );
       const schemaGroupById = Object.fromEntries(
         schemaDocs.flatMap((schemaDoc) => {
-          const normalizedGroup = tabBySchema.get(schemaDoc.schemaId)?.group?.trim();
+          const normalizedGroup = tabBySchema
+            .get(schemaDoc.schemaId)
+            ?.group?.trim();
           return normalizedGroup ? [[schemaDoc.schemaId, normalizedGroup]] : [];
         }),
       );
       const schemaIconNameById = Object.fromEntries(
         schemaDocs.flatMap((schemaDoc) => {
-          const normalizedIcon = tabBySchema.get(schemaDoc.schemaId)?.icon?.trim();
+          const normalizedIcon = tabBySchema
+            .get(schemaDoc.schemaId)
+            ?.icon?.trim();
           return normalizedIcon ? [[schemaDoc.schemaId, normalizedIcon]] : [];
         }),
       );
@@ -2979,11 +3038,7 @@ function PluginStudioPresenter({
       console.error('Error parsing JSON:', error);
       return null;
     }
-  }, [
-    adminTabsText,
-    workspaceActionManifest,
-    workspaceSchemaDocs,
-  ]);
+  }, [adminTabsText, workspaceActionManifest, workspaceSchemaDocs]);
   const groupOrder = parsed?.groupOrder ?? [];
   const systemTabs = parsed?.systemTabs ?? DEFAULT_SYSTEM_TABS;
   const subdomains = parsed?.subdomains ?? DEFAULT_SUBDOMAIN_PIPELINE;
@@ -3001,16 +3056,18 @@ function PluginStudioPresenter({
       schemaDocs[0] ??
       DEFAULT_SCHEMA_DOC;
     const schemaId = fallbackSchema.schemaId;
-    const scopedWorkflows = (fallbackSchema.workflows ?? []).map((workflow) => ({
-      ...workflow,
-      table: schemaId,
-      trigger: workflow.trigger
-        ? {
-            ...workflow.trigger,
-            table: schemaId,
-          }
-        : undefined,
-    }));
+    const scopedWorkflows = (fallbackSchema.workflows ?? []).map(
+      (workflow) => ({
+        ...workflow,
+        table: schemaId,
+        trigger: workflow.trigger
+          ? {
+              ...workflow.trigger,
+              table: schemaId,
+            }
+          : undefined,
+      }),
+    );
     if (scopedWorkflows.length > 0) {
       return scopedWorkflows;
     }
@@ -3024,7 +3081,9 @@ function PluginStudioPresenter({
   const availableGroups = groupOrder;
   const activeSchemaDocForEditor = useMemo(
     () =>
-      availableSchemaDocs.find((schemaDoc) => schemaDoc.schemaId === activeSchemaId) ??
+      availableSchemaDocs.find(
+        (schemaDoc) => schemaDoc.schemaId === activeSchemaId,
+      ) ??
       availableSchemaDocs[0] ??
       DEFAULT_SCHEMA_DOC,
     [activeSchemaId, availableSchemaDocs],
@@ -3032,7 +3091,8 @@ function PluginStudioPresenter({
   const schemaBuilder = useMemo(
     () => ({
       schemaId: activeSchemaDocForEditor.schemaId,
-      title: activeSchemaDocForEditor.title ?? activeSchemaDocForEditor.schemaId,
+      title:
+        activeSchemaDocForEditor.title ?? activeSchemaDocForEditor.schemaId,
       fields: activeSchemaDocForEditor.fields.map(toBuilderField),
       derivedFields: parseDerivedFieldsFromSchemaDoc(activeSchemaDocForEditor),
     }),
@@ -3047,7 +3107,8 @@ function PluginStudioPresenter({
   function setSchemaBuilder(
     value: BuilderSchema | ((current: BuilderSchema) => BuilderSchema),
   ) {
-    const nextBuilder = typeof value === 'function' ? value(schemaBuilder) : value;
+    const nextBuilder =
+      typeof value === 'function' ? value(schemaBuilder) : value;
     if (deepEqual(nextBuilder, schemaBuilder)) {
       return;
     }
@@ -3103,7 +3164,6 @@ function PluginStudioPresenter({
     );
   }, [activeSchemaId, availableSchemaDocs]);
 
-
   useEffect(() => {
     if (availableWorkflows.length === 0) return;
     if (
@@ -3132,17 +3192,20 @@ function PluginStudioPresenter({
         hasDerivedFieldValidationErrors(derivedField, fieldKeys),
     );
 
-    return (pluginId.trim() &&
+    return (
+      pluginId.trim() &&
       /^[a-z0-9][a-z0-9_.-]*[a-z0-9]$/.test(pluginId) &&
       parsed &&
-      !hasInvalidFieldConfig && !hasInvalidDerivedFieldConfig)
+      !hasInvalidFieldConfig &&
+      !hasInvalidDerivedFieldConfig
+    );
   }, [parsed, pluginId, schemaBuilder]);
   const isDraftSaveable = useMemo(
     () =>
       Boolean(
         parsed &&
-        pluginId.trim() &&
-        /^[a-z0-9][a-z0-9_.-]*[a-z0-9]$/.test(pluginId),
+          pluginId.trim() &&
+          /^[a-z0-9][a-z0-9_.-]*[a-z0-9]$/.test(pluginId),
       ),
     [parsed, pluginId],
   );
@@ -3179,7 +3242,10 @@ function PluginStudioPresenter({
       const currentTitle = toDisplayPluginTitle(activeDraft.title, pluginId);
       const currentDescription = activeDraft.description?.trim() || '';
 
-      if (nextTitle === currentTitle && nextDescription === currentDescription) {
+      if (
+        nextTitle === currentTitle &&
+        nextDescription === currentDescription
+      ) {
         return;
       }
 
@@ -3242,8 +3308,7 @@ function PluginStudioPresenter({
 
   const { mutateAsync: createDraft } = useMutation({
     mutationKey: ['plugin-studio', 'create-draft', draftId],
-    onMutate: () => {
-    },
+    onMutate: () => {},
     mutationFn: async () => {
       const userHandle = formatUserHandle(actorUserId);
       const draftTitle = `${pluginId} (${userHandle})`;
@@ -3303,13 +3368,8 @@ function PluginStudioPresenter({
 
   const { mutateAsync: saveDraftRevision, isPending: isSavingDraftRevision } =
     useMutation({
-      mutationKey: [
-        'plugin-studio',
-        'save-draft-revision',
-        draftId,
-      ],
-      onMutate: (_targetDraftId) => {
-      },
+      mutationKey: ['plugin-studio', 'save-draft-revision', draftId],
+      onMutate: (_targetDraftId) => {},
       mutationFn: async (targetDraftId: string) => {
         if (!parsed) {
           throw new Error('Invalid plugin payload');
@@ -3586,8 +3646,8 @@ function PluginStudioPresenter({
         const leftType = fieldTypeByRuleField.get(nextLeftField);
         const compatibleFields = leftType
           ? (availableRuleFieldsByType.get(leftType) ?? []).filter(
-            (fieldKey) => fieldKey !== nextLeftField,
-          )
+              (fieldKey) => fieldKey !== nextLeftField,
+            )
           : [];
         const nextRightField = compatibleFields.includes(rule.rightField)
           ? rule.rightField
@@ -3615,7 +3675,12 @@ function PluginStudioPresenter({
 
       return changed ? nextRules : currentRules;
     });
-  }, [leftRuleFields, availableRuleFieldsByType, fieldTypeByRuleField, setSchemaRefinements]);
+  }, [
+    leftRuleFields,
+    availableRuleFieldsByType,
+    fieldTypeByRuleField,
+    setSchemaRefinements,
+  ]);
 
   const selectedBlocklyField = useMemo(
     () =>
@@ -3721,8 +3786,8 @@ function PluginStudioPresenter({
   useEffect(() => {
     const nextOptions = blocklyComparableFields.length
       ? blocklyComparableFields.map(
-        (fieldKey) => [fieldKey, fieldKey] as [string, string],
-      )
+          (fieldKey) => [fieldKey, fieldKey] as [string, string],
+        )
       : [['No compatible fields', '']];
     blocklyRightFieldOptionsRef.current = nextOptions;
 
@@ -3742,10 +3807,10 @@ function PluginStudioPresenter({
       );
       operatorField.menuGenerator_ =
         conditionBlock?.type === 'plugin_rule_compare_text' ||
-          conditionBlock?.type === 'plugin_rule_compare_boolean'
+        conditionBlock?.type === 'plugin_rule_compare_boolean'
           ? operatorOptions.filter(
-            ([, operator]) => operator === 'eq' || operator === 'neq',
-          )
+              ([, operator]) => operator === 'eq' || operator === 'neq',
+            )
           : operatorOptions;
       const selectedOperator = conditionBlock.getFieldValue(
         'OP',
@@ -4025,8 +4090,7 @@ function PluginStudioPresenter({
 
     for (const row of currentRows) {
       const parsedDoc = parseStoredSchemaDoc(row.doc);
-      const schemaId =
-        row.schemaId || parsedDoc?.schemaId || '';
+      const schemaId = row.schemaId || parsedDoc?.schemaId || '';
       const rowId = row.id || schemaId;
       if (!schemaId || !rowId) continue;
       const nextDoc = nextBySchemaId.get(schemaId);
@@ -4034,24 +4098,28 @@ function PluginStudioPresenter({
         writes.push(deleteSchemaDocMutation.mutateAsync(rowId));
         continue;
       }
-      writes.push(updateSchemaDocMutation.mutateAsync({
-        id: rowId,
-        pluginId,
-        version: draftId,
-        schemaId,
-        doc: stringifySchemaDocForStorage(nextDoc),
-      }));
+      writes.push(
+        updateSchemaDocMutation.mutateAsync({
+          id: rowId,
+          pluginId,
+          version: draftId,
+          schemaId,
+          doc: stringifySchemaDocForStorage(nextDoc),
+        }),
+      );
       nextBySchemaId.delete(schemaId);
     }
 
     for (const [schemaId, nextDoc] of nextBySchemaId) {
-      writes.push(createSchemaDocMutation.mutateAsync({
-        id: `${draftId}:${schemaId}`,
-        pluginId,
-        version: draftId,
-        schemaId,
-        doc: stringifySchemaDocForStorage(nextDoc),
-      }));
+      writes.push(
+        createSchemaDocMutation.mutateAsync({
+          id: `${draftId}:${schemaId}`,
+          pluginId,
+          version: draftId,
+          schemaId,
+          doc: stringifySchemaDocForStorage(nextDoc),
+        }),
+      );
     }
 
     if (writes.length === 0) {
@@ -4072,7 +4140,9 @@ function PluginStudioPresenter({
     schemaId: string,
     nextWorkflowDocs: readonly WorkflowDoc[],
   ) {
-    const toSchemaWorkflowDoc = (workflowDoc: WorkflowDoc): SchemaWorkflowDoc => ({
+    const toSchemaWorkflowDoc = (
+      workflowDoc: WorkflowDoc,
+    ): SchemaWorkflowDoc => ({
       pluginContractVersion: workflowDoc.pluginContractVersion,
       workflowId: workflowDoc.workflowId.startsWith(`${schemaId}::`)
         ? workflowDoc.workflowId.slice(`${schemaId}::`.length)
@@ -4096,9 +4166,14 @@ function PluginStudioPresenter({
     }));
   }
 
-  function persistActionManifestDocs(nextActionManifest: readonly ActionManifestDoc[]) {
+  function persistActionManifestDocs(
+    nextActionManifest: readonly ActionManifestDoc[],
+  ) {
     const nextByActionId = new Map(
-      nextActionManifest.map((manifestDoc) => [manifestDoc.actionId, manifestDoc]),
+      nextActionManifest.map((manifestDoc) => [
+        manifestDoc.actionId,
+        manifestDoc,
+      ]),
     );
     const currentRows = actionManifestDocRows as Array<{
       id?: string;
@@ -4118,24 +4193,28 @@ function PluginStudioPresenter({
         writes.push(deleteActionManifestDocMutation.mutateAsync(rowId));
         continue;
       }
-      writes.push(updateActionManifestDocMutation.mutateAsync({
-        id: rowId,
-        pluginId,
-        version: draftId,
-        actionId,
-        doc: nextDoc,
-      }));
+      writes.push(
+        updateActionManifestDocMutation.mutateAsync({
+          id: rowId,
+          pluginId,
+          version: draftId,
+          actionId,
+          doc: nextDoc,
+        }),
+      );
       nextByActionId.delete(actionId);
     }
 
     for (const [actionId, nextDoc] of nextByActionId) {
-      writes.push(createActionManifestDocMutation.mutateAsync({
-        id: `${draftId}:${actionId}`,
-        pluginId,
-        version: draftId,
-        actionId,
-        doc: nextDoc,
-      }));
+      writes.push(
+        createActionManifestDocMutation.mutateAsync({
+          id: `${draftId}:${actionId}`,
+          pluginId,
+          version: draftId,
+          actionId,
+          doc: nextDoc,
+        }),
+      );
     }
 
     if (writes.length === 0) {
@@ -4183,7 +4262,10 @@ function PluginStudioPresenter({
     });
 
     const fieldKeySet = new Set(fieldTypeByKey.keys());
-    const derivationsByFieldKey = new Map<string, SchemaBuilderDerivedField[]>();
+    const derivationsByFieldKey = new Map<
+      string,
+      SchemaBuilderDerivedField[]
+    >();
     for (const derivedField of nextSchemaBuilder.derivedFields) {
       const targetFieldKey = derivedField.targetFieldKey.trim();
       if (!fieldKeySet.has(targetFieldKey)) {
@@ -4246,8 +4328,8 @@ function PluginStudioPresenter({
     const nextDocs =
       schemaIndex >= 0
         ? availableSchemaDocs.map((schemaDoc, index) =>
-          index === schemaIndex ? nextSchemaDoc : schemaDoc,
-        )
+            index === schemaIndex ? nextSchemaDoc : schemaDoc,
+          )
         : [...availableSchemaDocs, nextSchemaDoc];
     persistSchemaDocs(nextDocs);
     if (activeSchemaId !== nextSchemaDoc.schemaId) {
@@ -4308,7 +4390,9 @@ function PluginStudioPresenter({
 
       await refetchRoutesTabsConfig();
     })()
-      .catch((error) => reportPersistenceError('Sidebar tab persistence', error))
+      .catch((error) =>
+        reportPersistenceError('Sidebar tab persistence', error),
+      )
       .finally(() => {
         isSidebarTabPersistInFlightRef.current = false;
         if (pendingSidebarTabPersistRef.current) {
@@ -4363,7 +4447,9 @@ function PluginStudioPresenter({
     const filteredSchemaTabs = state.schemaTabs.filter((tab) =>
       availableSchemaById.has(tab.schema),
     );
-    const existingSchemaIds = new Set(filteredSchemaTabs.map((tab) => tab.schema));
+    const existingSchemaIds = new Set(
+      filteredSchemaTabs.map((tab) => tab.schema),
+    );
     const appendedSchemaTabs = [
       ...filteredSchemaTabs,
       ...resolvedAvailableSchemaDocs
@@ -4572,7 +4658,9 @@ function PluginStudioPresenter({
       let counter = state.subdomains.length + 1;
       let candidate = `subdomain-${counter}`;
       const existing = new Set(
-        state.subdomains.map((entry) => normalizeSubdomainName(entry.subdomain)),
+        state.subdomains.map((entry) =>
+          normalizeSubdomainName(entry.subdomain),
+        ),
       );
       while (existing.has(candidate)) {
         counter += 1;
@@ -4665,30 +4753,21 @@ function PluginStudioPresenter({
     [selectedSubdomainLayerSnapshot],
   );
   const buildAdminInjectedLayers = useCallback(
-    (subdomain: string): ComponentLayer[] => [
-      {
-        id: `${subdomain}-admin-root`,
-        name: 'Auto Admin',
-        type: 'AutoAdminRoot',
-        props: {
-          className: 'min-h-screen w-full bg-background text-foreground',
-          tabs: JSON.stringify(parsed?.adminTabs ?? []),
-          systemTabs: JSON.stringify(systemTabs),
-          bindings: '{}',
-          dataScopes: '{}',
-        },
-        children: [],
-      },
-    ],
-    [parsed?.adminTabs, systemTabs],
+    (subdomain: string): ComponentLayer[] =>
+      toAdminInjectedSubdomainUiLayers(subdomain),
+    [],
   );
 
-  const selectedSubdomainLayers =
-    parsedSelectedSubdomainLayers ??
-    (selectedSubdomain === 'admin' ||
-    selectedSubdomainEntry?.autoAdminInjected
+  const selectedSubdomainLayers = parsedSelectedSubdomainLayers
+    ? selectedSubdomain === 'admin' || selectedSubdomainEntry?.autoAdminInjected
+      ? normalizeAdminCanvasLayers(
+          selectedSubdomain,
+          parsedSelectedSubdomainLayers,
+        )
+      : parsedSelectedSubdomainLayers
+    : selectedSubdomain === 'admin' || selectedSubdomainEntry?.autoAdminInjected
       ? buildAdminInjectedLayers(selectedSubdomain)
-      : toBlankSubdomainUiLayers(selectedSubdomain));
+      : toBlankSubdomainUiLayers(selectedSubdomain);
 
   function selectSubdomain(subdomain: string) {
     const normalized = normalizeSubdomainName(subdomain);
@@ -4730,14 +4809,13 @@ function PluginStudioPresenter({
 
   function reorderSubdomainByOffset(offset: number, fromSubdomain?: string) {
     if (subdomains.length < 2) return;
-    const fromIndex =
-      fromSubdomain
-        ? subdomains.findIndex(
+    const fromIndex = fromSubdomain
+      ? subdomains.findIndex(
           (entry) =>
             normalizeSubdomainName(entry.subdomain) ===
             normalizeSubdomainName(fromSubdomain),
         )
-        : selectedSubdomainIndex;
+      : selectedSubdomainIndex;
     if (fromIndex < 0) return;
     const targetIndex = fromIndex + offset;
     if (targetIndex < 0 || targetIndex >= subdomains.length) return;
@@ -4802,89 +4880,42 @@ function PluginStudioPresenter({
     [draftId, projectId, pluginId, selectedSubdomain],
   );
 
-  const livePreviewTabById = useMemo(
-    () => new Map(livePreviewTabs.map((tab) => [tab.tabId, tab])),
-    [livePreviewTabs],
-  );
-
-  function AutoAdminRootLayer(
-    props: Record<string, unknown> & {
-      className?: string;
-    },
-  ) {
-    const focusedConfig = readAutoAdminRootFocusedConfig(props);
-    const tabsFromConfig = focusedConfig.tabs.flatMap((rawTab) => {
-      if (!rawTab || typeof rawTab !== 'object') return [];
-      const tab = rawTab as Record<string, unknown>;
-      const schema = typeof tab.schema === 'string' ? tab.schema.trim() : '';
-      if (!schema) return [];
-      const matched = livePreviewTabById.get(schema);
-      if (!matched) return [];
-      const title = typeof tab.title === 'string' && tab.title.trim()
-        ? tab.title.trim()
-        : matched.title;
-      const group =
-        typeof tab.group === 'string' && tab.group.trim()
-          ? tab.group.trim()
-          : matched.group;
-      const iconName =
-        typeof tab.icon === 'string' && tab.icon.trim()
-          ? tab.icon.trim()
-          : matched.iconName;
-      return [
-        {
-          ...matched,
-          title,
-          group,
-          iconName,
-          icon: resolveLucideIconByName(iconName) ?? matched.icon,
-        },
-      ];
-    });
-    const resolvedTabs = tabsFromConfig.length > 0 ? tabsFromConfig : livePreviewTabs;
+  // biome-ignore lint/correctness/noNestedComponentDefinitions: registry needs a local state-bound component
+  function EditableAutoAdminLayer() {
     return (
-      <div className={props.className}>
-        <AutoAdmin
-          tabs={resolvedTabs}
-          tabOrder={tabOrder}
-          editable
-          onAddTable={handleAddSchema}
-          onAddGroup={handleAddGroup}
-          onReorderGroups={handleReorderGroups}
-          onMoveTabToGroup={handleMoveTabToGroup}
-          onReorderTabs={handleReorderTabs}
-          onRenameGroup={handleRenameGroup}
-          onDeleteGroup={handleDeleteGroup}
-          onRenameTab={handleRenameTab}
-          onRenameTabIcon={handleRenameTabIcon}
-          onOpenWorkflowEditorForTab={handleOpenWorkflowEditorForTab}
-          onDeleteTableForTab={handleDeleteTableFromTab}
-          systemTabs={systemTabs}
-          onSystemTabChange={handleSystemTabChange}
-          groups={availableGroups}
-        />
-      </div>
+      <PluginStudioEditableAutoAdmin
+        tabs={livePreviewTabs}
+        tabOrder={tabOrder}
+        onAddTable={handleAddSchema}
+        onAddGroup={handleAddGroup}
+        onReorderGroups={handleReorderGroups}
+        onMoveTabToGroup={handleMoveTabToGroup}
+        onReorderTabs={handleReorderTabs}
+        onRenameGroup={handleRenameGroup}
+        onDeleteGroup={handleDeleteGroup}
+        onRenameTab={handleRenameTab}
+        onRenameTabIcon={handleRenameTabIcon}
+        onOpenWorkflowEditorForTab={handleOpenWorkflowEditorForTab}
+        onDeleteTableForTab={handleDeleteTableFromTab}
+        systemTabs={systemTabs}
+        onSystemTabChange={handleSystemTabChange}
+        groups={availableGroups}
+      />
     );
   }
 
   const subdomainComponentRegistry = {
     ...primitiveComponentDefinitions,
     ...complexComponentDefinitions,
+    AutoAdmin: {
+      component: EditableAutoAdminLayer,
+      schema: z.object({}),
+      from: '@/components/auto-admin/auto-admin-plugin-studio-editable',
+    },
     AutoAdminRoot: {
-      component: AutoAdminRootLayer,
-      schema: z.object({
-        className: z.string().optional(),
-        tabs: z.union([z.string(), z.array(z.unknown())]).optional(),
-        bindings: z.union([z.string(), z.record(z.unknown())]).optional(),
-        tabBindings: z.union([z.string(), z.record(z.unknown())]).optional(),
-        systemTabs: z.union([z.string(), z.record(z.unknown())]).optional(),
-        dataScopes: z.union([z.string(), z.record(z.unknown())]).optional(),
-        tabDataScopes: z.union([z.string(), z.record(z.unknown())]).optional(),
-      }),
-      fieldOverrides: {
-        className: (layer) => classNameFieldOverrides(layer),
-      },
-      from: '@/routes/plugin-studio/$projectId/$pluginId',
+      component: EditableAutoAdminLayer,
+      schema: z.object({}),
+      from: '@/components/auto-admin/auto-admin-plugin-studio-editable',
     },
   };
 
@@ -4898,10 +4929,19 @@ function PluginStudioPresenter({
     [selectedSubdomain],
   );
 
-  function getSubdomainLayers(entry: SubdomainPipelineState[number]): ComponentLayer[] {
+  function getSubdomainLayers(
+    entry: SubdomainPipelineState[number],
+  ): ComponentLayer[] {
     const normalized = normalizeSubdomainName(entry.subdomain);
-    const parsedLayers = parseStoredSubdomainUiLayers(subdomainUiLayers[normalized]);
-    if (parsedLayers && parsedLayers.length > 0) return parsedLayers;
+    const parsedLayers = parseStoredSubdomainUiLayers(
+      subdomainUiLayers[normalized],
+    );
+    if (parsedLayers && parsedLayers.length > 0) {
+      if (entry.autoAdminInjected || normalized === 'admin') {
+        return normalizeAdminCanvasLayers(normalized, parsedLayers);
+      }
+      return parsedLayers;
+    }
     if (entry.autoAdminInjected || normalized === 'admin') {
       return buildAdminInjectedLayers(normalized);
     }
@@ -5104,8 +5144,8 @@ function PluginStudioPresenter({
     const editingField =
       columnSheetMode === 'edit' && editingColumnKey
         ? schemaBuilder.fields.find(
-          (field) => field.key.trim() === editingColumnKey,
-        )
+            (field) => field.key.trim() === editingColumnKey,
+          )
         : undefined;
     const conflictingField = schemaBuilder.fields.find(
       (field) =>
@@ -5123,9 +5163,9 @@ function PluginStudioPresenter({
         const nextDerivedFields = current.derivedFields.map((derivedField) =>
           derivedField.targetFieldKey.trim() === previousKey
             ? {
-              ...derivedField,
-              targetFieldKey: nextKey,
-            }
+                ...derivedField,
+                targetFieldKey: nextKey,
+              }
             : derivedField,
         );
 
@@ -5134,23 +5174,23 @@ function PluginStudioPresenter({
           fields: current.fields.map((field) =>
             field.id === editingField.id
               ? {
-                ...field,
-                key: nextKey,
-                label: addColumnDraft.label.trim() || nextKey,
-                description: addColumnDraft.description.trim(),
-                type: addColumnDraft.type,
-                fieldType: addColumnDraft.fieldType,
-                required: addColumnDraft.required,
-                defaultValue: addColumnDraft.defaultValue.trim() || undefined,
-                enumValues: normalizeStringArray(addColumnDraft.enumValues),
-                min: addColumnDraft.min.trim() || undefined,
-                max: addColumnDraft.max.trim() || undefined,
-                inputPropsJson: setJsonStringEntry(
-                  field.inputPropsJson,
-                  'className',
-                  addColumnDraft.inputClassName,
-                ),
-              }
+                  ...field,
+                  key: nextKey,
+                  label: addColumnDraft.label.trim() || nextKey,
+                  description: addColumnDraft.description.trim(),
+                  type: addColumnDraft.type,
+                  fieldType: addColumnDraft.fieldType,
+                  required: addColumnDraft.required,
+                  defaultValue: addColumnDraft.defaultValue.trim() || undefined,
+                  enumValues: normalizeStringArray(addColumnDraft.enumValues),
+                  min: addColumnDraft.min.trim() || undefined,
+                  max: addColumnDraft.max.trim() || undefined,
+                  inputPropsJson: setJsonStringEntry(
+                    field.inputPropsJson,
+                    'className',
+                    addColumnDraft.inputClassName,
+                  ),
+                }
               : field,
           ),
           derivedFields: nextDerivedFields,
@@ -5249,7 +5289,9 @@ function PluginStudioPresenter({
       // insertion works even when a target group was not yet persisted in groupOrder.
       const base = [
         ...withCandidate,
-        ...availableGroups.filter((groupName) => !withCandidate.includes(groupName)),
+        ...availableGroups.filter(
+          (groupName) => !withCandidate.includes(groupName),
+        ),
       ].filter((groupName) => groupName !== normalized);
       const relativeTo = options?.relativeTo?.trim();
       const relativeIndex = relativeTo ? base.indexOf(relativeTo) : -1;
@@ -5312,13 +5354,17 @@ function PluginStudioPresenter({
     );
   }
 
-  function resolveSystemTabKeyForTabTitle(tabTitle: string): SystemTabKey | undefined {
+  function resolveSystemTabKeyForTabTitle(
+    tabTitle: string,
+  ): SystemTabKey | undefined {
     const normalized = tabTitle.trim().toLowerCase();
     if (!normalized) return undefined;
     const entries = Object.entries(systemTabs) as Array<
       [SystemTabKey, SystemTabState[SystemTabKey]]
     >;
-    const matched = entries.find(([, value]) => value.title.trim().toLowerCase() === normalized);
+    const matched = entries.find(
+      ([, value]) => value.title.trim().toLowerCase() === normalized,
+    );
     return matched?.[0];
   }
 
@@ -5326,7 +5372,11 @@ function PluginStudioPresenter({
     let counter = availableWorkflows.length + 1;
     while (true) {
       const candidate = `${pluginId}.workflow.${counter}`;
-      if (!availableWorkflows.some((workflow) => workflow.workflowId === candidate)) {
+      if (
+        !availableWorkflows.some(
+          (workflow) => workflow.workflowId === candidate,
+        )
+      ) {
         return candidate;
       }
       counter += 1;
@@ -5359,9 +5409,7 @@ function PluginStudioPresenter({
           workflowDoc.workflowId === activeWorkflowId &&
           workflowDoc.table === trimmedTable,
       ) ??
-      scopedWorkflows.find(
-        (workflowDoc) => workflowDoc.table === trimmedTable,
-      );
+      scopedWorkflows.find((workflowDoc) => workflowDoc.table === trimmedTable);
     if (activeSchemaId !== trimmedTable) {
       setActiveSchemaId(trimmedTable);
     }
@@ -5438,9 +5486,9 @@ function PluginStudioPresenter({
       state.schemaTabs = state.schemaTabs.map((tab) =>
         tab.schema === schemaId
           ? {
-            ...tab,
-            group: normalizedGroup || undefined,
-          }
+              ...tab,
+              group: normalizedGroup || undefined,
+            }
           : tab,
       );
     });
@@ -5494,8 +5542,9 @@ function PluginStudioPresenter({
         }
         if (toSchemaId) {
           return (
-            state.schemaTabs.find((tab) => tab.schema === toSchemaId)?.group?.trim() ||
-            undefined
+            state.schemaTabs
+              .find((tab) => tab.schema === toSchemaId)
+              ?.group?.trim() || undefined
           );
         }
         return undefined;
@@ -5515,9 +5564,9 @@ function PluginStudioPresenter({
         state.schemaTabs = state.schemaTabs.map((tab) =>
           tab.schema === fromSchemaId
             ? {
-              ...tab,
-              group: targetGroup,
-            }
+                ...tab,
+                group: targetGroup,
+              }
             : tab,
         );
       }
@@ -5546,16 +5595,19 @@ function PluginStudioPresenter({
     };
     const nextAvailableSchemaDocs = [...availableSchemaDocs, nextSchemaDoc];
     persistSchemaDocs(nextAvailableSchemaDocs);
-    updateSidebarAdminTabs((state) => {
-      state.schemaTabs = [
-        ...state.schemaTabs.filter((tab) => tab.schema !== nextSchemaId),
-        {
-          schema: nextSchemaId,
-          title: nextSchemaDoc.title ?? nextSchemaId,
-          group: normalizedGroupName,
-        },
-      ];
-    }, { availableSchemaDocsOverride: nextAvailableSchemaDocs });
+    updateSidebarAdminTabs(
+      (state) => {
+        state.schemaTabs = [
+          ...state.schemaTabs.filter((tab) => tab.schema !== nextSchemaId),
+          {
+            schema: nextSchemaId,
+            title: nextSchemaDoc.title ?? nextSchemaId,
+            group: normalizedGroupName,
+          },
+        ];
+      },
+      { availableSchemaDocsOverride: nextAvailableSchemaDocs },
+    );
     setActiveSchemaId(nextSchemaId);
     syncBuilderFromSchemaDoc(nextSchemaDoc);
   }
@@ -5600,7 +5652,10 @@ function PluginStudioPresenter({
       nodes: [],
       edges: [],
     };
-    persistSchemaWorkflows(workflowEditorTable, [...availableWorkflows, nextWorkflow]);
+    persistSchemaWorkflows(workflowEditorTable, [
+      ...availableWorkflows,
+      nextWorkflow,
+    ]);
     setActiveWorkflowId(nextWorkflow.workflowId);
   }
 
@@ -5630,7 +5685,10 @@ function PluginStudioPresenter({
       nodes: workspaceWorkflow.nodes.map((node) => ({ ...node })),
       edges: workspaceWorkflow.edges.map((edge) => ({ ...edge })),
     };
-    persistSchemaWorkflows(workflowEditorTable, [...availableWorkflows, nextWorkflow]);
+    persistSchemaWorkflows(workflowEditorTable, [
+      ...availableWorkflows,
+      nextWorkflow,
+    ]);
     setActiveWorkflowId(nextWorkflow.workflowId);
   }
 
@@ -5785,7 +5843,11 @@ function PluginStudioPresenter({
             {isSubdomainBuilderOpen ? (
               <div className="relative h-dvh w-full">
                 <div className="absolute left-4 top-4 z-20 flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-background/90 p-2 shadow-sm backdrop-blur">
-                  <Button type="button" variant="outline" onClick={closeSubdomainBuilder}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={closeSubdomainBuilder}
+                  >
                     <ArrowLeft className="mr-2 size-4" />
                     All subdomains
                   </Button>
@@ -5818,7 +5880,9 @@ function PluginStudioPresenter({
                           value={editingMetadataValue}
                           autoFocus
                           placeholder="Plugin name"
-                          onChange={(event) => setEditingMetadataValue(event.target.value)}
+                          onChange={(event) =>
+                            setEditingMetadataValue(event.target.value)
+                          }
                           onBlur={commitMetadataEdit}
                           onKeyDown={(event) => {
                             if (event.key === 'Enter') {
@@ -5856,14 +5920,19 @@ function PluginStudioPresenter({
                           value={editingMetadataValue}
                           autoFocus
                           placeholder="Add a description"
-                          onChange={(event) => setEditingMetadataValue(event.target.value)}
+                          onChange={(event) =>
+                            setEditingMetadataValue(event.target.value)
+                          }
                           onBlur={commitMetadataEdit}
                           onKeyDown={(event) => {
                             if (event.key === 'Escape') {
                               event.preventDefault();
                               stopMetadataEdit();
                             }
-                            if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+                            if (
+                              event.key === 'Enter' &&
+                              (event.metaKey || event.ctrlKey)
+                            ) {
                               event.preventDefault();
                               commitMetadataEdit();
                             }
@@ -5893,221 +5962,246 @@ function PluginStudioPresenter({
 
                 <div className="flex items-center justify-end">
                   <Button type="button" onClick={handleAddSubdomain}>
-                  <Plus className="mr-2 size-4" />
-                  Add subdomain
-                </Button>
+                    <Plus className="mr-2 size-4" />
+                    Add subdomain
+                  </Button>
                 </div>
 
                 <Sortable
                   value={subdomains}
                   onValueChange={handleSubdomainOrderChange}
-                  getItemValue={(entry) => normalizeSubdomainName(entry.subdomain)}
+                  getItemValue={(entry) =>
+                    normalizeSubdomainName(entry.subdomain)
+                  }
                   orientation="mixed"
                 >
                   <SortableContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {subdomains.map((entry) => {
-                    const normalizedSubdomain = normalizeSubdomainName(entry.subdomain);
-                    const previewLayers = getSubdomainLayers(entry);
-                    const previewPage = previewLayers[0];
-                    const displayTitle =
-                      normalizedSubdomain === 'index'
-                        ? 'Home'
-                        : normalizedSubdomain === 'admin'
-                          ? 'Admin'
-                          : normalizedSubdomain;
-                    const isDefaultSubdomain =
-                      normalizedSubdomain === 'index' || normalizedSubdomain === 'admin';
-                    const isSelected = normalizedSubdomain === selectedSubdomain;
-                    const isEditingTitle =
-                      editingSubdomainTitle?.originalSubdomain === entry.subdomain;
-                    return (
-                      <SortableItem key={normalizedSubdomain} value={normalizedSubdomain} asChild>
-                        <div className="space-y-2">
-                        <button
-                          type="button"
-                          className={`group block h-72 w-full rounded-2xl border p-4 text-left transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 ${
-                            isSelected
-                              ? 'border-primary/50 bg-gradient-to-br from-primary/10 via-accent/20 to-background shadow-sm'
-                              : 'border-border/70 bg-card hover:border-primary/40 hover:bg-accent/20 hover:shadow-sm'
-                          }`}
-                          onKeyDown={(event) => {
-                            if (event.key === 'ArrowRight') {
-                              event.preventDefault();
-                              moveSubdomainSelection(1);
-                            }
-                            if (event.key === 'ArrowLeft') {
-                              event.preventDefault();
-                              moveSubdomainSelection(-1);
-                            }
-                          }}
-                          aria-label={`Select ${displayTitle} card`}
-                          aria-current={isSelected ? 'true' : undefined}
+                    {subdomains.map((entry) => {
+                      const normalizedSubdomain = normalizeSubdomainName(
+                        entry.subdomain,
+                      );
+                      const previewLayers = getSubdomainLayers(entry);
+                      const previewPage = previewLayers[0];
+                      const displayTitle =
+                        normalizedSubdomain === 'index'
+                          ? 'Home'
+                          : normalizedSubdomain === 'admin'
+                            ? 'Admin'
+                            : normalizedSubdomain;
+                      const isDefaultSubdomain =
+                        normalizedSubdomain === 'index' ||
+                        normalizedSubdomain === 'admin';
+                      const isSelected =
+                        normalizedSubdomain === selectedSubdomain;
+                      const isEditingTitle =
+                        editingSubdomainTitle?.originalSubdomain ===
+                        entry.subdomain;
+                      return (
+                        <SortableItem
+                          key={normalizedSubdomain}
+                          value={normalizedSubdomain}
+                          asChild
                         >
-                          <div className="mb-3 flex items-center justify-between">
-                            <div className="group/title flex items-center gap-1">
-                              {isEditingTitle ? (
-                                <Input
-                                  value={editingSubdomainTitle.value}
-                                  autoFocus
-                                  placeholder="Subdomain title"
-                                  onClick={(event) => event.stopPropagation()}
-                                  onChange={(event) =>
-                                    setEditingSubdomainTitle((current) =>
-                                      current
-                                        ? { ...current, value: event.target.value }
-                                        : current,
-                                    )
-                                  }
-                                  onBlur={commitSubdomainTitleEdit}
-                                  onKeyDown={(event) => {
-                                    if (event.key === 'Enter') {
-                                      event.preventDefault();
-                                      commitSubdomainTitleEdit();
-                                    }
-                                    if (event.key === 'Escape') {
-                                      event.preventDefault();
-                                      cancelSubdomainTitleEdit();
-                                    }
-                                  }}
-                                  className="h-8 w-40"
-                                />
-                              ) : (
-                                <>
-                                  <p className="text-sm font-semibold tracking-wide text-foreground">
-                                    {displayTitle}
-                                  </p>
+                          <div className="space-y-2">
+                            <button
+                              type="button"
+                              className={`group block h-72 w-full rounded-2xl border p-4 text-left transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 ${
+                                isSelected
+                                  ? 'border-primary/50 bg-gradient-to-br from-primary/10 via-accent/20 to-background shadow-sm'
+                                  : 'border-border/70 bg-card hover:border-primary/40 hover:bg-accent/20 hover:shadow-sm'
+                              }`}
+                              onKeyDown={(event) => {
+                                if (event.key === 'ArrowRight') {
+                                  event.preventDefault();
+                                  moveSubdomainSelection(1);
+                                }
+                                if (event.key === 'ArrowLeft') {
+                                  event.preventDefault();
+                                  moveSubdomainSelection(-1);
+                                }
+                              }}
+                              aria-label={`Select ${displayTitle} card`}
+                              aria-current={isSelected ? 'true' : undefined}
+                            >
+                              <div className="mb-3 flex items-center justify-between">
+                                <div className="group/title flex items-center gap-1">
+                                  {isEditingTitle ? (
+                                    <Input
+                                      value={editingSubdomainTitle.value}
+                                      autoFocus
+                                      placeholder="Subdomain title"
+                                      onClick={(event) =>
+                                        event.stopPropagation()
+                                      }
+                                      onChange={(event) =>
+                                        setEditingSubdomainTitle((current) =>
+                                          current
+                                            ? {
+                                                ...current,
+                                                value: event.target.value,
+                                              }
+                                            : current,
+                                        )
+                                      }
+                                      onBlur={commitSubdomainTitleEdit}
+                                      onKeyDown={(event) => {
+                                        if (event.key === 'Enter') {
+                                          event.preventDefault();
+                                          commitSubdomainTitleEdit();
+                                        }
+                                        if (event.key === 'Escape') {
+                                          event.preventDefault();
+                                          cancelSubdomainTitleEdit();
+                                        }
+                                      }}
+                                      className="h-8 w-40"
+                                    />
+                                  ) : (
+                                    <>
+                                      <p className="text-sm font-semibold tracking-wide text-foreground">
+                                        {displayTitle}
+                                      </p>
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        className="size-7 p-0 opacity-0 transition group-hover/title:opacity-100"
+                                        onClick={(event) => {
+                                          event.preventDefault();
+                                          event.stopPropagation();
+                                          beginSubdomainTitleEdit(
+                                            entry.subdomain,
+                                          );
+                                        }}
+                                        aria-label={`Edit ${displayTitle} title`}
+                                      >
+                                        <Pencil className="size-3.5" />
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
+                                <div className="flex items-center">
+                                  <div className="mr-1 hidden items-center gap-1 group-hover:inline-flex group-focus-within:inline-flex">
+                                    <SortableItemHandle
+                                      data-subdomain-reorder-handle="true"
+                                      aria-label={`Reorder ${displayTitle}`}
+                                      className="inline-flex size-7 items-center justify-center rounded-md border border-border/70 bg-background/90 p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                                      onPointerDownCapture={(event) => {
+                                        event.stopPropagation();
+                                      }}
+                                      onClickCapture={(event) => {
+                                        event.stopPropagation();
+                                      }}
+                                      onClick={(event) => {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                      }}
+                                      onKeyDown={(event) => {
+                                        event.stopPropagation();
+                                      }}
+                                    >
+                                      <GripVertical className="size-3.5" />
+                                    </SortableItemHandle>
+                                  </div>
+                                  <Badge
+                                    variant="secondary"
+                                    className="group-hover:hidden group-focus-within:hidden"
+                                  >
+                                    Live preview
+                                  </Badge>
                                   <Button
                                     type="button"
                                     size="sm"
-                                    variant="ghost"
-                                    className="size-7 p-0 opacity-0 transition group-hover/title:opacity-100"
+                                    variant="destructive"
+                                    className="hidden h-7 items-center gap-1 group-hover:inline-flex group-focus-within:inline-flex"
                                     onClick={(event) => {
                                       event.preventDefault();
                                       event.stopPropagation();
-                                      beginSubdomainTitleEdit(entry.subdomain);
+                                      setPendingDeleteSubdomain(
+                                        entry.subdomain,
+                                      );
                                     }}
-                                    aria-label={`Edit ${displayTitle} title`}
+                                    disabled={isDefaultSubdomain}
                                   >
-                                    <Pencil className="size-3.5" />
+                                    <Trash2 className="size-3.5" />
+                                    Delete
                                   </Button>
-                                </>
-                              )}
-                            </div>
-                            <div className="flex items-center">
-                              <div className="mr-1 hidden items-center gap-1 group-hover:inline-flex group-focus-within:inline-flex">
-                                <SortableItemHandle
-                                  data-subdomain-reorder-handle="true"
-                                  aria-label={`Reorder ${displayTitle}`}
-                                  className="inline-flex size-7 items-center justify-center rounded-md border border-border/70 bg-background/90 p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                                  onPointerDownCapture={(event) => {
-                                    event.stopPropagation();
-                                  }}
-                                  onClickCapture={(event) => {
-                                    event.stopPropagation();
-                                  }}
-                                  onClick={(event) => {
-                                    event.preventDefault();
-                                    event.stopPropagation();
-                                  }}
-                                  onKeyDown={(event) => {
-                                    event.stopPropagation();
-                                  }}
-                                >
-                                  <GripVertical className="size-3.5" />
-                                </SortableItemHandle>
+                                </div>
                               </div>
-                              <Badge
-                                variant="secondary"
-                                className="group-hover:hidden group-focus-within:hidden"
-                              >
-                                Live preview
-                              </Badge>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="destructive"
-                                className="hidden h-7 items-center gap-1 group-hover:inline-flex group-focus-within:inline-flex"
+                              <div
+                                role="button"
+                                tabIndex={0}
+                                className="relative h-[calc(100%-2.25rem)] overflow-hidden rounded-xl border border-border/70 bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
                                 onClick={(event) => {
                                   event.preventDefault();
                                   event.stopPropagation();
-                                  setPendingDeleteSubdomain(entry.subdomain);
+                                  openSubdomainBuilder(normalizedSubdomain);
                                 }}
-                                disabled={isDefaultSubdomain}
+                                onKeyDown={(event) => {
+                                  if (
+                                    event.key === 'Enter' ||
+                                    event.key === ' '
+                                  ) {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    openSubdomainBuilder(normalizedSubdomain);
+                                  }
+                                }}
+                                aria-label={`Open ${displayTitle} builder`}
                               >
-                                <Trash2 className="size-3.5" />
-                                Delete
-                              </Button>
-                            </div>
-                          </div>
-                          <div
-                            role="button"
-                            tabIndex={0}
-                            className="relative h-[calc(100%-2.25rem)] overflow-hidden rounded-xl border border-border/70 bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
-                            onClick={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              openSubdomainBuilder(normalizedSubdomain);
-                            }}
-                            onKeyDown={(event) => {
-                              if (event.key === 'Enter' || event.key === ' ') {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                openSubdomainBuilder(normalizedSubdomain);
-                              }
-                            }}
-                            aria-label={`Open ${displayTitle} builder`}
-                          >
-                            {previewPage ? (
-                              <div className="pointer-events-none absolute left-0 top-0 h-[500%] w-[500%] origin-top-left scale-[0.2]">
-                                <ContextDataStore
-                                  contextData={{
-                                    ...subdomainContextData,
-                                    subdomain: normalizedSubdomain,
-                                  }}
-                                >
-                                  <LayerRenderer
-                                    componentRegistry={subdomainComponentRegistry}
-                                    page={previewPage}
-                                    className="min-h-screen w-screen bg-background"
-                                  />
-                                </ContextDataStore>
+                                {previewPage ? (
+                                  <div className="pointer-events-none absolute left-0 top-0 h-[500%] w-[500%] origin-top-left scale-[0.2]">
+                                    <ContextDataStore
+                                      contextData={{
+                                        ...subdomainContextData,
+                                        subdomain: normalizedSubdomain,
+                                      }}
+                                    >
+                                      <LayerRenderer
+                                        componentRegistry={
+                                          subdomainComponentRegistry
+                                        }
+                                        page={previewPage}
+                                        className="min-h-screen w-screen bg-background"
+                                      />
+                                    </ContextDataStore>
+                                  </div>
+                                ) : (
+                                  <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                                    No preview available yet.
+                                  </div>
+                                )}
                               </div>
-                            ) : (
-                              <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-                                No preview available yet.
-                              </div>
-                            )}
+                            </button>
                           </div>
-                        </button>
-                        </div>
-                      </SortableItem>
-                    );
-                  })}
+                        </SortableItem>
+                      );
+                    })}
                   </SortableContent>
                 </Sortable>
               </>
             )}
-              <AlertDialog
-                open={pendingDeleteSubdomain !== null}
-                onOpenChange={handleDeleteSubdomainDialogOpenChange}
-              >
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete subdomain?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {pendingDeleteSubdomain
-                        ? `Subdomain "${pendingDeleteSubdomain}" will be removed from this plugin workspace.`
-                        : 'This subdomain will be removed from this plugin workspace.'}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={confirmDeleteSubdomain}>
-                      Delete Subdomain
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+            <AlertDialog
+              open={pendingDeleteSubdomain !== null}
+              onOpenChange={handleDeleteSubdomainDialogOpenChange}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete subdomain?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {pendingDeleteSubdomain
+                      ? `Subdomain "${pendingDeleteSubdomain}" will be removed from this plugin workspace.`
+                      : 'This subdomain will be removed from this plugin workspace.'}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={confirmDeleteSubdomain}>
+                    Delete Subdomain
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       </div>
@@ -6143,7 +6237,9 @@ function PluginStudioPresenter({
                       value={editingMetadataValue}
                       autoFocus
                       placeholder="Plugin name"
-                      onChange={(event) => setEditingMetadataValue(event.target.value)}
+                      onChange={(event) =>
+                        setEditingMetadataValue(event.target.value)
+                      }
                       onBlur={commitMetadataEdit}
                       onKeyDown={(event) => {
                         if (event.key === 'Enter') {
@@ -6181,14 +6277,19 @@ function PluginStudioPresenter({
                       value={editingMetadataValue}
                       autoFocus
                       placeholder="Add a description"
-                      onChange={(event) => setEditingMetadataValue(event.target.value)}
+                      onChange={(event) =>
+                        setEditingMetadataValue(event.target.value)
+                      }
                       onBlur={commitMetadataEdit}
                       onKeyDown={(event) => {
                         if (event.key === 'Escape') {
                           event.preventDefault();
                           stopMetadataEdit();
                         }
-                        if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+                        if (
+                          event.key === 'Enter' &&
+                          (event.metaKey || event.ctrlKey)
+                        ) {
                           event.preventDefault();
                           commitMetadataEdit();
                         }
@@ -6222,16 +6323,20 @@ function PluginStudioPresenter({
           <CardHeader className="space-y-2">
             <CardTitle className="text-base">Subdomain Projects</CardTitle>
             <CardDescription>
-              Create subdomain projects. Routing, DNS, and infra mapping are handled
-              automatically. <code>admin</code> is bootstrapped with AutoAdmin by default.
+              Create subdomain projects. Routing, DNS, and infra mapping are
+              handled automatically. <code>admin</code> is bootstrapped with
+              AutoAdmin by default.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-3">
               {subdomains.map((entry) => {
-                const normalizedSubdomain = normalizeSubdomainName(entry.subdomain);
+                const normalizedSubdomain = normalizeSubdomainName(
+                  entry.subdomain,
+                );
                 const isDefaultSubdomain =
-                  normalizedSubdomain === 'index' || normalizedSubdomain === 'admin';
+                  normalizedSubdomain === 'index' ||
+                  normalizedSubdomain === 'admin';
                 return (
                   <div
                     key={normalizedSubdomain}
@@ -6249,14 +6354,17 @@ function PluginStudioPresenter({
                         placeholder="subdomain name"
                       />
                       <p className="text-xs text-muted-foreground">
-                        Blank UI Builder project on <code>{normalizedSubdomain}</code>.
+                        Blank UI Builder project on{' '}
+                        <code>{normalizedSubdomain}</code>.
                       </p>
                     </div>
                     <div className="flex flex-col items-start justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary">UI Builder</Badge>
                         <Badge
-                          variant={entry.autoAdminInjected ? 'default' : 'outline'}
+                          variant={
+                            entry.autoAdminInjected ? 'default' : 'outline'
+                          }
                         >
                           {entry.autoAdminInjected
                             ? 'AutoAdmin bootstrapped'
@@ -6293,7 +6401,11 @@ function PluginStudioPresenter({
                 );
               })}
             </div>
-            <Button type="button" variant="outline" onClick={handleAddSubdomain}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleAddSubdomain}
+            >
               <Plus className="mr-2 size-4" />
               New subdomain project
             </Button>
@@ -6338,9 +6450,15 @@ function PluginStudioPresenter({
                         void publishRelease();
                       }}
                       className="size-9 rounded-md shadow-sm"
-                      aria-label={isPublishing ? 'Publishing plugin' : 'Publish plugin'}
+                      aria-label={
+                        isPublishing ? 'Publishing plugin' : 'Publish plugin'
+                      }
                     >
-                      <CloudUpload className={isPublishing ? 'size-4 animate-pulse' : 'size-4'} />
+                      <CloudUpload
+                        className={
+                          isPublishing ? 'size-4 animate-pulse' : 'size-4'
+                        }
+                      />
                     </Button>
                   </span>
                 </TooltipTrigger>
@@ -6591,7 +6709,9 @@ function PluginStudioPresenter({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent className="flex items-center gap-2">
-                  <span>{columnSheetMode === 'edit' ? 'Save column' : 'Add column'}</span>
+                  <span>
+                    {columnSheetMode === 'edit' ? 'Save column' : 'Add column'}
+                  </span>
                   <ShortcutKbd
                     actionId={COLUMN_SHEET_SHORTCUTS.save.id}
                     interactive={false}
@@ -6665,10 +6785,11 @@ function PluginStudioPresenter({
               {templates.map((template) => (
                 <div
                   key={`${template.pluginId}@${template.version}`}
-                  className={`rounded-xl border bg-card p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${selectedTemplateLabel === template.docs?.title
-                    ? 'ring-2 ring-primary'
-                    : ''
-                    }`}
+                  className={`rounded-xl border bg-card p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                    selectedTemplateLabel === template.docs?.title
+                      ? 'ring-2 ring-primary'
+                      : ''
+                  }`}
                 >
                   <div className="space-y-0.5">
                     <div className="font-medium text-sm">
@@ -6896,9 +7017,9 @@ function PluginStudioPresenter({
                                   (candidate, candidateIndex) =>
                                     candidateIndex === fieldIndex
                                       ? {
-                                        ...candidate,
-                                        key: event.target.value,
-                                      }
+                                          ...candidate,
+                                          key: event.target.value,
+                                        }
                                       : candidate,
                                 ),
                               }))
@@ -6920,9 +7041,9 @@ function PluginStudioPresenter({
                                   (candidate, candidateIndex) =>
                                     candidateIndex === fieldIndex
                                       ? {
-                                        ...candidate,
-                                        label: event.target.value,
-                                      }
+                                          ...candidate,
+                                          label: event.target.value,
+                                        }
                                       : candidate,
                                 ),
                               }))
@@ -6946,9 +7067,9 @@ function PluginStudioPresenter({
                                   (candidate, candidateIndex) =>
                                     candidateIndex === fieldIndex
                                       ? {
-                                        ...candidate,
-                                        description: event.target.value,
-                                      }
+                                          ...candidate,
+                                          description: event.target.value,
+                                        }
                                       : candidate,
                                 ),
                               }))
@@ -7008,10 +7129,10 @@ function PluginStudioPresenter({
                                   (candidate, candidateIndex) =>
                                     candidateIndex === fieldIndex
                                       ? {
-                                        ...candidate,
-                                        defaultValue:
-                                          event.target.value || undefined,
-                                      }
+                                          ...candidate,
+                                          defaultValue:
+                                            event.target.value || undefined,
+                                        }
                                       : candidate,
                                 ),
                               }))
@@ -7036,9 +7157,9 @@ function PluginStudioPresenter({
                                   (candidate, candidateIndex) =>
                                     candidateIndex === fieldIndex
                                       ? {
-                                        ...candidate,
-                                        min: event.target.value || undefined,
-                                      }
+                                          ...candidate,
+                                          min: event.target.value || undefined,
+                                        }
                                       : candidate,
                                 ),
                               }))
@@ -7066,9 +7187,9 @@ function PluginStudioPresenter({
                                   (candidate, candidateIndex) =>
                                     candidateIndex === fieldIndex
                                       ? {
-                                        ...candidate,
-                                        max: event.target.value || undefined,
-                                      }
+                                          ...candidate,
+                                          max: event.target.value || undefined,
+                                        }
                                       : candidate,
                                 ),
                               }))
@@ -7098,9 +7219,9 @@ function PluginStudioPresenter({
                                     (candidate, candidateIndex) =>
                                       candidateIndex === fieldIndex
                                         ? {
-                                          ...candidate,
-                                          enumValues: nextValues,
-                                        }
+                                            ...candidate,
+                                            enumValues: nextValues,
+                                          }
                                         : candidate,
                                   ),
                                 }))
@@ -7121,7 +7242,9 @@ function PluginStudioPresenter({
                             >
                               Array item type
                             </Label>
-                            <div id={`schema-field-array-item-type-${field.id}`}>
+                            <div
+                              id={`schema-field-array-item-type-${field.id}`}
+                            >
                               <Combobox
                                 options={BUILDER_LEAF_FIELD_TYPE_OPTIONS}
                                 value={field.arrayItemType ?? 'string'}
@@ -7133,9 +7256,9 @@ function PluginStudioPresenter({
                                       (candidate, candidateIndex) =>
                                         candidateIndex === fieldIndex
                                           ? {
-                                            ...candidate,
-                                            arrayItemType: value,
-                                          }
+                                              ...candidate,
+                                              arrayItemType: value,
+                                            }
                                           : candidate,
                                     ),
                                   }));
@@ -7167,9 +7290,9 @@ function PluginStudioPresenter({
                                       (candidate, candidateIndex) =>
                                         candidateIndex === fieldIndex
                                           ? {
-                                            ...candidate,
-                                            arrayItemEnumValues: nextValues,
-                                          }
+                                              ...candidate,
+                                              arrayItemEnumValues: nextValues,
+                                            }
                                           : candidate,
                                     ),
                                   }))
@@ -7202,13 +7325,13 @@ function PluginStudioPresenter({
                                     (candidate, candidateIndex) =>
                                       candidateIndex === fieldIndex
                                         ? {
-                                          ...candidate,
-                                          inputPropsJson: setJsonStringEntry(
-                                            candidate.inputPropsJson,
-                                            'placeholder',
-                                            event.target.value,
-                                          ),
-                                        }
+                                            ...candidate,
+                                            inputPropsJson: setJsonStringEntry(
+                                              candidate.inputPropsJson,
+                                              'placeholder',
+                                              event.target.value,
+                                            ),
+                                          }
                                         : candidate,
                                   ),
                                 }))
@@ -7237,13 +7360,13 @@ function PluginStudioPresenter({
                                     (candidate, candidateIndex) =>
                                       candidateIndex === fieldIndex
                                         ? {
-                                          ...candidate,
-                                          inputPropsJson: setJsonNumberEntry(
-                                            candidate.inputPropsJson,
-                                            'step',
-                                            event.target.value,
-                                          ),
-                                        }
+                                            ...candidate,
+                                            inputPropsJson: setJsonNumberEntry(
+                                              candidate.inputPropsJson,
+                                              'step',
+                                              event.target.value,
+                                            ),
+                                          }
                                         : candidate,
                                   ),
                                 }))
@@ -7267,13 +7390,13 @@ function PluginStudioPresenter({
                                     (candidate, candidateIndex) =>
                                       candidateIndex === fieldIndex
                                         ? {
-                                          ...candidate,
-                                          inputPropsJson: setJsonNumberEntry(
-                                            candidate.inputPropsJson,
-                                            'rows',
-                                            event.target.value,
-                                          ),
-                                        }
+                                            ...candidate,
+                                            inputPropsJson: setJsonNumberEntry(
+                                              candidate.inputPropsJson,
+                                              'rows',
+                                              event.target.value,
+                                            ),
+                                          }
                                         : candidate,
                                   ),
                                 }))
@@ -7293,15 +7416,15 @@ function PluginStudioPresenter({
                                     (candidate, candidateIndex) =>
                                       candidateIndex === fieldIndex
                                         ? {
-                                          ...candidate,
-                                          inputPropsJson: setJsonBooleanEntry(
-                                            candidate.inputPropsJson,
-                                            'readOnly',
-                                            checked === true
-                                              ? true
-                                              : undefined,
-                                          ),
-                                        }
+                                            ...candidate,
+                                            inputPropsJson: setJsonBooleanEntry(
+                                              candidate.inputPropsJson,
+                                              'readOnly',
+                                              checked === true
+                                                ? true
+                                                : undefined,
+                                            ),
+                                          }
                                         : candidate,
                                   ),
                                 }))
@@ -7319,15 +7442,15 @@ function PluginStudioPresenter({
                                     (candidate, candidateIndex) =>
                                       candidateIndex === fieldIndex
                                         ? {
-                                          ...candidate,
-                                          inputPropsJson: setJsonBooleanEntry(
-                                            candidate.inputPropsJson,
-                                            'disabled',
-                                            checked === true
-                                              ? true
-                                              : undefined,
-                                          ),
-                                        }
+                                            ...candidate,
+                                            inputPropsJson: setJsonBooleanEntry(
+                                              candidate.inputPropsJson,
+                                              'disabled',
+                                              checked === true
+                                                ? true
+                                                : undefined,
+                                            ),
+                                          }
                                         : candidate,
                                   ),
                                 }))
@@ -7451,14 +7574,14 @@ function PluginStudioPresenter({
                                       (candidate, candidateIndex) =>
                                         candidateIndex === fieldIndex
                                           ? {
-                                            ...candidate,
-                                            inputPropsJson: upsertJsonEntry(
-                                              candidate.inputPropsJson,
-                                              entry.key,
-                                              event.target.value,
-                                              entry.value,
-                                            ),
-                                          }
+                                              ...candidate,
+                                              inputPropsJson: upsertJsonEntry(
+                                                candidate.inputPropsJson,
+                                                entry.key,
+                                                event.target.value,
+                                                entry.value,
+                                              ),
+                                            }
                                           : candidate,
                                     ),
                                   }))
@@ -7474,14 +7597,14 @@ function PluginStudioPresenter({
                                       (candidate, candidateIndex) =>
                                         candidateIndex === fieldIndex
                                           ? {
-                                            ...candidate,
-                                            inputPropsJson: upsertJsonEntry(
-                                              candidate.inputPropsJson,
-                                              entry.key,
-                                              entry.key,
-                                              event.target.value,
-                                            ),
-                                          }
+                                              ...candidate,
+                                              inputPropsJson: upsertJsonEntry(
+                                                candidate.inputPropsJson,
+                                                entry.key,
+                                                entry.key,
+                                                event.target.value,
+                                              ),
+                                            }
                                           : candidate,
                                     ),
                                   }))
@@ -7499,12 +7622,12 @@ function PluginStudioPresenter({
                                       (candidate, candidateIndex) =>
                                         candidateIndex === fieldIndex
                                           ? {
-                                            ...candidate,
-                                            inputPropsJson: removeJsonEntry(
-                                              candidate.inputPropsJson,
-                                              entry.key,
-                                            ),
-                                          }
+                                              ...candidate,
+                                              inputPropsJson: removeJsonEntry(
+                                                candidate.inputPropsJson,
+                                                entry.key,
+                                              ),
+                                            }
                                           : candidate,
                                     ),
                                   }))
@@ -7538,13 +7661,13 @@ function PluginStudioPresenter({
                                     (candidate, candidateIndex) =>
                                       candidateIndex === fieldIndex
                                         ? {
-                                          ...candidate,
-                                          customDataJson: setJsonStringEntry(
-                                            candidate.customDataJson,
-                                            'displayKey',
-                                            event.target.value,
-                                          ),
-                                        }
+                                            ...candidate,
+                                            customDataJson: setJsonStringEntry(
+                                              candidate.customDataJson,
+                                              'displayKey',
+                                              event.target.value,
+                                            ),
+                                          }
                                         : candidate,
                                   ),
                                 }))
@@ -7569,13 +7692,13 @@ function PluginStudioPresenter({
                                     (candidate, candidateIndex) =>
                                       candidateIndex === fieldIndex
                                         ? {
-                                          ...candidate,
-                                          customDataJson: setJsonEntryValue(
-                                            candidate.customDataJson,
-                                            'source',
-                                            event.target.value,
-                                          ),
-                                        }
+                                            ...candidate,
+                                            customDataJson: setJsonEntryValue(
+                                              candidate.customDataJson,
+                                              'source',
+                                              event.target.value,
+                                            ),
+                                          }
                                         : candidate,
                                   ),
                                 }))
@@ -7600,13 +7723,13 @@ function PluginStudioPresenter({
                                     (candidate, candidateIndex) =>
                                       candidateIndex === fieldIndex
                                         ? {
-                                          ...candidate,
-                                          customDataJson: setJsonEntryValue(
-                                            candidate.customDataJson,
-                                            'sources',
-                                            event.target.value,
-                                          ),
-                                        }
+                                            ...candidate,
+                                            customDataJson: setJsonEntryValue(
+                                              candidate.customDataJson,
+                                              'sources',
+                                              event.target.value,
+                                            ),
+                                          }
                                         : candidate,
                                   ),
                                 }))
@@ -7639,20 +7762,20 @@ function PluginStudioPresenter({
                                         (candidate, candidateIndex) =>
                                           candidateIndex === fieldIndex
                                             ? {
-                                              ...candidate,
-                                              customDataJson:
-                                                setJsonOptionPairsEntry(
-                                                  candidate.customDataJson,
-                                                  'options',
-                                                  [
-                                                    ...readJsonOptionPairsEntry(
-                                                      candidate.customDataJson,
-                                                      'options',
-                                                    ),
-                                                    { value: '', label: '' },
-                                                  ],
-                                                ),
-                                            }
+                                                ...candidate,
+                                                customDataJson:
+                                                  setJsonOptionPairsEntry(
+                                                    candidate.customDataJson,
+                                                    'options',
+                                                    [
+                                                      ...readJsonOptionPairsEntry(
+                                                        candidate.customDataJson,
+                                                        'options',
+                                                      ),
+                                                      { value: '', label: '' },
+                                                    ],
+                                                  ),
+                                              }
                                             : candidate,
                                       ),
                                     }))
@@ -7667,120 +7790,128 @@ function PluginStudioPresenter({
                                   No options yet.
                                 </p>
                               ) : null}
-                              {customDataOptionPairs.map((pair, optionIndex) => (
-                                <div
-                                  key={`${field.id}-option-pair-${optionIndex}`}
-                                  className="grid gap-2 md:grid-cols-[1fr_1fr_auto]"
-                                >
-                                  <Input
-                                    value={pair.value}
-                                    onChange={(event) =>
-                                      setSchemaBuilder((current) => ({
-                                        ...current,
-                                        fields: current.fields.map(
-                                          (candidate, candidateIndex) =>
-                                            candidateIndex === fieldIndex
-                                              ? {
-                                                ...candidate,
-                                                customDataJson:
-                                                  setJsonOptionPairsEntry(
-                                                    candidate.customDataJson,
-                                                    'options',
-                                                    readJsonOptionPairsEntry(
-                                                      candidate.customDataJson,
-                                                      'options',
-                                                    ).map(
-                                                      (entry, entryIndex) =>
-                                                        entryIndex ===
-                                                          optionIndex
-                                                          ? {
-                                                            ...entry,
-                                                            value:
-                                                              event.target
-                                                                .value,
-                                                          }
-                                                          : entry,
-                                                    ),
-                                                  ),
-                                              }
-                                              : candidate,
-                                        ),
-                                      }))
-                                    }
-                                    placeholder="Option value"
-                                  />
-                                  <Input
-                                    value={pair.label}
-                                    onChange={(event) =>
-                                      setSchemaBuilder((current) => ({
-                                        ...current,
-                                        fields: current.fields.map(
-                                          (candidate, candidateIndex) =>
-                                            candidateIndex === fieldIndex
-                                              ? {
-                                                ...candidate,
-                                                customDataJson:
-                                                  setJsonOptionPairsEntry(
-                                                    candidate.customDataJson,
-                                                    'options',
-                                                    readJsonOptionPairsEntry(
-                                                      candidate.customDataJson,
-                                                      'options',
-                                                    ).map(
-                                                      (entry, entryIndex) =>
-                                                        entryIndex ===
-                                                          optionIndex
-                                                          ? {
-                                                            ...entry,
-                                                            label:
-                                                              event.target
-                                                                .value,
-                                                          }
-                                                          : entry,
-                                                    ),
-                                                  ),
-                                              }
-                                              : candidate,
-                                        ),
-                                      }))
-                                    }
-                                    placeholder="Option label"
-                                  />
-                                  <Button
-                                    type="button"
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={() =>
-                                      setSchemaBuilder((current) => ({
-                                        ...current,
-                                        fields: current.fields.map(
-                                          (candidate, candidateIndex) =>
-                                            candidateIndex === fieldIndex
-                                              ? {
-                                                ...candidate,
-                                                customDataJson:
-                                                  setJsonOptionPairsEntry(
-                                                    candidate.customDataJson,
-                                                    'options',
-                                                    readJsonOptionPairsEntry(
-                                                      candidate.customDataJson,
-                                                      'options',
-                                                    ).filter(
-                                                      (_, entryIndex) =>
-                                                        entryIndex !==
-                                                        optionIndex,
-                                                    ),
-                                                  ),
-                                              }
-                                              : candidate,
-                                        ),
-                                      }))
-                                    }
+                              {customDataOptionPairs.map(
+                                (pair, optionIndex) => (
+                                  <div
+                                    key={`${field.id}-option-pair-${optionIndex}`}
+                                    className="grid gap-2 md:grid-cols-[1fr_1fr_auto]"
                                   >
-                                    <Trash2 className="size-4 text-destructive" />
-                                  </Button>
-                                </div>
-                              ))}
+                                    <Input
+                                      value={pair.value}
+                                      onChange={(event) =>
+                                        setSchemaBuilder((current) => ({
+                                          ...current,
+                                          fields: current.fields.map(
+                                            (candidate, candidateIndex) =>
+                                              candidateIndex === fieldIndex
+                                                ? {
+                                                    ...candidate,
+                                                    customDataJson:
+                                                      setJsonOptionPairsEntry(
+                                                        candidate.customDataJson,
+                                                        'options',
+                                                        readJsonOptionPairsEntry(
+                                                          candidate.customDataJson,
+                                                          'options',
+                                                        ).map(
+                                                          (
+                                                            entry,
+                                                            entryIndex,
+                                                          ) =>
+                                                            entryIndex ===
+                                                            optionIndex
+                                                              ? {
+                                                                  ...entry,
+                                                                  value:
+                                                                    event.target
+                                                                      .value,
+                                                                }
+                                                              : entry,
+                                                        ),
+                                                      ),
+                                                  }
+                                                : candidate,
+                                          ),
+                                        }))
+                                      }
+                                      placeholder="Option value"
+                                    />
+                                    <Input
+                                      value={pair.label}
+                                      onChange={(event) =>
+                                        setSchemaBuilder((current) => ({
+                                          ...current,
+                                          fields: current.fields.map(
+                                            (candidate, candidateIndex) =>
+                                              candidateIndex === fieldIndex
+                                                ? {
+                                                    ...candidate,
+                                                    customDataJson:
+                                                      setJsonOptionPairsEntry(
+                                                        candidate.customDataJson,
+                                                        'options',
+                                                        readJsonOptionPairsEntry(
+                                                          candidate.customDataJson,
+                                                          'options',
+                                                        ).map(
+                                                          (
+                                                            entry,
+                                                            entryIndex,
+                                                          ) =>
+                                                            entryIndex ===
+                                                            optionIndex
+                                                              ? {
+                                                                  ...entry,
+                                                                  label:
+                                                                    event.target
+                                                                      .value,
+                                                                }
+                                                              : entry,
+                                                        ),
+                                                      ),
+                                                  }
+                                                : candidate,
+                                          ),
+                                        }))
+                                      }
+                                      placeholder="Option label"
+                                    />
+                                    <Button
+                                      type="button"
+                                      size="icon"
+                                      variant="ghost"
+                                      onClick={() =>
+                                        setSchemaBuilder((current) => ({
+                                          ...current,
+                                          fields: current.fields.map(
+                                            (candidate, candidateIndex) =>
+                                              candidateIndex === fieldIndex
+                                                ? {
+                                                    ...candidate,
+                                                    customDataJson:
+                                                      setJsonOptionPairsEntry(
+                                                        candidate.customDataJson,
+                                                        'options',
+                                                        readJsonOptionPairsEntry(
+                                                          candidate.customDataJson,
+                                                          'options',
+                                                        ).filter(
+                                                          (_, entryIndex) =>
+                                                            entryIndex !==
+                                                            optionIndex,
+                                                        ),
+                                                      ),
+                                                  }
+                                                : candidate,
+                                          ),
+                                        }))
+                                      }
+                                    >
+                                      <Trash2 className="size-4 text-destructive" />
+                                    </Button>
+                                  </div>
+                                ),
+                              )}
                               <Textarea
                                 rows={2}
                                 value={customDataOptions}
@@ -7791,13 +7922,13 @@ function PluginStudioPresenter({
                                       (candidate, candidateIndex) =>
                                         candidateIndex === fieldIndex
                                           ? {
-                                            ...candidate,
-                                            customDataJson: setJsonEntryValue(
-                                              candidate.customDataJson,
-                                              'options',
-                                              event.target.value,
-                                            ),
-                                          }
+                                              ...candidate,
+                                              customDataJson: setJsonEntryValue(
+                                                candidate.customDataJson,
+                                                'options',
+                                                event.target.value,
+                                              ),
+                                            }
                                           : candidate,
                                     ),
                                   }))
@@ -7807,7 +7938,9 @@ function PluginStudioPresenter({
                             </div>
                           </div>
                           <div className="space-y-1 md:col-span-2">
-                            <Label htmlFor={`schema-field-custom-tabs-${field.id}`}>
+                            <Label
+                              htmlFor={`schema-field-custom-tabs-${field.id}`}
+                            >
                               tabs (JSON)
                             </Label>
                             <Textarea
@@ -7821,13 +7954,13 @@ function PluginStudioPresenter({
                                     (candidate, candidateIndex) =>
                                       candidateIndex === fieldIndex
                                         ? {
-                                          ...candidate,
-                                          customDataJson: setJsonEntryValue(
-                                            candidate.customDataJson,
-                                            'tabs',
-                                            event.target.value,
-                                          ),
-                                        }
+                                            ...candidate,
+                                            customDataJson: setJsonEntryValue(
+                                              candidate.customDataJson,
+                                              'tabs',
+                                              event.target.value,
+                                            ),
+                                          }
                                         : candidate,
                                   ),
                                 }))
@@ -7852,13 +7985,13 @@ function PluginStudioPresenter({
                                     (candidate, candidateIndex) =>
                                       candidateIndex === fieldIndex
                                         ? {
-                                          ...candidate,
-                                          customDataJson: setJsonEntryValue(
-                                            candidate.customDataJson,
-                                            'onValueChange',
-                                            event.target.value,
-                                          ),
-                                        }
+                                            ...candidate,
+                                            customDataJson: setJsonEntryValue(
+                                              candidate.customDataJson,
+                                              'onValueChange',
+                                              event.target.value,
+                                            ),
+                                          }
                                         : candidate,
                                   ),
                                 }))
@@ -7884,14 +8017,14 @@ function PluginStudioPresenter({
                                       (candidate, candidateIndex) =>
                                         candidateIndex === fieldIndex
                                           ? {
-                                            ...candidate,
-                                            customDataJson:
-                                              setJsonStringArrayEntry(
-                                                candidate.customDataJson,
-                                                'disableWhenValueIn',
-                                                nextValues,
-                                              ),
-                                          }
+                                              ...candidate,
+                                              customDataJson:
+                                                setJsonStringArrayEntry(
+                                                  candidate.customDataJson,
+                                                  'disableWhenValueIn',
+                                                  nextValues,
+                                                ),
+                                            }
                                           : candidate,
                                     ),
                                   }))
@@ -7920,14 +8053,14 @@ function PluginStudioPresenter({
                                       (candidate, candidateIndex) =>
                                         candidateIndex === fieldIndex
                                           ? {
-                                            ...candidate,
-                                            customDataJson:
-                                              setJsonStringArrayEntry(
-                                                candidate.customDataJson,
-                                                'onlyAllow',
-                                                nextValues,
-                                              ),
-                                          }
+                                              ...candidate,
+                                              customDataJson:
+                                                setJsonStringArrayEntry(
+                                                  candidate.customDataJson,
+                                                  'onlyAllow',
+                                                  nextValues,
+                                                ),
+                                            }
                                           : candidate,
                                     ),
                                   }))
@@ -7949,15 +8082,16 @@ function PluginStudioPresenter({
                                       (candidate, candidateIndex) =>
                                         candidateIndex === fieldIndex
                                           ? {
-                                            ...candidate,
-                                            customDataJson: setJsonBooleanEntry(
-                                              candidate.customDataJson,
-                                              'configDisabled',
-                                              checked === true
-                                                ? true
-                                                : undefined,
-                                            ),
-                                          }
+                                              ...candidate,
+                                              customDataJson:
+                                                setJsonBooleanEntry(
+                                                  candidate.customDataJson,
+                                                  'configDisabled',
+                                                  checked === true
+                                                    ? true
+                                                    : undefined,
+                                                ),
+                                            }
                                           : candidate,
                                     ),
                                   }))
@@ -8025,14 +8159,14 @@ function PluginStudioPresenter({
                                     (candidate, candidateIndex) =>
                                       candidateIndex === fieldIndex
                                         ? {
-                                          ...candidate,
-                                          customDataJson: upsertJsonEntry(
-                                            candidate.customDataJson,
-                                            entry.key,
-                                            event.target.value,
-                                            entry.value,
-                                          ),
-                                        }
+                                            ...candidate,
+                                            customDataJson: upsertJsonEntry(
+                                              candidate.customDataJson,
+                                              entry.key,
+                                              event.target.value,
+                                              entry.value,
+                                            ),
+                                          }
                                         : candidate,
                                   ),
                                 }))
@@ -8048,14 +8182,14 @@ function PluginStudioPresenter({
                                     (candidate, candidateIndex) =>
                                       candidateIndex === fieldIndex
                                         ? {
-                                          ...candidate,
-                                          customDataJson: upsertJsonEntry(
-                                            candidate.customDataJson,
-                                            entry.key,
-                                            entry.key,
-                                            event.target.value,
-                                          ),
-                                        }
+                                            ...candidate,
+                                            customDataJson: upsertJsonEntry(
+                                              candidate.customDataJson,
+                                              entry.key,
+                                              entry.key,
+                                              event.target.value,
+                                            ),
+                                          }
                                         : candidate,
                                   ),
                                 }))
@@ -8073,12 +8207,12 @@ function PluginStudioPresenter({
                                     (candidate, candidateIndex) =>
                                       candidateIndex === fieldIndex
                                         ? {
-                                          ...candidate,
-                                          customDataJson: removeJsonEntry(
-                                            candidate.customDataJson,
-                                            entry.key,
-                                          ),
-                                        }
+                                            ...candidate,
+                                            customDataJson: removeJsonEntry(
+                                              candidate.customDataJson,
+                                              entry.key,
+                                            ),
+                                          }
                                         : candidate,
                                   ),
                                 }))
@@ -8150,14 +8284,14 @@ function PluginStudioPresenter({
                                     (candidate, candidateIndex) =>
                                       candidateIndex === fieldIndex
                                         ? {
-                                          ...candidate,
-                                          fieldConfigJson: upsertJsonEntry(
-                                            candidate.fieldConfigJson,
-                                            entry.key,
-                                            event.target.value,
-                                            entry.value,
-                                          ),
-                                        }
+                                            ...candidate,
+                                            fieldConfigJson: upsertJsonEntry(
+                                              candidate.fieldConfigJson,
+                                              entry.key,
+                                              event.target.value,
+                                              entry.value,
+                                            ),
+                                          }
                                         : candidate,
                                   ),
                                 }))
@@ -8173,14 +8307,14 @@ function PluginStudioPresenter({
                                     (candidate, candidateIndex) =>
                                       candidateIndex === fieldIndex
                                         ? {
-                                          ...candidate,
-                                          fieldConfigJson: upsertJsonEntry(
-                                            candidate.fieldConfigJson,
-                                            entry.key,
-                                            entry.key,
-                                            event.target.value,
-                                          ),
-                                        }
+                                            ...candidate,
+                                            fieldConfigJson: upsertJsonEntry(
+                                              candidate.fieldConfigJson,
+                                              entry.key,
+                                              entry.key,
+                                              event.target.value,
+                                            ),
+                                          }
                                         : candidate,
                                   ),
                                 }))
@@ -8198,12 +8332,12 @@ function PluginStudioPresenter({
                                     (candidate, candidateIndex) =>
                                       candidateIndex === fieldIndex
                                         ? {
-                                          ...candidate,
-                                          fieldConfigJson: removeJsonEntry(
-                                            candidate.fieldConfigJson,
-                                            entry.key,
-                                          ),
-                                        }
+                                            ...candidate,
+                                            fieldConfigJson: removeJsonEntry(
+                                              candidate.fieldConfigJson,
+                                              entry.key,
+                                            ),
+                                          }
                                         : candidate,
                                   ),
                                 }))
@@ -8231,19 +8365,19 @@ function PluginStudioPresenter({
                                   (candidate, candidateIndex) =>
                                     candidateIndex === fieldIndex
                                       ? {
-                                        ...candidate,
-                                        fieldRefinements: [
-                                          ...(candidate.fieldRefinements ??
-                                            []),
-                                          {
-                                            id: generateBuilderId(),
-                                            operator: 'eq',
-                                            rightKind: 'literal',
-                                            rightLiteral: '',
-                                            message: 'Validation failed',
-                                          },
-                                        ],
-                                      }
+                                          ...candidate,
+                                          fieldRefinements: [
+                                            ...(candidate.fieldRefinements ??
+                                              []),
+                                            {
+                                              id: generateBuilderId(),
+                                              operator: 'eq',
+                                              rightKind: 'literal',
+                                              rightLiteral: '',
+                                              message: 'Validation failed',
+                                            },
+                                          ],
+                                        }
                                       : candidate,
                                 ),
                               }))
@@ -8269,19 +8403,19 @@ function PluginStudioPresenter({
                                       (candidate, candidateIndex) =>
                                         candidateIndex === fieldIndex
                                           ? {
-                                            ...candidate,
-                                            fieldRefinements: (
-                                              candidate.fieldRefinements ?? []
-                                            ).map((entry) =>
-                                              entry.id === refinement.id
-                                                ? {
-                                                  ...entry,
-                                                  operator:
-                                                    value as RuleOperator,
-                                                }
-                                                : entry,
-                                            ),
-                                          }
+                                              ...candidate,
+                                              fieldRefinements: (
+                                                candidate.fieldRefinements ?? []
+                                              ).map((entry) =>
+                                                entry.id === refinement.id
+                                                  ? {
+                                                      ...entry,
+                                                      operator:
+                                                        value as RuleOperator,
+                                                    }
+                                                  : entry,
+                                              ),
+                                            }
                                           : candidate,
                                     ),
                                   }))
@@ -8319,29 +8453,29 @@ function PluginStudioPresenter({
                                       (candidate, candidateIndex) =>
                                         candidateIndex === fieldIndex
                                           ? {
-                                            ...candidate,
-                                            fieldRefinements: (
-                                              candidate.fieldRefinements ?? []
-                                            ).map((entry) =>
-                                              entry.id === refinement.id
-                                                ? {
-                                                  ...entry,
-                                                  rightKind:
-                                                    value as BuilderFieldRefinement['rightKind'],
-                                                  rightPath:
-                                                    value === 'payloadField'
-                                                      ? compatiblePayloadFieldKeys.includes(
-                                                        entry.rightPath ??
-                                                        '',
-                                                      )
-                                                        ? entry.rightPath
-                                                        : (compatiblePayloadFieldKeys[0] ??
-                                                          undefined)
-                                                      : entry.rightPath,
-                                                }
-                                                : entry,
-                                            ),
-                                          }
+                                              ...candidate,
+                                              fieldRefinements: (
+                                                candidate.fieldRefinements ?? []
+                                              ).map((entry) =>
+                                                entry.id === refinement.id
+                                                  ? {
+                                                      ...entry,
+                                                      rightKind:
+                                                        value as BuilderFieldRefinement['rightKind'],
+                                                      rightPath:
+                                                        value === 'payloadField'
+                                                          ? compatiblePayloadFieldKeys.includes(
+                                                              entry.rightPath ??
+                                                                '',
+                                                            )
+                                                            ? entry.rightPath
+                                                            : (compatiblePayloadFieldKeys[0] ??
+                                                              undefined)
+                                                          : entry.rightPath,
+                                                    }
+                                                  : entry,
+                                              ),
+                                            }
                                           : candidate,
                                     ),
                                   }))
@@ -8377,20 +8511,20 @@ function PluginStudioPresenter({
                                         (candidate, candidateIndex) =>
                                           candidateIndex === fieldIndex
                                             ? {
-                                              ...candidate,
-                                              fieldRefinements: (
-                                                candidate.fieldRefinements ??
-                                                []
-                                              ).map((entry) =>
-                                                entry.id === refinement.id
-                                                  ? {
-                                                    ...entry,
-                                                    rightLiteral:
-                                                      event.target.value,
-                                                  }
-                                                  : entry,
-                                              ),
-                                            }
+                                                ...candidate,
+                                                fieldRefinements: (
+                                                  candidate.fieldRefinements ??
+                                                  []
+                                                ).map((entry) =>
+                                                  entry.id === refinement.id
+                                                    ? {
+                                                        ...entry,
+                                                        rightLiteral:
+                                                          event.target.value,
+                                                      }
+                                                    : entry,
+                                                ),
+                                              }
                                             : candidate,
                                       ),
                                     }))
@@ -8407,20 +8541,20 @@ function PluginStudioPresenter({
                                         (candidate, candidateIndex) =>
                                           candidateIndex === fieldIndex
                                             ? {
-                                              ...candidate,
-                                              fieldRefinements: (
-                                                candidate.fieldRefinements ??
-                                                []
-                                              ).map((entry) =>
-                                                entry.id === refinement.id
-                                                  ? {
-                                                    ...entry,
-                                                    rightPath:
-                                                      value || undefined,
-                                                  }
-                                                  : entry,
-                                              ),
-                                            }
+                                                ...candidate,
+                                                fieldRefinements: (
+                                                  candidate.fieldRefinements ??
+                                                  []
+                                                ).map((entry) =>
+                                                  entry.id === refinement.id
+                                                    ? {
+                                                        ...entry,
+                                                        rightPath:
+                                                          value || undefined,
+                                                      }
+                                                    : entry,
+                                                ),
+                                              }
                                             : candidate,
                                       ),
                                     }))
@@ -8455,19 +8589,19 @@ function PluginStudioPresenter({
                                       (candidate, candidateIndex) =>
                                         candidateIndex === fieldIndex
                                           ? {
-                                            ...candidate,
-                                            fieldRefinements: (
-                                              candidate.fieldRefinements ?? []
-                                            ).map((entry) =>
-                                              entry.id === refinement.id
-                                                ? {
-                                                  ...entry,
-                                                  message:
-                                                    event.target.value,
-                                                }
-                                                : entry,
-                                            ),
-                                          }
+                                              ...candidate,
+                                              fieldRefinements: (
+                                                candidate.fieldRefinements ?? []
+                                              ).map((entry) =>
+                                                entry.id === refinement.id
+                                                  ? {
+                                                      ...entry,
+                                                      message:
+                                                        event.target.value,
+                                                    }
+                                                  : entry,
+                                              ),
+                                            }
                                           : candidate,
                                     ),
                                   }))
@@ -8487,14 +8621,14 @@ function PluginStudioPresenter({
                                       (candidate, candidateIndex) =>
                                         candidateIndex === fieldIndex
                                           ? {
-                                            ...candidate,
-                                            fieldRefinements: (
-                                              candidate.fieldRefinements ?? []
-                                            ).filter(
-                                              (entry) =>
-                                                entry.id !== refinement.id,
-                                            ),
-                                          }
+                                              ...candidate,
+                                              fieldRefinements: (
+                                                candidate.fieldRefinements ?? []
+                                              ).filter(
+                                                (entry) =>
+                                                  entry.id !== refinement.id,
+                                              ),
+                                            }
                                           : candidate,
                                     ),
                                   }))
@@ -8518,9 +8652,9 @@ function PluginStudioPresenter({
                                   (candidate, candidateIndex) =>
                                     candidateIndex === fieldIndex
                                       ? {
-                                        ...candidate,
-                                        required: checked === true,
-                                      }
+                                          ...candidate,
+                                          required: checked === true,
+                                        }
                                       : candidate,
                                 ),
                               }))
@@ -8538,9 +8672,9 @@ function PluginStudioPresenter({
                                   (candidate, candidateIndex) =>
                                     candidateIndex === fieldIndex
                                       ? {
-                                        ...candidate,
-                                        useInt: checked === true,
-                                      }
+                                          ...candidate,
+                                          useInt: checked === true,
+                                        }
                                       : candidate,
                                 ),
                               }))
@@ -8558,9 +8692,9 @@ function PluginStudioPresenter({
                                   (candidate, candidateIndex) =>
                                     candidateIndex === fieldIndex
                                       ? {
-                                        ...candidate,
-                                        usePositive: checked === true,
-                                      }
+                                          ...candidate,
+                                          usePositive: checked === true,
+                                        }
                                       : candidate,
                                 ),
                               }))
@@ -8578,9 +8712,9 @@ function PluginStudioPresenter({
                                   (candidate, candidateIndex) =>
                                     candidateIndex === fieldIndex
                                       ? {
-                                        ...candidate,
-                                        useNonNegative: checked === true,
-                                      }
+                                          ...candidate,
+                                          useNonNegative: checked === true,
+                                        }
                                       : candidate,
                                 ),
                               }))
@@ -8674,12 +8808,12 @@ function PluginStudioPresenter({
                     );
                   const targetFieldOptions = hasCustomTargetField
                     ? [
-                      {
-                        value: derivedField.targetFieldKey,
-                        label: `Custom: ${derivedField.targetFieldKey}`,
-                      },
-                      ...derivedTargetFieldOptions,
-                    ]
+                        {
+                          value: derivedField.targetFieldKey,
+                          label: `Custom: ${derivedField.targetFieldKey}`,
+                        },
+                        ...derivedTargetFieldOptions,
+                      ]
                     : derivedTargetFieldOptions;
 
                   return (
@@ -8736,10 +8870,10 @@ function PluginStudioPresenter({
                                   (entry) =>
                                     entry.id === derivedField.id
                                       ? {
-                                        ...entry,
-                                        target:
-                                          value as SchemaBuilderDerivedField['target'],
-                                      }
+                                          ...entry,
+                                          target:
+                                            value as SchemaBuilderDerivedField['target'],
+                                        }
                                       : entry,
                                 ),
                               }))
@@ -8789,10 +8923,10 @@ function PluginStudioPresenter({
                                   (entry) =>
                                     entry.id === derivedField.id
                                       ? {
-                                        ...entry,
-                                        operation:
-                                          value as DerivedFieldOperation,
-                                      }
+                                          ...entry,
+                                          operation:
+                                            value as DerivedFieldOperation,
+                                        }
                                       : entry,
                                 ),
                               }))
@@ -8823,12 +8957,12 @@ function PluginStudioPresenter({
                                   (entry) =>
                                     entry.id === derivedField.id
                                       ? {
-                                        ...entry,
-                                        fallbackValue:
-                                          event.target.value.trim() === ''
-                                            ? undefined
-                                            : event.target.value,
-                                      }
+                                          ...entry,
+                                          fallbackValue:
+                                            event.target.value.trim() === ''
+                                              ? undefined
+                                              : event.target.value,
+                                        }
                                       : entry,
                                 ),
                               }))
@@ -8855,19 +8989,19 @@ function PluginStudioPresenter({
                                   (entry) =>
                                     entry.id === derivedField.id
                                       ? {
-                                        ...entry,
-                                        sources: [
-                                          ...entry.sources,
-                                          {
-                                            id: generateBuilderId(),
-                                            source: 'payload',
-                                            path:
-                                              derivationPathOptions[0]
-                                                ?.value ||
-                                              entry.targetFieldKey,
-                                          },
-                                        ],
-                                      }
+                                          ...entry,
+                                          sources: [
+                                            ...entry.sources,
+                                            {
+                                              id: generateBuilderId(),
+                                              source: 'payload',
+                                              path:
+                                                derivationPathOptions[0]
+                                                  ?.value ||
+                                                entry.targetFieldKey,
+                                            },
+                                          ],
+                                        }
                                       : entry,
                                 ),
                               }))
@@ -8905,12 +9039,12 @@ function PluginStudioPresenter({
                             );
                           const pathOptions = hasCustomPath
                             ? [
-                              {
-                                value: sourceField.path,
-                                label: `Custom: ${sourceField.path}`,
-                              },
-                              ...sourceSpecificOptions,
-                            ]
+                                {
+                                  value: sourceField.path,
+                                  label: `Custom: ${sourceField.path}`,
+                                },
+                                ...sourceSpecificOptions,
+                              ]
                             : sourceSpecificOptions;
 
                           return (
@@ -8929,19 +9063,19 @@ function PluginStudioPresenter({
                                         (entry) =>
                                           entry.id === derivedField.id
                                             ? {
-                                              ...entry,
-                                              sources: entry.sources.map(
-                                                (candidate) =>
-                                                  candidate.id ===
+                                                ...entry,
+                                                sources: entry.sources.map(
+                                                  (candidate) =>
+                                                    candidate.id ===
                                                     sourceField.id
-                                                    ? {
-                                                      ...candidate,
-                                                      source:
-                                                        value as (typeof DERIVED_FIELD_SOURCE_OPTIONS)[number],
-                                                    }
-                                                    : candidate,
-                                              ),
-                                            }
+                                                      ? {
+                                                          ...candidate,
+                                                          source:
+                                                            value as (typeof DERIVED_FIELD_SOURCE_OPTIONS)[number],
+                                                        }
+                                                      : candidate,
+                                                ),
+                                              }
                                             : entry,
                                       ),
                                     }))
@@ -8975,18 +9109,18 @@ function PluginStudioPresenter({
                                         (entry) =>
                                           entry.id === derivedField.id
                                             ? {
-                                              ...entry,
-                                              sources: entry.sources.map(
-                                                (candidate) =>
-                                                  candidate.id ===
+                                                ...entry,
+                                                sources: entry.sources.map(
+                                                  (candidate) =>
+                                                    candidate.id ===
                                                     sourceField.id
-                                                    ? {
-                                                      ...candidate,
-                                                      path: value,
-                                                    }
-                                                    : candidate,
-                                              ),
-                                            }
+                                                      ? {
+                                                          ...candidate,
+                                                          path: value,
+                                                        }
+                                                      : candidate,
+                                                ),
+                                              }
                                             : entry,
                                       ),
                                     }))
@@ -9025,13 +9159,13 @@ function PluginStudioPresenter({
                                         (entry) =>
                                           entry.id === derivedField.id
                                             ? {
-                                              ...entry,
-                                              sources: entry.sources.filter(
-                                                (candidate) =>
-                                                  candidate.id !==
-                                                  sourceField.id,
-                                              ),
-                                            }
+                                                ...entry,
+                                                sources: entry.sources.filter(
+                                                  (candidate) =>
+                                                    candidate.id !==
+                                                    sourceField.id,
+                                                ),
+                                              }
                                             : entry,
                                       ),
                                     }))
@@ -9089,8 +9223,8 @@ function PluginStudioPresenter({
                         fieldTypeByRuleField.get(nextLeftField);
                       const nextCompatibleFields = nextLeftType
                         ? (
-                          availableRuleFieldsByType.get(nextLeftType) ?? []
-                        ).filter((fieldKey) => fieldKey !== nextLeftField)
+                            availableRuleFieldsByType.get(nextLeftType) ?? []
+                          ).filter((fieldKey) => fieldKey !== nextLeftField)
                         : [];
                       setSchemaRefinements((current) => [
                         ...current,
@@ -9128,7 +9262,10 @@ function PluginStudioPresenter({
                         }))
                       }
                     >
-                      <SelectTrigger id={logicComposerFieldId} className="w-[280px]">
+                      <SelectTrigger
+                        id={logicComposerFieldId}
+                        className="w-[280px]"
+                      >
                         <SelectValue placeholder="Field for logic composer" />
                       </SelectTrigger>
                       <SelectContent>
@@ -9176,9 +9313,9 @@ function PluginStudioPresenter({
                               current.map((candidate) =>
                                 candidate.id === rule.id
                                   ? {
-                                    ...candidate,
-                                    message: event.target.value,
-                                  }
+                                      ...candidate,
+                                      message: event.target.value,
+                                    }
                                   : candidate,
                               ),
                             )
@@ -9228,7 +9365,9 @@ function PluginStudioPresenter({
                   <div className="rounded-lg border bg-muted/25 p-3 space-y-3">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="space-y-1">
-                        <div className="text-sm font-medium">Workflow Library</div>
+                        <div className="text-sm font-medium">
+                          Workflow Library
+                        </div>
                         <p className="text-xs text-muted-foreground">
                           Pick a workflow, then create, duplicate, or remove it.
                         </p>
@@ -9250,7 +9389,9 @@ function PluginStudioPresenter({
                     </div>
                     <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
                       <div className="space-y-1">
-                        <Label htmlFor={workflowEditorSelectorId}>Workflow</Label>
+                        <Label htmlFor={workflowEditorSelectorId}>
+                          Workflow
+                        </Label>
                         <Select
                           value={workspaceWorkflow.workflowId}
                           onValueChange={(value) => setActiveWorkflowId(value)}
@@ -9264,14 +9405,19 @@ function PluginStudioPresenter({
                                 key={workflow.workflowId}
                                 value={workflow.workflowId}
                               >
-                                {workflow.workflowId} ({workflow.table} · {workflow.hook})
+                                {workflow.workflowId} ({workflow.table} ·{' '}
+                                {workflow.hook})
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="flex items-end">
-                        <Button type="button" size="sm" onClick={handleAddWorkflow}>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleAddWorkflow}
+                        >
                           <Plus className="mr-2 size-4" />
                           New Workflow
                         </Button>
@@ -9291,7 +9437,9 @@ function PluginStudioPresenter({
                           type="button"
                           size="sm"
                           variant="ghost"
-                          onClick={() => handleRemoveWorkflow(workspaceWorkflow.workflowId)}
+                          onClick={() =>
+                            handleRemoveWorkflow(workspaceWorkflow.workflowId)
+                          }
                         >
                           Remove Selected
                         </Button>
@@ -9349,15 +9497,21 @@ function PluginStudioPresenter({
                           <SelectItem value="beforeCreate">
                             beforeCreate
                           </SelectItem>
-                          <SelectItem value="afterCreate">afterCreate</SelectItem>
+                          <SelectItem value="afterCreate">
+                            afterCreate
+                          </SelectItem>
                           <SelectItem value="beforeUpdate">
                             beforeUpdate
                           </SelectItem>
-                          <SelectItem value="afterUpdate">afterUpdate</SelectItem>
+                          <SelectItem value="afterUpdate">
+                            afterUpdate
+                          </SelectItem>
                           <SelectItem value="beforeDelete">
                             beforeDelete
                           </SelectItem>
-                          <SelectItem value="afterDelete">afterDelete</SelectItem>
+                          <SelectItem value="afterDelete">
+                            afterDelete
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -9365,7 +9519,9 @@ function PluginStudioPresenter({
                   <div className="rounded-lg border bg-card p-2">
                     <WorkflowGraphEditor
                       workflow={workspaceWorkflow}
-                      onWorkflowChange={(nextWorkflow) => updateActiveWorkflow(() => nextWorkflow)}
+                      onWorkflowChange={(nextWorkflow) =>
+                        updateActiveWorkflow(() => nextWorkflow)
+                      }
                       schemaDocs={availableSchemaDocs}
                       actionManifest={parsed?.actionManifest ?? []}
                       lockedTable={Boolean(workflowEditorLockedTable)}
@@ -9433,7 +9589,7 @@ function PluginStudioPresenter({
                           size="sm"
                           variant={
                             blocklyDraft.operator === preset.operator &&
-                              blocklyDraft.message === preset.message
+                            blocklyDraft.message === preset.message
                               ? 'default'
                               : 'outline'
                           }
@@ -9468,8 +9624,8 @@ function PluginStudioPresenter({
                   {blocklyComparableFields.length === 0 && (
                     <p className="text-xs text-muted-foreground">
                       Field-to-field compare needs another `
-                      {selectedBlocklyField.type}` field. Literal blocks can still
-                      be used right now.
+                      {selectedBlocklyField.type}` field. Literal blocks can
+                      still be used right now.
                     </p>
                   )}
                 </div>
@@ -9534,106 +9690,109 @@ function PluginStudioSkeleton() {
   return (
     <div className="min-h-screen w-full bg-background text-foreground py-6">
       <div className="mx-auto w-full max-w-7xl px-4 space-y-6">
-      <section className="rounded-2xl border border-border/70 bg-gradient-to-br from-primary/10 via-background to-accent/15 p-5 md:p-7">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-2 max-w-2xl w-full">
-            <Skeleton className="h-7 w-40 rounded-full" />
-            <Skeleton className="h-8 w-full max-w-2xl" />
-            <Skeleton className="h-4 w-full max-w-xl" />
-          </div>
-          <div className="rounded-xl border bg-background/70 p-3 text-sm w-[180px] space-y-2">
-            <Skeleton className="h-3 w-28" />
-            <Skeleton className="h-7 w-12" />
-          </div>
-        </div>
-      </section>
-
-      <Card className="py-4 gap-4">
-        <CardHeader className="px-4 md:px-6">
-          <Skeleton className="h-5 w-36" />
-          <Skeleton className="h-4 w-full max-w-xl" />
-        </CardHeader>
-        <CardContent className="grid gap-3 px-4 md:px-6 md:grid-cols-2 xl:grid-cols-3">
-          {templateSkeletonIds.map((skeletonId) => (
-            <div key={skeletonId} className="rounded-lg border p-3 space-y-2">
-              <div className="flex items-start justify-between gap-2">
-                <div className="space-y-1">
-                  <Skeleton className="h-4 w-28" />
-                  <Skeleton className="h-3 w-40" />
-                </div>
-                <Skeleton className="h-5 w-14" />
-              </div>
-              <Skeleton className="h-3 w-full" />
-              <Skeleton className="h-8 w-full" />
+        <section className="rounded-2xl border border-border/70 bg-gradient-to-br from-primary/10 via-background to-accent/15 p-5 md:p-7">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="space-y-2 max-w-2xl w-full">
+              <Skeleton className="h-7 w-40 rounded-full" />
+              <Skeleton className="h-8 w-full max-w-2xl" />
+              <Skeleton className="h-4 w-full max-w-xl" />
             </div>
-          ))}
-        </CardContent>
-      </Card>
+            <div className="rounded-xl border bg-background/70 p-3 text-sm w-[180px] space-y-2">
+              <Skeleton className="h-3 w-28" />
+              <Skeleton className="h-7 w-12" />
+            </div>
+          </div>
+        </section>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+        <Card className="py-4 gap-4">
+          <CardHeader className="px-4 md:px-6">
+            <Skeleton className="h-5 w-36" />
+            <Skeleton className="h-4 w-full max-w-xl" />
+          </CardHeader>
+          <CardContent className="grid gap-3 px-4 md:px-6 md:grid-cols-2 xl:grid-cols-3">
+            {templateSkeletonIds.map((skeletonId) => (
+              <div key={skeletonId} className="rounded-lg border p-3 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="space-y-1">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-3 w-40" />
+                  </div>
+                  <Skeleton className="h-5 w-14" />
+                </div>
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-4 xl:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-5 w-36" />
+            </CardHeader>
+            <CardContent className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-2">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-3 w-3/4" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-3 w-3/4" />
+              </div>
+              <Skeleton className="h-10 w-full md:col-span-2" />
+              <Skeleton className="h-10 w-full md:col-span-2" />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-5 w-40" />
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Skeleton className="h-10 w-full" />
+              <div className="space-y-2">
+                {marketSkeletonIds.map((skeletonId) => (
+                  <Skeleton
+                    key={skeletonId}
+                    className="h-14 w-full rounded-lg"
+                  />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-1 xl:grid-cols-3">
+          {editorSkeletonIds.map((skeletonId) => (
+            <Card key={skeletonId}>
+              <CardHeader>
+                <Skeleton className="h-5 w-44" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <Skeleton className="h-8 w-full rounded" />
+                  <Skeleton className="h-[320px] w-full rounded-md" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
         <Card>
           <CardHeader>
             <Skeleton className="h-5 w-36" />
           </CardHeader>
-          <CardContent className="grid gap-3 md:grid-cols-2">
-            <div className="space-y-2">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-3 w-3/4" />
+          <CardContent className="space-y-4">
+            <Skeleton className="h-4 w-64" />
+            <Skeleton className="h-4 w-64" />
+            <div className="flex flex-wrap gap-2">
+              <Skeleton className="h-10 w-64" />
+              <Skeleton className="h-10 w-52" />
             </div>
-            <div className="space-y-2">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-3 w-3/4" />
-            </div>
-            <Skeleton className="h-10 w-full md:col-span-2" />
-            <Skeleton className="h-10 w-full md:col-span-2" />
+            <Skeleton className="h-[120px] w-full rounded-md" />
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-5 w-40" />
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Skeleton className="h-10 w-full" />
-            <div className="space-y-2">
-              {marketSkeletonIds.map((skeletonId) => (
-                <Skeleton key={skeletonId} className="h-14 w-full rounded-lg" />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-1 xl:grid-cols-3">
-        {editorSkeletonIds.map((skeletonId) => (
-          <Card key={skeletonId}>
-            <CardHeader>
-              <Skeleton className="h-5 w-44" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <Skeleton className="h-8 w-full rounded" />
-                <Skeleton className="h-[320px] w-full rounded-md" />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-5 w-36" />
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Skeleton className="h-4 w-64" />
-          <Skeleton className="h-4 w-64" />
-          <div className="flex flex-wrap gap-2">
-            <Skeleton className="h-10 w-64" />
-            <Skeleton className="h-10 w-52" />
-          </div>
-          <Skeleton className="h-[120px] w-full rounded-md" />
-        </CardContent>
-      </Card>
       </div>
     </div>
   );

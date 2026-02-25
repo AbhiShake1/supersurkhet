@@ -25,8 +25,8 @@ import { Route as ChatCompletionsRouteImport } from './routes/chat/completions'
 import { Route as BusinessChatRouteImport } from './routes/_business/chat'
 import { Route as AuthSettingsRouteImport } from './routes/_auth/settings'
 import { Route as AuthAuthRouteImport } from './routes/_auth/auth'
+import { Route as BusinessNameSubdomainRouteImport } from './routes/$businessName/$subdomain'
 import { Route as PluginStudioProjectIdIndexRouteImport } from './routes/plugin-studio/$projectId/index'
-import { Route as BusinessNameAdminIndexRouteImport } from './routes/$businessName/admin/index'
 import { Route as V1ChatCompletionsRouteImport } from './routes/v1/chat/completions'
 import { Route as V1AuthSessionsRouteImport } from './routes/v1/auth/sessions'
 import { Route as V1AuthProvidersRouteImport } from './routes/v1/auth/providers'
@@ -127,17 +127,17 @@ const AuthAuthRoute = AuthAuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => AuthRoute,
 } as any)
+const BusinessNameSubdomainRoute = BusinessNameSubdomainRouteImport.update({
+  id: '/$subdomain',
+  path: '/$subdomain',
+  getParentRoute: () => BusinessNameRoute,
+} as any)
 const PluginStudioProjectIdIndexRoute =
   PluginStudioProjectIdIndexRouteImport.update({
     id: '/plugin-studio/$projectId/',
     path: '/plugin-studio/$projectId/',
     getParentRoute: () => rootRouteImport,
   } as any)
-const BusinessNameAdminIndexRoute = BusinessNameAdminIndexRouteImport.update({
-  id: '/admin/',
-  path: '/admin/',
-  getParentRoute: () => BusinessNameRoute,
-} as any)
 const V1ChatCompletionsRoute = V1ChatCompletionsRouteImport.update({
   id: '/v1/chat/completions',
   path: '/v1/chat/completions',
@@ -261,6 +261,7 @@ export interface FileRoutesByFullPath {
   '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
   '/s3test': typeof S3testRoute
+  '/$businessName/$subdomain': typeof BusinessNameSubdomainRoute
   '/auth': typeof AuthAuthRoute
   '/settings': typeof AuthSettingsRoute
   '/chat': typeof BusinessChatRoute
@@ -276,7 +277,6 @@ export interface FileRoutesByFullPath {
   '/v1/auth/providers': typeof V1AuthProvidersRouteWithChildren
   '/v1/auth/sessions': typeof V1AuthSessionsRoute
   '/v1/chat/completions': typeof V1ChatCompletionsRoute
-  '/$businessName/admin/': typeof BusinessNameAdminIndexRoute
   '/plugin-studio/$projectId/': typeof PluginStudioProjectIdIndexRoute
   '/$businessName/admin/plugin/$pluginId': typeof BusinessNameAdminPluginPluginIdRouteWithChildren
   '/v1/auth/providers/methods': typeof V1AuthProvidersMethodsRoute
@@ -299,6 +299,7 @@ export interface FileRoutesByTo {
   '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
   '/s3test': typeof S3testRoute
+  '/$businessName/$subdomain': typeof BusinessNameSubdomainRoute
   '/auth': typeof AuthAuthRoute
   '/settings': typeof AuthSettingsRoute
   '/chat': typeof BusinessChatRoute
@@ -314,7 +315,6 @@ export interface FileRoutesByTo {
   '/v1/auth/providers': typeof V1AuthProvidersRouteWithChildren
   '/v1/auth/sessions': typeof V1AuthSessionsRoute
   '/v1/chat/completions': typeof V1ChatCompletionsRoute
-  '/$businessName/admin': typeof BusinessNameAdminIndexRoute
   '/plugin-studio/$projectId': typeof PluginStudioProjectIdIndexRoute
   '/$businessName/admin/plugin/$pluginId': typeof BusinessNameAdminPluginPluginIdRouteWithChildren
   '/v1/auth/providers/methods': typeof V1AuthProvidersMethodsRoute
@@ -340,6 +340,7 @@ export interface FileRoutesById {
   '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
   '/s3test': typeof S3testRoute
+  '/$businessName/$subdomain': typeof BusinessNameSubdomainRoute
   '/_auth/auth': typeof AuthAuthRoute
   '/_auth/settings': typeof AuthSettingsRoute
   '/_business/chat': typeof BusinessChatRoute
@@ -355,7 +356,6 @@ export interface FileRoutesById {
   '/v1/auth/providers': typeof V1AuthProvidersRouteWithChildren
   '/v1/auth/sessions': typeof V1AuthSessionsRoute
   '/v1/chat/completions': typeof V1ChatCompletionsRoute
-  '/$businessName/admin/': typeof BusinessNameAdminIndexRoute
   '/plugin-studio/$projectId/': typeof PluginStudioProjectIdIndexRoute
   '/$businessName/admin/plugin/$pluginId': typeof BusinessNameAdminPluginPluginIdRouteWithChildren
   '/v1/auth/providers/methods': typeof V1AuthProvidersMethodsRoute
@@ -381,6 +381,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/privacy'
     | '/s3test'
+    | '/$businessName/$subdomain'
     | '/auth'
     | '/settings'
     | '/chat'
@@ -396,7 +397,6 @@ export interface FileRouteTypes {
     | '/v1/auth/providers'
     | '/v1/auth/sessions'
     | '/v1/chat/completions'
-    | '/$businessName/admin/'
     | '/plugin-studio/$projectId/'
     | '/$businessName/admin/plugin/$pluginId'
     | '/v1/auth/providers/methods'
@@ -419,6 +419,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/privacy'
     | '/s3test'
+    | '/$businessName/$subdomain'
     | '/auth'
     | '/settings'
     | '/chat'
@@ -434,7 +435,6 @@ export interface FileRouteTypes {
     | '/v1/auth/providers'
     | '/v1/auth/sessions'
     | '/v1/chat/completions'
-    | '/$businessName/admin'
     | '/plugin-studio/$projectId'
     | '/$businessName/admin/plugin/$pluginId'
     | '/v1/auth/providers/methods'
@@ -459,6 +459,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/privacy'
     | '/s3test'
+    | '/$businessName/$subdomain'
     | '/_auth/auth'
     | '/_auth/settings'
     | '/_business/chat'
@@ -474,7 +475,6 @@ export interface FileRouteTypes {
     | '/v1/auth/providers'
     | '/v1/auth/sessions'
     | '/v1/chat/completions'
-    | '/$businessName/admin/'
     | '/plugin-studio/$projectId/'
     | '/$businessName/admin/plugin/$pluginId'
     | '/v1/auth/providers/methods'
@@ -630,19 +630,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAuthRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/$businessName/$subdomain': {
+      id: '/$businessName/$subdomain'
+      path: '/$subdomain'
+      fullPath: '/$businessName/$subdomain'
+      preLoaderRoute: typeof BusinessNameSubdomainRouteImport
+      parentRoute: typeof BusinessNameRoute
+    }
     '/plugin-studio/$projectId/': {
       id: '/plugin-studio/$projectId/'
       path: '/plugin-studio/$projectId'
       fullPath: '/plugin-studio/$projectId/'
       preLoaderRoute: typeof PluginStudioProjectIdIndexRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/$businessName/admin/': {
-      id: '/$businessName/admin/'
-      path: '/admin'
-      fullPath: '/$businessName/admin/'
-      preLoaderRoute: typeof BusinessNameAdminIndexRouteImport
-      parentRoute: typeof BusinessNameRoute
     }
     '/v1/chat/completions': {
       id: '/v1/chat/completions'
@@ -803,20 +803,20 @@ const BusinessNameAdminPluginPluginIdRouteWithChildren =
   )
 
 interface BusinessNameRouteChildren {
+  BusinessNameSubdomainRoute: typeof BusinessNameSubdomainRoute
   BusinessNameIndexRoute: typeof BusinessNameIndexRoute
   BusinessNameAdminEditorRoute: typeof BusinessNameAdminEditorRoute
   BusinessNameAdminInvitationRoute: typeof BusinessNameAdminInvitationRoute
   BusinessNameAdminPluginsRoute: typeof BusinessNameAdminPluginsRoute
-  BusinessNameAdminIndexRoute: typeof BusinessNameAdminIndexRoute
   BusinessNameAdminPluginPluginIdRoute: typeof BusinessNameAdminPluginPluginIdRouteWithChildren
 }
 
 const BusinessNameRouteChildren: BusinessNameRouteChildren = {
+  BusinessNameSubdomainRoute: BusinessNameSubdomainRoute,
   BusinessNameIndexRoute: BusinessNameIndexRoute,
   BusinessNameAdminEditorRoute: BusinessNameAdminEditorRoute,
   BusinessNameAdminInvitationRoute: BusinessNameAdminInvitationRoute,
   BusinessNameAdminPluginsRoute: BusinessNameAdminPluginsRoute,
-  BusinessNameAdminIndexRoute: BusinessNameAdminIndexRoute,
   BusinessNameAdminPluginPluginIdRoute:
     BusinessNameAdminPluginPluginIdRouteWithChildren,
 }

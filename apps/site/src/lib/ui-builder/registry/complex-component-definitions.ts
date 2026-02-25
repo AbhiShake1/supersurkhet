@@ -1,27 +1,13 @@
-import type {
-  ComponentRegistry,
-  ComponentLayer,
-} from '@/components/ui/ui-builder/types';
 import { z } from 'zod';
-
-import { Button, ButtonSchema } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Flexbox } from '@/components/ui/ui-builder/components/flexbox';
-import { Grid } from '@/components/ui/ui-builder/components/grid';
-import { CodePanel } from '@/components/ui/ui-builder/components/code-panel';
-import { Markdown } from '@/components/ui/ui-builder/components/markdown';
-import { Icon, iconNames } from '@/components/ui/ui-builder/components/icon';
-import { Input, InputSchema } from '@/components/ui/input';
 import {
-  classNameFieldOverrides,
-  childrenFieldOverrides,
-  iconNameFieldOverrides,
-  commonFieldOverrides,
-  childrenAsTipTapFieldOverrides,
-  childrenAsTextareaFieldOverrides,
-} from '@/lib/ui-builder/registry/form-field-overrides';
-
-import { UserAvatarDropdown } from '@/components/user/user-avatar-dropdown';
+  AnimatedIcon,
+  AnimatedIconSchema,
+} from '@/components/animate-ui/icons/AnimatedIcon';
+import { AutoAdminResolved } from '@/components/auto-admin/auto-admin-resolved';
+import Features, { FeaturesSchema } from '@/components/features-1';
+import { imgCarouselComponentDefinitions } from '@/components/imgcarousel/component-definitions';
+import { kokonutuiComponentDefinitions } from '@/components/kokonutui/component-definitions';
+import { magicuiComponentDefinitions } from '@/components/magicui/component-definitions';
 import {
   SignedInOnly,
   SignedInOnlySchema,
@@ -30,51 +16,62 @@ import {
   SignedOutOnly,
   SignedOutOnlySchema,
 } from '@/components/security/signed-out-only';
-import { Link, LinkSchema } from '@/components/ui/navigation/link';
-
-import { Slider, sliderSchema } from '@/components/ui/slider-1';
-import EstimatedDateBadge, {
-  EstimatedDateBadgeSchema,
-} from '@/components/ui/estimated-arrival';
-
-import Features, { FeaturesSchema } from '@/components/features-1';
 import CardBottomImage, {
   CardBottomImageSchema,
 } from '@/components/shadcn-studio/card/card-04';
+import { supersurkhetComponentDefinitions } from '@/components/supersurkhet/component-definitions';
 import {
   AnimatedGradientText,
   AnimatedGradientTextSchema,
 } from '@/components/ui/animated-gradient-text';
-import {
-  ShimmerButton,
-  ShimmerButtonSchema,
-} from '@/components/ui/shimmer-button';
-import {
-  AnimatedIcon,
-  AnimatedIconSchema,
-} from '@/components/animate-ui/icons/AnimatedIcon';
-import { framerMotionComponentDefinitions } from './framer-motion-component-definitions';
+import { animatedListComponentDefinitions } from '@/components/ui/animated-list/component-definitions';
+import { Badge } from '@/components/ui/badge';
+import { Button, ButtonSchema } from '@/components/ui/button';
 import {
   RatingInteraction,
   RatingInteractionSchema,
 } from '@/components/ui/emoji-rating';
-import { dialogComponentDefinitions } from './dialog-component-definitions';
-import { credenzaComponentDefinitions } from './credenza-component-definitions';
-import { accordionComponentDefinitions } from './accordion-component-definitions';
-import { cardComponentDefinitions } from './card-component-definitions';
-import { kokonutuiComponentDefinitions } from '@/components/kokonutui/component-definitions';
-import { supersurkhetComponentDefinitions } from '@/components/supersurkhet/component-definitions';
-import { carouzelComponentDefinitions } from './carouzel-component-definitions';
+import EstimatedDateBadge, {
+  EstimatedDateBadgeSchema,
+} from '@/components/ui/estimated-arrival';
+import { Input, InputSchema } from '@/components/ui/input';
+import { Link, LinkSchema } from '@/components/ui/navigation/link';
+import {
+  ShimmerButton,
+  ShimmerButtonSchema,
+} from '@/components/ui/shimmer-button';
+import { Slider, sliderSchema } from '@/components/ui/slider-1';
 import { svgsComponentDefinitions } from '@/components/ui/svgs/component-definition';
-import { modalComponentDefinitions } from './modal-component-definitions';
-import { magicuiComponentDefinitions } from '@/components/magicui/component-definitions';
-import { productOnboardingComponentDefinitions } from './product-onboarding-card-definitions';
+import { CodePanel } from '@/components/ui/ui-builder/components/code-panel';
+import { Flexbox } from '@/components/ui/ui-builder/components/flexbox';
+import { Grid } from '@/components/ui/ui-builder/components/grid';
+import { Icon, iconNames } from '@/components/ui/ui-builder/components/icon';
+import { Markdown } from '@/components/ui/ui-builder/components/markdown';
+import type {
+  ComponentLayer,
+  ComponentRegistry,
+} from '@/components/ui/ui-builder/types';
+import { UserAvatarDropdown } from '@/components/user/user-avatar-dropdown';
+import {
+  childrenAsTextareaFieldOverrides,
+  childrenAsTipTapFieldOverrides,
+  childrenFieldOverrides,
+  classNameFieldOverrides,
+  commonFieldOverrides,
+  iconNameFieldOverrides,
+} from '@/lib/ui-builder/registry/form-field-overrides';
 import { threeDCardComponentDefinitions } from './3d-card-component-definitions';
-import { ratingComponentDefinitions } from './rating-component-definitions';
-import { imgCarouselComponentDefinitions } from '@/components/imgcarousel/component-definitions';
-import { offerComponentDefinitions } from './offer-component-definitions';
+import { accordionComponentDefinitions } from './accordion-component-definitions';
 import { bentoComponentDefinitions } from './bento-component-definitions';
-import { animatedListComponentDefinitions } from '@/components/ui/animated-list/component-definitions';
+import { cardComponentDefinitions } from './card-component-definitions';
+import { carouzelComponentDefinitions } from './carouzel-component-definitions';
+import { credenzaComponentDefinitions } from './credenza-component-definitions';
+import { dialogComponentDefinitions } from './dialog-component-definitions';
+import { framerMotionComponentDefinitions } from './framer-motion-component-definitions';
+import { modalComponentDefinitions } from './modal-component-definitions';
+import { offerComponentDefinitions } from './offer-component-definitions';
+import { productOnboardingComponentDefinitions } from './product-onboarding-card-definitions';
+import { ratingComponentDefinitions } from './rating-component-definitions';
 
 export const complexComponentDefinitions: ComponentRegistry = {
   ...framerMotionComponentDefinitions,
@@ -283,7 +280,11 @@ export const complexComponentDefinitions: ComponentRegistry = {
     from: '@/components/ui/navigation/link',
     fieldOverrides: commonFieldOverrides(),
   },
-
+  AutoAdmin: {
+    component: AutoAdminResolved,
+    schema: z.object({}),
+    from: '@/components/auto-admin/auto-admin-resolved',
+  },
   ...supersurkhetComponentDefinitions,
 
   ...productOnboardingComponentDefinitions,
