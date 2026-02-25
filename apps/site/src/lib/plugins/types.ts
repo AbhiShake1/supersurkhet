@@ -20,12 +20,14 @@ import type {
   PluginReleaseDoc,
   RefineIssueIR,
   SchemaDoc,
+  SchemaWorkflowDoc,
   SchemaFieldDoc,
   SchemaRuleDoc,
   PluginWorkflowDeadLetter,
   PluginWorkflowEventLog,
   PluginWorkflowJob,
   PluginWorkflowJobAttempt,
+  WorkflowDbAdapter,
   WorkflowDoc,
   WorkflowEdgeDoc,
   WorkflowNodeDoc,
@@ -53,12 +55,14 @@ export type {
   PluginReleaseDoc,
   RefineIssueIR,
   SchemaDoc,
+  SchemaWorkflowDoc,
   SchemaFieldDoc,
   SchemaRuleDoc,
   PluginWorkflowDeadLetter,
   PluginWorkflowEventLog,
   PluginWorkflowJob,
   PluginWorkflowJobAttempt,
+  WorkflowDbAdapter,
   WorkflowDoc,
   WorkflowEdgeDoc,
   WorkflowNodeDoc,
@@ -66,7 +70,6 @@ export type {
 
 export type PluginDocsBundle = {
   schemaDocs?: SchemaDoc[];
-  workflows?: WorkflowDoc[];
   adminTabs?: AdminTabDoc[];
 };
 
@@ -120,6 +123,9 @@ export type PluginExecutionContext = {
   table?: string;
   hook?: LifecycleHook;
   payload?: unknown;
+  formValues?: unknown;
+  db?: WorkflowDbAdapter;
+  ctx?: Record<string, unknown>;
   event?: ExecutionContextV3['event'];
   record?: ExecutionContextV3['record'];
   workflow?: ExecutionContextV3['workflow'];
@@ -133,6 +139,7 @@ export type ExecuteLifecycleHookInput = {
   table: string;
   hook: LifecycleHook;
   payload?: unknown;
+  db?: WorkflowDbAdapter;
   envelope?: {
     requestId?: string;
     rowId?: string;

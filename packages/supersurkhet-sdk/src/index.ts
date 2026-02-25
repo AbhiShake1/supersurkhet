@@ -21,6 +21,12 @@ export type ActionRuntimeContext = {
   userId?: string;
   capabilities?: readonly string[];
   signal?: AbortSignal;
+  ctx?: Record<string, unknown>;
+  event?: ExecutionContextV3['event'];
+  record?: ExecutionContextV3['record'];
+  workflow?: ExecutionContextV3['workflow'];
+  formValues?: unknown;
+  db?: WorkflowDbAdapter;
 };
 
 export type ActionHandler<In, Out> = (
@@ -265,6 +271,7 @@ export type SchemaDoc = {
   fields: SchemaFieldDoc[];
   refinements?: RefineIssueIR[];
   tokens?: Record<string, JsonValue>;
+  workflows?: SchemaWorkflowDoc[];
 };
 
 export type SchemaDataType = 'string' | 'number' | 'boolean' | 'date' | 'enum' | 'array' | 'object';
@@ -359,6 +366,56 @@ export type WorkflowDoc = {
   edges: WorkflowEdgeDoc[];
 };
 
+export type SchemaWorkflowDoc = Omit<WorkflowDoc, 'table' | 'trigger'> & {
+  trigger?: Omit<NonNullable<WorkflowDoc['trigger']>, 'table'>;
+};
+
+export const CORE_DB_ACTION_IDS = {
+  findMany: 'core.db.findMany',
+  findOne: 'core.db.findOne',
+  create: 'core.db.create',
+  update: 'core.db.update',
+  delete: 'core.db.delete',
+} as const;
+
+export type CoreDbActionId = (typeof CORE_DB_ACTION_IDS)[keyof typeof CORE_DB_ACTION_IDS];
+
+export type WorkflowDbAdapter = {
+  findMany: (input: {
+    businessId: string;
+    pluginId: string;
+    schemaId: string;
+    where?: Record<string, JsonValue | ExpressionDoc>;
+    limit?: number;
+    orderBy?: Array<{ field: string; direction?: 'asc' | 'desc' }>;
+  }) => Promise<unknown[]> | unknown[];
+  findOne: (input: {
+    businessId: string;
+    pluginId: string;
+    schemaId: string;
+    where?: Record<string, JsonValue | ExpressionDoc>;
+  }) => Promise<unknown | undefined> | unknown | undefined;
+  create: (input: {
+    businessId: string;
+    pluginId: string;
+    schemaId: string;
+    data: Record<string, JsonValue | ExpressionDoc>;
+  }) => Promise<unknown> | unknown;
+  update: (input: {
+    businessId: string;
+    pluginId: string;
+    schemaId: string;
+    where: Record<string, JsonValue | ExpressionDoc>;
+    data: Record<string, JsonValue | ExpressionDoc>;
+  }) => Promise<unknown> | unknown;
+  delete: (input: {
+    businessId: string;
+    pluginId: string;
+    schemaId: string;
+    where: Record<string, JsonValue | ExpressionDoc>;
+  }) => Promise<unknown> | unknown;
+};
+
 export type ActionDefinitionV3 = {
   actionId: string;
   runtime: 'sandbox-worker' | 'core';
@@ -375,6 +432,7 @@ export type ActionDefinitionV3 = {
 };
 
 export type ExecutionContextV3 = {
+  ctx?: Record<string, unknown>;
   event: {
     businessId: string;
     teamId?: string;
@@ -396,6 +454,8 @@ export type ExecutionContextV3 = {
     jobId?: string;
     scheduledAt?: string;
   };
+  formValues?: unknown;
+  db?: WorkflowDbAdapter;
   helpers?: {
     getSecret?: (ref: string) => Promise<string | undefined>;
     log?: (entry: { level: 'info' | 'warn' | 'error'; message: string }) => void;
@@ -477,7 +537,6 @@ export type PluginReleaseDoc = {
   };
   actionManifest: ActionManifestDoc[];
   schemaDocs?: SchemaDoc[];
-  workflows?: WorkflowDoc[];
   adminTabs?: AdminTabDoc[];
   publishedAt?: string;
 };
@@ -571,7 +630,6 @@ export type PluginDraftRevisionDoc = {
   manifestHash: string;
   artifactHash: string;
   schemaDocs?: SchemaDoc[];
-  workflows?: WorkflowDoc[];
   adminTabs?: AdminTabDoc[];
   createdAt: string;
   createdByUserId: string;
@@ -619,7 +677,6 @@ export type PluginDefinition<TMap extends ActionMap = EmptyActionMap> = {
   };
   actions?: ActionRegistry<TMap>;
   schemaDocs?: SchemaDoc[];
-  workflows?: WorkflowDoc[];
   adminTabs?: AdminTabDoc[];
 };
 
@@ -635,6 +692,36 @@ export function defineWorkflowDoc<T extends WorkflowDoc>(doc: T): T {
   return doc;
 }
 
+export function defineSchemaWorkflowDoc<T extends SchemaWorkflowDoc>(doc: T): T {
+  return doc;
+}
+
+export function flattenSchemaWorkflows(schemaDocs: readonly SchemaDoc[] = []): WorkflowDoc[] {
+  const flattened: WorkflowDoc[] = [];
+
+  for (const schemaDoc of schemaDocs) {
+    const schemaId = schemaDoc.schemaId;
+    if (!schemaId) continue;
+    for (const workflow of schemaDoc.workflows ?? []) {
+      const localWorkflowId = workflow.workflowId?.trim();
+      if (!localWorkflowId) continue;
+      flattened.push({
+        ...workflow,
+        workflowId: `${schemaId}::${localWorkflowId}`,
+        table: schemaId,
+        trigger: workflow.trigger
+          ? {
+              ...workflow.trigger,
+              table: schemaId,
+            }
+          : undefined,
+      });
+    }
+  }
+
+  return flattened;
+}
+
 export type ZodSchemaFactory<TSchema extends ZodLikeObjectSchema = ZodLikeObjectSchema> = (
   input: {
     z: typeof z;
@@ -647,6 +734,7 @@ export type DefineZodSchemaDocInput<TSchema extends ZodLikeObjectSchema = ZodLik
   title?: string;
   description?: string;
   tokens?: Record<string, JsonValue>;
+  workflows?: SchemaWorkflowDoc[];
 };
 
 export type InferSchemaType<TInput extends DefineZodSchemaDocInput> = TInput['schema'] extends {
@@ -848,6 +936,7 @@ export function defineZodSchemaDoc<TSchema extends ZodLikeObjectSchema>(
     description: input.description,
     fields,
     tokens: input.tokens,
+    workflows: input.workflows,
   };
 }
 
