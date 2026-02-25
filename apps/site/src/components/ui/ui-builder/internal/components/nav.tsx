@@ -76,6 +76,7 @@ import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
 import { cn } from '@/lib/utils';
 
 const Z_INDEX = 40;
+const DIALOG_Z_INDEX = 1200;
 
 export function NavBar({
   extraActions,
@@ -530,12 +531,11 @@ const PreviewDialog: React.FC<PreviewDialogProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger />
-      <DialogContentWithZIndex className="max-w-[calc(100dvw)] max-h-[calc(100dvh)] overflow-auto p-0 gap-0">
-        <DialogHeader>
-          <DialogTitle className="py-3 bg-yellow-600 text-center">
-            <span className="text-lg font-semibold">Page Preview</span>
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContentWithZIndex className="!left-0 !top-0 !m-0 !h-screen !w-screen !max-h-none !max-w-none !translate-x-0 !translate-y-0 !rounded-none overflow-auto p-0 gap-0">
+        <DialogClose className="absolute right-4 top-4 z-[1302] rounded-md border bg-background/95 p-2 text-foreground shadow-md ring-offset-background backdrop-blur transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+          <X className="h-4 w-4" />
+          <span className="sr-only">Close preview</span>
+        </DialogClose>
         <LayerRenderer
           className="w-full h-full flex flex-col overflow-x-hidden"
           page={page}
@@ -738,7 +738,7 @@ const DialogContentWithZIndex = forwardRef<
   React.ElementRef<typeof DialogContent>,
   React.ComponentPropsWithoutRef<typeof DialogContent>
 >(({ className, children, ...props }, ref) => {
-  const style = useMemo(() => ({ zIndex: Z_INDEX + 1 }), []);
+  const style = useMemo(() => ({ zIndex: DIALOG_Z_INDEX }), []);
   return (
     <DialogPortal>
       <DialogOverlay style={style} />
@@ -751,7 +751,7 @@ const DialogContentWithZIndex = forwardRef<
         {...props}
       >
         {children}
-        <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+        <DialogClose className="absolute right-4 top-4 z-20 rounded-md border bg-background/90 p-1 opacity-80 shadow-sm ring-offset-background backdrop-blur transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
           <X className="h-4 w-4 rounded-full p-1" />
           <span className="sr-only">Close</span>
         </DialogClose>

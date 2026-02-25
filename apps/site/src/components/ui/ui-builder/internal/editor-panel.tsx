@@ -229,7 +229,7 @@ const ZoomControls: React.FC<{
             <Button
               data-testid="button-Focus"
               variant="secondary"
-              className="size-14 md:size-10 rounded-l-full rounded-r-none border-r border-border [&_svg]:size-7 [&_svg]:md:size-4"
+              className="size-14 md:size-10 rounded-l-full rounded-r-none border-r border-border [&_svg]:size-4"
               onClick={onFocusSelected}
               disabled={!canFocusSelected}
             >
@@ -247,7 +247,7 @@ const ZoomControls: React.FC<{
             <Button
               data-testid="button-ExitFocus"
               variant="secondary"
-              className="size-14 md:size-10 rounded-none border-r border-border [&_svg]:size-7 [&_svg]:md:size-4"
+              className="size-14 md:size-10 rounded-none border-r border-border [&_svg]:size-4"
               onClick={onExitFocus}
               disabled={!canExitFocus}
             >
@@ -265,7 +265,7 @@ const ZoomControls: React.FC<{
             <Button
               data-testid="button-ZoomIn"
               variant="secondary"
-              className="size-14 md:size-10 rounded-none border-r border-border [&_svg]:size-7 [&_svg]:md:size-4"
+              className="size-14 md:size-10 rounded-none border-r border-border [&_svg]:size-4"
               onClick={handleZoomIn}
             >
               <span className="sr-only">Zoom in</span>
@@ -282,7 +282,7 @@ const ZoomControls: React.FC<{
             <Button
               data-testid="button-ZoomOut"
               variant="secondary"
-              className="size-14 md:size-10 rounded-none border-r border-border [&_svg]:size-7 [&_svg]:md:size-4"
+              className="size-14 md:size-10 rounded-none border-r border-border [&_svg]:size-4"
               onClick={handleZoomOut}
             >
               <span className="sr-only">Zoom out</span>
@@ -299,7 +299,7 @@ const ZoomControls: React.FC<{
             <Button
               data-testid="button-Reset"
               variant="secondary"
-              className="size-14 md:size-10 rounded-none border-r border-border [&_svg]:size-7 [&_svg]:md:size-4"
+              className="size-14 md:size-10 rounded-none border-r border-border [&_svg]:size-4"
               onClick={handleReset}
             >
               <span className="sr-only">Reset</span>
@@ -316,7 +316,7 @@ const ZoomControls: React.FC<{
             <Button
               data-testid="button-PointerEvents"
               variant={pointerEventsEnabled ? 'default' : 'secondary'}
-              className="size-14 md:size-10 rounded-r-full rounded-l-none [&_svg]:size-7 [&_svg]:md:size-4"
+              className="size-14 md:size-10 rounded-r-full rounded-l-none [&_svg]:size-4"
               onClick={handleTogglePointerEvents}
             >
               <span className="sr-only">
@@ -422,8 +422,14 @@ const EditorPanel: React.FC<EditorPanelProps> = ({
   } = useLayerStore();
   const previewMode = useEditorStore((state) => state.previewMode);
   const componentRegistry = useEditorStore((state) => state.registry);
-  const selectedLayer = findLayerById(selectedLayerId) as ComponentLayer;
-  const selectedPage = findLayerById(selectedPageId) as ComponentLayer;
+  const selectedLayerCandidate = findLayerById(selectedLayerId) as
+    | ComponentLayer
+    | undefined;
+  const selectedPage = findLayerById(selectedPageId) as
+    | ComponentLayer
+    | undefined;
+  if (!selectedPage) return null;
+  const selectedLayer = selectedLayerCandidate ?? selectedPage;
   const isLayerAPage = useLayerStore((state) =>
     state.isLayerAPage(selectedLayerId || ''),
   );
@@ -458,11 +464,6 @@ const EditorPanel: React.FC<EditorPanelProps> = ({
     isLayerInsideSubtree(selectedPage, selectedLayerId);
   const canExitFocus = focusModeEnabled && resolvedFocusStack.length > 0;
   const canResetFocus = canExitFocus;
-
-  const focusPath = useMemo(
-    () => findLayerPath(selectedPage, effectiveRootLayer?.id ?? null),
-    [selectedPage, effectiveRootLayer?.id],
-  );
 
   const handleFocusLayer = useCallback(
     (layerId: string | null) => {
@@ -562,7 +563,6 @@ const EditorPanel: React.FC<EditorPanelProps> = ({
         selectedLayer={selectedLayer}
         selectedPage={selectedPage}
         effectiveRootLayer={effectiveRootLayer}
-        focusPath={focusPath}
         isLayerAPage={isLayerAPage}
         allowPagesCreation={allowPagesCreation}
         allowPagesDeletion={allowPagesDeletion}
@@ -572,7 +572,6 @@ const EditorPanel: React.FC<EditorPanelProps> = ({
         onSelectElement={onSelectElement}
         handleDeleteLayer={handleDeleteLayer}
         handleDuplicateLayer={handleDuplicateLayer}
-        onFocusLayer={handleFocusLayer}
         handleFocusSelected={handleFocusSelected}
         canFocusSelected={canFocusSelected}
         handleExitFocus={handleExitFocus}
@@ -598,7 +597,6 @@ interface EditorPanelContentProps {
   selectedLayer: ComponentLayer;
   selectedPage: ComponentLayer;
   effectiveRootLayer: ComponentLayer;
-  focusPath: ComponentLayer[];
   isLayerAPage: boolean;
   allowPagesCreation: boolean;
   allowPagesDeletion: boolean;
@@ -609,7 +607,6 @@ interface EditorPanelContentProps {
   onSelectElement: (layerId: string) => void;
   handleDeleteLayer: () => void;
   handleDuplicateLayer: () => void;
-  onFocusLayer: (layerId: string | null) => void;
   handleFocusSelected: () => void;
   canFocusSelected: boolean;
   handleExitFocus: () => void;
@@ -631,7 +628,6 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
   selectedLayer,
   selectedPage,
   effectiveRootLayer,
-  focusPath,
   allowPagesCreation,
   allowPagesDeletion,
   previewMode,
@@ -640,7 +636,6 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
   onSelectElement,
   handleDeleteLayer,
   handleDuplicateLayer,
-  onFocusLayer,
   handleFocusSelected,
   canFocusSelected,
   handleExitFocus,
@@ -983,6 +978,8 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
     }),
     [resizing, isComponentDragging],
   );
+  const hasSelectedComponent =
+    Boolean(selectedLayerId) && selectedLayerId !== selectedPageId;
 
   return (
     // biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup
@@ -993,24 +990,20 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
         className,
       )}
     >
-      <div className="absolute left-4 top-4 z-[1000] max-w-[70%] rounded-full border bg-background/90 px-3 py-1 backdrop-blur-sm">
-        <FocusBreadcrumbs
-          path={focusPath}
-          selectedPage={selectedPage}
-          onFocusLayer={onFocusLayer}
-        />
+      <div className="z-[1000] flex items-center justify-end border-b border-border/60 bg-background/80 px-4 py-2 backdrop-blur-sm">
+        {hasSelectedComponent ? (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="gap-2"
+            onClick={() => onCommandOpenChange(true)}
+          >
+            <CommandIcon className="size-4" />
+            Focus Actions
+          </Button>
+        ) : null}
       </div>
-
-      <Button
-        type="button"
-        variant="secondary"
-        size="sm"
-        className="absolute right-4 top-4 z-[1000] gap-2"
-        onClick={() => onCommandOpenChange(true)}
-      >
-        <CommandIcon className="size-4" />
-        Focus Actions
-      </Button>
 
       <TransformWrapper
         initialScale={0.8}
@@ -1107,53 +1100,6 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
     </div>
   );
 };
-
-function FocusBreadcrumbs({
-  path,
-  selectedPage,
-  onFocusLayer,
-}: {
-  path: ComponentLayer[];
-  selectedPage: ComponentLayer;
-  onFocusLayer: (layerId: string | null) => void;
-}) {
-  const entries = path.length > 0 ? path : selectedPage ? [selectedPage] : [];
-
-  return (
-    <div
-      className="flex items-center gap-1 text-xs md:text-sm"
-      data-testid="focus-breadcrumbs"
-    >
-      {entries.map((layer, index) => {
-        const isPage = index === 0;
-        const isLast = index === entries.length - 1;
-        return (
-          <div key={layer.id} className="flex items-center gap-1">
-            <button
-              type="button"
-              className={cn(
-                'rounded px-1.5 py-0.5 transition-colors',
-                isLast
-                  ? 'bg-primary/15 text-primary font-medium'
-                  : 'text-muted-foreground hover:bg-muted',
-              )}
-              onClick={() => {
-                if (isPage) {
-                  onFocusLayer(selectedPage.id);
-                  return;
-                }
-                onFocusLayer(layer.id);
-              }}
-            >
-              {layer.name || layer.type}
-            </button>
-            {!isLast ? <span className="text-muted-foreground">/</span> : null}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 function FocusModeCommandPalette({
   open,

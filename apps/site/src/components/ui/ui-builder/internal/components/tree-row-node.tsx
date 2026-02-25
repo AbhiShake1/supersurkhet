@@ -124,18 +124,14 @@ export const TreeRowNode: React.FC<TreeRowNodeProps> = memo(
       return canAddChildren;
     }, [node.type, componentRegistry]);
 
-    const { key, ...rest } = nodeAttributes;
+    const { key: _nodeKey, ...rest } = nodeAttributes;
 
     if (!node) {
       return null;
     }
 
     return (
-      <div
-        key={key}
-        {...rest}
-        className="w-fit flex items-center group relative"
-      >
+      <div {...rest} className="w-fit flex items-center group relative">
         <RowOffset level={level} />
 
         {hasLayerChildren(node) && node.children.length > 0 ? (
@@ -300,9 +296,9 @@ const RowOffset = ({ level }: { level: number }) => {
 export const TreeRowPlaceholder: React.FC<
   Pick<TreeRowNodeProps, 'nodeAttributes'>
 > = ({ nodeAttributes }) => {
-  const { key, ...rest } = nodeAttributes;
+  const { key: _nodeKey, ...rest } = nodeAttributes;
   return (
-    <div key={key} {...rest} className="w-40 h-2">
+    <div {...rest} className="w-40 h-2">
       <div className="size-full border-b-2 border-blue-500 border-dashed" />
     </div>
   );

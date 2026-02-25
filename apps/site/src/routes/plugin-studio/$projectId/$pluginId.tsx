@@ -60,6 +60,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import UIBuilder from '@/components/ui/ui-builder';
+import LayerRenderer from '@/components/ui/ui-builder/layer-renderer';
+import type { ComponentLayer } from '@/components/ui/ui-builder/types';
 import { buildDerivationPathOptions } from '@/features/plugin-builder/workspace/tabs/derivation-path-options';
 import {
   compileDerivedFieldToDeriveIr,
@@ -81,6 +84,10 @@ import {
   parseReleaseId,
 } from '@/lib/plugins/marketplace-seed';
 import { compileSchemaDoc } from '@/lib/plugins/schema-compiler';
+import { ContextDataStore } from '@/lib/ui-builder/context/context-data-store';
+import { complexComponentDefinitions } from '@/lib/ui-builder/registry/complex-component-definitions';
+import { classNameFieldOverrides } from '@/lib/ui-builder/registry/form-field-overrides';
+import { primitiveComponentDefinitions } from '@/lib/ui-builder/registry/primitive-component-definitions';
 import type {
   ActionManifestDoc,
   AdminTabDoc,
@@ -101,6 +108,7 @@ import deepEqual from 'fast-deep-equal';
 import * as LucideIcons from 'lucide-react';
 import {
   ArrowLeft,
+  ArrowRight,
   BadgePlus,
   CloudUpload,
   Pencil,
@@ -113,6 +121,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { publishPluginRelease } from '@/server-functions/plugins';
+import { readAutoAdminRootFocusedConfig } from '@/config/business-config';
 import { throwOnFailedPersistenceWrites } from '../-plugin-studio-persistence';
 import {
   resolvePluginStudioPluginId,
@@ -308,6 +317,7 @@ const SUBDOMAIN_STUDIO_SHORTCUTS = {
 const DRAFT_GROUP_SENTINEL_SCHEMA_PREFIX = '__plugin_studio_group__/';
 const DRAFT_SYSTEM_SENTINEL_SCHEMA_PREFIX = '__plugin_studio_system__/';
 const DRAFT_SUBDOMAIN_SENTINEL_SCHEMA_PREFIX = '__plugin_studio_subdomain__/';
+const DRAFT_SUBDOMAIN_UI_SENTINEL_SCHEMA_PREFIX = '__plugin_studio_subdomain_ui__/';
 const DRAFT_DNS_SENTINEL_SCHEMA_ID = '__plugin_studio_dns__/cloudflare';
 type SubdomainUiProjectKind = 'index' | 'admin' | 'custom';
 type SubdomainPipelineState = Array<{
@@ -316,6 +326,7 @@ type SubdomainPipelineState = Array<{
   uiProject: SubdomainUiProjectKind;
   autoAdminInjected: boolean;
 }>;
+type SubdomainUiLayersState = Record<string, string>;
 const DEFAULT_SUBDOMAIN_PIPELINE: SubdomainPipelineState = [
   {
     subdomain: 'index',
@@ -651,6 +662,62 @@ function normalizeSubdomainBasePath(value: string | undefined): string {
   return compact || '/';
 }
 
+function parseSubdomainUiSentinelSchemaId(schemaId: string): string | null {
+  if (!schemaId.startsWith(DRAFT_SUBDOMAIN_UI_SENTINEL_SCHEMA_PREFIX)) {
+    return null;
+  }
+  const value = schemaId.slice(DRAFT_SUBDOMAIN_UI_SENTINEL_SCHEMA_PREFIX.length).trim();
+  if (!value) return null;
+  return normalizeSubdomainName(value);
+}
+
+function toSubdomainUiSentinelSchemaId(subdomain: string): string {
+  return `${DRAFT_SUBDOMAIN_UI_SENTINEL_SCHEMA_PREFIX}${subdomain}`;
+}
+
+function toBlankSubdomainUiLayers(subdomain: string): ComponentLayer[] {
+  return [
+    {
+      id: `${subdomain}-page-root`,
+      name: `${subdomain} page`,
+      type: 'div',
+      props: {
+        className:
+          'min-h-screen w-full bg-background px-8 py-10 text-foreground',
+      },
+      children: [],
+    },
+  ];
+}
+
+function toAdminInjectedSubdomainUiLayers(subdomain: string): ComponentLayer[] {
+  return [
+    {
+      id: `${subdomain}-admin-root`,
+      name: 'Auto Admin',
+      type: 'AutoAdminRoot',
+      props: {
+        className:
+          'min-h-screen w-full bg-background text-foreground',
+      },
+      children: [],
+    },
+  ];
+}
+
+function parseStoredSubdomainUiLayers(
+  value: string | undefined,
+): ComponentLayer[] | null {
+  if (!value || !value.trim()) return null;
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!Array.isArray(parsed)) return null;
+    return parsed as ComponentLayer[];
+  } catch {
+    return null;
+  }
+}
+
 function computeOrderedTabTokens({
   tabOrder,
   schemaOrder,
@@ -708,6 +775,7 @@ function serializeDraftAdminTabs({
   orderedGroups,
   systemTabs,
   subdomains = DEFAULT_SUBDOMAIN_PIPELINE,
+  subdomainUiLayers = {},
   cloudflareDnsAutoConfigured = true,
   tabOrder = [],
 }: {
@@ -715,6 +783,7 @@ function serializeDraftAdminTabs({
   orderedGroups: readonly string[];
   systemTabs: SystemTabState;
   subdomains?: SubdomainPipelineState;
+  subdomainUiLayers?: SubdomainUiLayersState;
   cloudflareDnsAutoConfigured?: boolean;
   tabOrder?: readonly string[];
 }): AdminTabDoc[] {
@@ -746,6 +815,18 @@ function serializeDraftAdminTabs({
     group: entry.uiProject,
     icon: entry.autoAdminInjected ? 'autoadmin' : 'none',
   }));
+  const subdomainUiSentinels: AdminTabDoc[] = subdomains
+    .map((entry) => normalizeSubdomainName(entry.subdomain))
+    .flatMap((subdomain) => {
+      const layers = subdomainUiLayers[subdomain];
+      if (!layers) return [];
+      return [
+        {
+          schema: toSubdomainUiSentinelSchemaId(subdomain),
+          title: layers,
+        } satisfies AdminTabDoc,
+      ];
+    });
   const dnsSentinel: AdminTabDoc = {
     schema: DRAFT_DNS_SENTINEL_SCHEMA_ID,
     title: cloudflareDnsAutoConfigured ? 'auto' : 'manual',
@@ -786,7 +867,13 @@ function serializeDraftAdminTabs({
     usedSystemKeys.add(key);
   }
 
-  return [...groupSentinels, ...subdomainSentinels, dnsSentinel, ...orderedTabs];
+  return [
+    ...groupSentinels,
+    ...subdomainSentinels,
+    ...subdomainUiSentinels,
+    dnsSentinel,
+    ...orderedTabs,
+  ];
 }
 
 function deserializeDraftAdminTabs(
@@ -796,6 +883,7 @@ function deserializeDraftAdminTabs(
   orderedGroups: string[];
   systemTabs: SystemTabState;
   subdomains: SubdomainPipelineState;
+  subdomainUiLayers: SubdomainUiLayersState;
   cloudflareDnsAutoConfigured: boolean;
   tabOrder: string[];
 } {
@@ -804,6 +892,7 @@ function deserializeDraftAdminTabs(
   const orderedGroups: string[] = [];
   const systemTabs: SystemTabState = { ...DEFAULT_SYSTEM_TABS };
   const subdomains: SubdomainPipelineState = [];
+  const subdomainUiLayers: SubdomainUiLayersState = {};
   let cloudflareDnsAutoConfigured = true;
   const tabOrder: string[] = [];
 
@@ -857,6 +946,15 @@ function deserializeDraftAdminTabs(
       continue;
     }
 
+    const subdomainUi = parseSubdomainUiSentinelSchemaId(tab.schema);
+    if (subdomainUi) {
+      const encodedLayers = tab.title?.trim();
+      if (encodedLayers) {
+        subdomainUiLayers[subdomainUi] = encodedLayers;
+      }
+      continue;
+    }
+
     if (tab.schema === DRAFT_DNS_SENTINEL_SCHEMA_ID) {
       cloudflareDnsAutoConfigured = (tab.title?.trim() || 'auto') !== 'manual';
       continue;
@@ -881,6 +979,7 @@ function deserializeDraftAdminTabs(
     systemTabs,
     subdomains:
       subdomains.length > 0 ? subdomains : [...DEFAULT_SUBDOMAIN_PIPELINE],
+    subdomainUiLayers,
     cloudflareDnsAutoConfigured,
     tabOrder: computeOrderedTabTokens({
       tabOrder,
@@ -2795,6 +2894,7 @@ function PluginStudioPresenter({
         orderedGroups: storedGroupOrder,
         systemTabs,
         subdomains,
+        subdomainUiLayers,
         cloudflareDnsAutoConfigured,
         tabOrder: storedTabOrder,
       } = deserializeDraftAdminTabs(parsedDraftAdminTabs);
@@ -2851,6 +2951,7 @@ function PluginStudioPresenter({
         orderedGroups,
         systemTabs,
         subdomains,
+        subdomainUiLayers,
         cloudflareDnsAutoConfigured,
         tabOrder,
       });
@@ -2866,6 +2967,7 @@ function PluginStudioPresenter({
         groupOrder: orderedGroups,
         systemTabs,
         subdomains,
+        subdomainUiLayers,
         cloudflareDnsAutoConfigured,
         tabOrder,
         adminTabs,
@@ -2883,6 +2985,7 @@ function PluginStudioPresenter({
   const groupOrder = parsed?.groupOrder ?? [];
   const systemTabs = parsed?.systemTabs ?? DEFAULT_SYSTEM_TABS;
   const subdomains = parsed?.subdomains ?? DEFAULT_SUBDOMAIN_PIPELINE;
+  const subdomainUiLayers = parsed?.subdomainUiLayers ?? {};
   const cloudflareDnsAutoConfigured =
     parsed?.cloudflareDnsAutoConfigured ?? true;
   const tabOrder = parsed?.tabOrder ?? [];
@@ -4229,6 +4332,7 @@ function PluginStudioPresenter({
       orderedGroups: string[];
       systemTabs: SystemTabState;
       subdomains: SubdomainPipelineState;
+      subdomainUiLayers: SubdomainUiLayersState;
       cloudflareDnsAutoConfigured: boolean;
       tabOrder: string[];
     }) => void,
@@ -4297,6 +4401,7 @@ function PluginStudioPresenter({
         orderedGroups,
         systemTabs: state.systemTabs,
         subdomains: state.subdomains,
+        subdomainUiLayers: state.subdomainUiLayers,
         cloudflareDnsAutoConfigured: state.cloudflareDnsAutoConfigured,
         tabOrder,
       }),
@@ -4425,6 +4530,7 @@ function PluginStudioPresenter({
   ) {
     const normalizedPrevious = normalizeSubdomainName(previousSubdomain);
     updateSidebarAdminTabs((state) => {
+      let renamedTo: string | null = null;
       state.subdomains = state.subdomains.map((entry) => {
         if (normalizeSubdomainName(entry.subdomain) !== normalizedPrevious) {
           return entry;
@@ -4432,6 +4538,7 @@ function PluginStudioPresenter({
         const nextSubdomain = normalizeSubdomainName(
           patch.subdomain ?? entry.subdomain,
         );
+        renamedTo = nextSubdomain;
         const nextUiProject =
           nextSubdomain === 'index'
             ? 'index'
@@ -4448,6 +4555,13 @@ function PluginStudioPresenter({
               : (patch.autoAdminInjected ?? entry.autoAdminInjected),
         };
       });
+      if (renamedTo && renamedTo !== normalizedPrevious) {
+        const existingLayers = state.subdomainUiLayers[normalizedPrevious];
+        if (existingLayers) {
+          state.subdomainUiLayers[renamedTo] = existingLayers;
+          delete state.subdomainUiLayers[normalizedPrevious];
+        }
+      }
     });
   }
 
@@ -4471,6 +4585,9 @@ function PluginStudioPresenter({
           autoAdminInjected: false,
         },
       ];
+      state.subdomainUiLayers[candidate] = JSON.stringify(
+        toBlankSubdomainUiLayers(candidate),
+      );
     });
   }
 
@@ -4484,6 +4601,7 @@ function PluginStudioPresenter({
       state.subdomains = state.subdomains.filter(
         (entry) => normalizeSubdomainName(entry.subdomain) !== normalized,
       );
+      delete state.subdomainUiLayers[normalized];
     });
   }
 
@@ -4523,14 +4641,52 @@ function PluginStudioPresenter({
     setPendingDeleteSubdomain(null);
   }
 
+  const requestedSubdomain = search.subdomain
+    ? normalizeSubdomainName(search.subdomain)
+    : null;
   const selectedSubdomain = normalizeSubdomainName(
-    search.subdomain ??
+    requestedSubdomain ??
       subdomains[0]?.subdomain ??
       DEFAULT_SUBDOMAIN_PIPELINE[0]?.subdomain,
   );
   const selectedSubdomainIndex = subdomains.findIndex(
     (entry) => normalizeSubdomainName(entry.subdomain) === selectedSubdomain,
   );
+  const selectedSubdomainEntry = subdomains.find(
+    (entry) => normalizeSubdomainName(entry.subdomain) === selectedSubdomain,
+  );
+  const isSubdomainBuilderOpen = requestedSubdomain !== null;
+  const selectedSubdomainLayerSnapshot =
+    subdomainUiLayers[selectedSubdomain] ?? undefined;
+  const parsedSelectedSubdomainLayers = useMemo(
+    () => parseStoredSubdomainUiLayers(selectedSubdomainLayerSnapshot),
+    [selectedSubdomainLayerSnapshot],
+  );
+  const buildAdminInjectedLayers = useCallback(
+    (subdomain: string): ComponentLayer[] => [
+      {
+        id: `${subdomain}-admin-root`,
+        name: 'Auto Admin',
+        type: 'AutoAdminRoot',
+        props: {
+          className: 'min-h-screen w-full bg-background text-foreground',
+          tabs: JSON.stringify(parsed?.adminTabs ?? []),
+          systemTabs: JSON.stringify(systemTabs),
+          bindings: '{}',
+          dataScopes: '{}',
+        },
+        children: [],
+      },
+    ],
+    [parsed?.adminTabs, systemTabs],
+  );
+
+  const selectedSubdomainLayers =
+    parsedSelectedSubdomainLayers ??
+    (selectedSubdomain === 'admin' ||
+    selectedSubdomainEntry?.autoAdminInjected
+      ? buildAdminInjectedLayers(selectedSubdomain)
+      : toBlankSubdomainUiLayers(selectedSubdomain));
 
   function selectSubdomain(subdomain: string) {
     const normalized = normalizeSubdomainName(subdomain);
@@ -4540,6 +4696,17 @@ function PluginStudioPresenter({
         ...(current as Record<string, unknown>),
         subdomain: normalized,
       }),
+    });
+  }
+
+  function closeSubdomainBuilder() {
+    void navigate({
+      to: '.',
+      search: (current) => {
+        const next = { ...(current as Record<string, unknown>) };
+        delete next.subdomain;
+        return next;
+      },
     });
   }
 
@@ -4610,6 +4777,128 @@ function PluginStudioPresenter({
     () => reorderSubdomainByOffset(1),
     { enabled: isSubdomainStudioMode, allowInEditableContext: true },
   );
+
+  const subdomainContextData = useMemo(
+    () => ({
+      plugin: {
+        draftId,
+        projectId,
+        pluginId,
+      },
+      subdomain: selectedSubdomain,
+      date: {
+        currentTime: new Date().toISOString(),
+        locale: 'en-US',
+      },
+    }),
+    [draftId, projectId, pluginId, selectedSubdomain],
+  );
+
+  const livePreviewTabById = useMemo(
+    () => new Map(livePreviewTabs.map((tab) => [tab.tabId, tab])),
+    [livePreviewTabs],
+  );
+
+  function AutoAdminRootLayer(
+    props: Record<string, unknown> & {
+      className?: string;
+    },
+  ) {
+    const focusedConfig = readAutoAdminRootFocusedConfig(props);
+    const tabsFromConfig = focusedConfig.tabs.flatMap((rawTab) => {
+      if (!rawTab || typeof rawTab !== 'object') return [];
+      const tab = rawTab as Record<string, unknown>;
+      const schema = typeof tab.schema === 'string' ? tab.schema.trim() : '';
+      if (!schema) return [];
+      const matched = livePreviewTabById.get(schema);
+      if (!matched) return [];
+      const title = typeof tab.title === 'string' && tab.title.trim()
+        ? tab.title.trim()
+        : matched.title;
+      const group =
+        typeof tab.group === 'string' && tab.group.trim()
+          ? tab.group.trim()
+          : matched.group;
+      const iconName =
+        typeof tab.icon === 'string' && tab.icon.trim()
+          ? tab.icon.trim()
+          : matched.iconName;
+      return [
+        {
+          ...matched,
+          title,
+          group,
+          iconName,
+          icon: resolveLucideIconByName(iconName) ?? matched.icon,
+        },
+      ];
+    });
+    const resolvedTabs = tabsFromConfig.length > 0 ? tabsFromConfig : livePreviewTabs;
+    return (
+      <div className={props.className}>
+        <AutoAdmin
+          tabs={resolvedTabs}
+          tabOrder={tabOrder}
+          editable
+          onAddTable={handleAddSchema}
+          onAddGroup={handleAddGroup}
+          onReorderGroups={handleReorderGroups}
+          onMoveTabToGroup={handleMoveTabToGroup}
+          onReorderTabs={handleReorderTabs}
+          onRenameGroup={handleRenameGroup}
+          onDeleteGroup={handleDeleteGroup}
+          onRenameTab={handleRenameTab}
+          onRenameTabIcon={handleRenameTabIcon}
+          onOpenWorkflowEditorForTab={handleOpenWorkflowEditorForTab}
+          onDeleteTableForTab={handleDeleteTableFromTab}
+          systemTabs={systemTabs}
+          onSystemTabChange={handleSystemTabChange}
+          groups={availableGroups}
+        />
+      </div>
+    );
+  }
+
+  const subdomainComponentRegistry = {
+    ...primitiveComponentDefinitions,
+    ...complexComponentDefinitions,
+    AutoAdminRoot: {
+      component: AutoAdminRootLayer,
+      schema: z.object({
+        className: z.string().optional(),
+        tabs: z.union([z.string(), z.array(z.unknown())]).optional(),
+        bindings: z.union([z.string(), z.record(z.unknown())]).optional(),
+        tabBindings: z.union([z.string(), z.record(z.unknown())]).optional(),
+        systemTabs: z.union([z.string(), z.record(z.unknown())]).optional(),
+        dataScopes: z.union([z.string(), z.record(z.unknown())]).optional(),
+        tabDataScopes: z.union([z.string(), z.record(z.unknown())]).optional(),
+      }),
+      fieldOverrides: {
+        className: (layer) => classNameFieldOverrides(layer),
+      },
+      from: '@/routes/plugin-studio/$projectId/$pluginId',
+    },
+  };
+
+  const handleSubdomainBuilderLayersChange = useCallback(
+    (layers: ComponentLayer[]) => {
+      const nextLayers = JSON.stringify(layers);
+      updateSidebarAdminTabs((state) => {
+        state.subdomainUiLayers[selectedSubdomain] = nextLayers;
+      });
+    },
+    [selectedSubdomain],
+  );
+
+  function getSubdomainLayers(entry: SubdomainPipelineState[number]): ComponentLayer[] {
+    const normalized = normalizeSubdomainName(entry.subdomain);
+    const parsedLayers = parseStoredSubdomainUiLayers(subdomainUiLayers[normalized]);
+    if (parsedLayers && parsedLayers.length > 0) return parsedLayers;
+    if (entry.autoAdminInjected || normalized === 'admin') {
+      return buildAdminInjectedLayers(normalized);
+    }
+    return toBlankSubdomainUiLayers(normalized);
+  }
 
   function getTargetSchemaDoc(schemaId?: string) {
     const normalizedSchemaId = schemaId?.trim();
@@ -5428,6 +5717,7 @@ function PluginStudioPresenter({
         ),
         systemTabs,
         subdomains,
+        subdomainUiLayers,
         cloudflareDnsAutoConfigured,
       }),
     );
@@ -5473,235 +5763,314 @@ function PluginStudioPresenter({
 
   if (isSubdomainStudioMode) {
     return (
-      <div className="relative min-h-screen w-full overflow-hidden bg-gradient-to-br from-background via-background to-accent/10">
+      <div className="relative min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-background via-background to-accent/10">
         <div className="pointer-events-none absolute -top-24 right-[-8%] h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-28 left-[-6%] h-64 w-64 rounded-full bg-accent/20 blur-3xl" />
-        <div className="mx-auto w-full max-w-7xl px-4 py-6 md:py-8">
+        <div
+          className={
+            isSubdomainBuilderOpen
+              ? 'w-full px-0 py-0'
+              : 'mx-auto w-full max-w-7xl px-4 py-6 md:py-8'
+          }
+        >
           <div className="relative space-y-6">
-              <div className="rounded-2xl border border-border/70 bg-card/80 p-5 backdrop-blur-sm">
-                <div className="space-y-3">
-                  <div className="group flex items-start gap-2">
-                    {editingMetadataField === 'title' ? (
-                      <Input
-                        value={editingMetadataValue}
-                        autoFocus
-                        placeholder="Plugin name"
-                        onChange={(event) => setEditingMetadataValue(event.target.value)}
-                        onBlur={commitMetadataEdit}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter') {
-                            event.preventDefault();
-                            commitMetadataEdit();
-                          }
-                          if (event.key === 'Escape') {
-                            event.preventDefault();
-                            stopMetadataEdit();
-                          }
-                        }}
-                        className="h-11 border-border/70 bg-background/80 text-2xl font-semibold text-foreground placeholder:text-muted-foreground md:text-3xl"
-                      />
-                    ) : (
-                      <p className="bg-gradient-to-r from-foreground via-foreground to-foreground/70 bg-clip-text text-2xl font-semibold text-transparent md:text-3xl">
-                        {activeDraftTitle}
-                      </p>
-                    )}
-                    {editingMetadataField === 'title' ? null : (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => beginMetadataEdit('title')}
-                        className="size-8 rounded-full border border-border/70 bg-background/75 p-0 text-muted-foreground opacity-0 transition hover:text-foreground group-hover:opacity-100 group-focus-within:opacity-100"
-                        aria-label="Edit title"
-                      >
-                        <Pencil className="size-3.5" />
-                      </Button>
-                    )}
-                  </div>
-                  <div className="group flex items-start gap-2">
-                    {editingMetadataField === 'description' ? (
-                      <Textarea
-                        value={editingMetadataValue}
-                        autoFocus
-                        placeholder="Add a description"
-                        onChange={(event) => setEditingMetadataValue(event.target.value)}
-                        onBlur={commitMetadataEdit}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Escape') {
-                            event.preventDefault();
-                            stopMetadataEdit();
-                          }
-                          if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-                            event.preventDefault();
-                            commitMetadataEdit();
-                          }
-                        }}
-                        className="min-h-[88px] resize-none border-border/70 bg-background/80 text-base leading-relaxed text-foreground placeholder:text-muted-foreground"
-                      />
-                    ) : (
-                      <p className="text-base text-muted-foreground">
-                        {activeDraftDescription || 'Add a description'}
-                      </p>
-                    )}
-                    {editingMetadataField === 'description' ? null : (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => beginMetadataEdit('description')}
-                        className="size-8 rounded-full border border-border/70 bg-background/75 p-0 text-muted-foreground opacity-0 transition hover:text-foreground group-hover:opacity-100 group-focus-within:opacity-100"
-                        aria-label="Edit description"
-                      >
-                        <Pencil className="size-3.5" />
-                      </Button>
-                    )}
-                  </div>
+            {isSubdomainBuilderOpen ? (
+              <div className="relative h-dvh w-full">
+                <div className="absolute left-4 top-4 z-20 flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-background/90 p-2 shadow-sm backdrop-blur">
+                  <Button type="button" variant="outline" onClick={closeSubdomainBuilder}>
+                    <ArrowLeft className="mr-2 size-4" />
+                    All subdomains
+                  </Button>
+                  <Badge variant="secondary">{selectedSubdomain}</Badge>
+                  <Button type="button" onClick={handleAddSubdomain}>
+                    <Plus className="mr-2 size-4" />
+                    Add subdomain
+                  </Button>
+                </div>
+                <div className="h-dvh w-full overflow-hidden">
+                  <ContextDataStore contextData={subdomainContextData}>
+                    <UIBuilder
+                      componentRegistry={subdomainComponentRegistry}
+                      initialLayers={selectedSubdomainLayers}
+                      onChange={handleSubdomainBuilderLayersChange}
+                      persistLayerStore={false}
+                      createNew={false}
+                      enableFocusMode
+                    />
+                  </ContextDataStore>
                 </div>
               </div>
+            ) : (
+              <>
+                <div className="rounded-2xl border border-border/70 bg-card/80 p-5 backdrop-blur-sm">
+                  <div className="space-y-3">
+                    <div className="group flex items-start gap-2">
+                      {editingMetadataField === 'title' ? (
+                        <Input
+                          value={editingMetadataValue}
+                          autoFocus
+                          placeholder="Plugin name"
+                          onChange={(event) => setEditingMetadataValue(event.target.value)}
+                          onBlur={commitMetadataEdit}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                              event.preventDefault();
+                              commitMetadataEdit();
+                            }
+                            if (event.key === 'Escape') {
+                              event.preventDefault();
+                              stopMetadataEdit();
+                            }
+                          }}
+                          className="h-11 border-border/70 bg-background/80 text-2xl font-semibold text-foreground placeholder:text-muted-foreground md:text-3xl"
+                        />
+                      ) : (
+                        <p className="bg-gradient-to-r from-foreground via-foreground to-foreground/70 bg-clip-text text-2xl font-semibold text-transparent md:text-3xl">
+                          {activeDraftTitle}
+                        </p>
+                      )}
+                      {editingMetadataField === 'title' ? null : (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => beginMetadataEdit('title')}
+                          className="size-8 rounded-full border border-border/70 bg-background/75 p-0 text-muted-foreground opacity-0 transition hover:text-foreground group-hover:opacity-100 group-focus-within:opacity-100"
+                          aria-label="Edit title"
+                        >
+                          <Pencil className="size-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="group flex items-start gap-2">
+                      {editingMetadataField === 'description' ? (
+                        <Textarea
+                          value={editingMetadataValue}
+                          autoFocus
+                          placeholder="Add a description"
+                          onChange={(event) => setEditingMetadataValue(event.target.value)}
+                          onBlur={commitMetadataEdit}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Escape') {
+                              event.preventDefault();
+                              stopMetadataEdit();
+                            }
+                            if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+                              event.preventDefault();
+                              commitMetadataEdit();
+                            }
+                          }}
+                          className="min-h-[88px] resize-none border-border/70 bg-background/80 text-base leading-relaxed text-foreground placeholder:text-muted-foreground"
+                        />
+                      ) : (
+                        <p className="text-base text-muted-foreground">
+                          {activeDraftDescription || 'Add a description'}
+                        </p>
+                      )}
+                      {editingMetadataField === 'description' ? null : (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => beginMetadataEdit('description')}
+                          className="size-8 rounded-full border border-border/70 bg-background/75 p-0 text-muted-foreground opacity-0 transition hover:text-foreground group-hover:opacity-100 group-focus-within:opacity-100"
+                          aria-label="Edit description"
+                        >
+                          <Pencil className="size-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
-              <div className="flex items-center justify-end">
-                <Button type="button" onClick={handleAddSubdomain}>
+                <div className="flex items-center justify-end">
+                  <Button type="button" onClick={handleAddSubdomain}>
                   <Plus className="mr-2 size-4" />
                   Add subdomain
                 </Button>
-              </div>
+                </div>
 
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {subdomains.map((entry) => {
-                  const normalizedSubdomain = normalizeSubdomainName(entry.subdomain);
-                  const displayTitle =
-                    normalizedSubdomain === 'index'
-                      ? 'Home'
-                      : normalizedSubdomain === 'admin'
-                        ? 'Admin'
-                        : normalizedSubdomain;
-                  const isDefaultSubdomain =
-                    normalizedSubdomain === 'index' || normalizedSubdomain === 'admin';
-                  const isSelected = normalizedSubdomain === selectedSubdomain;
-                  const isEditingTitle =
-                    editingSubdomainTitle?.originalSubdomain === entry.subdomain;
-                  return (
-                    <div key={normalizedSubdomain} className="space-y-2">
-                      <button
-                        type="button"
-                        className={`group block h-64 w-full rounded-2xl border p-4 text-left transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 ${isSelected
-                          ? 'border-primary/50 bg-gradient-to-br from-primary/10 via-accent/30 to-background shadow-sm'
-                          : 'border-border/70 bg-card hover:border-primary/40 hover:bg-accent/30 hover:shadow-sm'
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {subdomains.map((entry, cardIndex) => {
+                    const normalizedSubdomain = normalizeSubdomainName(entry.subdomain);
+                    const previewLayers = getSubdomainLayers(entry);
+                    const previewPage = previewLayers[0];
+                    const displayTitle =
+                      normalizedSubdomain === 'index'
+                        ? 'Home'
+                        : normalizedSubdomain === 'admin'
+                          ? 'Admin'
+                          : normalizedSubdomain;
+                    const isDefaultSubdomain =
+                      normalizedSubdomain === 'index' || normalizedSubdomain === 'admin';
+                    const isSelected = normalizedSubdomain === selectedSubdomain;
+                    const canMoveLeft = cardIndex > 0;
+                    const canMoveRight = cardIndex < subdomains.length - 1;
+                    const isEditingTitle =
+                      editingSubdomainTitle?.originalSubdomain === entry.subdomain;
+                    return (
+                      <div key={normalizedSubdomain} className="space-y-2">
+                        <button
+                          type="button"
+                          className={`group block h-72 w-full rounded-2xl border p-4 text-left transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 ${
+                            isSelected
+                              ? 'border-primary/50 bg-gradient-to-br from-primary/10 via-accent/20 to-background shadow-sm'
+                              : 'border-border/70 bg-card hover:border-primary/40 hover:bg-accent/20 hover:shadow-sm'
                           }`}
-                        onClick={() => openSubdomainBuilder(normalizedSubdomain)}
-                        onFocus={() => selectSubdomain(normalizedSubdomain)}
-                        onKeyDown={(event) => {
-                          if (event.key === 'ArrowRight') {
-                            event.preventDefault();
-                            moveSubdomainSelection(1);
-                          }
-                          if (event.key === 'ArrowLeft') {
-                            event.preventDefault();
-                            moveSubdomainSelection(-1);
-                          }
-                          if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault();
-                            openSubdomainBuilder(normalizedSubdomain);
-                          }
-                        }}
-                        aria-label={`Open ${displayTitle} builder`}
-                        aria-current={isSelected ? 'true' : undefined}
+                          onClick={() => openSubdomainBuilder(normalizedSubdomain)}
+                          onFocus={() => selectSubdomain(normalizedSubdomain)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'ArrowRight') {
+                              event.preventDefault();
+                              moveSubdomainSelection(1);
+                            }
+                            if (event.key === 'ArrowLeft') {
+                              event.preventDefault();
+                              moveSubdomainSelection(-1);
+                            }
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              openSubdomainBuilder(normalizedSubdomain);
+                            }
+                          }}
+                          aria-label={`Open ${displayTitle} builder`}
+                          aria-current={isSelected ? 'true' : undefined}
                         >
-                        <div className="mb-3 flex items-center justify-between">
-                          <div className="group/title flex items-center gap-1">
-                            {isEditingTitle ? (
-                              <Input
-                                value={editingSubdomainTitle.value}
-                                autoFocus
-                                onClick={(event) => event.stopPropagation()}
-                                onChange={(event) =>
-                                  setEditingSubdomainTitle((current) =>
-                                    current
-                                      ? { ...current, value: event.target.value }
-                                      : current,
-                                  )
-                                }
-                                onBlur={commitSubdomainTitleEdit}
-                                onKeyDown={(event) => {
-                                  if (event.key === 'Enter') {
-                                    event.preventDefault();
-                                    commitSubdomainTitleEdit();
+                          <div className="mb-3 flex items-center justify-between">
+                            <div className="group/title flex items-center gap-1">
+                              {isEditingTitle ? (
+                                <Input
+                                  value={editingSubdomainTitle.value}
+                                  autoFocus
+                                  placeholder="Subdomain title"
+                                  onClick={(event) => event.stopPropagation()}
+                                  onChange={(event) =>
+                                    setEditingSubdomainTitle((current) =>
+                                      current
+                                        ? { ...current, value: event.target.value }
+                                        : current,
+                                    )
                                   }
-                                  if (event.key === 'Escape') {
-                                    event.preventDefault();
-                                    cancelSubdomainTitleEdit();
-                                  }
-                                }}
-                                className="h-8 w-40"
-                              />
-                            ) : (
-                              <>
-                                <p className="text-sm font-semibold tracking-wide text-foreground">
-                                  {displayTitle}
-                                </p>
+                                  onBlur={commitSubdomainTitleEdit}
+                                  onKeyDown={(event) => {
+                                    if (event.key === 'Enter') {
+                                      event.preventDefault();
+                                      commitSubdomainTitleEdit();
+                                    }
+                                    if (event.key === 'Escape') {
+                                      event.preventDefault();
+                                      cancelSubdomainTitleEdit();
+                                    }
+                                  }}
+                                  className="h-8 w-40"
+                                />
+                              ) : (
+                                <>
+                                  <p className="text-sm font-semibold tracking-wide text-foreground">
+                                    {displayTitle}
+                                  </p>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    className="size-7 p-0 opacity-0 transition group-hover/title:opacity-100"
+                                    onClick={(event) => {
+                                      event.preventDefault();
+                                      event.stopPropagation();
+                                      beginSubdomainTitleEdit(entry.subdomain);
+                                    }}
+                                    aria-label={`Edit ${displayTitle} title`}
+                                  >
+                                    <Pencil className="size-3.5" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                            <div className="flex items-center">
+                              <div className="mr-1 hidden items-center gap-1 group-hover:inline-flex group-focus-within:inline-flex">
                                 <Button
                                   type="button"
-                                  size="sm"
-                                  variant="ghost"
-                                  className="size-7 p-0 opacity-0 transition group-hover/title:opacity-100"
+                                  size="icon"
+                                  variant="outline"
+                                  className="size-7"
+                                  disabled={!canMoveLeft}
                                   onClick={(event) => {
                                     event.preventDefault();
                                     event.stopPropagation();
-                                    beginSubdomainTitleEdit(entry.subdomain);
+                                    reorderSubdomainByOffset(-1, normalizedSubdomain);
                                   }}
-                                  aria-label={`Edit ${displayTitle} title`}
+                                  aria-label={`Move ${displayTitle} left`}
                                 >
-                                  <Pencil className="size-3.5" />
+                                  <ArrowLeft className="size-3.5" />
                                 </Button>
-                              </>
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="outline"
+                                  className="size-7"
+                                  disabled={!canMoveRight}
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    reorderSubdomainByOffset(1, normalizedSubdomain);
+                                  }}
+                                  aria-label={`Move ${displayTitle} right`}
+                                >
+                                  <ArrowRight className="size-3.5" />
+                                </Button>
+                              </div>
+                              <Badge
+                                variant="secondary"
+                                className="group-hover:hidden group-focus-within:hidden"
+                              >
+                                Live preview
+                              </Badge>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="destructive"
+                                className="hidden h-7 items-center gap-1 group-hover:inline-flex group-focus-within:inline-flex"
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  setPendingDeleteSubdomain(entry.subdomain);
+                                }}
+                                disabled={isDefaultSubdomain}
+                              >
+                                <Trash2 className="size-3.5" />
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="relative h-[calc(100%-2.25rem)] overflow-hidden rounded-xl border border-border/70 bg-background">
+                            {previewPage ? (
+                              <div className="pointer-events-none absolute left-0 top-0 h-[500%] w-[500%] origin-top-left scale-[0.2]">
+                                <ContextDataStore
+                                  contextData={{
+                                    ...subdomainContextData,
+                                    subdomain: normalizedSubdomain,
+                                  }}
+                                >
+                                  <LayerRenderer
+                                    componentRegistry={subdomainComponentRegistry}
+                                    page={previewPage}
+                                    className="min-h-screen w-screen bg-background"
+                                  />
+                                </ContextDataStore>
+                              </div>
+                            ) : (
+                              <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                                No preview available yet.
+                              </div>
                             )}
                           </div>
-                          <div className="flex items-center">
-                            <Badge
-                              variant="secondary"
-                              className="group-hover:hidden group-focus-within:hidden"
-                            >
-                              Live preview
-                            </Badge>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="destructive"
-                              className="hidden h-7 items-center gap-1 group-hover:inline-flex group-focus-within:inline-flex"
-                              onClick={(event) => {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                setPendingDeleteSubdomain(entry.subdomain);
-                              }}
-                              disabled={isDefaultSubdomain}
-                            >
-                              <Trash2 className="size-3.5" />
-                              Delete
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="h-[calc(100%-2.25rem)] rounded-xl border border-border/70 bg-muted/30 p-3">
-                          <div className="space-y-2">
-                            <div className="h-6 w-3/5 rounded-md bg-muted-foreground/20" />
-                            <div className="h-4 w-4/5 rounded-md bg-muted-foreground/15" />
-                            <div className="h-16 rounded-lg border border-border/60 bg-background/60" />
-                            <div className="grid grid-cols-3 gap-2">
-                              <div className="h-6 rounded-md bg-primary/30" />
-                              <div className="h-6 rounded-md bg-accent/70" />
-                              <div className="h-6 rounded-md bg-secondary" />
-                            </div>
-                            <p className="pt-1 text-xs text-muted-foreground">
-                              {entry.autoAdminInjected
-                                ? 'Admin schema + AutoAdmin presets ready.'
-                                : 'Blank UI Builder canvas with full component registry.'}
-                            </p>
-                          </div>
-                        </div>
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
               <AlertDialog
                 open={pendingDeleteSubdomain !== null}
                 onOpenChange={handleDeleteSubdomainDialogOpenChange}
@@ -5723,7 +6092,7 @@ function PluginStudioPresenter({
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-            </div>
+          </div>
         </div>
       </div>
     );
