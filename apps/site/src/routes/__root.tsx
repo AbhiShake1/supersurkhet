@@ -1,54 +1,56 @@
 import '@/lib/monkey-patches';
-import { VibeKanbanWebCompanion } from 'vibe-kanban-web-companion';
-import { Agentation } from 'agentation';
+import { DismissableLayerBranch } from '@radix-ui/react-dismissable-layer';
+import { TooltipProvider } from '@radix-ui/react-tooltip';
+import { TanStackDevtools } from '@tanstack/react-devtools';
+import type { QueryClient } from '@tanstack/react-query';
 import {
+  createRootRouteWithContext,
   HeadContent,
   Outlet,
   Scripts,
-  createRootRouteWithContext,
 } from '@tanstack/react-router';
-import { NuqsAdapter } from 'nuqs/adapters/tanstack-router';
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
-import { TanStackDevtools } from '@tanstack/react-devtools';
-import TanStackQueryDevtools from '../integrations/tanstack-query/devtools';
-import appCss from '../styles.css?url';
-import { NotFound } from '@/components/ui/not-found';
-import { ErrorComponent } from '@/components/ui/error';
-import { Toaster } from '@/components/ui/sonner';
-import { gun } from '@/lib/gun';
-import { DismissableLayerBranch } from '@radix-ui/react-dismissable-layer';
-import { TooltipProvider } from '@radix-ui/react-tooltip';
+import { Agentation } from 'agentation';
+import type { IGunUserInstance } from 'gun/types';
+import { NuqsAdapter } from 'nuqs/adapters/tanstack-router';
 import { useEffect } from 'react';
+import { VibeKanbanWebCompanion } from 'vibe-kanban-web-companion';
+import z from 'zod';
 import { AuthProvider } from '@/components/auth-provider';
 import { ConfettiProvider } from '@/components/confetti-provider';
 import { LoginPromptProvider } from '@/components/login-prompt-provider';
-import {
-  GoogleLoginProvider,
-  OneTapLoginProvider,
-} from '@/integrations/google/google-login-provider';
-import { setGTADefaultOptions } from '@/lib/gun/options';
-import { appSchema, transformSchema } from '@/lib/schema';
+import { ErrorComponent } from '@/components/ui/error';
+import { NotFound } from '@/components/ui/not-found';
+import { Toaster } from '@/components/ui/sonner';
+import { UserLoading } from '@/components/ui/user-loading';
+import { DialogProvider, DrawerProvider } from '@/contexts/dialog-context';
+import { I18nProvider } from '@/contexts/i18n-context';
 // import { QRScannerButton } from "@/components/ui/qr-scanner-button";
 // import { toast } from "sonner";
 // import type { DataMatrixAction } from "@/lib/datamatrix";
 import {
-  getAppTheme,
   getAppDarkMode,
+  getAppTheme,
   getAppThemeData,
   resolveDarkModePreference,
+  ThemeProvider as ThemeModeProvider,
 } from '@/contexts/theme-context';
-import { ThemeProvider as ThemeModeProvider } from '@/contexts/theme-context';
+import {
+  GoogleLoginProvider,
+  OneTapLoginProvider,
+} from '@/integrations/google/google-login-provider';
+import { gun } from '@/lib/gun';
+import { setGTADefaultOptions } from '@/lib/gun/options';
+import { getGunRef, mergeKeys } from '@/lib/gun/utils';
+import { bootstrapRuntimeHealth } from '@/lib/runtime-health';
+import { bootstrapLiveRuntimeRecovery } from '@/lib/runtime-recovery';
+import { appSchema, transformSchema } from '@/lib/schema';
 import { defaultPresets } from '@/lib/theme';
 import { buildCriticalThemeCss } from '@/lib/theme/critical-theme-css';
 import { migrateMarketplaceSeedReleases } from '@/server-functions/plugins';
 import { getUser, removeUser } from '@/server-functions/user';
-import type { IGunUserInstance } from 'gun/types';
-import z from 'zod';
-import { getGunRef, mergeKeys } from '@/lib/gun/utils';
-import { I18nProvider } from '@/contexts/i18n-context';
-import { DialogProvider, DrawerProvider } from '@/contexts/dialog-context';
-import type { QueryClient } from '@tanstack/react-query';
-import { UserLoading } from '@/components/ui/user-loading';
+import TanStackQueryDevtools from '../integrations/tanstack-query/devtools';
+import appCss from '../styles.css?url';
 
 setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
 
@@ -358,6 +360,23 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   useEffect(() => {
+    const runtimeHealth = bootstrapRuntimeHealth({
+      target: window,
+      getVisibilityState: () => document.visibilityState,
+      onError: (error) => {
+        console.error('Runtime health capture failed:', error);
+      },
+    });
+    const runtimeRecovery = bootstrapLiveRuntimeRecovery({
+      runtimeHealthService: runtimeHealth.service,
+      target: window,
+      threshold: 3,
+      thresholdWindowMs: 60_000,
+      onError: (error) => {
+        console.error('Runtime recovery evaluation failed:', error);
+      },
+    });
+
     void runMarketplaceSeedMigrationOnce();
     recallUser();
 
@@ -383,6 +402,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 
     return () => {
       window.removeEventListener('message', handleMessage);
+      runtimeRecovery.dispose();
+      runtimeHealth.dispose();
     };
   }, []);
 
@@ -545,7 +566,7 @@ function AgentationBridge() {
     const isAgentationTarget = (target: EventTarget | null) =>
       target instanceof Element &&
       target.closest('[data-feedback-toolbar], [data-agentation-root]') !==
-      null;
+        null;
 
     const handleFocusIn = (event: FocusEvent) => {
       if (!isAgentationTarget(event.target)) return;
