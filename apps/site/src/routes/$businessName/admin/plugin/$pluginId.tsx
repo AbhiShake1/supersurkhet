@@ -281,16 +281,20 @@ function PluginDetailsPage() {
     ? pluginData.isUpgradable
       ? `Upgrade to ${pluginData.latestRelease.version}`
       : pluginData.installed &&
-          (pluginData.installed.manifestHash !== pluginData.latestRelease.manifestHash ||
-            pluginData.installed.artifactHash !== pluginData.latestRelease.artifactHash)
+          (pluginData.installed.manifestHash !==
+            pluginData.latestRelease.manifestHash ||
+            pluginData.installed.artifactHash !==
+              pluginData.latestRelease.artifactHash)
         ? `Repair install ${pluginData.latestRelease.version}`
-      : `Installed ${pluginData.installed?.version}`
+        : `Installed ${pluginData.installed?.version}`
     : `Install ${pluginData.latestRelease.version}`;
   const hasInstallHashMismatch =
     pluginData.isInstalled &&
     Boolean(pluginData.installed) &&
-    (pluginData.installed?.manifestHash !== pluginData.latestRelease.manifestHash ||
-      pluginData.installed?.artifactHash !== pluginData.latestRelease.artifactHash);
+    (pluginData.installed?.manifestHash !==
+      pluginData.latestRelease.manifestHash ||
+      pluginData.installed?.artifactHash !==
+        pluginData.latestRelease.artifactHash);
 
   async function installCurrent() {
     if (!actorUserId) {
@@ -399,7 +403,9 @@ function PluginDetailsPage() {
     } catch (error) {
       console.error(error);
       if (error instanceof Error && error.name === 'HashVerificationError') {
-        toast.error('Install hashes are stale. Click Repair install, then retry.');
+        toast.error(
+          'Install hashes are stale. Click Repair install, then retry.',
+        );
         return;
       }
       toast.error('Failed to save review');
@@ -416,7 +422,7 @@ function PluginDetailsPage() {
         </Link>
       </Button>
 
-      <section className="grid gap-6 rounded-3xl border border-border/70 bg-background p-6 lg:grid-cols-[1fr_260px]">
+      <section className="grid gap-6 rounded-3xl border border-border/70 bg-background p-6">
         <div className="space-y-4">
           <h1 className="text-4xl font-semibold tracking-tight">
             {pluginData.title}
@@ -507,7 +513,7 @@ function PluginDetailsPage() {
             ) : null}
           </div>
         </div>
-        <div className="flex items-start justify-end">
+        <div className="flex items-start justify-start">
           {pluginData.iconUrl ? (
             <img
               src={pluginData.iconUrl}
@@ -540,7 +546,7 @@ function PluginDetailsPage() {
         </div>
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      <section className="grid gap-6">
         <div className="space-y-8">
           <Card className="py-4">
             <CardHeader className="px-5">
@@ -616,127 +622,130 @@ function PluginDetailsPage() {
             </CardContent>
           </Card>
 
-          <Card className="py-4">
-            <CardHeader className="px-5">
-              <CardTitle>Ratings and reviews</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-5 px-5">
-              <div className="grid gap-4 md:grid-cols-[220px_1fr]">
-                <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
-                  <p className="text-xs uppercase tracking-[0.08em] text-muted-foreground">
-                    Marketplace average
+          <section className="space-y-5">
+            <div className="relative overflow-hidden rounded-3xl border border-amber-200/70 bg-gradient-to-br from-amber-50 via-background to-sky-50 p-6 shadow-sm dark:border-amber-300/30 dark:from-amber-950/20 dark:to-sky-950/30 md:p-8">
+              <div className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full bg-amber-300/20 blur-3xl dark:bg-amber-500/20" />
+              <div className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-sky-300/20 blur-3xl dark:bg-sky-500/20" />
+              <div className="relative">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  Marketplace average
+                </p>
+                <div className="mt-3 flex items-end gap-3">
+                  <p className="text-6xl font-semibold tracking-tight md:text-7xl">
+                    {details.reviewStats.averageRating.toFixed(1)}
                   </p>
-                  <div className="mt-2 flex items-baseline gap-2">
-                    <p className="text-3xl font-semibold">
-                      {details.reviewStats.averageRating.toFixed(1)}
-                    </p>
-                    <span className="text-xs text-muted-foreground">/5</span>
-                  </div>
-                  <div className="mt-2">
-                    <Stars rating={details.reviewStats.averageRating} />
-                  </div>
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    {details.reviewStats.totalReviews.toLocaleString()} reviews
-                  </p>
+                  <span className="pb-2 text-sm text-muted-foreground md:text-base">
+                    out of 5
+                  </span>
                 </div>
+                <div className="mt-4">
+                  <Stars
+                    rating={details.reviewStats.averageRating}
+                    starClassName="size-6 md:size-7"
+                  />
+                </div>
+                <p className="mt-4 text-sm text-muted-foreground">
+                  Based on {details.reviewStats.totalReviews.toLocaleString()}{' '}
+                  verified marketplace reviews.
+                </p>
+              </div>
+            </div>
 
-                <div className="space-y-4">
-                  <div className="rounded-xl border border-border/70 p-3">
-                    <p className="text-sm font-medium">Your review</p>
-                    <div className="mt-2 flex items-center gap-1">
-                      {Array.from({ length: 5 }).map((_, index) => {
-                        const value = index + 1;
-                        const active = value <= reviewRating;
-                        return (
-                          <button
-                            key={`rating-star-${value.toString()}`}
-                            type="button"
-                            aria-label={`Rate ${value} star${value === 1 ? '' : 's'}`}
-                            className="rounded p-0.5 hover:bg-muted"
-                            onClick={() => setReviewRating(value)}
-                          >
-                            <Star
-                              className={cn(
-                                'size-5 transition-colors',
-                                active
-                                  ? 'fill-amber-400 text-amber-500'
-                                  : 'text-muted-foreground/40',
-                              )}
-                            />
-                          </button>
-                        );
-                      })}
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        {reviewRating > 0
-                          ? `${reviewRating.toString()}/5`
-                          : 'Select rating'}
-                      </span>
-                    </div>
-                    <Textarea
-                      className="mt-3 min-h-24"
-                      value={reviewComment}
-                      onChange={(event) => setReviewComment(event.target.value)}
-                      placeholder="Share details about your experience with this plugin."
-                      maxLength={2000}
-                    />
-                    <div className="mt-3 flex items-center justify-between gap-3">
-                      <span className="text-xs text-muted-foreground">
-                        You can edit and resave your review any time.
-                      </span>
-                      <Button
-                        size="sm"
-                        onClick={saveReview}
-                        loading={savingReview}
-                        disabled={
-                          savingReview || reviewRating <= 0 || !isReviewDirty
-                        }
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-border/70 p-4 md:p-5">
+                <p className="text-base font-medium">Your review</p>
+                <div className="mt-2 flex items-center gap-1">
+                  {Array.from({ length: 5 }).map((_, index) => {
+                    const value = index + 1;
+                    const active = value <= reviewRating;
+                    return (
+                      <button
+                        key={`rating-star-${value.toString()}`}
+                        type="button"
+                        aria-label={`Rate ${value} star${value === 1 ? '' : 's'}`}
+                        className="rounded p-0.5 hover:bg-muted"
+                        onClick={() => setReviewRating(value)}
                       >
-                        Save review
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Latest reviews</p>
-                    {reviewGroups.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        Be the first one to review this plugin.
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        {reviewGroups.map((group) => (
-                          <div
-                            key={group.userId}
-                            className="rounded-xl border border-border/70 p-3"
-                          >
-                            <div className="flex items-center justify-between gap-3">
-                              <p className="text-sm font-medium text-foreground">
-                                {group.userLabel}
-                                {group.isCurrentUser ? ' (You)' : ''}
-                              </p>
-                              <span className="text-xs text-muted-foreground">
-                                {new Date(
-                                  group.latestReview.createdAt,
-                                ).toLocaleDateString()}
-                              </span>
-                            </div>
-                            <div className="mt-1">
-                              <Stars rating={group.latestReview.rating} />
-                            </div>
-                            {group.latestReview.comment ? (
-                              <p className="mt-2 text-sm text-muted-foreground">
-                                {group.latestReview.comment}
-                              </p>
-                            ) : null}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                        <Star
+                          className={cn(
+                            'size-5 transition-colors',
+                            active
+                              ? 'fill-amber-400 text-amber-500'
+                              : 'text-muted-foreground/40',
+                          )}
+                        />
+                      </button>
+                    );
+                  })}
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    {reviewRating > 0
+                      ? `${reviewRating.toString()}/5`
+                      : 'Select rating'}
+                  </span>
+                </div>
+                <Textarea
+                  className="mt-3 min-h-24"
+                  value={reviewComment}
+                  onChange={(event) => setReviewComment(event.target.value)}
+                  placeholder="Share details about your experience with this plugin."
+                  maxLength={2000}
+                />
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <span className="text-xs text-muted-foreground">
+                    You can edit and resave your review any time.
+                  </span>
+                  <Button
+                    size="sm"
+                    onClick={saveReview}
+                    loading={savingReview}
+                    disabled={
+                      savingReview || reviewRating <= 0 || !isReviewDirty
+                    }
+                  >
+                    Save review
+                  </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Latest reviews</p>
+                {reviewGroups.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Be the first one to review this plugin.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {reviewGroups.map((group) => (
+                      <div
+                        key={group.userId}
+                        className="rounded-xl border border-border/70 p-3"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-sm font-medium text-foreground">
+                            {group.userLabel}
+                            {group.isCurrentUser ? ' (You)' : ''}
+                          </p>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(
+                              group.latestReview.createdAt,
+                            ).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div className="mt-1">
+                          <Stars rating={group.latestReview.rating} />
+                        </div>
+                        {group.latestReview.comment ? (
+                          <p className="mt-2 text-sm text-muted-foreground">
+                            {group.latestReview.comment}
+                          </p>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
         </div>
 
         <aside className="space-y-4">
@@ -816,7 +825,13 @@ function Stat({
   );
 }
 
-function Stars({ rating }: { rating: number }) {
+function Stars({
+  rating,
+  starClassName,
+}: {
+  rating: number;
+  starClassName?: string;
+}) {
   const rounded = Math.max(0, Math.min(5, Math.round(rating)));
 
   return (
@@ -825,7 +840,7 @@ function Stars({ rating }: { rating: number }) {
         <Star
           key={`stars-${index.toString()}`}
           className={cn(
-            'size-4',
+            starClassName ?? 'size-4',
             index < rounded
               ? 'fill-amber-400 text-amber-500'
               : 'text-muted-foreground/35',
