@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as S3testRouteImport } from './routes/s3test'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as CreateBusinessRouteImport } from './routes/create-business'
@@ -23,7 +22,6 @@ import { Route as BusinessNameIndexRouteImport } from './routes/$businessName/in
 import { Route as V1ModelsRouteImport } from './routes/v1/models'
 import { Route as ChatCompletionsRouteImport } from './routes/chat/completions'
 import { Route as BusinessChatRouteImport } from './routes/_business/chat'
-import { Route as AuthSettingsRouteImport } from './routes/_auth/settings'
 import { Route as AuthAuthRouteImport } from './routes/_auth/auth'
 import { Route as BusinessNameSubdomainRouteImport } from './routes/$businessName/$subdomain'
 import { Route as PluginStudioProjectIdIndexRouteImport } from './routes/plugin-studio/$projectId/index'
@@ -48,11 +46,6 @@ import { Route as BusinessNameAdminPluginPluginIdSchemaIdRouteImport } from './r
 import { Route as V1CliProjectsProjectIdTokensRotateRouteImport } from './routes/v1/cli/projects/$projectId/tokens/rotate'
 import { Route as V1CliProjectsProjectIdTokensTokenIdRouteImport } from './routes/v1/cli/projects/$projectId/tokens/$tokenId'
 
-const S3testRoute = S3testRouteImport.update({
-  id: '/s3test',
-  path: '/s3test',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
@@ -116,11 +109,6 @@ const BusinessChatRoute = BusinessChatRouteImport.update({
   id: '/_business/chat',
   path: '/chat',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AuthSettingsRoute = AuthSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AuthRoute,
 } as any)
 const AuthAuthRoute = AuthAuthRouteImport.update({
   id: '/auth',
@@ -260,10 +248,8 @@ export interface FileRoutesByFullPath {
   '/create-business': typeof CreateBusinessRoute
   '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
-  '/s3test': typeof S3testRoute
   '/$businessName/$subdomain': typeof BusinessNameSubdomainRoute
   '/auth': typeof AuthAuthRoute
-  '/settings': typeof AuthSettingsRoute
   '/chat': typeof BusinessChatRoute
   '/chat/completions': typeof ChatCompletionsRoute
   '/v1/models': typeof V1ModelsRoute
@@ -298,10 +284,8 @@ export interface FileRoutesByTo {
   '/create-business': typeof CreateBusinessRoute
   '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
-  '/s3test': typeof S3testRoute
   '/$businessName/$subdomain': typeof BusinessNameSubdomainRoute
   '/auth': typeof AuthAuthRoute
-  '/settings': typeof AuthSettingsRoute
   '/chat': typeof BusinessChatRoute
   '/chat/completions': typeof ChatCompletionsRoute
   '/v1/models': typeof V1ModelsRoute
@@ -339,10 +323,8 @@ export interface FileRoutesById {
   '/create-business': typeof CreateBusinessRoute
   '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
-  '/s3test': typeof S3testRoute
   '/$businessName/$subdomain': typeof BusinessNameSubdomainRoute
   '/_auth/auth': typeof AuthAuthRoute
-  '/_auth/settings': typeof AuthSettingsRoute
   '/_business/chat': typeof BusinessChatRoute
   '/chat/completions': typeof ChatCompletionsRoute
   '/v1/models': typeof V1ModelsRoute
@@ -380,10 +362,8 @@ export interface FileRouteTypes {
     | '/create-business'
     | '/mcp'
     | '/privacy'
-    | '/s3test'
     | '/$businessName/$subdomain'
     | '/auth'
-    | '/settings'
     | '/chat'
     | '/chat/completions'
     | '/v1/models'
@@ -418,10 +398,8 @@ export interface FileRouteTypes {
     | '/create-business'
     | '/mcp'
     | '/privacy'
-    | '/s3test'
     | '/$businessName/$subdomain'
     | '/auth'
-    | '/settings'
     | '/chat'
     | '/chat/completions'
     | '/v1/models'
@@ -458,10 +436,8 @@ export interface FileRouteTypes {
     | '/create-business'
     | '/mcp'
     | '/privacy'
-    | '/s3test'
     | '/$businessName/$subdomain'
     | '/_auth/auth'
-    | '/_auth/settings'
     | '/_business/chat'
     | '/chat/completions'
     | '/v1/models'
@@ -499,7 +475,6 @@ export interface RootRouteChildren {
   CreateBusinessRoute: typeof CreateBusinessRoute
   McpRoute: typeof McpRoute
   PrivacyRoute: typeof PrivacyRoute
-  S3testRoute: typeof S3testRoute
   BusinessChatRoute: typeof BusinessChatRoute
   ChatCompletionsRoute: typeof ChatCompletionsRoute
   V1ModelsRoute: typeof V1ModelsRoute
@@ -518,13 +493,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/s3test': {
-      id: '/s3test'
-      path: '/s3test'
-      fullPath: '/s3test'
-      preLoaderRoute: typeof S3testRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
@@ -615,13 +583,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/chat'
       preLoaderRoute: typeof BusinessChatRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_auth/settings': {
-      id: '/_auth/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthSettingsRouteImport
-      parentRoute: typeof AuthRoute
     }
     '/_auth/auth': {
       id: '/_auth/auth'
@@ -827,12 +788,10 @@ const BusinessNameRouteWithChildren = BusinessNameRoute._addFileChildren(
 
 interface AuthRouteChildren {
   AuthAuthRoute: typeof AuthAuthRoute
-  AuthSettingsRoute: typeof AuthSettingsRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthAuthRoute: AuthAuthRoute,
-  AuthSettingsRoute: AuthSettingsRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
@@ -896,7 +855,6 @@ const rootRouteChildren: RootRouteChildren = {
   CreateBusinessRoute: CreateBusinessRoute,
   McpRoute: McpRoute,
   PrivacyRoute: PrivacyRoute,
-  S3testRoute: S3testRoute,
   BusinessChatRoute: BusinessChatRoute,
   ChatCompletionsRoute: ChatCompletionsRoute,
   V1ModelsRoute: V1ModelsRoute,

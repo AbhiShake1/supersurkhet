@@ -58,12 +58,6 @@ export function UserAvatarDropdown(props: UserAvatarDropdownProps) {
               </div>
             </div>
             <div className="flex flex-col">
-              <Link
-                to="/settings"
-                className="px-4 py-2 hover:bg-muted text-left text-sm"
-              >
-                Settings
-              </Link>
               <button
                 type="button"
                 className="px-4 py-2 text-left text-sm text-destructive hover:bg-destructive/10"
