@@ -14,6 +14,7 @@ export const Route = createFileRoute('/admin')({
 });
 
 type RawShapeConfig = GTAAppConfig['schema'][SchemaKeys];
+type UnknownRow = Record<string, unknown>;
 
 function toRawShapeEntries(
   rawShape: typeof appSchema.rawShape,
@@ -21,11 +22,30 @@ function toRawShapeEntries(
   return Object.entries(rawShape) as Array<[SchemaKeys, RawShapeConfig]>;
 }
 
-function createAdminTab(schema: SchemaKeys) {
-  return {
-    schema,
-    slug: '',
-  } as unknown as AutoAdminTabInput;
+function normalizeAdminRows<TRow extends UnknownRow>(rows: TRow[]): TRow[] {
+  if (rows.length === 0) return rows;
+  const first = rows[0];
+  if ('timestamp' in first) return rows;
+
+  const flattened = rows
+    .flatMap((row) => {
+      const businessSource = row._;
+      const business =
+        businessSource &&
+        typeof businessSource === 'object' &&
+        'soul' in businessSource
+          ? businessSource.soul
+          : undefined;
+
+      return Object.values(row).map((value) =>
+        !value || typeof value !== 'object' || 'soul' in value
+          ? null
+          : { ...(value as UnknownRow), business },
+      );
+    })
+    .filter((value) => !!value && typeof value === 'object') as UnknownRow[];
+
+  return flattened.length > 0 ? (flattened as unknown as TRow[]) : rows;
 }
 
 function RouteComponent() {
@@ -49,7 +69,15 @@ function RouteComponent() {
 
   const tabs = entries
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([schemaKey]) => createAdminTab(schemaKey));
+    .map(([schemaKey]) => {
+      const transformer = (rows: UnknownRow[]) => normalizeAdminRows(rows);
+
+      return {
+        schema: schemaKey,
+        slug: '',
+        transformer,
+      };
+    }) as AutoAdminTabInput[];
 
   return <AutoAdmin tabs={tabs} />;
 }
