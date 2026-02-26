@@ -791,6 +791,137 @@ export const pluginWorkflowDeadLetterSchema = z
   })
   .extend(table);
 
+export const dataMatrixV2RetryClassSchema = z.enum([
+  'interactive_fast_fail',
+  'device_bridge',
+  'commit_background',
+  'scheduled_batch',
+]);
+
+const dataMatrixV2RetryPolicySchema = z.object({
+  maxAttempts: z.number().int().min(1),
+  backoffMs: z.number().int().min(0),
+});
+
+const dataMatrixV2SchedulerStatusSchema = z.enum(['active', 'paused']);
+
+const dataMatrixV2QueueStatusSchema = z.enum([
+  'queued',
+  'leased',
+  'running',
+  'completed',
+  'failed',
+  'cancelled',
+]);
+
+const dataMatrixV2RunStatusSchema = z.enum([
+  'running',
+  'completed',
+  'failed',
+  'cancelled',
+]);
+
+const dataMatrixV2StepAttemptStatusSchema = z.enum([
+  'running',
+  'completed',
+  'failed',
+  'skipped',
+  'cancelled',
+]);
+
+export const dataMatrixV2SchedulerSchema = z
+  .object({
+    id: z.string().describe('Deterministic scheduler id'),
+    businessId: z.string(),
+    workflowId: z.string(),
+    status: dataMatrixV2SchedulerStatusSchema.default('active'),
+    intervalMinutes: z.number().int().min(1),
+    timezone: z.string().default('UTC'),
+    payloadTemplate: jsonValueSchema.optional(),
+    retryClass: dataMatrixV2RetryClassSchema.optional(),
+    retryPolicy: dataMatrixV2RetryPolicySchema.optional(),
+    nextRunAt: z.string().datetime({ offset: true }),
+    lastRunAt: z.string().datetime({ offset: true }).optional(),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .extend(table);
+
+export const dataMatrixV2QueueJobSchema = z
+  .object({
+    id: z.string().describe('Deterministic queue job id'),
+    businessId: z.string(),
+    schedulerId: z.string().optional(),
+    workflowId: z.string(),
+    status: dataMatrixV2QueueStatusSchema,
+    payload: jsonValueSchema,
+    retryClass: dataMatrixV2RetryClassSchema.optional(),
+    retryPolicy: dataMatrixV2RetryPolicySchema.optional(),
+    attempts: z.number().int().min(0),
+    nextRunAt: z.string().datetime({ offset: true }),
+    leaseOwner: z.string().optional(),
+    leasedAt: z.string().datetime({ offset: true }).optional(),
+    leaseExpiresAt: z.string().datetime({ offset: true }).optional(),
+    startedAt: z.string().datetime({ offset: true }).optional(),
+    completedAt: z.string().datetime({ offset: true }).optional(),
+    failedAt: z.string().datetime({ offset: true }).optional(),
+    lastErrorCode: z.string().optional(),
+    lastErrorMessage: z.string().optional(),
+    clientTimezone: z.string().default('UTC'),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .extend(table);
+
+export const dataMatrixV2RunSchema = z
+  .object({
+    id: z.string(),
+    jobId: z.string(),
+    schedulerId: z.string().optional(),
+    businessId: z.string(),
+    workflowId: z.string(),
+    attempt: z.number().int().min(1),
+    status: dataMatrixV2RunStatusSchema,
+    retryClass: dataMatrixV2RetryClassSchema.optional(),
+    startedAt: z.string().datetime({ offset: true }),
+    finishedAt: z.string().datetime({ offset: true }).optional(),
+    errorCode: z.string().optional(),
+    errorMessage: z.string().optional(),
+  })
+  .extend(table);
+
+export const dataMatrixV2StepAttemptSchema = z
+  .object({
+    id: z.string(),
+    runId: z.string(),
+    jobId: z.string(),
+    stepId: z.string(),
+    attempt: z.number().int().min(1),
+    status: dataMatrixV2StepAttemptStatusSchema,
+    startedAt: z.string().datetime({ offset: true }),
+    finishedAt: z.string().datetime({ offset: true }).optional(),
+    output: jsonValueSchema.optional(),
+    errorCode: z.string().optional(),
+    errorMessage: z.string().optional(),
+  })
+  .extend(table);
+
+export const dataMatrixV2EventLogSchema = z
+  .object({
+    id: z.string(),
+    businessId: z.string(),
+    schedulerId: z.string().optional(),
+    jobId: z.string().optional(),
+    runId: z.string().optional(),
+    stepAttemptId: z.string().optional(),
+    level: z.enum(['info', 'warn', 'error']),
+    eventType: z.string(),
+    message: z.string(),
+    data: jsonValueSchema.optional(),
+    createdAt: z.string().datetime({ offset: true }),
+  })
+  .extend(table);
+
 export const cliApiTokenSchema = z
   .object({
     id: z

@@ -25,6 +25,11 @@ import {
   businessUiTemplateInstallSchema,
   cliApiTokenSchema,
   cliSchemaSnapshotSchema,
+  dataMatrixV2EventLogSchema,
+  dataMatrixV2QueueJobSchema,
+  dataMatrixV2RunSchema,
+  dataMatrixV2SchedulerSchema,
+  dataMatrixV2StepAttemptSchema,
   pluginActionCapabilityEnvelopeSchema,
   pluginActionDefinitionV3Schema,
   pluginActionManifestDocStorageSchema,
@@ -439,6 +444,36 @@ export const coreSchema = createSchema({
     icon: Lock,
     group: 'Plugin Platform',
   },
+  dataMatrixV2Scheduler: {
+    schema: dataMatrixV2SchedulerSchema,
+    title: 'DataMatrix V2 Schedulers',
+    icon: Clock,
+    group: 'Plugin Platform',
+  },
+  dataMatrixV2QueueJob: {
+    schema: dataMatrixV2QueueJobSchema,
+    title: 'DataMatrix V2 Queue Jobs',
+    icon: Clock,
+    group: 'Plugin Platform',
+  },
+  dataMatrixV2Run: {
+    schema: dataMatrixV2RunSchema,
+    title: 'DataMatrix V2 Runs',
+    icon: List,
+    group: 'Plugin Platform',
+  },
+  dataMatrixV2StepAttempt: {
+    schema: dataMatrixV2StepAttemptSchema,
+    title: 'DataMatrix V2 Step Attempts',
+    icon: List,
+    group: 'Plugin Platform',
+  },
+  dataMatrixV2EventLog: {
+    schema: dataMatrixV2EventLogSchema,
+    title: 'DataMatrix V2 Event Logs',
+    icon: List,
+    group: 'Plugin Platform',
+  },
   cliApiToken: {
     schema: cliApiTokenSchema,
     title: 'CLI API Tokens',
@@ -666,6 +701,11 @@ export type PluginWorkflowJobAttempt =
 export type PluginWorkflowEventLog = InferredTable<'pluginWorkflowEventLog'>;
 export type PluginWorkflowDeadLetter =
   InferredTable<'pluginWorkflowDeadLetter'>;
+export type DataMatrixV2Scheduler = InferredTable<'dataMatrixV2Scheduler'>;
+export type DataMatrixV2QueueJob = InferredTable<'dataMatrixV2QueueJob'>;
+export type DataMatrixV2Run = InferredTable<'dataMatrixV2Run'>;
+export type DataMatrixV2StepAttempt = InferredTable<'dataMatrixV2StepAttempt'>;
+export type DataMatrixV2EventLog = InferredTable<'dataMatrixV2EventLog'>;
 export type CliApiToken = InferredTable<'cliApiToken'>;
 export type CliSchemaSnapshot = InferredTable<'cliSchemaSnapshot'>;
 // #endregion
@@ -677,6 +717,11 @@ export {
   cliApiTokenSchema,
   cliSchemaSnapshotSchema,
   compilePluginSchemasFromDocs,
+  dataMatrixV2EventLogSchema,
+  dataMatrixV2QueueJobSchema,
+  dataMatrixV2RunSchema,
+  dataMatrixV2SchedulerSchema,
+  dataMatrixV2StepAttemptSchema,
   pluginActionCapabilityEnvelopeSchema,
   pluginActionDefinitionV3Schema,
   pluginActionManifestDocStorageSchema,
