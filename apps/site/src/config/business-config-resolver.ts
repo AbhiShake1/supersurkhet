@@ -212,7 +212,9 @@ export function resolveInstallDrivenSubdomainGuardRule({
     ]),
   );
 
-  let resolved: SubdomainAccessRule | null = null;
+  // Admin is protected by default unless a stricter rule is selected.
+  let resolved: SubdomainAccessRule | null =
+    normalizedSubdomain === 'admin' ? 'organization-member' : null;
   for (const install of installs) {
     if (install.businessId !== businessId || install.status !== 'active') {
       continue;

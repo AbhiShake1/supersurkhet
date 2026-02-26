@@ -189,6 +189,32 @@ describe('business config install-driven tab resolver', () => {
     expect(guardRule).toBe('authenticated-user');
   });
 
+  it('defaults admin subdomain guardrail to organization-member', () => {
+    const guardRule = resolveInstallDrivenSubdomainGuardRule({
+      businessId: 'business-1',
+      subdomain: 'admin',
+      installs: [],
+      releases: [],
+    });
+
+    expect(guardRule).toBe('organization-member');
+  });
+
+  it('keeps admin subdomain guardrail strict when no explicit guard is defined', () => {
+    const guardRule = resolveInstallDrivenSubdomainGuardRule({
+      businessId: 'business-1',
+      subdomain: 'admin',
+      installs: [install()],
+      releases: [
+        release({
+          adminTabs: [{ schema: '__plugin_studio_subdomain__/admin' }],
+        }),
+      ],
+    });
+
+    expect(guardRule).toBe('organization-member');
+  });
+
   it('chooses stricter rule when multiple installs target same subdomain', () => {
     const guardRule = resolveInstallDrivenSubdomainGuardRule({
       businessId: 'business-1',
