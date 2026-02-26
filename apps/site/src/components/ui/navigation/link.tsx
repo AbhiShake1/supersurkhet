@@ -14,5 +14,21 @@ export function Link({
   searchParams,
   ...props
 }: z.infer<typeof LinkSchema>) {
-  return <LinkBase {...props} to={page ?? '.'} search={searchParams ?? true} />;
+  const hasLegacySearch = page != null || searchParams !== undefined;
+
+  return (
+    <LinkBase
+      {...props}
+      to="."
+      search={
+        hasLegacySearch
+          ? (previous) => ({
+              ...previous,
+              ...(searchParams ?? {}),
+              ...(typeof page === 'string' ? { p: page } : {}),
+            })
+          : true
+      }
+    />
+  );
 }
