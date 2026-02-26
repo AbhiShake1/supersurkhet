@@ -432,10 +432,10 @@ declare global {
      readonly title: "Products";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Products & Inventory";
-     readonly components: () => Promise<{
+     readonly components: () => {
      name: string;
-     component: import("../components/ui/admin/index").AdminComponent;
-    }[]>;
+     component: React.LazyExoticComponent<import("../components/ui/admin/index").AdminComponent>;
+    }[];
     };
      readonly party: {
      readonly schema: import("zod").ZodObject<{
@@ -491,10 +491,10 @@ declare global {
      readonly title: "Purchase Parties";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
-     readonly components: () => Promise<{
+     readonly components: () => {
      name: string;
-     component: import("../components/ui/admin/index").AdminComponent;
-    }[]>;
+     component: React.LazyExoticComponent<import("../components/ui/admin/index").AdminComponent>;
+    }[];
     };
      readonly customer: {
      readonly schema: import("zod").ZodObject<{
@@ -666,10 +666,10 @@ declare global {
      readonly title: "Invoices";
      readonly icon: React.ForwardRefExoticComponent<import("@tabler/icons-react").IconProps & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
-     readonly components: () => Promise<{
+     readonly components: () => {
      name: string;
-     component: import("../components/ui/admin/index").AdminComponent;
-    }[]>;
+     component: React.LazyExoticComponent<import("../components/ui/admin/index").AdminComponent>;
+    }[];
     };
      readonly sale: {
      readonly schema: import("zod").ZodEffects<import("zod").ZodObject<{
@@ -1270,10 +1270,10 @@ declare global {
      readonly title: "Orders";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Business Operations";
-     readonly components: () => Promise<{
+     readonly components: () => {
      name: string;
-     component: import("../components/ui/admin/index").AdminComponent;
-    }[]>;
+     component: React.LazyExoticComponent<import("../components/ui/admin/index").AdminComponent>;
+    }[];
     };
      readonly menuItem: {
      readonly schema: import("zod").ZodObject<{
@@ -1363,10 +1363,10 @@ declare global {
      readonly title: "Menu Items";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Products & Inventory";
-     readonly components: () => Promise<{
+     readonly components: () => {
      name: string;
-     component: import("../components/ui/admin/index").AdminComponent;
-    }[]>;
+     component: React.LazyExoticComponent<import("../components/ui/admin/index").AdminComponent>;
+    }[];
     };
      readonly dataMatrixAction: {
      readonly schema: import("zod").ZodObject<{
@@ -2221,7 +2221,7 @@ declare global {
      readonly title: "Data Matrix Actions";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "System Configuration";
-     readonly components: () => Promise<never[]>;
+     readonly components: () => never[];
     };
      readonly recentlyUsedApp: {
      readonly schema: import("zod").ZodObject<{
@@ -2667,7 +2667,7 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }>, "many">;
-     returnedProducts: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+     returnedProducts: import("zod").ZodArray<import("zod").ZodObject<{
      product: import("zod").ZodEffects<import("zod").ZodString, string, string>;
      unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
      quantity: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
@@ -2710,7 +2710,7 @@ declare global {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
-    }>, "many">>;
+    }>, "many">;
     } & {
      timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
@@ -2740,15 +2740,7 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }[];
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     returnTime?: string | undefined;
-     destination?: string | undefined;
-     returnedProducts?: {
+     returnedProducts: {
      product: string;
      quantity: number;
      totalAmount: number;
@@ -2760,10 +2752,31 @@ declare global {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
-    }[] | undefined;
+    }[];
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     returnTime?: string | undefined;
+     destination?: string | undefined;
     }, {
      vehicleId: string;
      products: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     returnedProducts: {
      product: string;
      quantity: number;
      totalAmount: number;
@@ -2785,27 +2798,14 @@ declare global {
      dispatchTime?: string | undefined;
      returnTime?: string | undefined;
      destination?: string | undefined;
-     returnedProducts?: {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }[] | undefined;
     }>;
      readonly title: "Trips";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Logistics";
-     readonly components: () => Promise<{
+     readonly components: () => {
      name: string;
-     component: typeof import("../components/ui/admin/trip-management").TripManagement;
-    }[]>;
+     component: React.LazyExoticComponent<typeof import("../components/ui/admin/trip-management").default>;
+    }[];
     };
     }>;
 }
