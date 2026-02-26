@@ -401,3 +401,75 @@ Single shared coordination ledger for all parallel epic plans. Every plan update
   - `cd apps/site && pnpm vitest run src/lib/runtime-health/runtime-health-integration.test.ts src/lib/runtime-recovery/recovery-orchestrator.integration.test.ts src/lib/ai-policy/ai-policy-integration.test.ts src/lib/business-insights/insights.integration.test.ts src/components/ui/ui-builder/focus-mode.integration.test.tsx src/lib/ui-builder/store/editor-store.focus-mode.test.ts` -> passed (24 tests)
   - `cd apps/site && pnpm biome check src/routes/__root.tsx src/components/ui-builder.tsx src/components/ui/ui-builder/internal/editor-panel.tsx src/components/ui/ui-builder/internal/layers-panel.tsx src/components/ui/ui-builder/internal/config-panel.tsx src/routes/plugin-studio/-plugin-studio-global-command.tsx src/lib/ui-builder/store/editor-store.ts src/lib/ui-builder/store/editor-utils.ts src/lib/runtime-health/index.ts src/lib/runtime-recovery/recovery-orchestrator.ts src/components/permission-gate/business-access-gate.tsx src/lib/ai-policy/ai-surface-gates.ts src/lib/business-insights/index.ts src/hooks/use-business-analytics.ts src/lib/business-ai-assistant.ts` -> passed
   - `cd apps/site && pnpm tsc --noEmit` -> failed in many untouched files (pre-existing repo-wide type errors); not introduced by these integration changes.
+
+## Cycle DM2 - DataMatrix V2
+
+### Plan 090
+- Status: ready-for-integration
+- Last Updated By: Codex (GPT-5)
+- Last Updated At: 2026-02-26T14:47:02Z
+- Dependencies: 083
+- Contract Outputs:
+  - Added AI budget guard contracts in `apps/site/src/lib/datamatrix/ai-budget-guard.ts`: defaults (`2 per scan`, `8 per session`, `45s dedupe`), dedupe keying, and deterministic allow/block decisions with serializable guard state.
+  - Added vision fallback orchestration in `apps/site/src/lib/datamatrix/vision-fallback.ts` with provider-lane tagging (`official | optional`), one-upload-per-scan-attempt policy, timeout handling, and deterministic response contract (`resolved | blocked | failed`).
+  - Added server fallback entrypoint in `apps/site/src/server-functions/datamatrix-vision.ts` exposing `runDataMatrixVisionFallback` with strict input validation, credential-store-aware provider resolution, OAuth refresh handling, and AI SDK provider execution.
+  - Wired runtime scan-router fallback invocation from `apps/site/src/components/ui/datamatrix-scanner.tsx` to `runDataMatrixVisionFallback` with per-session fallback state persistence.
+  - Published integration artifact for 083/088/092 at `output/parallel/datamatrix-v2/090-vision-fallback-and-ai-budget-guard.md`.
+- Integration Risks:
+  - Runtime fallback AI success still depends on available provider credentials (environment API keys or stored provider credentials in `ss-ai-provider-store` cookie); missing credentials deterministically degrade to `provider_unavailable`.
+- Progress Log:
+  - 2026-02-26T13:37:00Z - Audited scoped 090 files and validated baseline tests/biome commands before patching.
+  - 2026-02-26T13:50:00Z - Fixed upload telemetry aggregation across multi-provider attempts to preserve one-upload guarantees in timeout/block/failure responses.
+  - 2026-02-26T13:54:22Z - Added regression coverage and published 090 integration artifact with constants/contracts/flags/failure semantics.
+  - 2026-02-26T14:47:02Z - Completed production wiring by binding scan-router fallback path to server vision runtime and enabling provider-backed AI execution with deterministic unavailable fallback.
+- Artifacts:
+  - `cd apps/site && pnpm vitest run src/server-functions/datamatrix-vision.test.ts src/lib/datamatrix/vision-fallback.test.ts src/lib/datamatrix/scan-router.test.ts` -> passed (17 tests; Vitest emitted non-blocking close-timeout warning after completion).
+  - `cd apps/site && pnpm biome check src/server-functions/datamatrix-vision.ts src/server-functions/datamatrix-vision.test.ts src/components/ui/datamatrix-scanner.tsx src/lib/datamatrix/vision-fallback.ts src/lib/datamatrix/ai-budget-guard.ts src/lib/datamatrix/scan-router.ts` -> passed.
+
+### Plan 091
+- Status: ready-for-integration
+- Last Updated By: Codex (GPT-5)
+- Last Updated At: 2026-02-26T13:54:49Z
+- Dependencies: 086
+- Contract Outputs:
+  - Added DM2 observability helper contract in `apps/site/src/lib/datamatrix/observability.ts` with canonical structured event fields (`businessId`, scheduler/job/run/step references), canonical event type set, and explicit severity taxonomy (`info|warn|error`).
+  - Added DM2 detailed-log retention engine in `apps/site/src/lib/datamatrix/retention.ts` with 30-day default policy, dry-run support, deterministic oldest-first prune selection, capped deletes (`maxRowsPerRun`), and invalid-timestamp safeguarding.
+  - Added retention runner server entrypoint in `apps/site/src/server-functions/datamatrix-retention.ts` wired to DM2 schema tables (`dataMatrixV2Run`, `dataMatrixV2StepAttempt`, `dataMatrixV2EventLog`) and lifecycle event emissions (`retention.started|completed|failed`).
+  - Added retention contract coverage in `apps/site/src/lib/datamatrix/retention.test.ts`, including prune behavior, dry-run behavior, cap safeguard behavior, and run-summary preservation safeguard.
+  - Published shard artifact `output/parallel/datamatrix-v2/091-observability-and-retention.md` for 088/092 integration consumption.
+- Integration Risks:
+  - Event sink uses system-scoped metadata (`businessId=datamatrix-system`, `schedulerId=datamatrix-retention`) for retention lifecycle logs; multi-tenant retention consumers should filter by `eventType`/IDs consistently.
+- Progress Log:
+  - 2026-02-26T13:37:00Z - Audited Plan 091 implementation and identified contract drift against Plan 086 DM2 schema (`pluginWorkflow*` vs `dataMatrixV2*` tables).
+  - 2026-02-26T13:45:00Z - Refactored observability, retention engine, and retention server function to DM2 schema-aligned event/run/step shapes.
+  - 2026-02-26T13:54:49Z - Added summary-history safeguard regression test and published 091 artifact with event taxonomy, retention assumptions, summary preservation, and data-loss safeguards.
+- Artifacts:
+  - `cd apps/site && pnpm vitest run src/lib/datamatrix/retention.test.ts` -> passed (4 tests; non-blocking Vitest close-timeout warning after completion).
+  - `cd apps/site && pnpm biome check src/lib/datamatrix/observability.ts src/lib/datamatrix/retention.ts src/server-functions/datamatrix-retention.ts` -> passed.
+
+### Plan 092 (Integration + E2E Rollup)
+- Status: blocked
+- Last Updated By: Codex (GPT-5)
+- Last Updated At: 2026-02-26T13:40:53Z
+- Dependencies: 081, 082, 083, 084, 085, 086, 087, 088, 089, 090, 091
+- Contract Outputs:
+  - Reconciled scheduler timezone contract mismatch by preserving valid caller-provided timezone IDs in `normalizeSchedulerClientTimezone` (`apps/site/src/lib/datamatrix/scheduler-worker.ts`).
+  - Applied rollup blocker cleanup for site-side verification gates (`apps/site` tests + Biome pass).
+  - Published refreshed consolidated DM2 integration rollup artifact at `output/parallel/datamatrix-v2/092-integration-e2e-rollup.md`.
+- Integration Risks:
+  - DM2 integration artifacts are still incomplete: 082 artifact remains `in-progress`; 083 and 085-091 artifacts are absent in `output/parallel/datamatrix-v2`.
+  - `datamatrix-agent-console` tests remain intentionally skipped due reproducible `Invalid hook call` when unskipped under current Vitest/runtime setup.
+  - `apps/surkhet` Biome check is blocked by pre-existing root Biome config schema mismatch.
+- Progress Log:
+  - 2026-02-26T13:18:04Z - Executed required orchestration checks, validated one-window tmux smoke assumptions, and applied scheduler timezone hotfix (`Asia/Kathmandu` preserved).
+  - 2026-02-26T13:34:56Z - Cleared site-side rollup blocker failures in verification matrix (`apps/site` test/biome pass).
+  - 2026-02-26T13:34:56Z - Re-validated full matrix and updated cycle artifact/ledger with current blocker set (dependency artifacts + skipped agent-console suite).
+  - 2026-02-26T13:40:53Z - Removed local Surkhet Biome-targeting config and restored baseline verification evidence for `apps/surkhet`.
+- Artifacts:
+  - `scripts/spawn-codex-parallel-plans.fish --profile datamatrix-v2 --dry-run` -> passed.
+  - `scripts/spawn-codex-parallel-plans.fish --profile datamatrix-v2 --plans 081 082 --no-attach --session dm2-smoke` -> passed.
+  - `tmux list-windows -t dm2-smoke` / `tmux list-panes -t dm2-smoke:0 ...` -> passed (single-window, 2-pane smoke confirmed).
+  - `cd apps/site && pnpm test` -> passed (131 files passed, 1 file skipped; 499 tests passed, 3 tests skipped).
+  - `cd apps/site && pnpm biome check` -> passed.
+  - `cd apps/surkhet && pnpm biome check .` -> failed (root `biome.json` schema mismatch: config `1.9.4` vs CLI `2.2.4`, plus unknown key `organizeImports`).
+  - `cd apps/site && pnpm vitest run src/lib/datamatrix/scheduler-worker.test.ts` -> passed (5 tests).
