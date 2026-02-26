@@ -40,10 +40,7 @@ type RuntimeRollbackView = Awaited<
 >;
 
 type LiveRuntimeRecoveryExecutionStatus =
-  | 'success'
-  | 'failed'
-  | 'partial'
-  | 'no-op';
+  RollbackExecutionResultDoc['status'];
 
 export type LiveRuntimeRecoveryExecutionResult = {
   status: LiveRuntimeRecoveryExecutionStatus;
@@ -76,14 +73,6 @@ export interface LiveRuntimeRecoveryRollbackAdapter {
 export type LiveRuntimeRecoveryRollbackAdapters = Partial<
   Record<RollbackStrategyKind, LiveRuntimeRecoveryRollbackAdapter>
 >;
-
-function toRollbackStepStatus(
-  status: LiveRuntimeRecoveryExecutionStatus,
-): RollbackExecutionStepResultDoc['status'] {
-  if (status === 'success') return 'succeeded';
-  if (status === 'no-op') return 'noop';
-  return status;
-}
 
 function getExecutionFailureReason(
   execution: RollbackExecutionResultDoc,
@@ -192,6 +181,7 @@ function createRollbackCandidates(
 }
 
 function isEditableTarget(target: EventTarget | null): boolean {
+  if (typeof HTMLElement === 'undefined') return false;
   if (!(target instanceof HTMLElement)) return false;
   if (target.isContentEditable) return true;
   const tag = target.tagName;
@@ -317,7 +307,7 @@ export function bootstrapLiveRuntimeRecovery(options: {
               buildExecutionStep({
                 stepId: `${plan.planId}-${strategy.strategy}`,
                 target: strategy.strategy,
-                status: toRollbackStepStatus(result.status),
+                status: result.status,
                 failureReason: result.failureReason,
                 appliedStrategies: result.appliedStrategies ?? [
                   strategy.strategy,

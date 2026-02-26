@@ -38,15 +38,16 @@ class TestRuntimeRecoveryEventTarget {
     this.listeners.get(type)?.delete(listener);
   }
 
-  emit(type: string) {
+  emit(type: string, eventInit?: Record<string, unknown>) {
     const listeners = this.listeners.get(type);
     if (!listeners) return;
+    const event = { type, ...eventInit } as Event;
 
     for (const listener of listeners) {
       if (typeof listener === 'function') {
-        listener({ type } as Event);
+        listener(event);
       } else {
-        listener.handleEvent({ type } as Event);
+        listener.handleEvent(event);
       }
     }
   }
@@ -133,7 +134,7 @@ describe('bootstrapLiveRuntimeRecovery', () => {
     ) => {
       executeCallInput = input;
       return {
-        status: 'success',
+        status: 'succeeded',
         appliedStrategies: ['plugin-install-state'],
       };
     };
@@ -163,9 +164,7 @@ describe('bootstrapLiveRuntimeRecovery', () => {
       'onClick' in warningPayload.action &&
       typeof warningPayload.action.onClick === 'function'
     ) {
-      (warningPayload.action.onClick as unknown as (event: MouseEvent) => void)(
-        new MouseEvent('click'),
-      );
+      (warningPayload.action.onClick as unknown as () => void)();
     }
     await flushAsyncWork();
 
@@ -181,6 +180,52 @@ describe('bootstrapLiveRuntimeRecovery', () => {
         rows[1].execution.steps[0]?.details?.appliedStrategies;
       expect(appliedStrategies).toEqual(['plugin-install-state']);
     }
+
+    runtimeRecovery.dispose();
+  });
+
+  it('handles Enter shortcut in non-browser test events', async () => {
+    const target = new TestRuntimeRecoveryEventTarget();
+    const runtimeHealthService = createRuntimeHealthServiceStub(
+      createLastKnownGoodSnapshot(),
+    );
+    let executeCallCount = 0;
+    const execute: LiveRuntimeRecoveryRollbackAdapter['execute'] = async () => {
+      executeCallCount += 1;
+      return {
+        status: 'succeeded',
+        appliedStrategies: ['plugin-install-state'],
+      };
+    };
+    const preventDefault = vi.fn();
+    const runtimeRecovery = bootstrapLiveRuntimeRecovery({
+      runtimeHealthService,
+      target,
+      threshold: 1,
+      thresholdWindowMs: 60_000,
+      rollbackAdapters: {
+        'plugin-install-state': {
+          execute,
+        },
+      },
+    });
+
+    target.emit('error');
+    await flushAsyncWork();
+
+    target.emit('keydown', {
+      key: 'Enter',
+      ctrlKey: false,
+      metaKey: false,
+      altKey: false,
+      shiftKey: false,
+      preventDefault,
+      target: null,
+    });
+    await flushAsyncWork();
+
+    expect(executeCallCount).toBe(1);
+    expect(preventDefault).toHaveBeenCalledTimes(1);
 
     runtimeRecovery.dispose();
   });
