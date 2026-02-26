@@ -176,12 +176,98 @@ async function sleep(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export type WorkflowRetryBackoffStrategy = 'fixed' | 'exponential';
+
+export type WorkflowRetryExecutionPolicy = {
+  maxAttempts: number;
+  baseBackoffMs: number;
+  backoffStrategy: WorkflowRetryBackoffStrategy;
+};
+
+export const WORKFLOW_RETRY_CLASS_POLICIES = {
+  interactive_fast_fail: {
+    maxAttempts: 2,
+    backoffMs: 250,
+    backoffStrategy: 'fixed',
+  },
+  device_bridge: {
+    maxAttempts: 4,
+    backoffMs: 500,
+    backoffStrategy: 'fixed',
+  },
+  commit_background: {
+    maxAttempts: 5,
+    backoffMs: 1000,
+    backoffStrategy: 'exponential',
+  },
+  scheduled_batch: {
+    maxAttempts: 6,
+    backoffMs: 5000,
+    backoffStrategy: 'exponential',
+  },
+} as const;
+
+export type WorkflowRetryClass = keyof typeof WORKFLOW_RETRY_CLASS_POLICIES;
+
+function toWorkflowRetryClass(value: unknown): WorkflowRetryClass | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  if (value in WORKFLOW_RETRY_CLASS_POLICIES) {
+    return value as WorkflowRetryClass;
+  }
+  return undefined;
+}
+
+export function resolveWorkflowRetryPolicy(
+  node: WorkflowNodeDoc,
+): WorkflowRetryExecutionPolicy {
+  if (node.retryPolicy) {
+    return {
+      maxAttempts: Math.max(node.retryPolicy.maxAttempts ?? 1, 1),
+      baseBackoffMs: Math.max(node.retryPolicy.backoffMs ?? 0, 0),
+      backoffStrategy: 'exponential',
+    };
+  }
+
+  const retryClass = toWorkflowRetryClass(
+    (node as WorkflowNodeDoc & { retryClass?: unknown }).retryClass,
+  );
+  if (retryClass) {
+    const classPolicy = WORKFLOW_RETRY_CLASS_POLICIES[retryClass];
+    return {
+      maxAttempts: classPolicy.maxAttempts,
+      baseBackoffMs: classPolicy.backoffMs,
+      backoffStrategy: classPolicy.backoffStrategy,
+    };
+  }
+
+  return {
+    maxAttempts: 1,
+    baseBackoffMs: 0,
+    backoffStrategy: 'exponential',
+  };
+}
+
+export function computeWorkflowRetryBackoffMs(
+  policy: WorkflowRetryExecutionPolicy,
+  attempt: number,
+): number {
+  if (policy.baseBackoffMs <= 0) {
+    return 0;
+  }
+  if (policy.backoffStrategy === 'fixed') {
+    return policy.baseBackoffMs;
+  }
+  return policy.baseBackoffMs * 2 ** (attempt - 1);
+}
+
 async function executeNodeWithPolicy(args: {
   node: WorkflowNodeDoc;
   run: () => Promise<unknown>;
 }): Promise<unknown> {
-  const maxAttempts = Math.max(args.node.retryPolicy?.maxAttempts ?? 1, 1);
-  const baseBackoffMs = Math.max(args.node.retryPolicy?.backoffMs ?? 0, 0);
+  const policy = resolveWorkflowRetryPolicy(args.node);
+  const maxAttempts = policy.maxAttempts;
   let attempt = 0;
   let lastError: unknown;
 
@@ -194,7 +280,7 @@ async function executeNodeWithPolicy(args: {
       if (attempt >= maxAttempts) {
         break;
       }
-      const backoffMs = baseBackoffMs * 2 ** (attempt - 1);
+      const backoffMs = computeWorkflowRetryBackoffMs(policy, attempt);
       await sleep(backoffMs);
     }
   }

@@ -189,6 +189,13 @@ const pluginSchemaDocBaseSchema = z.object({
   tokens: z.record(z.string(), jsonValueSchema).optional(),
 });
 
+const workflowRetryClassSchema = z.enum([
+  'interactive_fast_fail',
+  'device_bridge',
+  'commit_background',
+  'scheduled_batch',
+]);
+
 const workflowNodeDocSchema = z.object({
   nodeId: z.string(),
   type: z.literal('action').optional(),
@@ -203,6 +210,7 @@ const workflowNodeDocSchema = z.object({
     ])
     .optional(),
   runIf: expressionDocSchema.optional(),
+  retryClass: workflowRetryClassSchema.optional(),
   retryPolicy: z
     .object({
       maxAttempts: z.number().int().min(1),

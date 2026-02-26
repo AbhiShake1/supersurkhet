@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createPluginRuntimeRegistry } from '@/lib/plugins/runtime-registry';
 import type {
   BusinessPluginInstallDoc,
@@ -6,8 +6,10 @@ import type {
   WorkflowDoc,
 } from '@/lib/plugins/types';
 import {
+  computeWorkflowRetryBackoffMs,
   executeLifecycleHook,
   HashVerificationError,
+  resolveWorkflowRetryPolicy,
 } from '@/lib/plugins/workflow-executor';
 
 function baseRelease(workflow: WorkflowDoc): PluginReleaseDoc {
@@ -75,6 +77,11 @@ function baseInstall(
 }
 
 describe('workflow executor', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
   it('blocks execution when install hashes do not match release hashes', async () => {
     const registry = createPluginRuntimeRegistry();
     const workflow: WorkflowDoc = {
@@ -464,5 +471,158 @@ describe('workflow executor', () => {
     expect(attempts).toBe(2);
     expect(result.actionOutputsByNodeId.n1).toEqual({ ok: true });
     expect(result.actionOutputsByNodeId.n2).toEqual({ ok: true });
+  });
+
+  it('resolves retry class timing matrix policies', () => {
+    const interactivePolicy = resolveWorkflowRetryPolicy({
+      nodeId: 'n1',
+      retryClass: 'interactive_fast_fail',
+    } as WorkflowDoc['nodes'][number]);
+    expect(interactivePolicy).toEqual({
+      maxAttempts: 2,
+      baseBackoffMs: 250,
+      backoffStrategy: 'fixed',
+    });
+    expect(computeWorkflowRetryBackoffMs(interactivePolicy, 1)).toBe(250);
+    expect(computeWorkflowRetryBackoffMs(interactivePolicy, 2)).toBe(250);
+
+    const devicePolicy = resolveWorkflowRetryPolicy({
+      nodeId: 'n2',
+      retryClass: 'device_bridge',
+    } as WorkflowDoc['nodes'][number]);
+    expect(devicePolicy).toEqual({
+      maxAttempts: 4,
+      baseBackoffMs: 500,
+      backoffStrategy: 'fixed',
+    });
+    expect(computeWorkflowRetryBackoffMs(devicePolicy, 1)).toBe(500);
+    expect(computeWorkflowRetryBackoffMs(devicePolicy, 3)).toBe(500);
+
+    const backgroundPolicy = resolveWorkflowRetryPolicy({
+      nodeId: 'n3',
+      retryClass: 'commit_background',
+    } as WorkflowDoc['nodes'][number]);
+    expect(backgroundPolicy).toEqual({
+      maxAttempts: 5,
+      baseBackoffMs: 1000,
+      backoffStrategy: 'exponential',
+    });
+    expect(computeWorkflowRetryBackoffMs(backgroundPolicy, 1)).toBe(1000);
+    expect(computeWorkflowRetryBackoffMs(backgroundPolicy, 2)).toBe(2000);
+    expect(computeWorkflowRetryBackoffMs(backgroundPolicy, 3)).toBe(4000);
+
+    const batchPolicy = resolveWorkflowRetryPolicy({
+      nodeId: 'n4',
+      retryClass: 'scheduled_batch',
+    } as WorkflowDoc['nodes'][number]);
+    expect(batchPolicy).toEqual({
+      maxAttempts: 6,
+      baseBackoffMs: 5000,
+      backoffStrategy: 'exponential',
+    });
+    expect(computeWorkflowRetryBackoffMs(batchPolicy, 1)).toBe(5000);
+    expect(computeWorkflowRetryBackoffMs(batchPolicy, 2)).toBe(10000);
+    expect(computeWorkflowRetryBackoffMs(batchPolicy, 3)).toBe(20000);
+    expect(computeWorkflowRetryBackoffMs(batchPolicy, 4)).toBe(40000);
+    expect(computeWorkflowRetryBackoffMs(batchPolicy, 5)).toBe(80000);
+  });
+
+  it('uses explicit retryPolicy over retryClass defaults', () => {
+    const policy = resolveWorkflowRetryPolicy({
+      nodeId: 'n1',
+      retryClass: 'scheduled_batch',
+      retryPolicy: {
+        maxAttempts: 3,
+        backoffMs: 7,
+      },
+    } as WorkflowDoc['nodes'][number]);
+
+    expect(policy).toEqual({
+      maxAttempts: 3,
+      baseBackoffMs: 7,
+      backoffStrategy: 'exponential',
+    });
+    expect(computeWorkflowRetryBackoffMs(policy, 1)).toBe(7);
+    expect(computeWorkflowRetryBackoffMs(policy, 2)).toBe(14);
+  });
+
+  it('applies retryClass max attempts during execution', async () => {
+    const registry = createPluginRuntimeRegistry();
+    let attempts = 0;
+    registry.publishRelease(
+      baseRelease({
+        workflowId: 'wf-retry-class-runtime-attempts',
+        table: 'order',
+        hook: 'afterUpdate',
+        nodes: [
+          {
+            nodeId: 'n1',
+            type: 'action',
+            actionId: 'core.device',
+            retryClass: 'device_bridge',
+          },
+        ],
+        edges: [],
+      }),
+    );
+    registry.installRelease(baseInstall(), { explicitOwnerUpdate: true });
+
+    const executionPromise = executeLifecycleHook({
+      registry,
+      businessId: 'business-1',
+      table: 'order',
+      hook: 'afterUpdate',
+      payload: { id: 'o-1' },
+      actionHandlers: {
+        'core.device': async () => {
+          attempts += 1;
+          throw new Error('device failure');
+        },
+      },
+    });
+
+    const rejection =
+      expect(executionPromise).rejects.toThrow('device failure');
+    await rejection;
+    expect(attempts).toBe(4);
+  });
+
+  it('preserves legacy single-attempt behavior without retry policy or class', async () => {
+    const registry = createPluginRuntimeRegistry();
+    let attempts = 0;
+    registry.publishRelease(
+      baseRelease({
+        workflowId: 'wf-retry-legacy-default',
+        table: 'order',
+        hook: 'afterUpdate',
+        nodes: [
+          {
+            nodeId: 'n1',
+            type: 'action',
+            actionId: 'core.legacy',
+          },
+        ],
+        edges: [],
+      }),
+    );
+    registry.installRelease(baseInstall(), { explicitOwnerUpdate: true });
+
+    await expect(
+      executeLifecycleHook({
+        registry,
+        businessId: 'business-1',
+        table: 'order',
+        hook: 'afterUpdate',
+        payload: { id: 'o-1' },
+        actionHandlers: {
+          'core.legacy': async () => {
+            attempts += 1;
+            throw new Error('legacy failure');
+          },
+        },
+      }),
+    ).rejects.toThrow('legacy failure');
+
+    expect(attempts).toBe(1);
   });
 });
