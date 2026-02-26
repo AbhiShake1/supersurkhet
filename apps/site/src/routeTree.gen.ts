@@ -28,6 +28,7 @@ import { Route as V1ChatCompletionsRouteImport } from './routes/v1/chat/completi
 import { Route as V1AuthSessionsRouteImport } from './routes/v1/auth/sessions'
 import { Route as V1AuthProvidersRouteImport } from './routes/v1/auth/providers'
 import { Route as PluginStudioProjectIdPluginIdRouteImport } from './routes/plugin-studio/$projectId/$pluginId'
+import { Route as BusinessNameAdminQrAgentRouteImport } from './routes/$businessName/admin/qr-agent'
 import { Route as BusinessNameAdminPluginsRouteImport } from './routes/$businessName/admin/plugins'
 import { Route as BusinessNameAdminInvitationRouteImport } from './routes/$businessName/admin/invitation'
 import { Route as BusinessNameAdminEditorRouteImport } from './routes/$businessName/admin/editor'
@@ -143,6 +144,12 @@ const PluginStudioProjectIdPluginIdRoute =
     id: '/plugin-studio/$projectId/$pluginId',
     path: '/plugin-studio/$projectId/$pluginId',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const BusinessNameAdminQrAgentRoute =
+  BusinessNameAdminQrAgentRouteImport.update({
+    id: '/admin/qr-agent',
+    path: '/admin/qr-agent',
+    getParentRoute: () => BusinessNameRoute,
   } as any)
 const BusinessNameAdminPluginsRoute =
   BusinessNameAdminPluginsRouteImport.update({
@@ -267,6 +274,7 @@ export interface FileRoutesByFullPath {
   '/$businessName/admin/editor': typeof BusinessNameAdminEditorRoute
   '/$businessName/admin/invitation': typeof BusinessNameAdminInvitationRoute
   '/$businessName/admin/plugins': typeof BusinessNameAdminPluginsRoute
+  '/$businessName/admin/qr-agent': typeof BusinessNameAdminQrAgentRoute
   '/plugin-studio/$projectId/$pluginId': typeof PluginStudioProjectIdPluginIdRouteWithChildren
   '/v1/auth/providers': typeof V1AuthProvidersRouteWithChildren
   '/v1/auth/sessions': typeof V1AuthSessionsRoute
@@ -305,6 +313,7 @@ export interface FileRoutesByTo {
   '/$businessName/admin/editor': typeof BusinessNameAdminEditorRoute
   '/$businessName/admin/invitation': typeof BusinessNameAdminInvitationRoute
   '/$businessName/admin/plugins': typeof BusinessNameAdminPluginsRoute
+  '/$businessName/admin/qr-agent': typeof BusinessNameAdminQrAgentRoute
   '/v1/auth/providers': typeof V1AuthProvidersRouteWithChildren
   '/v1/auth/sessions': typeof V1AuthSessionsRoute
   '/v1/chat/completions': typeof V1ChatCompletionsRoute
@@ -344,6 +353,7 @@ export interface FileRoutesById {
   '/$businessName/admin/editor': typeof BusinessNameAdminEditorRoute
   '/$businessName/admin/invitation': typeof BusinessNameAdminInvitationRoute
   '/$businessName/admin/plugins': typeof BusinessNameAdminPluginsRoute
+  '/$businessName/admin/qr-agent': typeof BusinessNameAdminQrAgentRoute
   '/plugin-studio/$projectId/$pluginId': typeof PluginStudioProjectIdPluginIdRouteWithChildren
   '/v1/auth/providers': typeof V1AuthProvidersRouteWithChildren
   '/v1/auth/sessions': typeof V1AuthSessionsRoute
@@ -384,6 +394,7 @@ export interface FileRouteTypes {
     | '/$businessName/admin/editor'
     | '/$businessName/admin/invitation'
     | '/$businessName/admin/plugins'
+    | '/$businessName/admin/qr-agent'
     | '/plugin-studio/$projectId/$pluginId'
     | '/v1/auth/providers'
     | '/v1/auth/sessions'
@@ -422,6 +433,7 @@ export interface FileRouteTypes {
     | '/$businessName/admin/editor'
     | '/$businessName/admin/invitation'
     | '/$businessName/admin/plugins'
+    | '/$businessName/admin/qr-agent'
     | '/v1/auth/providers'
     | '/v1/auth/sessions'
     | '/v1/chat/completions'
@@ -460,6 +472,7 @@ export interface FileRouteTypes {
     | '/$businessName/admin/editor'
     | '/$businessName/admin/invitation'
     | '/$businessName/admin/plugins'
+    | '/$businessName/admin/qr-agent'
     | '/plugin-studio/$projectId/$pluginId'
     | '/v1/auth/providers'
     | '/v1/auth/sessions'
@@ -641,6 +654,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PluginStudioProjectIdPluginIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$businessName/admin/qr-agent': {
+      id: '/$businessName/admin/qr-agent'
+      path: '/admin/qr-agent'
+      fullPath: '/$businessName/admin/qr-agent'
+      preLoaderRoute: typeof BusinessNameAdminQrAgentRouteImport
+      parentRoute: typeof BusinessNameRoute
+    }
     '/$businessName/admin/plugins': {
       id: '/$businessName/admin/plugins'
       path: '/admin/plugins'
@@ -790,6 +810,7 @@ interface BusinessNameRouteChildren {
   BusinessNameAdminEditorRoute: typeof BusinessNameAdminEditorRoute
   BusinessNameAdminInvitationRoute: typeof BusinessNameAdminInvitationRoute
   BusinessNameAdminPluginsRoute: typeof BusinessNameAdminPluginsRoute
+  BusinessNameAdminQrAgentRoute: typeof BusinessNameAdminQrAgentRoute
   BusinessNameAdminPluginPluginIdRoute: typeof BusinessNameAdminPluginPluginIdRouteWithChildren
 }
 
@@ -799,6 +820,7 @@ const BusinessNameRouteChildren: BusinessNameRouteChildren = {
   BusinessNameAdminEditorRoute: BusinessNameAdminEditorRoute,
   BusinessNameAdminInvitationRoute: BusinessNameAdminInvitationRoute,
   BusinessNameAdminPluginsRoute: BusinessNameAdminPluginsRoute,
+  BusinessNameAdminQrAgentRoute: BusinessNameAdminQrAgentRoute,
   BusinessNameAdminPluginPluginIdRoute:
     BusinessNameAdminPluginPluginIdRouteWithChildren,
 }
