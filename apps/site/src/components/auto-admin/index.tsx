@@ -1118,6 +1118,70 @@ export type AutoKanbanProps<K extends SchemaKeys> = {
   ) => void | Promise<void>;
 };
 
+type WrappedEnumField = {
+  Values?: Record<string, string>;
+  options?: readonly string[];
+  enum?: Record<string, string | number>;
+  _def?: {
+    innerType?: WrappedEnumField;
+    schema?: WrappedEnumField;
+    type?: WrappedEnumField;
+    out?: WrappedEnumField;
+    in?: WrappedEnumField;
+  };
+};
+
+function getWrappedEnumValues(field: WrappedEnumField | undefined): string[] {
+  if (!field) return [];
+
+  const queue: WrappedEnumField[] = [field];
+  const visited = new Set<WrappedEnumField>();
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (!current || visited.has(current)) continue;
+    visited.add(current);
+
+    const values = current.Values;
+    if (values) {
+      const keys = Object.keys(values);
+      if (keys.length > 0) return keys;
+    }
+
+    const options = current.options;
+    if (Array.isArray(options) && options.length > 0) {
+      return [...options];
+    }
+
+    const nativeEnumValues = current.enum
+      ? [
+          ...new Set(
+            Object.values(current.enum).filter(
+              (value): value is string => typeof value === 'string',
+            ),
+          ),
+        ]
+      : [];
+    if (nativeEnumValues.length > 0) {
+      return nativeEnumValues;
+    }
+
+    for (const candidate of [
+      current._def?.innerType,
+      current._def?.schema,
+      current._def?.type,
+      current._def?.out,
+      current._def?.in,
+    ]) {
+      if (candidate && !visited.has(candidate)) {
+        queue.push(candidate);
+      }
+    }
+  }
+
+  return [];
+}
+
 export function AutoKanban<K extends SchemaKeys>({
   slug,
   schema: schemaName,
@@ -1134,13 +1198,8 @@ export function AutoKanban<K extends SchemaKeys>({
   const schema = getNestedZodShape(schemaName, appSchema.schemaShape);
   const schemaObject =
     schema instanceof ZodEffects ? schema.innerType() : schema;
-  const groupField = schemaObject.shape[groupKey] as {
-    Values?: Record<string, string>;
-    _def?: { innerType?: { Values?: Record<string, string> } };
-  };
-  const statuses = Object.keys(
-    groupField.Values ?? groupField._def?.innerType?.Values ?? {},
-  );
+  const groupField = schemaObject.shape[groupKey] as WrappedEnumField;
+  const statuses = getWrappedEnumValues(groupField);
 
   return (
     // @ts-expect-error
