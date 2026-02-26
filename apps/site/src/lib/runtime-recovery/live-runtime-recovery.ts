@@ -3,7 +3,11 @@ import type {
   LastKnownGoodSnapshotDoc,
   RuntimeHealthService,
 } from '@/lib/runtime-health';
-import type { RollbackPlanCandidateDoc, RollbackPlanDoc } from './contracts';
+import type {
+  RollbackPlanCandidateDoc,
+  RollbackPlanDoc,
+  RollbackStrategyKind,
+} from './contracts';
 import { RecoveryAuditLog, type RecoveryAuditRow } from './recovery-audit-log';
 import { RecoveryOrchestrator } from './recovery-orchestrator';
 import { RollbackCoordinator } from './rollback-coordinator';
@@ -26,42 +30,117 @@ type RuntimeErrorSignal = {
   observedAt: number;
 };
 
+type RuntimeRollbackView = Awaited<
+  ReturnType<RuntimeHealthService['getRollbackTriggerView']>
+>;
+
+type LiveRuntimeRecoveryExecutionStatus =
+  | 'success'
+  | 'failed'
+  | 'partial'
+  | 'no-op';
+
+export type LiveRuntimeRecoveryExecutionResult = {
+  status: LiveRuntimeRecoveryExecutionStatus;
+  failureReason?: string;
+  appliedStrategies?: RollbackStrategyKind[];
+};
+
+export type LiveRuntimeRecoveryAdapterAvailability = {
+  available: boolean;
+  summary?: string;
+  unavailableReason?: string;
+};
+
+export interface LiveRuntimeRecoveryRollbackAdapter {
+  getAvailability?: (input: {
+    snapshot: LastKnownGoodSnapshotDoc;
+    rollbackView: RuntimeRollbackView;
+  }) =>
+    | LiveRuntimeRecoveryAdapterAvailability
+    | Promise<LiveRuntimeRecoveryAdapterAvailability>;
+  execute: (input: {
+    plan: RollbackPlanDoc;
+    strategy: RollbackPlanCandidateDoc;
+    rollbackView: RuntimeRollbackView;
+  }) =>
+    | LiveRuntimeRecoveryExecutionResult
+    | Promise<LiveRuntimeRecoveryExecutionResult>;
+}
+
+export type LiveRuntimeRecoveryRollbackAdapters = Partial<
+  Record<RollbackStrategyKind, LiveRuntimeRecoveryRollbackAdapter>
+>;
+
+function defaultUnavailableReason(strategy: RollbackStrategyKind) {
+  if (strategy === 'plugin-install-state') {
+    return 'Plugin install rollback adapter is not configured.';
+  }
+  if (strategy === 'data-snapshot') {
+    return 'Data snapshot rollback adapter is not configured.';
+  }
+  return 'Surface snapshot rollback adapter is not configured.';
+}
+
 function createRollbackCandidates(
   snapshot: LastKnownGoodSnapshotDoc | null,
+  adapters: LiveRuntimeRecoveryRollbackAdapters | undefined,
 ): RollbackPlanCandidateDoc[] {
-  if (!snapshot) {
+  if (!snapshot || !adapters) {
     return [];
   }
 
-  return [
-    {
-      strategy: 'plugin-install-state',
-      targetId: snapshot.snapshotId,
-      capturedAt: snapshot.updatedAt,
-      source: 'last-known-good',
-      available: true,
-      summary:
-        snapshot.pluginId && snapshot.pluginVersion
-          ? `Restore ${snapshot.pluginId} to ${snapshot.pluginVersion}`
-          : 'Restore plugin install state from last-known-good snapshot.',
-    },
-    {
-      strategy: 'data-snapshot',
-      targetId: snapshot.snapshotId,
-      capturedAt: snapshot.updatedAt,
-      source: 'last-known-good',
-      available: false,
-      unavailableReason: 'Data snapshot rollback adapter is not configured.',
-    },
-    {
-      strategy: 'surface-snapshot',
-      targetId: snapshot.snapshotId,
-      capturedAt: snapshot.updatedAt,
-      source: 'last-known-good',
-      available: false,
-      unavailableReason: 'Surface snapshot rollback adapter is not configured.',
-    },
-  ];
+  const defaultPluginSummary =
+    snapshot.pluginId && snapshot.pluginVersion
+      ? `Restore ${snapshot.pluginId} to ${snapshot.pluginVersion}`
+      : 'Restore plugin install state from last-known-good snapshot.';
+
+  const configuredStrategies = new Set(
+    Object.keys(adapters) as RollbackStrategyKind[],
+  );
+
+  return (
+    [
+      {
+        strategy: 'plugin-install-state',
+        targetId: snapshot.snapshotId,
+        capturedAt: snapshot.updatedAt,
+        source: 'last-known-good',
+        available: false,
+        summary: defaultPluginSummary,
+      },
+      {
+        strategy: 'data-snapshot',
+        targetId: snapshot.snapshotId,
+        capturedAt: snapshot.updatedAt,
+        source: 'last-known-good',
+        available: false,
+      },
+      {
+        strategy: 'surface-snapshot',
+        targetId: snapshot.snapshotId,
+        capturedAt: snapshot.updatedAt,
+        source: 'last-known-good',
+        available: false,
+      },
+    ] as RollbackPlanCandidateDoc[]
+  )
+    .filter((candidate) => configuredStrategies.has(candidate.strategy))
+    .map((candidate) => {
+      const adapter = adapters[candidate.strategy];
+      if (!adapter) {
+        return {
+          ...candidate,
+          available: false,
+          unavailableReason: defaultUnavailableReason(candidate.strategy),
+        };
+      }
+
+      return {
+        ...candidate,
+        available: true,
+      };
+    });
 }
 
 function isEditableTarget(target: EventTarget | null): boolean {
@@ -75,6 +154,7 @@ function isEditableTarget(target: EventTarget | null): boolean {
 
 export function bootstrapLiveRuntimeRecovery(options: {
   runtimeHealthService: RuntimeHealthService;
+  rollbackAdapters?: LiveRuntimeRecoveryRollbackAdapters;
   target?: RuntimeRecoveryEventTarget;
   threshold?: number;
   thresholdWindowMs?: number;
@@ -91,6 +171,7 @@ export function bootstrapLiveRuntimeRecovery(options: {
   const reportError = options.onError ?? (() => undefined);
   const rollbackCoordinator = new RollbackCoordinator();
   const auditRows: RecoveryAuditRow[] = [];
+  let latestRollbackView: RuntimeRollbackView | null = null;
   let activeToastId: string | number | undefined;
 
   const orchestrator = new RecoveryOrchestrator({
@@ -99,11 +180,33 @@ export function bootstrapLiveRuntimeRecovery(options: {
     now: () => new Date(now()),
     coordinator: {
       resolvePlan: async (evaluation) => {
-        const rollbackView =
+        latestRollbackView =
           await options.runtimeHealthService.getRollbackTriggerView();
         const candidateStrategies = createRollbackCandidates(
-          rollbackView.lastKnownGood,
+          latestRollbackView.lastKnownGood,
+          options.rollbackAdapters,
         );
+        if (latestRollbackView.lastKnownGood) {
+          for (let index = 0; index < candidateStrategies.length; index += 1) {
+            const candidate = candidateStrategies[index];
+            if (!candidate) continue;
+            const adapter = options.rollbackAdapters?.[candidate.strategy];
+            if (!adapter?.getAvailability) continue;
+            const availability = await adapter.getAvailability({
+              snapshot: latestRollbackView.lastKnownGood,
+              rollbackView: latestRollbackView,
+            });
+            candidateStrategies[index] = {
+              ...candidate,
+              available: availability.available,
+              summary: availability.summary ?? candidate.summary,
+              unavailableReason: availability.available
+                ? undefined
+                : (availability.unavailableReason ??
+                  defaultUnavailableReason(candidate.strategy)),
+            };
+          }
+        }
 
         return rollbackCoordinator.buildPlan({
           thresholdEvaluation: evaluation,
@@ -112,17 +215,68 @@ export function bootstrapLiveRuntimeRecovery(options: {
       },
     },
     executor: {
-      executePlan: async (plan) => ({
-        executionId: `runtime-recovery-exec-${now()}`,
-        planId: plan.planId,
-        executedAt: new Date(now()).toISOString(),
-        status: 'no-op',
-        appliedStrategies: plan.recommendedStrategy
-          ? [plan.recommendedStrategy.strategy]
-          : [],
-        failureReason:
-          'Rollback adapters are not configured; decision recorded for operator follow-up.',
-      }),
+      executePlan: async (plan) => {
+        const executionId = `runtime-recovery-exec-${now()}`;
+        const executedAt = new Date(now()).toISOString();
+        const strategy = plan.recommendedStrategy;
+        if (!strategy) {
+          return {
+            executionId,
+            planId: plan.planId,
+            executedAt,
+            status: 'no-op' as const,
+            appliedStrategies: [],
+            failureReason:
+              'Rollback plan did not include an executable strategy.',
+          };
+        }
+
+        const adapter = options.rollbackAdapters?.[strategy.strategy];
+        if (!adapter) {
+          return {
+            executionId,
+            planId: plan.planId,
+            executedAt,
+            status: 'no-op' as const,
+            appliedStrategies: [strategy.strategy],
+            failureReason: defaultUnavailableReason(strategy.strategy),
+          };
+        }
+
+        const rollbackView =
+          latestRollbackView ??
+          (await options.runtimeHealthService.getRollbackTriggerView());
+
+        try {
+          const result = await adapter.execute({
+            plan,
+            strategy,
+            rollbackView,
+          });
+
+          return {
+            executionId,
+            planId: plan.planId,
+            executedAt,
+            status: result.status,
+            appliedStrategies: result.appliedStrategies ?? [strategy.strategy],
+            failureReason: result.failureReason,
+          };
+        } catch (error) {
+          const failureReason =
+            error instanceof Error
+              ? error.message
+              : 'Rollback adapter execution failed unexpectedly.';
+          return {
+            executionId,
+            planId: plan.planId,
+            executedAt,
+            status: 'failed' as const,
+            appliedStrategies: [strategy.strategy],
+            failureReason,
+          };
+        }
+      },
     },
     auditLog: new RecoveryAuditLog({
       appendRecoveryAudit(row) {

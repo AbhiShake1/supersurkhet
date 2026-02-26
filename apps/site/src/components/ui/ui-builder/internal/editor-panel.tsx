@@ -773,7 +773,7 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
       `Explain the selected layer "${selectedLayer?.name ?? selectedLayerId ?? 'unknown'}" and suggest safe improvements.`,
     );
     window.open(
-      `/_business/chat?prompt=${query}`,
+      `/chat?prompt=${query}`,
       '_blank',
       'noopener,noreferrer',
     );

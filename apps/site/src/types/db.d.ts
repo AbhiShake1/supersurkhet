@@ -5596,7 +5596,10 @@ declare global {
      readonly title: "Data Matrix Actions";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "System Configuration";
-     readonly components: () => never[];
+     readonly components: () => {
+     name: string;
+     component: React.LazyExoticComponent<import("../components/ui/admin/index").AdminComponent>;
+    }[];
     };
      readonly recentlyUsedApp: {
      readonly schema: import("zod").ZodObject<{

@@ -89,6 +89,9 @@ const PartyManagement = React.lazy(
 const InvoiceManagement = React.lazy(
   () => import('@/components/ui/admin/invoice-management'),
 );
+const DataMatrixFlowBuilder = React.lazy(
+  () => import('@/components/ui/admin/datamatrix-flow-builder'),
+);
 
 function getPermissions() {
   return ['product'] as readonly [string, ...string[]];
@@ -556,16 +559,12 @@ export const featureSchema = createSchema({
     icon: QrCode,
     group: 'System Configuration',
     components: () => {
-      return [];
-      // const { DataMatrixFlowBuilder } = await import(
-      // 	"@/components/ui/admin/datamatrix-flow-builder"
-      // );
-      // return [
-      // 	{
-      // 		name: "Flow Builder",
-      // 		component: DataMatrixFlowBuilder,
-      // 	},
-      // ];
+      return [
+        {
+          name: 'Flow Builder',
+          component: DataMatrixFlowBuilder,
+        },
+      ];
     },
   },
 

@@ -1,46 +1,3 @@
-import { useEffect, useState } from 'react';
-
-// ** Custom Hooks **
-import { useChat } from '@/hooks/use-chat';
-
-// ** UI Components **
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from '@/components/blocks/sidebar';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { CardDescription, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from '@/components/ui/resizable';
-import { ScrollArea } from '@/components/ui/scroll-area';
-
-// ** Dropdown Menu Components **
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-
-// ** Icons **
-import { cn } from '@/lib/utils';
 import {
   Brush,
   Camera,
@@ -71,6 +28,46 @@ import {
   Users,
   Video,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+// ** UI Components **
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from '@/components/blocks/sidebar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { CardDescription, CardTitle } from '@/components/ui/card';
+// ** Dropdown Menu Components **
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@/components/ui/resizable';
+import { ScrollArea } from '@/components/ui/scroll-area';
+// ** Custom Hooks **
+import { useChat } from '@/hooks/use-chat';
+// ** Icons **
+import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 // ** Contact List **
@@ -190,7 +187,7 @@ const menuItems = [
 ];
 
 // ** Home Component **
-export const Home = () => {
+export const Home = ({ initialPrompt }: { initialPrompt?: string }) => {
   const { toggleSidebar } = useSidebar();
   const [currentChat, setCurrentChat] = useState(contactList[0]);
 
@@ -413,7 +410,7 @@ export const Home = () => {
                 </div>
               </div>
 
-              <ChatBody chat={currentChat} />
+              <ChatBody chat={currentChat} initialPrompt={initialPrompt} />
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
@@ -422,7 +419,13 @@ export const Home = () => {
   );
 };
 
-function ChatBody({ chat }: { chat: (typeof contactList)[number] }) {
+function ChatBody({
+  chat,
+  initialPrompt,
+}: {
+  chat: (typeof contactList)[number];
+  initialPrompt?: string;
+}) {
   const [currentMessage, setCurrentMessage] = useState('');
   // const { rooms } = useChatRooms()
   const chatId = chat?.name || 'default';
@@ -432,6 +435,15 @@ function ChatBody({ chat }: { chat: (typeof contactList)[number] }) {
   useEffect(() => {
     setCurrentMessage('');
   }, []);
+
+  useEffect(() => {
+    const seededPrompt = initialPrompt?.trim();
+    if (!seededPrompt) {
+      return;
+    }
+
+    setCurrentMessage(seededPrompt);
+  }, [initialPrompt]);
 
   // Mark messages as read when chat changes
   useEffect(() => {
