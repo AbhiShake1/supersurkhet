@@ -31,6 +31,7 @@ import { Route as PluginStudioProjectIdPluginIdRouteImport } from './routes/plug
 import { Route as BusinessNameAdminPluginsRouteImport } from './routes/$businessName/admin/plugins'
 import { Route as BusinessNameAdminInvitationRouteImport } from './routes/$businessName/admin/invitation'
 import { Route as BusinessNameAdminEditorRouteImport } from './routes/$businessName/admin/editor'
+import { Route as PluginStudioProjectIdPluginIdIndexRouteImport } from './routes/plugin-studio/$projectId/$pluginId.index'
 import { Route as V1IntegrationsGitRepositoriesRouteImport } from './routes/v1/integrations/git/repositories'
 import { Route as V1CliProjectsProjectIdRouteImport } from './routes/v1/cli/projects/$projectId'
 import { Route as V1AuthProvidersMethodsRouteImport } from './routes/v1/auth/providers/methods'
@@ -160,6 +161,12 @@ const BusinessNameAdminEditorRoute = BusinessNameAdminEditorRouteImport.update({
   path: '/admin/editor',
   getParentRoute: () => BusinessNameRoute,
 } as any)
+const PluginStudioProjectIdPluginIdIndexRoute =
+  PluginStudioProjectIdPluginIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => PluginStudioProjectIdPluginIdRoute,
+  } as any)
 const V1IntegrationsGitRepositoriesRoute =
   V1IntegrationsGitRepositoriesRouteImport.update({
     id: '/v1/integrations/git/repositories',
@@ -269,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/v1/auth/providers/methods': typeof V1AuthProvidersMethodsRoute
   '/v1/cli/projects/$projectId': typeof V1CliProjectsProjectIdRouteWithChildren
   '/v1/integrations/git/repositories': typeof V1IntegrationsGitRepositoriesRoute
+  '/plugin-studio/$projectId/$pluginId/': typeof PluginStudioProjectIdPluginIdIndexRoute
   '/$businessName/admin/plugin/$pluginId/$schemaId': typeof BusinessNameAdminPluginPluginIdSchemaIdRoute
   '/plugin-studio/$projectId/$pluginId/subdomain/$subdomain': typeof PluginStudioProjectIdPluginIdSubdomainSubdomainRoute
   '/v1/auth/providers/oauth/authorize': typeof V1AuthProvidersOauthAuthorizeRoute
@@ -297,7 +305,6 @@ export interface FileRoutesByTo {
   '/$businessName/admin/editor': typeof BusinessNameAdminEditorRoute
   '/$businessName/admin/invitation': typeof BusinessNameAdminInvitationRoute
   '/$businessName/admin/plugins': typeof BusinessNameAdminPluginsRoute
-  '/plugin-studio/$projectId/$pluginId': typeof PluginStudioProjectIdPluginIdRouteWithChildren
   '/v1/auth/providers': typeof V1AuthProvidersRouteWithChildren
   '/v1/auth/sessions': typeof V1AuthSessionsRoute
   '/v1/chat/completions': typeof V1ChatCompletionsRoute
@@ -306,6 +313,7 @@ export interface FileRoutesByTo {
   '/v1/auth/providers/methods': typeof V1AuthProvidersMethodsRoute
   '/v1/cli/projects/$projectId': typeof V1CliProjectsProjectIdRouteWithChildren
   '/v1/integrations/git/repositories': typeof V1IntegrationsGitRepositoriesRoute
+  '/plugin-studio/$projectId/$pluginId': typeof PluginStudioProjectIdPluginIdIndexRoute
   '/$businessName/admin/plugin/$pluginId/$schemaId': typeof BusinessNameAdminPluginPluginIdSchemaIdRoute
   '/plugin-studio/$projectId/$pluginId/subdomain/$subdomain': typeof PluginStudioProjectIdPluginIdSubdomainSubdomainRoute
   '/v1/auth/providers/oauth/authorize': typeof V1AuthProvidersOauthAuthorizeRoute
@@ -345,6 +353,7 @@ export interface FileRoutesById {
   '/v1/auth/providers/methods': typeof V1AuthProvidersMethodsRoute
   '/v1/cli/projects/$projectId': typeof V1CliProjectsProjectIdRouteWithChildren
   '/v1/integrations/git/repositories': typeof V1IntegrationsGitRepositoriesRoute
+  '/plugin-studio/$projectId/$pluginId/': typeof PluginStudioProjectIdPluginIdIndexRoute
   '/$businessName/admin/plugin/$pluginId/$schemaId': typeof BusinessNameAdminPluginPluginIdSchemaIdRoute
   '/plugin-studio/$projectId/$pluginId/subdomain/$subdomain': typeof PluginStudioProjectIdPluginIdSubdomainSubdomainRoute
   '/v1/auth/providers/oauth/authorize': typeof V1AuthProvidersOauthAuthorizeRoute
@@ -384,6 +393,7 @@ export interface FileRouteTypes {
     | '/v1/auth/providers/methods'
     | '/v1/cli/projects/$projectId'
     | '/v1/integrations/git/repositories'
+    | '/plugin-studio/$projectId/$pluginId/'
     | '/$businessName/admin/plugin/$pluginId/$schemaId'
     | '/plugin-studio/$projectId/$pluginId/subdomain/$subdomain'
     | '/v1/auth/providers/oauth/authorize'
@@ -412,7 +422,6 @@ export interface FileRouteTypes {
     | '/$businessName/admin/editor'
     | '/$businessName/admin/invitation'
     | '/$businessName/admin/plugins'
-    | '/plugin-studio/$projectId/$pluginId'
     | '/v1/auth/providers'
     | '/v1/auth/sessions'
     | '/v1/chat/completions'
@@ -421,6 +430,7 @@ export interface FileRouteTypes {
     | '/v1/auth/providers/methods'
     | '/v1/cli/projects/$projectId'
     | '/v1/integrations/git/repositories'
+    | '/plugin-studio/$projectId/$pluginId'
     | '/$businessName/admin/plugin/$pluginId/$schemaId'
     | '/plugin-studio/$projectId/$pluginId/subdomain/$subdomain'
     | '/v1/auth/providers/oauth/authorize'
@@ -459,6 +469,7 @@ export interface FileRouteTypes {
     | '/v1/auth/providers/methods'
     | '/v1/cli/projects/$projectId'
     | '/v1/integrations/git/repositories'
+    | '/plugin-studio/$projectId/$pluginId/'
     | '/$businessName/admin/plugin/$pluginId/$schemaId'
     | '/plugin-studio/$projectId/$pluginId/subdomain/$subdomain'
     | '/v1/auth/providers/oauth/authorize'
@@ -651,6 +662,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BusinessNameAdminEditorRouteImport
       parentRoute: typeof BusinessNameRoute
     }
+    '/plugin-studio/$projectId/$pluginId/': {
+      id: '/plugin-studio/$projectId/$pluginId/'
+      path: '/'
+      fullPath: '/plugin-studio/$projectId/$pluginId/'
+      preLoaderRoute: typeof PluginStudioProjectIdPluginIdIndexRouteImport
+      parentRoute: typeof PluginStudioProjectIdPluginIdRoute
+    }
     '/v1/integrations/git/repositories': {
       id: '/v1/integrations/git/repositories'
       path: '/v1/integrations/git/repositories'
@@ -800,11 +818,14 @@ const AuthRouteChildren: AuthRouteChildren = {
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface PluginStudioProjectIdPluginIdRouteChildren {
+  PluginStudioProjectIdPluginIdIndexRoute: typeof PluginStudioProjectIdPluginIdIndexRoute
   PluginStudioProjectIdPluginIdSubdomainSubdomainRoute: typeof PluginStudioProjectIdPluginIdSubdomainSubdomainRoute
 }
 
 const PluginStudioProjectIdPluginIdRouteChildren: PluginStudioProjectIdPluginIdRouteChildren =
   {
+    PluginStudioProjectIdPluginIdIndexRoute:
+      PluginStudioProjectIdPluginIdIndexRoute,
     PluginStudioProjectIdPluginIdSubdomainSubdomainRoute:
       PluginStudioProjectIdPluginIdSubdomainSubdomainRoute,
   }

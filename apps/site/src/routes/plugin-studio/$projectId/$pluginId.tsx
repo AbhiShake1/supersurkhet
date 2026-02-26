@@ -1,6 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { Outlet, createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { PluginStudioEditor } from './-plugin-studio-editor';
 
 const optionalSearchStringSchema = z.preprocess((value) => {
   if (typeof value !== 'string') return undefined;
@@ -21,11 +20,9 @@ const pluginStudioSearchSchema = z.object({
 
 export const Route = createFileRoute('/plugin-studio/$projectId/$pluginId')({
   validateSearch: pluginStudioSearchSchema,
-  component: PluginStudioRoute,
+  component: PluginStudioLayoutRoute,
 });
 
-function PluginStudioRoute() {
-  const { projectId, pluginId } = Route.useParams();
-
-  return <PluginStudioEditor projectId={projectId} pluginId={pluginId} />;
+function PluginStudioLayoutRoute() {
+  return <Outlet />;
 }
