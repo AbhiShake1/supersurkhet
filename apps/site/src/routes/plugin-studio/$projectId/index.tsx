@@ -9,7 +9,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { MouseEvent } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
 import { Logo } from '@/components/logo';
@@ -176,6 +176,38 @@ function PluginStudioProjectRoute() {
     const storageKey = buildProjectPluginOrderStorageKey(projectId);
     return parseStoredPluginOrder(window.localStorage.getItem(storageKey));
   });
+  const setPluginLayoutAndPersist = useCallback(
+    (next: ProjectPluginLayout) => {
+      setPluginLayout((current) => {
+        if (current === next) {
+          return current;
+        }
+        if (typeof window !== 'undefined') {
+          const storageKey = buildProjectPluginLayoutStorageKey(projectId);
+          window.localStorage.setItem(storageKey, next);
+        }
+        return next;
+      });
+    },
+    [projectId],
+  );
+  const setPluginOrderAndPersist = useCallback(
+    (update: string[] | ((current: string[]) => string[])) => {
+      setPluginOrder((current) => {
+        const next = typeof update === 'function' ? update(current) : update;
+        if (arraysEqual(current, next)) {
+          return current;
+        }
+        if (typeof window !== 'undefined') {
+          const storageKey = buildProjectPluginOrderStorageKey(projectId);
+          window.localStorage.setItem(storageKey, JSON.stringify(next));
+        }
+        return next;
+      });
+    },
+    [projectId],
+  );
+  const previousProjectIdRef = useRef(projectId);
   const [hoveredProjectId, setHoveredProjectId] = useState(projectId);
   const [editingField, setEditingField] = useState<{
     pluginId: string;
@@ -414,40 +446,35 @@ function PluginStudioProjectRoute() {
     return byProjectId;
   }, [organizationPluginOptions]);
 
-  useEffect(() => {
-    const hasHoveredProject = accessibleProjectIdSet.has(hoveredProjectId);
-    if (hasHoveredProject) return;
+  if (!accessibleProjectIdSet.has(hoveredProjectId)) {
     const fallbackProjectId = accessibleProjects[0]?.id ?? projectId;
-    setHoveredProjectId(fallbackProjectId);
-  }, [accessibleProjectIdSet, accessibleProjects, hoveredProjectId, projectId]);
+    if (hoveredProjectId !== fallbackProjectId) {
+      setHoveredProjectId(fallbackProjectId);
+    }
+  }
 
-  useEffect(() => {
-    const storageKey = buildProjectPluginLayoutStorageKey(projectId);
-    window.localStorage.setItem(storageKey, pluginLayout);
-  }, [pluginLayout, projectId]);
-  useEffect(() => {
+  if (previousProjectIdRef.current !== projectId) {
+    previousProjectIdRef.current = projectId;
     const storageKey = buildProjectPluginOrderStorageKey(projectId);
-    setPluginOrder(
+    setPluginOrderAndPersist(
       parseStoredPluginOrder(window.localStorage.getItem(storageKey)),
     );
-  }, [projectId]);
-  useEffect(() => {
+  }
+
+  const reconciledPluginOrder = useMemo(() => {
     const currentPluginIds = allPluginCardsUnordered.map(
       (card) => card.pluginId,
     );
-    setPluginOrder((current) => {
-      const currentSet = new Set(currentPluginIds);
-      const next = [
-        ...current.filter((pluginId) => currentSet.has(pluginId)),
-        ...currentPluginIds.filter((pluginId) => !current.includes(pluginId)),
-      ];
-      return arraysEqual(current, next) ? current : next;
-    });
-  }, [allPluginCardsUnordered]);
-  useEffect(() => {
-    const storageKey = buildProjectPluginOrderStorageKey(projectId);
-    window.localStorage.setItem(storageKey, JSON.stringify(pluginOrder));
-  }, [pluginOrder, projectId]);
+    const currentSet = new Set(currentPluginIds);
+    return [
+      ...pluginOrder.filter((pluginId) => currentSet.has(pluginId)),
+      ...currentPluginIds.filter((pluginId) => !pluginOrder.includes(pluginId)),
+    ];
+  }, [allPluginCardsUnordered, pluginOrder]);
+
+  if (!arraysEqual(pluginOrder, reconciledPluginOrder)) {
+    setPluginOrderAndPersist(reconciledPluginOrder);
+  }
 
   const beginInlineEdit = (
     event: MouseEvent,
@@ -512,7 +539,7 @@ function PluginStudioProjectRoute() {
     reorderedGroupPluginIds: readonly string[],
   ) => {
     if (search.trim()) return;
-    setPluginOrder((currentOrder) => {
+    setPluginOrderAndPersist((currentOrder) => {
       const fullOrder = [
         ...currentOrder.filter((pluginId) =>
           allPluginCardsUnordered.some((card) => card.pluginId === pluginId),
@@ -598,7 +625,7 @@ function PluginStudioProjectRoute() {
           deleteDraftMutation.mutateAsync(id as never),
         ),
       );
-      setPluginOrder((current) =>
+      setPluginOrderAndPersist((current) =>
         current.filter((pluginId) => pluginId !== pendingPluginDelete.pluginId),
       );
       await refetchDrafts();
@@ -950,7 +977,7 @@ function PluginStudioProjectRoute() {
               type="button"
               variant={pluginLayout === 'list' ? 'default' : 'outline'}
               className="h-11 px-3"
-              onClick={() => setPluginLayout('list')}
+              onClick={() => setPluginLayoutAndPersist('list')}
               aria-pressed={pluginLayout === 'list'}
             >
               <List className="size-4" />
@@ -959,7 +986,7 @@ function PluginStudioProjectRoute() {
               type="button"
               variant={pluginLayout === 'grid' ? 'default' : 'outline'}
               className="h-11 px-3"
-              onClick={() => setPluginLayout('grid')}
+              onClick={() => setPluginLayoutAndPersist('grid')}
               aria-pressed={pluginLayout === 'grid'}
             >
               <LayoutGrid className="size-4" />
