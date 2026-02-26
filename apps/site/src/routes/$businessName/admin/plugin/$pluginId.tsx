@@ -10,13 +10,13 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { useAuth } from '@/components/auth-provider';
 import { AutoAdmin, type AutoAdminTabInput } from '@/components/auto-admin';
 import { useConfetti } from '@/components/confetti-provider';
-import { useLoginPrompt } from '@/components/login-prompt-provider';
+import { useLoginPromptGuard } from '@/components/login-prompt-provider';
 import { PluginPreviewDialog } from '@/components/plugin-preview-dialog';
 import {
   AlertDialog,
@@ -132,7 +132,6 @@ function PluginDetailsPage() {
   const search = Route.useSearch();
   const decodedPluginId = decodeURIComponentOrNull(pluginId) ?? '';
   const { isAuthenticated, isLoading: isUserLoading, user } = useAuth();
-  const { promptLogin, closeLoginPrompt } = useLoginPrompt();
   const { fire } = useConfetti();
   const actorUserId = user?._?.soul ?? user?.pub ?? '';
   const actorUserLabel =
@@ -170,11 +169,13 @@ function PluginDetailsPage() {
     businessId: businessNamespace,
   }) as AutoAdminTabInput[];
 
-  useEffect(() => {
-    if (!isAuthenticated && !isUserLoading)
-      promptLogin({ dismissible: false, showBackgroundContent: false });
-    else closeLoginPrompt();
-  }, [isAuthenticated, isUserLoading, promptLogin, closeLoginPrompt]);
+  useLoginPromptGuard({
+    enabled: true,
+    isAuthenticated,
+    isLoading: isUserLoading,
+    dismissible: false,
+    showBackgroundContent: false,
+  });
 
   const { data: installRows = [] } = api.businessPluginInstall.useGet({
     keys: [businessNamespace],
@@ -356,13 +357,6 @@ function PluginDetailsPage() {
     ? Math.max(1, Math.min(5, Math.round(details.userReview.rating)))
     : 0;
   const persistedReviewComment = details?.userReview?.comment ?? '';
-  const [draftReviewRating, setDraftReviewRating] = useState(
-    persistedReviewRating,
-  );
-
-  useEffect(() => {
-    setDraftReviewRating(persistedReviewRating);
-  }, [persistedReviewRating]);
 
   if (isUserLoading || isBusinessLoading) return null;
 
@@ -770,75 +764,13 @@ function PluginDetailsPage() {
             <div className="space-y-4">
               <div className="rounded-2xl border border-border/70 p-4 md:p-5">
                 <p className="text-base font-medium">Your review</p>
-                <form
+                <PluginReviewForm
                   key={`${persistedReviewSourceKey}::${persistedReviewRating}::${encodeURIComponent(persistedReviewComment)}`}
-                  className="space-y-3"
-                  onSubmit={async (event) => {
-                    event.preventDefault();
-                    const formData = new FormData(event.currentTarget);
-                    const reviewCommentValue = String(
-                      formData.get('reviewComment') ?? '',
-                    );
-                    await saveReview(draftReviewRating, reviewCommentValue);
-                  }}
-                >
-                  <div className="mt-2 space-y-1.5">
-                    <p className="text-xs text-muted-foreground">Rating</p>
-                    <div
-                      className="flex items-center gap-1"
-                      role="radiogroup"
-                      aria-label="Choose your rating"
-                    >
-                      {Array.from({ length: 5 }).map((_, index) => {
-                        const value = index + 1;
-                        const isActive = value <= draftReviewRating;
-                        return (
-                          <button
-                            key={`review-star-${value.toString()}`}
-                            type="button"
-                            aria-label={`Rate ${value} out of 5`}
-                            className="rounded-sm p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
-                            onClick={() => setDraftReviewRating(value)}
-                          >
-                            <Star
-                              className={cn(
-                                'size-5 transition-colors',
-                                isActive
-                                  ? 'fill-amber-400 text-amber-500'
-                                  : 'text-muted-foreground/35',
-                              )}
-                            />
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <input
-                      type="hidden"
-                      name="reviewRating"
-                      value={draftReviewRating}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {draftReviewRating > 0
-                        ? `${draftReviewRating.toString()}/5 selected`
-                        : 'Select a rating'}
-                    </p>
-                  </div>
-                  <Textarea
-                    name="reviewComment"
-                    className="min-h-24"
-                    defaultValue={persistedReviewComment}
-                    placeholder="Share details about your experience with this plugin."
-                    maxLength={2000}
-                  />
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-xs text-muted-foreground">
-                      You can edit and resave your review any time.
-                    </span>
-                    <Button size="sm" type="submit" loading={savingReview}>
-                      Save review
-                    </Button>
-                  </div>
-                </form>
+                  initialRating={persistedReviewRating}
+                  initialComment={persistedReviewComment}
+                  isSaving={savingReview}
+                  onSave={saveReview}
+                />
                 <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
                   <Star className="size-3.5 text-amber-500" />
                   Current saved rating:{' '}
@@ -945,6 +877,85 @@ function PluginDetailsPage() {
         onInstall={installCurrent}
       />
     </div>
+  );
+}
+
+function PluginReviewForm({
+  initialRating,
+  initialComment,
+  isSaving,
+  onSave,
+}: {
+  initialRating: number;
+  initialComment: string;
+  isSaving: boolean;
+  onSave: (rating: number, comment: string) => Promise<void>;
+}) {
+  const [draftReviewRating, setDraftReviewRating] = useState(initialRating);
+
+  return (
+    <form
+      className="space-y-3"
+      onSubmit={async (event) => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        const reviewCommentValue = String(formData.get('reviewComment') ?? '');
+        await onSave(draftReviewRating, reviewCommentValue);
+      }}
+    >
+      <div className="mt-2 space-y-1.5">
+        <p className="text-xs text-muted-foreground">Rating</p>
+        <div
+          className="flex items-center gap-1"
+          role="radiogroup"
+          aria-label="Choose your rating"
+        >
+          {Array.from({ length: 5 }).map((_, index) => {
+            const value = index + 1;
+            const isActive = value <= draftReviewRating;
+            return (
+              <button
+                key={`review-star-${value.toString()}`}
+                type="button"
+                aria-label={`Rate ${value} out of 5`}
+                className="rounded-sm p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+                onClick={() => setDraftReviewRating(value)}
+              >
+                <Star
+                  className={cn(
+                    'size-5 transition-colors',
+                    isActive
+                      ? 'fill-amber-400 text-amber-500'
+                      : 'text-muted-foreground/35',
+                  )}
+                />
+              </button>
+            );
+          })}
+        </div>
+        <input type="hidden" name="reviewRating" value={draftReviewRating} />
+        <p className="text-xs text-muted-foreground">
+          {draftReviewRating > 0
+            ? `${draftReviewRating.toString()}/5 selected`
+            : 'Select a rating'}
+        </p>
+      </div>
+      <Textarea
+        name="reviewComment"
+        className="min-h-24"
+        defaultValue={initialComment}
+        placeholder="Share details about your experience with this plugin."
+        maxLength={2000}
+      />
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-xs text-muted-foreground">
+          You can edit and resave your review any time.
+        </span>
+        <Button size="sm" type="submit" loading={isSaving}>
+          Save review
+        </Button>
+      </div>
+    </form>
   );
 }
 

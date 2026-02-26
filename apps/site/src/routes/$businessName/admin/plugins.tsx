@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { z } from 'zod';
 import { useAuth } from '@/components/auth-provider';
 import { AutoAdmin, type AutoAdminTabInput } from '@/components/auto-admin';
-import { useLoginPrompt } from '@/components/login-prompt-provider';
+import { useLoginPromptGuard } from '@/components/login-prompt-provider';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -93,7 +93,6 @@ function toReleaseAdminTabs(
 function PluginsRouteComponent() {
   const { businessName } = Route.useParams();
   const { isAuthenticated, isLoading: isUserLoading, user } = useAuth();
-  const { promptLogin, closeLoginPrompt } = useLoginPrompt();
   const [query, setQuery] = useState('');
   const [chartType, setChartType] = useState<ChartType>('top-installed');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -117,11 +116,13 @@ function PluginsRouteComponent() {
     businessId: businessNamespace,
   }) as AutoAdminTabInput[];
 
-  useEffect(() => {
-    if (!isAuthenticated && !isUserLoading)
-      promptLogin({ dismissible: false, showBackgroundContent: false });
-    else closeLoginPrompt();
-  }, [isAuthenticated, isUserLoading, promptLogin, closeLoginPrompt]);
+  useLoginPromptGuard({
+    enabled: true,
+    isAuthenticated,
+    isLoading: isUserLoading,
+    dismissible: false,
+    showBackgroundContent: false,
+  });
 
   const { data: installRows = [] } = api.businessPluginInstall.useGet({
     keys: [businessNamespace],

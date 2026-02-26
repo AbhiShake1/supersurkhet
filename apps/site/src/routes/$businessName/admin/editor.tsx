@@ -14,7 +14,7 @@ import {
   Terminal,
   X,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { z } from 'zod';
 import { useAuth } from '@/components/auth-provider';
 // import { useChat } from '@ai-sdk/react';
@@ -67,7 +67,7 @@ import { useAuth } from '@/components/auth-provider';
 // import { DefaultChatTransport } from 'ai';
 // import { createServerFn } from '@tanstack/react-start';
 // import { getBuilderChat } from '@/server-functions/ai';
-import { useLoginPrompt } from '@/components/login-prompt-provider';
+import { useLoginPromptGuard } from '@/components/login-prompt-provider';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { NotFound } from '@/components/ui/not-found';
@@ -554,14 +554,14 @@ Provide the complete UI configuration in JSON format as your response. Do not in
     });
   }, [monacoInstance]);
 
-  const { promptLogin, closeLoginPrompt } = useLoginPrompt();
   const { isAuthenticated, user } = useAuth();
-
-  useEffect(() => {
-    if (!isAuthenticated && !isLoading)
-      promptLogin({ dismissible: false, showBackgroundContent: false });
-    else closeLoginPrompt();
-  }, [isAuthenticated, isLoading, closeLoginPrompt, promptLogin]);
+  useLoginPromptGuard({
+    enabled: true,
+    isAuthenticated,
+    isLoading,
+    dismissible: false,
+    showBackgroundContent: false,
+  });
 
   if (isLoading) return <Spinner />;
 
