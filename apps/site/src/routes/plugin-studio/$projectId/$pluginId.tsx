@@ -6164,7 +6164,7 @@ function PluginStudioPresenter({
                                     </>
                                   )}
                                 </div>
-                                <div className="flex items-center">
+                                <div className="flex items-center gap-1.5">
                                   <div className="mr-1 hidden items-center gap-1 group-hover:inline-flex group-focus-within:inline-flex">
                                     <SortableItemHandle
                                       data-subdomain-reorder-handle="true"
@@ -6301,9 +6301,9 @@ function PluginStudioPresenter({
                                   </Popover>
                                   <Button
                                     type="button"
-                                    size="sm"
+                                    size="icon"
                                     variant="destructive"
-                                    className="hidden h-7 items-center gap-1 group-hover:inline-flex group-focus-within:inline-flex"
+                                    className="hidden size-7 p-0 group-hover:inline-flex group-focus-within:inline-flex"
                                     onClick={(event) => {
                                       event.preventDefault();
                                       event.stopPropagation();
@@ -6312,9 +6312,9 @@ function PluginStudioPresenter({
                                       );
                                     }}
                                     disabled={isDefaultSubdomain}
+                                    aria-label={`Delete ${displayTitle} subdomain`}
                                   >
                                     <Trash2 className="size-3.5" />
-                                    Delete
                                   </Button>
                                 </div>
                               </div>
