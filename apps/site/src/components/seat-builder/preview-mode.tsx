@@ -22,12 +22,7 @@ export function PreviewMode({ floor, darkMode }: PreviewModeProps) {
   const [rotation, setRotation] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showLabels, setShowLabels] = useState(true);
-  const [ambientLight, setAmbientLight] = useState(darkMode ? 0.3 : 0.7);
-
-  // Update ambient light when dark mode changes
-  useEffect(() => {
-    setAmbientLight(darkMode ? 0.3 : 0.7);
-  }, [darkMode]);
+  const ambientLight = darkMode ? 0.3 : 0.7;
 
   // Handle fullscreen
   const toggleFullscreen = () => {

@@ -70,7 +70,9 @@ export function LayoutCanvas({
   const [_lastEvent, setLastEvent] = useState<string>('No events yet');
   const [rotationStartAngle, setRotationStartAngle] = useState(0);
   const [rotationStartMouseAngle, setRotationStartMouseAngle] = useState(0);
-  const [initialElements, setInitialElements] = useState<LayoutElement[]>([]);
+  const [initialElements, setInitialElements] = useState<LayoutElement[]>(
+    () => [...floor.elements],
+  );
 
   // Update canvas size on resize
   useEffect(() => {
@@ -87,11 +89,6 @@ export function LayoutCanvas({
     window.addEventListener('resize', updateSize);
     return () => window.removeEventListener('resize', updateSize);
   }, []);
-
-  // Save initial elements state for history
-  useEffect(() => {
-    setInitialElements([...floor.elements]);
-  }, [floor.elements]);
 
   const handleElementClick = (
     elementId: string,

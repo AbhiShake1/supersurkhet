@@ -10,7 +10,7 @@ import {
   Upload,
 } from 'lucide-react';
 import type React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -83,28 +83,55 @@ export function RestaurantLayoutEditor() {
 
 function _RestaurantLayoutEditor() {
   const { push } = useHistory();
-  const initialLayout: RestaurantLayout = {
-    name: 'My Restaurant',
-    version: '1.0',
-    floors: [
-      {
-        id: 'floor-1',
-        name: 'Ground Floor',
-        elements: [],
-        width: DEFAULT_FLOOR_WIDTH,
-        height: DEFAULT_FLOOR_HEIGHT,
-        backgroundColor: '#ffffff',
-      },
-    ],
-  };
+  const initialLayout = useMemo<RestaurantLayout>(
+    () => ({
+      name: 'My Restaurant',
+      version: '1.0',
+      floors: [
+        {
+          id: 'floor-1',
+          name: 'Ground Floor',
+          elements: [],
+          width: DEFAULT_FLOOR_WIDTH,
+          height: DEFAULT_FLOOR_HEIGHT,
+          backgroundColor: '#ffffff',
+        },
+      ],
+    }),
+    [],
+  );
+  const hydratedInitialLayout = useMemo<RestaurantLayout>(() => {
+    if (typeof window === 'undefined') {
+      return initialLayout;
+    }
 
-  const [layout, setLayout] = useState<RestaurantLayout>(initialLayout);
+    const savedLayout = localStorage.getItem('restaurantLayout');
+    if (!savedLayout) {
+      return initialLayout;
+    }
 
-  // Initialize history with initial layout
-  useEffect(() => {
-    push(initialLayout);
-    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
-  }, [initialLayout, push]); // eslint-disable-line react-hooks/exhaustive-deps
+    try {
+      const parsedLayout = JSON.parse(savedLayout) as RestaurantLayout;
+      if (
+        Array.isArray(parsedLayout.floors) &&
+        parsedLayout.floors.length > 0
+      ) {
+        return parsedLayout;
+      }
+    } catch {
+      // Ignore malformed saved layouts and fall back to defaults.
+    }
+
+    return initialLayout;
+  }, [initialLayout]);
+
+  const [layout, setLayout] = useState<RestaurantLayout>(hydratedInitialLayout);
+  const historyInitializedRef = useRef(false);
+
+  if (!historyInitializedRef.current) {
+    push(hydratedInitialLayout);
+    historyInitializedRef.current = true;
+  }
 
   // Subscribe to history changes
   useEffect(() => {
@@ -126,7 +153,9 @@ function _RestaurantLayoutEditor() {
 
   const [darkMode, setDarkMode] = useState<boolean>(true);
   const [previewMode, setPreviewMode] = useState<boolean>(false);
-  const [activeFloor, setActiveFloor] = useState<string>('floor-1');
+  const [activeFloor, setActiveFloor] = useState<string>(
+    hydratedInitialLayout.floors[0]?.id ?? 'floor-1',
+  );
   const [selectedElementId, setSelectedElementId] = useState<string | null>(
     null,
   );
@@ -189,29 +218,6 @@ function _RestaurantLayoutEditor() {
 
     toast.success('Layout saved');
   };
-
-  const loadLayout = () => {
-    // In a real app, this would load from a database
-    const savedLayout = localStorage.getItem('restaurantLayout');
-
-    if (savedLayout) {
-      try {
-        const parsedLayout = JSON.parse(savedLayout) as RestaurantLayout;
-        setLayout(parsedLayout);
-        setActiveFloor(parsedLayout.floors[0].id);
-
-        // toast.success("Layout loaded")
-      } catch (_error) {
-        toast.error('Error loading layout');
-      }
-    } else {
-      // toast.error("No saved layout")
-    }
-  };
-  useEffect(() => {
-    loadLayout();
-    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
-  }, [loadLayout]);
 
   const exportLayout = () => {
     const dataStr = JSON.stringify(layout, null, 2);
