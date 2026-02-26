@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import {
   // biome-ignore lint/suspicious/noShadowRestrictedNames: lint debt cleanup
@@ -12,6 +12,39 @@ import {
 import type { AutoFormFieldProps } from '../react';
 
 type GpsCoordinate = [number, number]; // [latitude, longitude]
+const DEFAULT_COORDINATES: GpsCoordinate = [28.597, 81.634];
+
+function parseCoordinateValue(value: unknown): GpsCoordinate | null {
+  if (!value) return null;
+
+  if (Array.isArray(value) && value.length === 2) {
+    const [lat, lng] = value;
+    if (typeof lat === 'number' && typeof lng === 'number') {
+      return [lat, lng];
+    }
+  }
+
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      if (
+        Array.isArray(parsed) &&
+        parsed.length === 2 &&
+        typeof parsed[0] === 'number' &&
+        typeof parsed[1] === 'number'
+      ) {
+        return [parsed[0], parsed[1]];
+      }
+    } catch {
+      const coords = value.split(',').map(Number);
+      if (coords.length === 2 && !coords.some(Number.isNaN)) {
+        return [coords[0], coords[1]];
+      }
+    }
+  }
+
+  return null;
+}
 
 const MapClickHandler: React.FC<{
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
@@ -43,38 +76,13 @@ export const MapField: React.FC<AutoFormFieldProps> = ({
   value,
 }) => {
   const { onChange } = inputProps;
-
-  // Parse the value from the form state - expecting a stringified array like "[28.597,81.634]"
-  const [coordinates, setCoordinates] = useState<GpsCoordinate>([
-    28.597, 81.634,
-  ]); // Default to Surkhet, Nepal
-
-  useEffect(() => {
-    if (value) {
-      try {
-        // Attempt to parse the value as a JSON array
-        const parsedValue = JSON.parse(value);
-        if (Array.isArray(parsedValue) && parsedValue.length === 2) {
-          setCoordinates(parsedValue as GpsCoordinate);
-        }
-      } catch (_e) {
-        // If parsing fails, try to split by comma if it's a string
-        if (typeof value === 'string') {
-          const coords = value.split(',').map(Number);
-          if (coords.length === 2 && !coords.some(Number.isNaN)) {
-            setCoordinates(coords as GpsCoordinate);
-          }
-        }
-      }
-    }
-  }, [value]);
+  const coordinates = parseCoordinateValue(value) ?? DEFAULT_COORDINATES;
 
   const handleMapClick = useCallback(
     // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     (e: any) => {
       // Using 'any' since maplibregl types might not be available here
       const newCoords: GpsCoordinate = [e.lngLat.lat, e.lngLat.lng];
-      setCoordinates(newCoords);
 
       // Convert coordinates to string format for form submission
       const coordinateString = JSON.stringify(newCoords);

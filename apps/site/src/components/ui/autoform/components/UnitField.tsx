@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import {
@@ -42,10 +42,8 @@ export function UnitField({
     ?.configDisabled as boolean;
 
   const [initialSelectedUnit, initialPiecesPerUnit] = value?.split(':') ?? [];
-  const [_selectedUnit, setSelectedUnit] = useState(initialSelectedUnit);
-  const [_piecesPerUnit, setPiecesPerUnit] = useState(initialPiecesPerUnit);
-  const selectedUnit = _selectedUnit ?? initialSelectedUnit;
-  const piecesPerUnit = _piecesPerUnit ?? initialPiecesPerUnit;
+  const selectedUnit = initialSelectedUnit;
+  const piecesPerUnit = initialPiecesPerUnit;
   const fieldName = path.join('.');
   const pathKey = path.join('.');
   const form = useFormContext();
@@ -54,64 +52,50 @@ export function UnitField({
 
   const ALL_UNITS = onlyAllow ?? [...REGULAR_UNITS, ...SPECIAL_UNITS];
 
-  // Sync UI state with external form value updates (e.g. product selection).
-  useEffect(() => {
-    const [nextUnit, nextPiecesPerUnit] = value?.split(':') ?? [];
-    if (typeof nextUnit !== 'undefined') setSelectedUnit(nextUnit);
-    if (nextPiecesPerUnit) setPiecesPerUnit(nextPiecesPerUnit);
-  }, [value]);
+  const commitUnitValue = useCallback(
+    (nextValue: string) => {
+      if (!nextValue) return;
+      const currentValue = form.getValues(fieldName);
+      if (currentValue === nextValue) return;
 
-  // Update the form value when unit or piecesPerUnit changes
-  useEffect(() => {
-    if (!selectedUnit) return;
-    // biome-ignore lint/suspicious/noImplicitAnyLet: lint debt cleanup
-    let nextValue;
-    if (SPECIAL_UNITS.includes(selectedUnit)) {
-      // For special units, store as "unit:piecesPerUnit"
-      nextValue = `${selectedUnit}:${piecesPerUnit}`;
-    } else {
-      // For regular units, store as just the unit
-      nextValue = selectedUnit;
-    }
+      runFieldOnValueChange({
+        customData,
+        value: nextValue,
+        path: pathKey.split('.'),
+        form,
+        businessBasePath: business?.business?.basePath,
+      });
+      // Update the form field with the new value only when it changed.
+      form.setValue(fieldName, nextValue, {
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: false,
+      });
+    },
+    [business?.business?.basePath, customData, fieldName, form, pathKey],
+  );
 
-    const currentValue = form.getValues(fieldName);
-    if (currentValue === nextValue) return;
+  const handleUnitChange = useCallback(
+    (nextUnit: string) => {
+      if (SPECIAL_UNITS.includes(nextUnit)) {
+        commitUnitValue(`${nextUnit}:${piecesPerUnit || '1'}`);
+        return;
+      }
+      commitUnitValue(nextUnit);
+    },
+    [commitUnitValue, piecesPerUnit],
+  );
 
-    runFieldOnValueChange({
-      customData,
-      value: nextValue,
-      path: pathKey.split('.'),
-      form,
-      businessBasePath: business?.business?.basePath,
-    });
-    // Update the form field with the new value only when it changed.
-    form.setValue(fieldName, nextValue, {
-      shouldDirty: true,
-      shouldTouch: true,
-      shouldValidate: false,
-    });
-  }, [
-    selectedUnit,
-    piecesPerUnit,
-    fieldName,
-    form,
-    business?.business?.basePath,
-    customData,
-    pathKey,
-  ]);
-
-  const handleUnitChange = (value: string) => {
-    setSelectedUnit(value);
-  };
-
-  const handlePiecesPerUnitChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const value = parseInt(e.target.value, 10);
-    if (!Number.isNaN(value) && value > 0) {
-      setPiecesPerUnit(value);
-    }
-  };
+  const handlePiecesPerUnitChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const nextPieces = Number.parseInt(e.target.value, 10);
+      if (!selectedUnit || !SPECIAL_UNITS.includes(selectedUnit)) return;
+      if (!Number.isNaN(nextPieces) && nextPieces > 0) {
+        commitUnitValue(`${selectedUnit}:${nextPieces}`);
+      }
+    },
+    [commitUnitValue, selectedUnit],
+  );
 
   if (ALL_UNITS.length === 1)
     return (
