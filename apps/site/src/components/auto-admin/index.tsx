@@ -9,14 +9,7 @@ import {
   type LucideIcon,
   QrCodeIcon,
 } from 'lucide-react';
-import {
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { type ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { ZodEffects } from 'zod';
 import CollapsibleSidebar from '@/components/ui/collapsible-sidebar';
 import * as Kanban from '@/components/ui/kanban';
@@ -341,9 +334,7 @@ export function AutoAdmin({
     useState<AutoAdminSystemTabs>(DEFAULT_SYSTEM_TABS);
   const resolvedSystemTabs = systemTabs ?? uncontrolledSystemTabs;
   const resolvedSystemTabsRef = useRef(resolvedSystemTabs);
-  useEffect(() => {
-    resolvedSystemTabsRef.current = resolvedSystemTabs;
-  }, [resolvedSystemTabs]);
+  resolvedSystemTabsRef.current = resolvedSystemTabs;
   const dashboardTab = resolvedSystemTabs.dashboard;
   const qrTab = resolvedSystemTabs.qr;
 

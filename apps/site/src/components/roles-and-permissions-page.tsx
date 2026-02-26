@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -23,7 +23,7 @@ export function RolesAndPermissionsPage({ tabs }: RolesMatrixProps) {
         <div className="space-y-2">
           {Object.entries(groupedPermissions).map(([feature, actions]) => (
             <PermissionGroup
-              key={feature}
+              key={`${feature}:${actions.join('|')}`}
               feature={feature}
               actions={actions}
             />
@@ -39,21 +39,20 @@ interface PermissionGroupProps {
   actions: string[];
 }
 
+const buildInitialCheckedStates = (feature: string, actions: string[]) => {
+  const initialStates: Record<string, boolean> = {};
+  for (const action of actions) {
+    initialStates[`${feature}:${action}`] = false;
+  }
+  return initialStates;
+};
+
 function PermissionGroup({ feature, actions }: PermissionGroupProps) {
   const [expanded, setExpanded] = useState(true);
 
   const [checkedStates, setCheckedStates] = useState<Record<string, boolean>>(
-    {},
+    () => buildInitialCheckedStates(feature, actions),
   );
-
-  // Initialize the checked states
-  useEffect(() => {
-    const initialStates: Record<string, boolean> = {};
-    for (const action of actions) {
-      initialStates[`${feature}:${action}`] = false;
-    }
-    setCheckedStates(initialStates);
-  }, [feature, actions]);
 
   const isFeatureFullyChecked = actions.every(
     (action) => checkedStates[`${feature}:${action}`],

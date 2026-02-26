@@ -28,7 +28,7 @@ import {
   Users,
   Video,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
 
 // ** UI Components **
 import {
@@ -426,35 +426,42 @@ function ChatBody({
   chat: (typeof contactList)[number];
   initialPrompt?: string;
 }) {
-  const [currentMessage, setCurrentMessage] = useState('');
+  const [currentMessage, setCurrentMessage] = useState(
+    () => initialPrompt?.trim() ?? '',
+  );
   // const { rooms } = useChatRooms()
   const chatId = chat?.name || 'default';
   const { messages, sendMessage, markAsRead } = useChat(chatId);
-
-  // Reset current message when chat changes
-  useEffect(() => {
-    setCurrentMessage('');
-  }, []);
-
-  useEffect(() => {
+  const previousInitialPromptRef = useRef(initialPrompt);
+  if (previousInitialPromptRef.current !== initialPrompt) {
+    previousInitialPromptRef.current = initialPrompt;
     const seededPrompt = initialPrompt?.trim();
-    if (!seededPrompt) {
-      return;
+    if (seededPrompt) {
+      setCurrentMessage(seededPrompt);
     }
-
-    setCurrentMessage(seededPrompt);
-  }, [initialPrompt]);
+  }
 
   // Mark messages as read when chat changes
-  useEffect(() => {
-    if (chat?.name) {
-      messages.forEach((msg) => {
-        if (!msg.read && msg.sender_id !== 'current_user') {
-          markAsRead(msg._?.soul ?? '');
-        }
-      });
+  const markedMessageIdsRef = useRef<Set<string>>(new Set());
+  const previousChatNameRef = useRef<string | undefined>(chat?.name);
+  if (previousChatNameRef.current !== chat?.name) {
+    previousChatNameRef.current = chat?.name;
+    markedMessageIdsRef.current.clear();
+  }
+  if (chat?.name) {
+    for (const msg of messages) {
+      const messageId = msg._?.soul;
+      if (
+        messageId &&
+        !msg.read &&
+        msg.sender_id !== 'current_user' &&
+        !markedMessageIdsRef.current.has(messageId)
+      ) {
+        markedMessageIdsRef.current.add(messageId);
+        void markAsRead(messageId);
+      }
     }
-  }, [chat, messages, markAsRead]);
+  }
   return (
     <>
       <ScrollArea className="flex-grow px-4 py-4">

@@ -82,14 +82,14 @@ function getOrderItems(order: Order | undefined): SalesItem[] {
 
   const itemsWithProductHints: Array<[string | undefined, unknown]> =
     Array.isArray(order.items)
-    ? order.items.map(
-        (item: unknown) => [undefined, item] as [string | undefined, unknown],
-      )
-    : typeof order.items === 'object'
-      ? (Object.entries(order.items as Record<string, unknown>) as Array<
-          [string, unknown]
-        >)
-      : [];
+      ? order.items.map(
+          (item: unknown) => [undefined, item] as [string | undefined, unknown],
+        )
+      : typeof order.items === 'object'
+        ? (Object.entries(order.items as Record<string, unknown>) as Array<
+            [string, unknown]
+          >)
+        : [];
 
   return itemsWithProductHints
     .map(([fallbackProductId, item]: [string | undefined, unknown]) =>
@@ -145,22 +145,18 @@ const OrderKanban: AdminComponent = ({ slug }) => {
 
           const itemsByProductIdWithQuantity = orderItems.reduce<
             Record<string, number>
-          >(
-            (a, item) => {
-              const product = productsBySoul.get(item.product);
-              let adjustedQuantity = item.quantity;
-              if (product?.unit?.includes(':')) {
-                const [unitType, piecesPerUnit] = product.unit.split(':');
-                if (item.unit === unitType) {
-                  adjustedQuantity =
-                    item.quantity * parseInt(piecesPerUnit, 10);
-                }
+          >((a, item) => {
+            const product = productsBySoul.get(item.product);
+            let adjustedQuantity = item.quantity;
+            if (product?.unit?.includes(':')) {
+              const [unitType, piecesPerUnit] = product.unit.split(':');
+              if (item.unit === unitType) {
+                adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
               }
-              a[item.product] = (a[item.product] || 0) + adjustedQuantity;
-              return a;
-            },
-            {},
-          );
+            }
+            a[item.product] = (a[item.product] || 0) + adjustedQuantity;
+            return a;
+          }, {});
 
           Object.entries(itemsByProductIdWithQuantity).forEach(
             ([productId, quantity]: [string, number]) => {
@@ -193,7 +189,8 @@ const OrderKanban: AdminComponent = ({ slug }) => {
           });
 
           const totalAmount = orderItems.reduce(
-            (sum: number, item: SalesItem) => sum + item.quantity * item.unitPrice,
+            (sum: number, item: SalesItem) =>
+              sum + item.quantity * item.unitPrice,
             0,
           );
           const payments = normalizePaymentsWithFallback(
@@ -403,8 +400,12 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
                     menuItem?._?.soul === item.product,
                 ),
               )
-              .map((menuItem: { title?: string } | undefined) => menuItem?.title)
-              .filter((title: string | undefined): title is string => Boolean(title))
+              .map(
+                (menuItem: { title?: string } | undefined) => menuItem?.title,
+              )
+              .filter((title: string | undefined): title is string =>
+                Boolean(title),
+              )
               .join(', ')}
           </span>
           <div className="flex items-center justify-between gap-2">

@@ -462,7 +462,14 @@ function MonthYearPicker({
   onChange: (value: Date, mode: 'month' | 'year') => void;
   className?: string;
 }) {
-  const yearRef = useRef<HTMLDivElement>(null);
+  const selectedYearRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (mode === 'year' && node) {
+        node.scrollIntoView({ behavior: 'auto', block: 'center' });
+      }
+    },
+    [mode],
+  );
   // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const years = useMemo(() => {
     const years: TimeOption[] = [];
@@ -504,12 +511,6 @@ function MonthYearPicker({
     [onChange, value, minDate, maxDate],
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
-  useEffect(() => {
-    if (mode === 'year') {
-      yearRef.current?.scrollIntoView({ behavior: 'auto', block: 'center' });
-    }
-  }, [mode, value]);
   return (
     <div className={cn(className)}>
       <ScrollArea className="h-full">
@@ -518,7 +519,9 @@ function MonthYearPicker({
             {years.map((year) => (
               <div
                 key={year.value}
-                ref={year.value === getYear(value) ? yearRef : undefined}
+                ref={
+                  year.value === getYear(value) ? selectedYearRef : undefined
+                }
               >
                 <Button
                   disabled={year.disabled}

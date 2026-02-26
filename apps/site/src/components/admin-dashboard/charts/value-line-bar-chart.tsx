@@ -74,9 +74,9 @@ export function ValueLineBarChart() {
     setSpringyValue(Number(latest.toFixed(0)));
   });
 
-  React.useEffect(() => {
+  if (maxValueIndexSpring.get() !== maxValueIndex.value) {
     maxValueIndexSpring.set(maxValueIndex.value);
-  }, [maxValueIndex.value, maxValueIndexSpring]);
+  }
 
   return (
     <Card>
