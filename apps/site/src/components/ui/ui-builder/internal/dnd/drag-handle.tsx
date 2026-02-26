@@ -1,8 +1,8 @@
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
-import React, { useMemo } from 'react';
-import { useComponentDragContext } from '@/lib/ui-builder/context/dnd-context';
+import type React from 'react';
+import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 
 interface DragHandleProps {
@@ -25,13 +25,6 @@ export const DragHandle: React.FC<DragHandleProps> = ({
         layerType,
       },
     });
-
-  const { setDragging } = useComponentDragContext();
-
-  React.useEffect(() => {
-    setDragging(!!isDragging);
-    return () => setDragging(false);
-  }, [isDragging, setDragging]);
 
   const style = useMemo(() => {
     return {

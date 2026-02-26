@@ -1,6 +1,6 @@
 import { DragOverlay } from '@dnd-kit/core';
 import type React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
 
@@ -8,7 +8,17 @@ import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
 export const TransformAwareDragOverlay: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
-  const [mountNode, setMountNode] = useState<HTMLElement | null>(null);
+  const [mountNode] = useState<HTMLElement | null>(() => {
+    if (typeof document === 'undefined') {
+      return null;
+    }
+    return (
+      (document.querySelector(
+        '[data-testid="transform-component"]',
+      ) as HTMLElement | null) ??
+      document.getElementById('editor-panel-content')
+    );
+  });
 
   // Create a positioned overlay that follows the mouse within the transform context
   const overlayStyle = useMemo(
@@ -23,20 +33,6 @@ export const TransformAwareDragOverlay: React.FC<{
     }),
     [],
   );
-
-  useEffect(() => {
-    // Try to find the transform component container where we want to render the overlay
-    const transformComponent = document.querySelector(
-      '[data-testid="transform-component"]',
-    ) as HTMLElement;
-    if (transformComponent) {
-      setMountNode(transformComponent);
-    } else {
-      // Fallback to editor panel container
-      const editorContainer = document.getElementById('editor-panel-content');
-      setMountNode(editorContainer);
-    }
-  }, []);
 
   // Render the overlay inside the transformed container using a portal
   if (!mountNode) {
