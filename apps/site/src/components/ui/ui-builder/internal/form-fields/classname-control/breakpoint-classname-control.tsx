@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   Accordion,
   AccordionContent,
@@ -47,17 +47,25 @@ export const BreakpointClassNameControl = ({
 
   // State for the full class string
   const [classString, setClassString] = useState(value || '');
-  const [lastEmittedValue, setLastEmittedValue] = useState(value || '');
+  const lastEmittedValueRef = useRef(value || '');
   // State for the tab
   const [tab, setTab] = useState<'base' | 'md'>('base');
 
-  // Sync classString with value prop (uncontrolled to controlled fix)
-  useEffect(() => {
-    if (typeof value === 'string' && value !== classString) {
-      setClassString(value);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value, classString]);
+  if (typeof value === 'string' && value !== classString) {
+    setClassString(value);
+    lastEmittedValueRef.current = value;
+  }
+
+  const commitClassString = useCallback(
+    (nextClassString: string) => {
+      setClassString(nextClassString);
+      if (!onChange) return;
+      if (nextClassString === lastEmittedValueRef.current) return;
+      lastEmittedValueRef.current = nextClassString;
+      onChange(nextClassString);
+    },
+    [onChange],
+  );
 
   // Parse the class string for the tabs
   const { base, md, rest } = parseClassString(classString);
@@ -77,9 +85,9 @@ export const BreakpointClassNameControl = ({
         .join(' ')
         .replace(/\s+/g, ' ')
         .trim();
-      setClassString(newClassString);
+      commitClassString(newClassString);
     },
-    [md, rest],
+    [commitClassString, md, rest],
   );
 
   const handleMdChange = useCallback(
@@ -94,23 +102,18 @@ export const BreakpointClassNameControl = ({
         .join(' ')
         .replace(/\s+/g, ' ')
         .trim();
-      setClassString(newClassString);
+      commitClassString(newClassString);
     },
-    [base, rest],
+    [base, commitClassString, rest],
   );
 
-  // When classString changes, call parent onChange
-  useEffect(() => {
-    if (!onChange) return;
-    if (classString === lastEmittedValue) return;
-    onChange(classString);
-    setLastEmittedValue(classString);
-  }, [classString, lastEmittedValue, onChange]);
-
   // When multiselect changes, update classString (and tabs will re-parse)
-  const handleMultiselectChange = useCallback((newClassString: string) => {
-    setClassString(newClassString);
-  }, []);
+  const handleMultiselectChange = useCallback(
+    (newClassString: string) => {
+      commitClassString(newClassString);
+    },
+    [commitClassString],
+  );
 
   const handleTabChange = useCallback(
     (val: string) => setTab(val as 'base' | 'md'),

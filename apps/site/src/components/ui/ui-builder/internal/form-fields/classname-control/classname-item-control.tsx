@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { ClassNameGroupControl } from '@/components/ui/ui-builder/internal/form-fields/classname-control/classname-group-control';
 import {
   CONFIG,
@@ -94,9 +94,18 @@ export function ClassNameItemControl({
   const [selectedKeys, setSelectedKeys] = useState<{
     [groupLabel: string]: string;
   }>(parsed.initialSelected);
-
-  // Only update state if parsed result changes (deep compare)
-  useEffect(() => {
+  const parsedSnapshot = useMemo(
+    () =>
+      JSON.stringify({
+        parsedState: parsed.parsedState,
+        unhandledTokens: parsed.unhandledTokens,
+        initialSelected: parsed.initialSelected,
+      }),
+    [parsed],
+  );
+  const lastParsedSnapshotRef = useRef<string | null>(null);
+  if (lastParsedSnapshotRef.current !== parsedSnapshot) {
+    lastParsedSnapshotRef.current = parsedSnapshot;
     const stateChanged =
       JSON.stringify(state) !== JSON.stringify(parsed.parsedState);
     const unhandledChanged =
@@ -106,8 +115,7 @@ export function ClassNameItemControl({
     if (stateChanged) setState(parsed.parsedState);
     if (unhandledChanged) setUnhandled(parsed.unhandledTokens);
     if (selectedChanged) setSelectedKeys(parsed.initialSelected);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [parsed, selectedKeys, state, unhandled]);
+  }
 
   // Helper to build class string from state and unhandled
   const buildClassString = (
@@ -226,13 +234,12 @@ export function ClassNameItemControl({
     }
   };
 
-  // Call onChange with the new class string after state/unhandled change
-  useEffect(() => {
-    const classString = buildClassString(state, unhandled);
-    if (onChange) onChange(classString);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
-  }, [state, unhandled, buildClassString, onChange]);
+  const lastEmittedClassStringRef = useRef<string | null>(null);
+  const classString = buildClassString(state, unhandled);
+  if (classString !== lastEmittedClassStringRef.current) {
+    lastEmittedClassStringRef.current = classString;
+    onChange(classString);
+  }
 
   return (
     <div className="w-full" data-testid="classname-item-control">
