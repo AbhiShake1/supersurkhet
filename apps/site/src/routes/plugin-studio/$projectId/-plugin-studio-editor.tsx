@@ -65,6 +65,7 @@ import { ContextDataStore } from '@/lib/ui-builder/context/context-data-store';
 import { complexComponentDefinitions } from '@/lib/ui-builder/registry/complex-component-definitions';
 import { primitiveComponentDefinitions } from '@/lib/ui-builder/registry/primitive-component-definitions';
 import { publishPluginRelease } from '@/server-functions/plugins';
+import { shouldCreatePluginDraft } from '../-draft-creation-guard';
 import { throwOnFailedPersistenceWrites } from '../-plugin-studio-persistence';
 import { resolvePluginStudioPluginId } from '../-plugin-studio-plugin-id';
 import { toProjectScopedDraftId } from '../-plugin-studio-project-draft-id';
@@ -1825,16 +1826,14 @@ function _StringListEditor({
 }: StringListEditorProps) {
   const rowIdsRef = useRef<string[]>([]);
 
-  useEffect(() => {
-    const rowIds = rowIdsRef.current;
-    if (values.length > rowIds.length) {
-      for (let index = rowIds.length; index < values.length; index += 1) {
-        rowIds.push(generateBuilderId());
-      }
-    } else if (values.length < rowIds.length) {
-      rowIds.splice(values.length);
+  const rowIds = rowIdsRef.current;
+  if (values.length > rowIds.length) {
+    for (let index = rowIds.length; index < values.length; index += 1) {
+      rowIds.push(generateBuilderId());
     }
-  }, [values.length]);
+  } else if (values.length < rowIds.length) {
+    rowIds.splice(values.length);
+  }
 
   return (
     <div className="space-y-2 rounded-md border p-2">
@@ -3120,33 +3119,27 @@ function PluginStudioPresenter({
       nextBlocklyRefinements,
     );
   }
-  useEffect(() => {
-    if (availableSchemaDocs.length === 0) return;
-    if (
-      availableSchemaDocs.some(
-        (schemaDoc) => schemaDoc.schemaId === activeSchemaId,
-      )
-    ) {
-      return;
-    }
-    setActiveSchemaId(
-      availableSchemaDocs[0]?.schemaId ?? DEFAULT_SCHEMA_DOC.schemaId,
+  if (availableSchemaDocs.length > 0) {
+    const hasActiveSchema = availableSchemaDocs.some(
+      (schemaDoc) => schemaDoc.schemaId === activeSchemaId,
     );
-  }, [activeSchemaId, availableSchemaDocs]);
+    if (!hasActiveSchema) {
+      setActiveSchemaId(
+        availableSchemaDocs[0]?.schemaId ?? DEFAULT_SCHEMA_DOC.schemaId,
+      );
+    }
+  }
 
-  useEffect(() => {
-    if (availableWorkflows.length === 0) return;
-    if (
-      availableWorkflows.some(
-        (workflowDoc) => workflowDoc.workflowId === activeWorkflowId,
-      )
-    ) {
-      return;
-    }
-    setActiveWorkflowId(
-      availableWorkflows[0]?.workflowId ?? DEFAULT_WORKFLOW_DOC.workflowId,
+  if (availableWorkflows.length > 0) {
+    const hasActiveWorkflow = availableWorkflows.some(
+      (workflowDoc) => workflowDoc.workflowId === activeWorkflowId,
     );
-  }, [activeWorkflowId, availableWorkflows]);
+    if (!hasActiveWorkflow) {
+      setActiveWorkflowId(
+        availableWorkflows[0]?.workflowId ?? DEFAULT_WORKFLOW_DOC.workflowId,
+      );
+    }
+  }
 
   const _isValidInputs = useMemo(() => {
     const hasInvalidFieldConfig = schemaBuilder.fields.some((field) =>
@@ -3269,12 +3262,12 @@ function PluginStudioPresenter({
     setEditingMetadataValue('');
   }, []);
 
-  useEffect(() => {
-    if (!expectedHydratedDraftKey) return;
-    setHydratedDraftKey((current) =>
-      current === expectedHydratedDraftKey ? current : expectedHydratedDraftKey,
-    );
-  }, [expectedHydratedDraftKey]);
+  if (
+    expectedHydratedDraftKey &&
+    hydratedDraftKey !== expectedHydratedDraftKey
+  ) {
+    setHydratedDraftKey(expectedHydratedDraftKey);
+  }
 
   const { mutateAsync: createDraft } = useMutation({
     mutationKey: ['plugin-studio', 'create-draft', draftId],
@@ -3406,98 +3399,67 @@ function PluginStudioPresenter({
     return currentDraftSnapshot !== latestPersistedDraftSnapshot;
   }, [activeDraft, currentDraftSnapshot, latestPersistedDraftSnapshot]);
 
-  useEffect(() => {
-    if (!pluginId.trim()) {
-      return;
-    }
-    if (isDraftLoading) {
-      return;
-    }
-    if (!isActorIdentityReady) {
-      return;
-    }
-    if (activeDraft && activeDraft.pluginId === pluginId) {
-      return;
-    }
-    if (hasAttemptedDraftCreationRef.current.has(draftId)) {
-      return;
-    }
-
-    hasAttemptedDraftCreationRef.current.add(draftId);
-    void createDraft();
-  }, [
+  const shouldCreateDraft = shouldCreatePluginDraft({
     pluginId,
-    activeDraft,
     isDraftLoading,
     isActorIdentityReady,
-    draftId,
-    createDraft,
-  ]);
+    activeDraftPluginId: activeDraft?.pluginId,
+    hasAttemptedDraftCreation:
+      hasAttemptedDraftCreationRef.current.has(draftId),
+  });
+  if (shouldCreateDraft) {
+    hasAttemptedDraftCreationRef.current.add(draftId);
+    void createDraft();
+  }
 
-  useEffect(() => {
-    if (!hasPendingDraftChanges) {
-      lastRequestedDraftSnapshotRef.current = null;
-    }
-  }, [hasPendingDraftChanges]);
+  if (!hasPendingDraftChanges) {
+    lastRequestedDraftSnapshotRef.current = null;
+  }
 
-  useEffect(() => {
-    if (!activeDraft) return;
-    if (activeDraft.draftId in initialSnapshotByDraftRef.current) {
-      return;
-    }
+  if (
+    activeDraft &&
+    !(activeDraft.draftId in initialSnapshotByDraftRef.current)
+  ) {
     initialSnapshotByDraftRef.current = {
       ...initialSnapshotByDraftRef.current,
       [activeDraft.draftId]: currentDraftSnapshot,
     };
-  }, [activeDraft, currentDraftSnapshot]);
+  }
 
-  useEffect(() => {
-    if (!parsed || !isDraftSaveable || !activeDraft) {
-      return;
-    }
-    if (!isActorIdentityReady) {
-      return;
-    }
-    if (!isDraftHydrated) {
-      return;
-    }
-    if (!currentDraftSnapshot) {
-      return;
-    }
+  if (
+    parsed &&
+    isDraftSaveable &&
+    activeDraft &&
+    isActorIdentityReady &&
+    isDraftHydrated &&
+    currentDraftSnapshot &&
+    hasPendingDraftChanges &&
+    !isSavingDraftRevision
+  ) {
+    let shouldSave = true;
+
     if (activeDraftRevisions.length === 0) {
       if (isDraftRevisionLoading) {
-        return;
+        shouldSave = false;
+      } else {
+        const initialSnapshot =
+          initialSnapshotByDraftRef.current[activeDraft.draftId] ?? null;
+        // Avoid creating synthetic "default" revisions from transient empty states.
+        // For brand-new drafts, save only after the user changes from activation baseline.
+        if (initialSnapshot === currentDraftSnapshot) {
+          shouldSave = false;
+        }
       }
-      const initialSnapshot =
-        initialSnapshotByDraftRef.current[activeDraft.draftId] ?? null;
-      // Avoid creating synthetic "default" revisions from transient empty states.
-      // For brand-new drafts, save only after the user changes from activation baseline.
-      if (initialSnapshot === currentDraftSnapshot) {
-        return;
+    }
+
+    if (shouldSave) {
+      const requestedSnapshotKey = `${activeDraft.draftId}:${currentDraftSnapshot}`;
+      if (lastRequestedDraftSnapshotRef.current !== requestedSnapshotKey) {
+        lastRequestedDraftSnapshotRef.current = requestedSnapshotKey;
+        void saveDraftRevision(activeDraft.draftId);
       }
     }
-    if (!hasPendingDraftChanges || isSavingDraftRevision) {
-      return;
-    }
-    const requestedSnapshotKey = `${activeDraft.draftId}:${currentDraftSnapshot}`;
-    if (lastRequestedDraftSnapshotRef.current === requestedSnapshotKey) {
-      return;
-    }
-    lastRequestedDraftSnapshotRef.current = requestedSnapshotKey;
-    void saveDraftRevision(activeDraft.draftId);
-  }, [
-    parsed,
-    isDraftHydrated,
-    currentDraftSnapshot,
-    isDraftSaveable,
-    activeDraft,
-    activeDraftRevisions.length,
-    hasPendingDraftChanges,
-    isActorIdentityReady,
-    isDraftRevisionLoading,
-    isSavingDraftRevision,
-    saveDraftRevision,
-  ]);
+  }
 
   useMutation({
     mutationKey: ['plugin-studio', 'publish-release'],
@@ -3593,58 +3555,57 @@ function PluginStudioPresenter({
     });
   }, [parsed]);
 
-  useEffect(() => {
+  const normalizedSchemaRefinements = useMemo(() => {
     if (leftRuleFields.length === 0) {
-      setSchemaRefinements((currentRules) =>
-        currentRules.length === 0 ? currentRules : [],
-      );
-      return;
+      return [];
     }
 
-    setSchemaRefinements((currentRules) => {
-      let changed = false;
-      const nextRules = currentRules.map((rule) => {
-        const nextLeftField = leftRuleFields.includes(rule.leftField)
-          ? rule.leftField
-          : (leftRuleFields[0] ?? '');
-        const leftType = fieldTypeByRuleField.get(nextLeftField);
-        const compatibleFields = leftType
-          ? (availableRuleFieldsByType.get(leftType) ?? []).filter(
-              (fieldKey) => fieldKey !== nextLeftField,
-            )
-          : [];
-        const nextRightField = compatibleFields.includes(rule.rightField)
-          ? rule.rightField
-          : (compatibleFields[0] ?? '');
-        const allowedOperators = getAllowedOperators(leftType);
-        const nextOperator = allowedOperators.includes(rule.operator)
-          ? rule.operator
-          : (allowedOperators[0] ?? 'eq');
+    let changed = false;
+    const nextRules = schemaRefinements.map((rule) => {
+      const nextLeftField = leftRuleFields.includes(rule.leftField)
+        ? rule.leftField
+        : (leftRuleFields[0] ?? '');
+      const leftType = fieldTypeByRuleField.get(nextLeftField);
+      const compatibleFields = leftType
+        ? (availableRuleFieldsByType.get(leftType) ?? []).filter(
+            (fieldKey) => fieldKey !== nextLeftField,
+          )
+        : [];
+      const nextRightField = compatibleFields.includes(rule.rightField)
+        ? rule.rightField
+        : (compatibleFields[0] ?? '');
+      const allowedOperators = getAllowedOperators(leftType);
+      const nextOperator = allowedOperators.includes(rule.operator)
+        ? rule.operator
+        : (allowedOperators[0] ?? 'eq');
 
-        if (
-          nextLeftField !== rule.leftField ||
-          nextRightField !== rule.rightField ||
-          nextOperator !== rule.operator
-        ) {
-          changed = true;
-        }
+      if (
+        nextLeftField !== rule.leftField ||
+        nextRightField !== rule.rightField ||
+        nextOperator !== rule.operator
+      ) {
+        changed = true;
+      }
 
-        return {
-          ...rule,
-          leftField: nextLeftField,
-          rightField: nextRightField,
-          operator: nextOperator,
-        };
-      });
-
-      return changed ? nextRules : currentRules;
+      return {
+        ...rule,
+        leftField: nextLeftField,
+        rightField: nextRightField,
+        operator: nextOperator,
+      };
     });
+
+    return changed ? nextRules : schemaRefinements;
   }, [
-    leftRuleFields,
     availableRuleFieldsByType,
     fieldTypeByRuleField,
-    setSchemaRefinements,
+    leftRuleFields,
+    schemaRefinements,
   ]);
+
+  if (!deepEqual(normalizedSchemaRefinements, schemaRefinements)) {
+    setSchemaRefinements(normalizedSchemaRefinements);
+  }
 
   const selectedBlocklyField = useMemo(
     () =>
@@ -3805,10 +3766,8 @@ function PluginStudioPresenter({
     conditionBlock.setFieldValue(blocklyDraft.operator, 'OP');
   }, [blocklyDraft.operator]);
 
-  useEffect(() => {
-    blocklyInitialOperatorRef.current = blocklyDraft.operator;
-    blocklyInitialRightFieldRef.current = blocklyDraft.rightField;
-  }, [blocklyDraft.operator, blocklyDraft.rightField]);
+  blocklyInitialOperatorRef.current = blocklyDraft.operator;
+  blocklyInitialRightFieldRef.current = blocklyDraft.rightField;
 
   useEffect(() => {
     if (
