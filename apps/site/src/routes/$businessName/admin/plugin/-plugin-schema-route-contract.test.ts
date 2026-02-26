@@ -22,8 +22,10 @@ describe('plugin schema route contract', () => {
     });
 
     expect(tab.title).toBe('Custom Table');
-    expect(tab.slug).toBe('biz-1/acme/orders');
-    expect(tab.treatSlugAsAbsolute).toBe(true);
+    expect('slug' in tab ? tab.slug : undefined).toBe('biz-1/acme/orders');
+    expect(
+      'treatSlugAsAbsolute' in tab ? tab.treatSlugAsAbsolute : undefined,
+    ).toBe(true);
   });
 
   it('falls back from plugin tab to schema doc to schema id', () => {

@@ -53,6 +53,7 @@ export const NameEdit: React.FC<NameEditProps> = ({
       <Input
         type="text"
         value={newName}
+        placeholder="Enter name"
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         autoFocus

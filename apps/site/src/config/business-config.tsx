@@ -1,5 +1,6 @@
 import type { SchemaKeys } from '@gta/react-hooks';
 import { useMemo } from 'react';
+import type { ComponentLayer } from '@/components/ui/ui-builder/types';
 import { api } from '@/lib/api';
 import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
 import type {
@@ -169,7 +170,7 @@ type UseBusinessSubdomainLayersInput = {
 };
 
 type UseBusinessSubdomainLayersState = {
-  layers: unknown[] | null;
+  layers: ComponentLayer[] | null;
   guardRule: 'authenticated-user' | 'organization-member' | null;
   isLoading: boolean;
 };

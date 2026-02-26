@@ -15,8 +15,8 @@ import {
 } from '@/lib/datamatrix';
 import { ActionExecutor } from '@/lib/datamatrix/action-executor';
 
-// biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
 export function QRCodePage({ slug }: { slug: string }) {
+  void slug;
   const [_sampleAction] = useState<DataMatrixAction>(() => {
     return dataMatrixActionSchema.parse({
       version: '1.0',
@@ -53,6 +53,7 @@ export function QRCodePage({ slug }: { slug: string }) {
       console.error('Action execution failed:', error);
     });
   };
+  void _handleActionDetected;
 
   return (
     <div className="w-full items-center flex justify-center">

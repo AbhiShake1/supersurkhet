@@ -29,7 +29,10 @@ import {
   sanitizeFocusStack,
   UI_BUILDER_FOCUS_SHORTCUTS,
 } from '@/components/ui/ui-builder/internal/editor-panel';
-import type { ComponentLayer } from '@/components/ui/ui-builder/types';
+import type {
+  ComponentLayer,
+  PropValue,
+} from '@/components/ui/ui-builder/types';
 import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
 
 function createTree(): ComponentLayer {
@@ -79,12 +82,19 @@ describe('UI Builder focus mode integration', () => {
 
   it('derives focus path and sanitizes invalid stack entries', () => {
     const page = createTree();
+    const pageChildren = Array.isArray(page.children) ? page.children : [];
+    const focusLayer = pageChildren.find(
+      (child): child is ComponentLayer<Record<string, PropValue>> =>
+        typeof child !== 'string' && child.id === 'focus',
+    );
 
     const pathToLeaf = findLayerPath(page, 'leaf').map((layer) => layer.id);
     expect(pathToLeaf).toEqual(['page', 'focus', 'leaf']);
 
     expect(isLayerInsideSubtree(page, 'outside')).toBe(true);
-    expect(isLayerInsideSubtree(page.children[0], 'outside')).toBe(false);
+    expect(focusLayer).toBeDefined();
+    if (!focusLayer) return;
+    expect(isLayerInsideSubtree(focusLayer, 'outside')).toBe(false);
 
     expect(sanitizeFocusStack(page, ['focus', 'leaf', 'outside'])).toEqual([
       'focus',

@@ -48,10 +48,6 @@ function _PartyManagement({ slug }: PartyManagementProps) {
     keys: [slug],
   });
 
-  const _createMutation = api.party.useCreate();
-  const _updateMutation = api.party.useUpdate();
-  const _deleteMutation = api.party.useDelete();
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">

@@ -21,6 +21,13 @@ function toRawShapeEntries(
   return Object.entries(rawShape) as Array<[SchemaKeys, RawShapeConfig]>;
 }
 
+function createAdminTab(schema: SchemaKeys) {
+  return {
+    schema,
+    slug: '',
+  } as unknown as AutoAdminTabInput;
+}
+
 function RouteComponent() {
   const { promptLogin, closeLoginPrompt } = useLoginPrompt();
   const { isAuthenticated, user } = useAuth();
@@ -42,41 +49,7 @@ function RouteComponent() {
 
   const tabs = entries
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([schemaKey]) => {
-      const transformer = (rows: Array<Record<string, unknown>>) => {
-        if (rows.length === 0) return rows;
-        const first = rows[0];
-        if ('timestamp' in first) return rows;
-
-        const flattened = rows
-          .flatMap((row) => {
-            const businessSource = row._;
-            const business =
-              businessSource &&
-              typeof businessSource === 'object' &&
-              'soul' in businessSource
-                ? businessSource.soul
-                : undefined;
-            return Object.values(row).map((value) =>
-              !value || typeof value !== 'object'
-                ? null
-                : { ...value, business },
-            );
-          })
-          .filter(
-            (value) =>
-              !!value && typeof value === 'object' && !('soul' in value),
-          );
-
-        return flattened.length ? flattened : rows;
-      };
-
-      return {
-        schema: schemaKey,
-        slug: '',
-        transformer,
-      } satisfies AutoAdminTabInput;
-    });
+    .map(([schemaKey]) => createAdminTab(schemaKey));
 
   return <AutoAdmin tabs={tabs} />;
 }

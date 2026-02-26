@@ -21,18 +21,21 @@ export const ImageUploadField: React.FC<AutoFormFieldProps> = ({
   field,
   value,
 }) => {
-  const { control } = useFormContext();
+  const form = useFormContext();
   // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
   const { key, ...props } = inputProps;
+  const fieldPath = path.join('.');
 
   return (
     <ImageUploadItem
       id={id}
       className={error && 'border-destructive'}
-      control={control}
-      path={path}
       defaultValue={props.defaultValue ?? value ?? field.default}
       value={value}
+      onUpload={() => {
+        form.unregister(fieldPath);
+        form.register(fieldPath, { shouldUnregister: true });
+      }}
       {...props}
     />
   );
@@ -40,13 +43,12 @@ export const ImageUploadField: React.FC<AutoFormFieldProps> = ({
 
 export interface ImageUploadItemProps
   extends Omit<ComponentProps<'input'>, 'defaultValue' | 'value'>,
-    UseImageUploadProps,
-    Pick<AutoFormFieldProps, 'control' | 'path'> {}
+    UseImageUploadProps {}
 
 export function ImageUploadItem({
   className,
-  control,
-  path,
+  onUpload,
+  defaultValue,
   value,
   ...props
 }: ImageUploadItemProps) {
@@ -59,12 +61,9 @@ export function ImageUploadItem({
     handleRemove,
     isUploading,
   } = useImageUpload({
-    defaultValue: props.defaultValue,
+    defaultValue,
     value,
-    onUpload() {
-      control.unregister();
-      control?.register(path.join('.'), { shouldUnregister: true });
-    },
+    onUpload,
   });
 
   const [isDragging, setIsDragging] = useState(false);
@@ -125,6 +124,7 @@ export function ImageUploadItem({
 
       <Input
         type="file"
+        placeholder="Upload image file"
         accept="image/*"
         className="hidden"
         ref={fileInputRef}

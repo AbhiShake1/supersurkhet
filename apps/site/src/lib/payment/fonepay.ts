@@ -5,10 +5,6 @@ import WebSocket from 'ws';
 // --- Configuration ---
 const FONEPAY_API_BASE_URL_DEV = 'https://dev-merchantapi.fonepay.com/api';
 const FONEPAY_API_BASE_URL_LIVE = 'https://merchantapi.fonepay.com/api';
-const _FONEPAY_WEBSOCKET_URL_DEV =
-  'wss://dev-ws.fonepay.com/convergent-webSocket-web/merchantEndPoint';
-const _FONEPAY_WEBSOCKET_URL_LIVE =
-  'wss://ws.fonepay.com/convergent-webSocket-web/merchantEndPoint';
 
 // Fonepay credentials - Load these from environment variables
 const MERCHANT_CODE = process.env.FONEPAY_MERCHANT_CODE || 'YOUR_MERCHANT_CODE';

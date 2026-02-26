@@ -329,12 +329,12 @@ const ProductPrice = React.forwardRef<HTMLDivElement, ProductPriceProps>(
       );
     }
 
-    const originalPrice = product?.price;
+    const originalPrice = product?.sellingPrice ?? product?.costPrice ?? 0;
 
     return (
       <div ref={ref} className={cn('mb-3', className)} {...props}>
         <span className="text-lg font-bold text-primary">
-          ${originalPrice?.toFixed(2)}
+          ${originalPrice.toFixed(2)}
         </span>
       </div>
     );

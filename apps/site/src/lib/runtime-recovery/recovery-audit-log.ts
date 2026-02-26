@@ -1,4 +1,7 @@
 import type { RollbackPlanDoc } from './contracts';
+import type { RollbackExecutionResultDoc } from './rollback-health-verify';
+
+export type { RollbackExecutionResultDoc };
 
 export type RecoveryPromptDecision = 'accept_rollback' | 'dismiss';
 
@@ -7,15 +10,6 @@ export type RecoveryActorSource =
   | 'assistant-cta'
   | 'keyboard-shortcut'
   | 'manual';
-
-export type RollbackExecutionResultDoc = {
-  executionId: string;
-  planId: string;
-  executedAt: string;
-  status: 'success' | 'failed' | 'partial' | 'no-op';
-  appliedStrategies: string[];
-  failureReason?: string;
-};
 
 export type RecoveryDecisionAuditRow = {
   kind: 'rollback-decision';

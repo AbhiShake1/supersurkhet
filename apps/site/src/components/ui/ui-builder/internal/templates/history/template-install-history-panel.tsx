@@ -4,9 +4,9 @@ import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import type { ComponentLayer } from '@/components/ui/ui-builder/types';
 import type {
   BusinessUiTemplateInstallDoc,
-  ComponentLayer,
   UiTemplateInstallPreview,
   UiTemplateReleaseDoc,
 } from '@/lib/plugins/types';

@@ -1,0 +1,11 @@
+Execute /Users/abhi/proj/personal/supersurkhet/.parallel/067/PLANS/067-runtime-recovery-contract-alignment-hotfix.md end-to-end.
+
+Rules:
+- Follow Exclusive Write Scope only.
+- Do not ask user questions; choose safe defaults and continue.
+- Keep changes small, non-breaking, and quick.
+- Continuously append progress to output/parallel/067-runtime-recovery.md.
+- Run verification commands listed in the plan.
+- Commit changes on this branch with plan id in commit subject.
+- Do not modify files outside the plan scope.
+- End by writing status=merged/pending_merge and verification summary in output/parallel/067-runtime-recovery.md.

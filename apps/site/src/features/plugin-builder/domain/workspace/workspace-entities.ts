@@ -192,15 +192,15 @@ export type WorkspaceEntityCollectionInput = z.input<
 >;
 
 export type WorkspaceEntityMap = {
-  schemas: Record<SchemaEntityId, SchemaEntity>;
-  fields: Record<FieldEntityId, FieldEntity>;
-  derivations: Record<DerivationEntityId, DerivationEntity>;
-  refinements: Record<RefinementEntityId, RefinementEntity>;
-  workflows: Record<WorkflowEntityId, WorkflowEntity>;
-  nodes: Record<NodeEntityId, NodeEntity>;
-  edges: Record<EdgeEntityId, EdgeEntity>;
-  actions: Record<ActionEntityId, ActionEntity>;
-  tabs: Record<TabEntityId, TabEntity>;
+  schemas: Record<string, SchemaEntity>;
+  fields: Record<string, FieldEntity>;
+  derivations: Record<string, DerivationEntity>;
+  refinements: Record<string, RefinementEntity>;
+  workflows: Record<string, WorkflowEntity>;
+  nodes: Record<string, NodeEntity>;
+  edges: Record<string, EdgeEntity>;
+  actions: Record<string, ActionEntity>;
+  tabs: Record<string, TabEntity>;
 };
 
 function toCanonicalRecord<Id extends string, T extends { id: Id }>(
@@ -386,33 +386,15 @@ export function createWorkspaceEntityMap(
   assertNoDuplicateIds('tabs', parsed.tabs);
 
   const entityMap: WorkspaceEntityMap = {
-    schemas: toCanonicalRecord(parsed.schemas) as Record<
-      SchemaEntityId,
-      SchemaEntity
-    >,
-    fields: toCanonicalRecord(parsed.fields) as Record<
-      FieldEntityId,
-      FieldEntity
-    >,
-    derivations: toCanonicalRecord(parsed.derivations) as Record<
-      DerivationEntityId,
-      DerivationEntity
-    >,
-    refinements: toCanonicalRecord(parsed.refinements) as Record<
-      RefinementEntityId,
-      RefinementEntity
-    >,
-    workflows: toCanonicalRecord(parsed.workflows) as Record<
-      WorkflowEntityId,
-      WorkflowEntity
-    >,
-    nodes: toCanonicalRecord(parsed.nodes) as Record<NodeEntityId, NodeEntity>,
-    edges: toCanonicalRecord(parsed.edges) as Record<EdgeEntityId, EdgeEntity>,
-    actions: toCanonicalRecord(parsed.actions) as Record<
-      ActionEntityId,
-      ActionEntity
-    >,
-    tabs: toCanonicalRecord(parsed.tabs) as Record<TabEntityId, TabEntity>,
+    schemas: toCanonicalRecord(parsed.schemas),
+    fields: toCanonicalRecord(parsed.fields),
+    derivations: toCanonicalRecord(parsed.derivations),
+    refinements: toCanonicalRecord(parsed.refinements),
+    workflows: toCanonicalRecord(parsed.workflows),
+    nodes: toCanonicalRecord(parsed.nodes),
+    edges: toCanonicalRecord(parsed.edges),
+    actions: toCanonicalRecord(parsed.actions),
+    tabs: toCanonicalRecord(parsed.tabs),
   };
 
   assertReferencesExist(entityMap);

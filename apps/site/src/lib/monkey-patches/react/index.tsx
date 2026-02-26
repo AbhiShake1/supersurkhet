@@ -18,12 +18,15 @@ const WRAPPED = Symbol('Wrapped:Provider');
 
   Provider[WRAPPED] = true;
 
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  context.Provider = (props: any) => (
-    <ContextDataStore contextData={props?.value}>
+  const WrappedProvider = ((props: React.ProviderProps<unknown>) => (
+    <ContextDataStore
+      contextData={(props.value as Record<string, unknown>) ?? {}}
+    >
       <Provider {...props} />
     </ContextDataStore>
-  );
+  )) as typeof context.Provider;
+
+  context.Provider = WrappedProvider;
 
   return context;
 };

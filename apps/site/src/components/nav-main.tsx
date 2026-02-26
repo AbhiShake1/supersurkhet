@@ -19,8 +19,8 @@ export interface NavMainProps {
 
 export function NavMain({ items }: NavMainProps) {
   const { search } = useLocation();
-  // @ts-expect-error
-  const tab = (search.tab as string) ?? items[0].title;
+  const tab =
+    typeof search?.tab === 'string' ? search.tab : (items[0]?.title ?? '');
   return (
     <SidebarGroup>
       <SidebarMenu>
@@ -31,7 +31,6 @@ export function NavMain({ items }: NavMainProps) {
               className={cn(tab === item.title && 'bg-accent')}
               asChild
             >
-              {/* @ts-expect-error */}
               <Link to="." search={{ tab: item.title }}>
                 {item.icon && <item.icon className={cn('w-4')} />}
                 <span>{item.title}</span>

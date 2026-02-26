@@ -1,10 +1,11 @@
 import { Link as LinkBase } from '@tanstack/react-router';
+import type { ReactNode } from 'react';
 import z from 'zod';
 
 export const LinkSchema = z.object({
   page: z.string().nullish().default(null).catch(null),
   className: z.string().optional(),
-  children: z.any().optional(),
+  children: z.custom<ReactNode>().optional(),
   searchParams: z.record(z.string()).optional(),
 });
 
@@ -13,11 +14,5 @@ export function Link({
   searchParams,
   ...props
 }: z.infer<typeof LinkSchema>) {
-  // @ts-expect-error
-  return (
-    <LinkBase
-      {...props}
-      search={(prev) => ({ ...prev, ...searchParams, p: page })}
-    />
-  );
+  return <LinkBase {...props} to={page ?? '.'} search={searchParams ?? true} />;
 }

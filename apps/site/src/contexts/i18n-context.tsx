@@ -8,10 +8,9 @@ import i18n, {
 // Define the context type
 interface I18nContextType {
   language: Language;
-  setLanguage: (lang: Language) => void;
+  setLanguage: (lang: Language) => Promise<void>;
   availableLanguages: Language[];
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  t: (key: string, options?: any) => string;
+  t: typeof i18n.t;
   changeLanguage: (lang: Language) => Promise<void>;
 }
 
@@ -72,8 +71,7 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({ children }) => {
       language,
       setLanguage: changeLanguage,
       availableLanguages: AVAILABLE_LANGUAGES,
-      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-      t: (key: string, options?: any) => i18n.t(key, options),
+      t: i18n.t.bind(i18n),
       changeLanguage,
     }),
     [language],

@@ -103,7 +103,7 @@ export const NodeTooltipContent = forwardRef<HTMLDivElement, NodeToolbarProps>(
             'rounded-sm bg-primary p-2 text-primary-foreground',
             className,
           )}
-          tabIndex="0"
+          tabIndex={0}
           position={position}
           {...props}
         >

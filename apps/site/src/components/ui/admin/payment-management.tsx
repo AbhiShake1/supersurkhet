@@ -1,7 +1,6 @@
 'use client';
 
 import { format } from 'date-fns';
-import _ from 'lodash';
 import {
   CheckCircle,
   Clock,
@@ -24,6 +23,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { api } from '@/lib/api';
+import { formatCurrency } from '@/lib/intl';
+import {
+  getInvoicePaidAmount,
+  getInvoicePayments,
+  getInvoiceTotalAmount,
+} from '@/lib/invoice-payments';
 import type { AdminComponent } from '.';
 
 interface PaymentManagementProps {
@@ -36,112 +41,117 @@ export const PaymentManagement: AdminComponent = ({ slug }) => {
 
 function _PaymentManagement({ slug }: PaymentManagementProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const { data: payments = [] } = api.paymentTransaction.useGet({
+  const { data: invoices = [] } = api.invoice.useGet({
     keys: [slug],
   });
-  // const { mutate: update } = api.paymentTransaction.useUpdate({ keys: [slug] })
 
-  const _filteredPayments = payments.filter((payment) => {
-    const matchesSearch =
-      payment.transactionId
-        ?.toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      payment.customerId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      payment.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
+  const paymentEntries = invoices.flatMap((invoice) =>
+    getInvoicePayments(invoice).map((payment, index) => ({
+      id: `${invoice._?.soul ?? 'invoice'}:${index}`,
+      invoice,
+      payment,
+    })),
+  );
+
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+  const filteredPaymentEntries = paymentEntries.filter((entry) => {
+    if (!normalizedSearch) return true;
+    const invoiceId = entry.invoice._?.soul?.split('/').at(-1);
+    const paidAt = entry.payment.paidAt
+      ? format(new Date(entry.payment.paidAt), 'MMM dd, yyyy')
+      : '';
+    return (
+      invoiceId?.toLowerCase().includes(normalizedSearch) ||
+      paidAt.toLowerCase().includes(normalizedSearch) ||
+      entry.invoice.paymentStatus?.toLowerCase().includes(normalizedSearch) ||
+      entry.invoice.type?.toLowerCase().includes(normalizedSearch)
+    );
   });
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'default';
-      case 'pending':
-        return 'secondary';
-      case 'processing':
-        return 'outline';
-      case 'failed':
-        return 'destructive';
-      case 'refunded':
-        return 'secondary';
-      case 'cancelled':
-        return 'secondary';
-      default:
-        return 'secondary';
-    }
+  const getStatusBadgeVariant = (status: string | undefined) => {
+    if (!status || status === 'pending') return 'secondary';
+    if (status === 'paid') return 'default';
+    if (status.startsWith('partial')) return 'outline';
+    if (status.startsWith('overpaid')) return 'destructive';
+    return 'secondary';
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="w-4 h-4" />;
-      case 'pending':
-        return <Clock className="w-4 h-4" />;
-      case 'processing':
-        return <RotateCcw className="w-4 h-4" />;
-      case 'failed':
-        return <XCircle className="w-4 h-4" />;
-      case 'refunded':
-        return <RotateCcw className="w-4 h-4" />;
-      case 'cancelled':
-        return <XCircle className="w-4 h-4" />;
-      default:
-        return <Clock className="w-4 h-4" />;
+  const getStatusIcon = (status: string | undefined) => {
+    if (status === 'paid') {
+      return <CheckCircle className="w-4 h-4" />;
     }
+    if (status?.startsWith('partial')) {
+      return <RotateCcw className="w-4 h-4" />;
+    }
+    if (status?.startsWith('overpaid')) {
+      return <XCircle className="w-4 h-4" />;
+    }
+    return <Clock className="w-4 h-4" />;
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  const PaymentCard = ({ payment }: { payment: any }) => {
+  const completedCount = invoices.filter(
+    (invoice) => invoice.paymentStatus === 'paid',
+  ).length;
+  const pendingCount = invoices.filter(
+    (invoice) => invoice.paymentStatus === 'pending',
+  ).length;
+  const partialCount = invoices.filter((invoice) =>
+    invoice.paymentStatus?.startsWith('partial'),
+  ).length;
+
+  const totalPaidAmount = invoices.reduce(
+    (sum, invoice) => sum + getInvoicePaidAmount(invoice),
+    0,
+  );
+
+  const renderPaymentCard = (invoice: (typeof invoices)[number]) => {
+    const invoiceId = invoice._?.soul?.split('/').at(-1) ?? 'N/A';
+    const totalAmount = getInvoiceTotalAmount(invoice);
+    const paidAmount = getInvoicePaidAmount(invoice);
     return (
       <div className="rounded-md border bg-card p-3 shadow-xs flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
-          <span className="font-medium text-sm">
-            {payment.description || 'Payment'}
-          </span>
+          <span className="font-medium text-sm">Invoice #{invoiceId}</span>
           <Badge
-            variant={getStatusBadgeVariant(payment.status)}
+            variant={getStatusBadgeVariant(invoice.paymentStatus)}
             className="flex items-center gap-1"
           >
-            {getStatusIcon(payment.status)}
-            <span className="capitalize">{payment.status}</span>
+            {getStatusIcon(invoice.paymentStatus)}
+            <span className="capitalize">
+              {invoice.paymentStatus || 'pending'}
+            </span>
           </Badge>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-lg font-bold">
-            {payment.currency} {payment.amount?.toFixed(2)}
+            {formatCurrency(paidAmount)}
           </span>
           <span className="text-xs text-gray-500">
-            {payment.processedAt
-              ? format(new Date(payment.processedAt), 'MMM dd, yyyy')
+            {invoice.issuedAt
+              ? format(new Date(invoice.issuedAt), 'MMM dd, yyyy')
               : 'N/A'}
           </span>
         </div>
         <div className="text-xs text-gray-500 truncate">
-          ID: {payment.transactionId || 'N/A'}
+          Total: {formatCurrency(totalAmount)}
         </div>
-        {payment.customerId && (
-          <div className="text-xs text-gray-500 truncate">
-            Customer: {payment.customerId}
-          </div>
-        )}
       </div>
     );
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             Payment Management
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            Manage payment transactions and view financial data
+            Manage invoice payments and settlement status
           </p>
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
@@ -151,7 +161,7 @@ function _PaymentManagement({ slug }: PaymentManagementProps) {
                   Total Payments
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  {payments.length}
+                  {paymentEntries.length}
                 </p>
               </div>
               <Wallet className="w-8 h-8 text-gray-400" />
@@ -167,7 +177,7 @@ function _PaymentManagement({ slug }: PaymentManagementProps) {
                   Completed
                 </p>
                 <p className="text-2xl font-bold text-green-600">
-                  {payments.filter((p) => p.status === 'completed').length}
+                  {completedCount}
                 </p>
               </div>
               <CheckCircle className="w-8 h-8 text-green-500" />
@@ -183,7 +193,7 @@ function _PaymentManagement({ slug }: PaymentManagementProps) {
                   Pending
                 </p>
                 <p className="text-2xl font-bold text-yellow-600">
-                  {payments.filter((p) => p.status === 'pending').length}
+                  {pendingCount}
                 </p>
               </div>
               <Clock className="w-8 h-8 text-yellow-500" />
@@ -196,30 +206,28 @@ function _PaymentManagement({ slug }: PaymentManagementProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Failed
+                  Partial
                 </p>
                 <p className="text-2xl font-bold text-red-600">
-                  {payments.filter((p) => p.status === 'failed').length}
+                  {partialCount}
                 </p>
               </div>
-              <XCircle className="w-8 h-8 text-red-500" />
+              <RotateCcw className="w-8 h-8 text-red-500" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
         <Input
-          placeholder="Search payments by ID, customer, or description..."
+          placeholder="Search payments by invoice, status, date, or type..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(event) => setSearchQuery(event.target.value)}
           className="pl-10"
         />
       </div>
 
-      {/* Views */}
       <Tabs defaultValue="table" className="space-y-4">
         <TabsList>
           <TabsTrigger value="table">Table View</TabsTrigger>
@@ -228,15 +236,15 @@ function _PaymentManagement({ slug }: PaymentManagementProps) {
         </TabsList>
 
         <TabsContent value="table" className="space-y-4">
-          <AutoTable schema="paymentTransaction" slug={slug} />
+          <AutoTable schema="invoice" slug={slug} />
         </TabsContent>
 
         <TabsContent value="kanban" className="space-y-4">
           <AutoKanban
             slug={slug}
-            cardBuilder={(payment) => <PaymentCard payment={payment} />}
-            groupKey="status"
-            schema="paymentTransaction"
+            cardBuilder={(invoice) => renderPaymentCard(invoice)}
+            groupKey="paymentStatus"
+            schema="invoice"
           />
         </TabsContent>
 
@@ -245,57 +253,66 @@ function _PaymentManagement({ slug }: PaymentManagementProps) {
             <CardHeader>
               <CardTitle>Payment Summary</CardTitle>
               <CardDescription>
-                Overview of payment transactions and financial metrics
+                Overview of payment activity and settlement metrics
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="font-semibold mb-3">Payment Methods</h3>
+                  <h3 className="font-semibold mb-3">Recent Payments</h3>
                   <div className="space-y-2">
-                    {_.uniqBy(payments, 'paymentMethod').map((method) => (
-                      <div
-                        key={method.paymentMethod}
-                        className="flex justify-between"
-                      >
-                        <span className="capitalize">
-                          {method.paymentMethod || 'N/A'}
-                        </span>
-                        <span>
-                          {
-                            payments.filter(
-                              (p) => p.paymentMethod === method.paymentMethod,
-                            ).length
-                          }
-                        </span>
-                      </div>
-                    ))}
+                    {filteredPaymentEntries.slice(0, 8).map((entry) => {
+                      const paidAt = entry.payment.paidAt
+                        ? format(new Date(entry.payment.paidAt), 'MMM dd, yyyy')
+                        : 'N/A';
+                      return (
+                        <div
+                          key={entry.id}
+                          className="flex justify-between text-sm"
+                        >
+                          <span>
+                            #{entry.invoice._?.soul?.split('/').at(-1)} •{' '}
+                            {paidAt}
+                          </span>
+                          <span className="font-medium">
+                            {formatCurrency(entry.payment.paidAmount ?? 0)}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold mb-3">Recent Activity</h3>
+                  <h3 className="font-semibold mb-3">Totals</h3>
                   <div className="space-y-2">
-                    {[...payments]
-                      .sort(
-                        (a, b) =>
-                          new Date(b.processedAt || '').getTime() -
-                          new Date(a.processedAt || '').getTime(),
-                      )
-                      .slice(0, 5)
-                      .map((payment) => (
-                        <div
-                          key={payment._?.soul}
-                          className="flex justify-between text-sm"
-                        >
-                          <span className="truncate max-w-[120px]">
-                            {payment.description || 'Payment'}
-                          </span>
-                          <span className="font-medium">
-                            {payment.currency} {payment.amount?.toFixed(2)}
-                          </span>
-                        </div>
-                      ))}
+                    <div className="flex justify-between">
+                      <span>Total Invoices</span>
+                      <span>{invoices.length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total Paid</span>
+                      <span className="font-medium">
+                        {formatCurrency(totalPaidAmount)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total Outstanding</span>
+                      <span className="font-medium">
+                        {formatCurrency(
+                          invoices.reduce(
+                            (sum, invoice) =>
+                              sum +
+                              Math.max(
+                                0,
+                                getInvoiceTotalAmount(invoice) -
+                                  getInvoicePaidAmount(invoice),
+                              ),
+                            0,
+                          ),
+                        )}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>

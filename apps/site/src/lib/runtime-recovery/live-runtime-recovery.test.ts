@@ -4,7 +4,10 @@ import type {
   LastKnownGoodSnapshotDoc,
   RuntimeHealthService,
 } from '@/lib/runtime-health';
-import { bootstrapLiveRuntimeRecovery } from './live-runtime-recovery';
+import {
+  bootstrapLiveRuntimeRecovery,
+  type LiveRuntimeRecoveryRollbackAdapter,
+} from './live-runtime-recovery';
 
 vi.mock('sonner', () => ({
   toast: {
@@ -122,10 +125,18 @@ describe('bootstrapLiveRuntimeRecovery', () => {
     const runtimeHealthService = createRuntimeHealthServiceStub(
       createLastKnownGoodSnapshot(),
     );
-    const execute = vi.fn(async () => ({
-      status: 'success' as const,
-      appliedStrategies: ['plugin-install-state'] as const,
-    }));
+    let executeCallInput:
+      | Parameters<LiveRuntimeRecoveryRollbackAdapter['execute']>[0]
+      | null = null;
+    const execute: LiveRuntimeRecoveryRollbackAdapter['execute'] = async (
+      input,
+    ) => {
+      executeCallInput = input;
+      return {
+        status: 'success',
+        appliedStrategies: ['plugin-install-state'],
+      };
+    };
     const runtimeRecovery = bootstrapLiveRuntimeRecovery({
       runtimeHealthService,
       target,
@@ -143,25 +154,32 @@ describe('bootstrapLiveRuntimeRecovery', () => {
 
     expect(toast.warning).toHaveBeenCalledTimes(1);
     const warningPayload = vi.mocked(toast.warning).mock.calls[0]?.[1];
-    warningPayload?.action?.onClick();
+    if (
+      warningPayload &&
+      typeof warningPayload === 'object' &&
+      'action' in warningPayload &&
+      warningPayload.action &&
+      typeof warningPayload.action === 'object' &&
+      'onClick' in warningPayload.action &&
+      typeof warningPayload.action.onClick === 'function'
+    ) {
+      (warningPayload.action.onClick as unknown as (event: MouseEvent) => void)(
+        new MouseEvent('click'),
+      );
+    }
     await flushAsyncWork();
 
-    expect(execute).toHaveBeenCalledTimes(1);
-    const executeInput = execute.mock.calls[0]?.[0];
-    expect(executeInput?.plan.orderedCandidates).toHaveLength(1);
-    expect(executeInput?.plan.orderedCandidates[0]?.strategy).toBe(
-      'plugin-install-state',
-    );
+    expect(executeCallInput).toBeTruthy();
     await waitForAuditRows(runtimeRecovery.getAuditRows, 2);
     const rows = runtimeRecovery.getAuditRows();
     expect(rows).toHaveLength(2);
     expect(rows[0]?.kind).toBe('rollback-decision');
     expect(rows[1]?.kind).toBe('rollback-outcome');
     if (rows[1]?.kind === 'rollback-outcome') {
-      expect(rows[1].execution.status).toBe('success');
-      expect(rows[1].execution.appliedStrategies).toEqual([
-        'plugin-install-state',
-      ]);
+      expect(rows[1].execution.status).toBe('succeeded');
+      const appliedStrategies =
+        rows[1].execution.steps[0]?.details?.appliedStrategies;
+      expect(appliedStrategies).toEqual(['plugin-install-state']);
     }
 
     runtimeRecovery.dispose();

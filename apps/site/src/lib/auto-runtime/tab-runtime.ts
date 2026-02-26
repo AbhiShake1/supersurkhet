@@ -93,7 +93,7 @@ export function dedupeAdminTabs<TTab extends { title?: string }>(
 }
 
 export function normalizeAutoTableTab<
-  TTab extends { slug?: string; data?: unknown },
+  TTab extends Record<string, unknown> & { slug?: string; data?: unknown },
 >(tab: TTab, basePath: string): TTab {
   if (tab.data !== undefined) {
     return tab;

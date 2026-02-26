@@ -16,6 +16,7 @@ import {
   CredenzaTitle,
 } from '@/components/ui/credenza';
 import type { User } from '@/lib/schema';
+import type { AuthUser } from './auth-provider';
 import { useAuth } from './auth-provider';
 import { ScrollArea } from './ui/scroll-area';
 
@@ -23,7 +24,7 @@ interface LoginPromptContextType {
   promptLogin: (options?: {
     dismissible?: boolean;
     showBackgroundContent?: boolean;
-  }) => Promise<User | undefined>;
+  }) => Promise<AuthUser | undefined>;
   closeLoginPrompt: () => void;
 }
 
@@ -35,7 +36,9 @@ export const LoginPromptProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [isOpen, _setIsOpen] = useState(false);
-  const resolveRef = useRef<((user: User | undefined) => void) | null>(null);
+  const resolveRef = useRef<((user: AuthUser | undefined) => void) | null>(
+    null,
+  );
   const rejectRef = useRef<((error: Error) => void) | null>(null);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -61,7 +64,7 @@ export const LoginPromptProvider: React.FC<{ children: React.ReactNode }> = ({
       showBackgroundContentRef.current = showBackgroundContent;
       setIsOpen(true);
       setMode('login'); // Always start with login mode
-      return new Promise<User | undefined>((resolve, reject) => {
+      return new Promise<AuthUser | undefined>((resolve, reject) => {
         resolveRef.current = resolve;
         rejectRef.current = reject;
       });

@@ -54,7 +54,9 @@ export default function ScrollText({
   const handleIntersection = (entries: IntersectionObserverEntry[]) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
-        const index = itemsRef.current.indexOf(entry.target);
+        const target =
+          entry.target instanceof HTMLDivElement ? entry.target : null;
+        const index = target ? itemsRef.current.indexOf(target) : -1;
         setActiveIndex(index);
       }
     });

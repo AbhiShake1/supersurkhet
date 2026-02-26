@@ -12,8 +12,7 @@ interface RolesMatrixProps {
   tabs: PossibleTabConfig[];
 }
 
-// biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-export function RolesAndPermissionsPage({ slug, tabs }: RolesMatrixProps) {
+export function RolesAndPermissionsPage({ tabs }: RolesMatrixProps) {
   const groupedPermissions = useMemo(() => {
     return generatePermissions(tabs);
   }, [tabs]);

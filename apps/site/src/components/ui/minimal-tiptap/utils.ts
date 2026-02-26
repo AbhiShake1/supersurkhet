@@ -44,13 +44,19 @@ export const getOutput = (
   editor: Editor,
   format: MinimalTiptapProps['output'],
 ): object | string => {
+  const markdownStorage = editor.storage as Editor['storage'] & {
+    markdown?: { getMarkdown: () => string };
+  };
+
   switch (format) {
     case 'json':
       return editor.getJSON();
     case 'html':
       return editor.isEmpty ? '' : editor.getHTML();
     case 'markdown':
-      return editor.isEmpty ? '' : editor.storage.markdown.getMarkdown();
+      return editor.isEmpty
+        ? ''
+        : (markdownStorage.markdown?.getMarkdown() ?? '');
     default:
       return editor.getText();
   }

@@ -8,15 +8,17 @@ const conditionNodeHeight = 120;
 const startEndNodeWidth = 100;
 const startEndNodeHeight = 100;
 
-export const getLayoutedElements = (
-  nodes: Node[],
-  edges: Edge[],
+export const getLayoutedElements = <
+  TNode extends Node = Node,
+  TEdge extends Edge = Edge,
+>(
+  nodes: TNode[],
+  edges: TEdge[],
   direction = 'TB',
 ) => {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
 
-  const _isHorizontal = direction === 'LR';
   dagreGraph.setGraph({ rankdir: direction });
 
   nodes.forEach((node) => {
@@ -51,8 +53,8 @@ export const getLayoutedElements = (
     const nodeWithPosition = dagreGraph.node(node.id);
 
     // Special handling for different node types
-    // biome-ignore lint/suspicious/noImplicitAnyLet: lint debt cleanup
-    let width, height;
+    let width = nodeWidth;
+    let height = nodeHeight;
 
     if (node.type === 'condition') {
       width = conditionNodeWidth;
@@ -65,7 +67,7 @@ export const getLayoutedElements = (
       height = node.measured?.height || nodeHeight;
     }
 
-    const newNode = {
+    const newNode: TNode = {
       ...node,
       position: {
         x: nodeWithPosition.x - width / 2,

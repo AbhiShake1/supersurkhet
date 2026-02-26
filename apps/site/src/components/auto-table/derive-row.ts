@@ -1,6 +1,7 @@
 import { runDeriveWithRuntimeFormValues } from '@/lib/zod/with-derivations';
 import type {
   DeriveConfig,
+  DerivedFieldResult,
   DeriveFn,
   FieldConfigCustomData,
 } from '../ui/autoform';
@@ -28,16 +29,17 @@ export function applyDerivedValuesToRow(
         sourceRow: null as never,
       }),
     );
-    if (result && typeof (result as Promise<unknown>).then === 'function') {
+    if (result instanceof Promise) {
       continue;
     }
     if (!result) {
       continue;
     }
+    const deriveResult = result satisfies DerivedFieldResult;
     const derivedValue =
-      'value' in result
-        ? result.value
-        : (result.inputProps as Record<string, unknown> | undefined)?.value;
+      'value' in deriveResult
+        ? deriveResult.value
+        : deriveResult.inputProps?.value;
     if (typeof derivedValue === 'undefined') {
       continue;
     }

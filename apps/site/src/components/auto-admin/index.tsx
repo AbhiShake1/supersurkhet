@@ -593,7 +593,7 @@ export function AutoAdmin({
     [updateSystemTab],
   );
 
-  const tab = (search.tab as string) ?? tabsWithHome[0]?.title;
+  const tab = (search?.tab as string) ?? tabsWithHome[0]?.title;
 
   const currentItem = useMemo(
     () => tabsWithHome.find((t) => t.title === tab) ?? tabsWithHome?.[0],
@@ -1112,6 +1112,10 @@ export type AutoKanbanProps<K extends SchemaKeys> = {
   cardBuilder: (data: NestedSchemaType<K>) => ReactNode;
   schema: K;
   isItemLocked?: (item: NestedSchemaType<K>) => boolean;
+  onUpdate?: (
+    item: NestedSchemaType<K>,
+    variables: { id: string } & Partial<NestedSchemaType<K>>,
+  ) => void | Promise<void>;
 };
 
 export function AutoKanban<K extends SchemaKeys>({
@@ -1120,6 +1124,7 @@ export function AutoKanban<K extends SchemaKeys>({
   groupKey,
   cardBuilder,
   isItemLocked,
+  onUpdate,
 }: AutoKanbanProps<K>) {
   const { data: orders = [], isLoading } = api[schemaName].useGet({
     keys: [slug],
@@ -1134,10 +1139,7 @@ export function AutoKanban<K extends SchemaKeys>({
     _def?: { innerType?: { Values?: Record<string, string> } };
   };
   const statuses = Object.keys(
-    groupField.Values ??
-      groupField._def?.innerType?.Values ??
-      groupField._def?.schema?._def?.innerType?.Values ??
-      {},
+    groupField.Values ?? groupField._def?.innerType?.Values ?? {},
   );
 
   return (
@@ -1151,8 +1153,12 @@ export function AutoKanban<K extends SchemaKeys>({
             const soul = getSoulFromUnknown(order);
             if (!soul) continue;
             if (isItemLocked?.(order)) continue;
-            // @ts-expect-error
-            update({ id: soul, [groupKey]: status });
+            const variables = {
+              id: soul,
+              [groupKey]: status,
+            } as { id: string } & Partial<NestedSchemaType<K>>;
+            update(variables);
+            void onUpdate?.(order, variables);
           }
         }
       }}

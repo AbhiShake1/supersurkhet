@@ -119,7 +119,7 @@ describe('marketplace seed catalog', () => {
       (release) => release.id === liveSeedWithoutDocs.id,
     );
 
-    expect(restaurantRelease?.docs.title).toBe('Restaurant Admin Core (Live)');
+    expect(restaurantRelease?.docs?.title).toBe('Restaurant Admin Core (Live)');
     expect(restaurantRelease?.schemaDocs?.length).toBeGreaterThan(0);
     expect(
       (restaurantRelease?.schemaDocs ?? []).some(
@@ -186,7 +186,9 @@ describe('marketplace seed catalog', () => {
     };
 
     expect(() =>
-      mergeMarketplaceReleasesWithSeed([malformedLiveRow as PluginReleaseDoc]),
+      mergeMarketplaceReleasesWithSeed([
+        malformedLiveRow as unknown as PluginReleaseDoc,
+      ]),
     ).not.toThrow();
   });
 });

@@ -6,7 +6,6 @@ import {
   ArrowDown,
   ArrowUp,
   Calendar,
-  Currency,
   Loader2,
   Plus,
   Search,
@@ -26,7 +25,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { api } from '@/lib/api';
-import type { Transaction } from '@/lib/schema';
+import { formatCurrency } from '@/lib/intl';
+import {
+  getInvoicePaidAmount,
+  getInvoiceTotalAmount,
+} from '@/lib/invoice-payments';
 import type { AdminComponent } from '.';
 
 interface TransactionManagementProps {
@@ -40,22 +43,18 @@ export const TransactionManagement: AdminComponent = ({ slug }) => {
 function _TransactionManagement({ slug }: TransactionManagementProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const {
-    data: transactions = [],
+    data: invoices = [],
     isLoading,
     error,
-  } = api.transaction.useGet({
+  } = api.invoice.useGet({
     keys: [slug],
   });
   const { data: parties = [] } = api.party.useGet({
     keys: [slug],
   });
-  const { data: invoices = [] } = api.invoice.useGet({
+  const { data: customers = [] } = api.customer.useGet({
     keys: [slug],
   });
-
-  const _createMutation = api.transaction.useCreate();
-  const _updateMutation = api.transaction.useUpdate();
-  const _deleteMutation = api.transaction.useDelete();
 
   if (isLoading) {
     return (
@@ -77,97 +76,116 @@ function _TransactionManagement({ slug }: TransactionManagementProps) {
     );
   }
 
-  const filteredTransactions = transactions.filter((transaction) => {
-    const party = parties.find((p) => p._?.soul === transaction.partyId);
-    const invoice = invoices.find((i) => i._?.soul === transaction.invoiceId);
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+  const filteredInvoices = invoices.filter((invoice) => {
+    if (!normalizedSearchQuery) return true;
+    const party = parties.find((row) => row._?.soul === invoice.partyId);
+    const customer = customers.find((row) => row._?.soul === invoice.partyId);
+    const invoiceId = invoice._?.soul?.split('/').at(-1);
     const matchesSearch =
-      party?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      invoice?.invoiceNumber
-        ?.toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      transaction.type?.toLowerCase().includes(searchQuery.toLowerCase());
+      party?.name?.toLowerCase().includes(normalizedSearchQuery) ||
+      customer?.name?.toLowerCase().includes(normalizedSearchQuery) ||
+      invoice.type?.toLowerCase().includes(normalizedSearchQuery) ||
+      invoiceId?.toLowerCase().includes(normalizedSearchQuery);
     return matchesSearch;
   });
 
-  const getTransactionTypeIcon = (type: string) => {
+  const totalPaidAmount = invoices.reduce(
+    (sum, invoice) => sum + getInvoicePaidAmount(invoice),
+    0,
+  );
+  const totalPurchaseAmount = invoices
+    .filter((invoice) => invoice.type === 'purchase')
+    .reduce((sum, invoice) => sum + getInvoiceTotalAmount(invoice), 0);
+  const totalSaleAmount = invoices
+    .filter((invoice) => invoice.type === 'sale')
+    .reduce((sum, invoice) => sum + getInvoiceTotalAmount(invoice), 0);
+
+  const getTransactionTypeIcon = (
+    type: (typeof invoices)[number]['type'] | undefined,
+  ) => {
     switch (type) {
-      case 'payment':
+      case 'purchase':
         return <ArrowDown className="w-4 h-4" />;
-      case 'receipt':
+      case 'sale':
         return <ArrowUp className="w-4 h-4" />;
-      case 'deposit':
-        return <Wallet className="w-4 h-4" />;
       default:
-        return <Currency className="w-4 h-4" />;
+        return <Calendar className="w-4 h-4" />;
     }
   };
 
-  const getTransactionTypeBadgeVariant = (type: string) => {
+  const getTransactionTypeBadgeVariant = (
+    type: (typeof invoices)[number]['type'] | undefined,
+  ) => {
     switch (type) {
-      case 'payment':
+      case 'purchase':
         return 'destructive';
-      case 'receipt':
+      case 'sale':
         return 'default';
-      case 'deposit':
-        return 'secondary';
       default:
         return 'outline';
     }
   };
 
-  const TransactionCard = ({
-    transaction,
-  }: {
-    transaction: Transaction & { _?: { soul: string } };
-  }) => {
-    const party = parties.find((p) => p._?.soul === transaction.partyId);
-    const invoice = invoices.find((i) => i._?.soul === transaction.invoiceId);
+  const renderTransactionCard = (
+    invoice: (typeof filteredInvoices)[number],
+  ) => {
+    const party = parties.find((row) => row._?.soul === invoice.partyId);
+    const customer = customers.find((row) => row._?.soul === invoice.partyId);
+    const totalAmount = getInvoiceTotalAmount(invoice);
+    const paidAmount = getInvoicePaidAmount(invoice);
+    const invoiceId = invoice._?.soul?.split('/').at(-1) ?? 'N/A';
+    const issuedOn = invoice.issuedAt
+      ? format(new Date(invoice.issuedAt), 'MMM dd, yyyy')
+      : 'N/A';
+    const displayName = party?.name || customer?.name || 'Unknown party';
 
     return (
-      <div className="rounded-md border bg-card p-4 shadow-xs flex flex-col gap-3">
+      <div
+        key={invoice._?.soul}
+        className="rounded-md border bg-card p-4 shadow-xs flex flex-col gap-3"
+      >
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3">
             <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded-lg">
-              {getTransactionTypeIcon(transaction.type)}
+              {getTransactionTypeIcon(invoice.type)}
             </div>
             <div>
               <h3 className="font-semibold text-sm capitalize">
-                {transaction.type}
+                {invoice.type}
               </h3>
               <Badge
-                variant={getTransactionTypeBadgeVariant(transaction.type)}
+                variant={getTransactionTypeBadgeVariant(invoice.type)}
                 className="mt-1 text-xs"
               >
-                {transaction.type}
+                {invoice.type}
               </Badge>
             </div>
           </div>
           <div className="text-right">
             <div className="font-bold text-sm">
-              Rs. {transaction.amount?.toFixed(2)}
+              {formatCurrency(totalAmount)}
             </div>
-            <div className="text-xs text-gray-500">
-              {format(new Date(transaction.date), 'MMM dd, yyyy')}
-            </div>
+            <div className="text-xs text-gray-500">{issuedOn}</div>
           </div>
         </div>
 
         <div className="space-y-2 text-sm">
-          {party && (
-            <div className="flex items-center gap-2">
-              <span className="text-gray-500">Party:</span>
-              <span>{party.name}</span>
-            </div>
-          )}
-          {invoice && (
-            <div className="flex items-center gap-2">
-              <span className="text-gray-500">Invoice:</span>
-              <span>#{invoice.invoiceNumber}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <span className="text-gray-500">Party:</span>
+            <span>{displayName}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-gray-500">Invoice:</span>
+            <span>#{invoiceId}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-gray-500">Paid:</span>
+            <span>{formatCurrency(paidAmount)}</span>
+          </div>
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-gray-500" />
-            <span>{format(new Date(transaction.date), 'MMM dd, yyyy')}</span>
+            <span>{issuedOn}</span>
           </div>
         </div>
       </div>
@@ -183,7 +201,7 @@ function _TransactionManagement({ slug }: TransactionManagementProps) {
             Transaction Management
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            Manage payments, receipts, and deposits
+            Manage purchase and sale invoice flows
           </p>
         </div>
         <Button
@@ -207,10 +225,10 @@ function _TransactionManagement({ slug }: TransactionManagementProps) {
                   Total Transactions
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  {transactions.length}
+                  {invoices.length}
                 </p>
               </div>
-              <Currency className="w-8 h-8 text-gray-400" />
+              <Calendar className="w-8 h-8 text-gray-400" />
             </div>
           </CardContent>
         </Card>
@@ -223,7 +241,10 @@ function _TransactionManagement({ slug }: TransactionManagementProps) {
                   Payments
                 </p>
                 <p className="text-2xl font-bold text-red-600">
-                  {transactions.filter((t) => t.type === 'payment').length}
+                  {
+                    invoices.filter((invoice) => invoice.type === 'purchase')
+                      .length
+                  }
                 </p>
               </div>
               <ArrowDown className="w-8 h-8 text-red-500" />
@@ -239,7 +260,7 @@ function _TransactionManagement({ slug }: TransactionManagementProps) {
                   Receipts
                 </p>
                 <p className="text-2xl font-bold text-green-600">
-                  {transactions.filter((t) => t.type === 'receipt').length}
+                  {invoices.filter((invoice) => invoice.type === 'sale').length}
                 </p>
               </div>
               <ArrowUp className="w-8 h-8 text-green-500" />
@@ -252,13 +273,10 @@ function _TransactionManagement({ slug }: TransactionManagementProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Total Amount
+                  Total Paid
                 </p>
                 <p className="text-2xl font-bold text-purple-600">
-                  Rs.{' '}
-                  {transactions
-                    .reduce((sum, t) => sum + (t.amount || 0), 0)
-                    .toFixed(2)}
+                  {formatCurrency(totalPaidAmount)}
                 </p>
               </div>
               <Wallet className="w-8 h-8 text-purple-500" />
@@ -287,21 +305,16 @@ function _TransactionManagement({ slug }: TransactionManagementProps) {
         </TabsList>
 
         <TabsContent value="table" className="space-y-4">
-          <AutoTable schema="transaction" slug={slug} />
+          <AutoTable schema="invoice" slug={slug} />
         </TabsContent>
 
         <TabsContent value="cards" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredTransactions.map((transaction) => (
-              <TransactionCard
-                key={transaction._?.soul}
-                transaction={transaction}
-              />
-            ))}
+            {filteredInvoices.map((invoice) => renderTransactionCard(invoice))}
           </div>
-          {filteredTransactions.length === 0 && !isLoading && (
+          {filteredInvoices.length === 0 && !isLoading && (
             <div className="text-center py-12">
-              <Currency className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                 No transactions found
               </h3>
@@ -333,8 +346,9 @@ function _TransactionManagement({ slug }: TransactionManagementProps) {
                       <span>Payments</span>
                       <span className="font-medium">
                         {
-                          transactions.filter((t) => t.type === 'payment')
-                            .length
+                          invoices.filter(
+                            (invoice) => invoice.type === 'purchase',
+                          ).length
                         }
                       </span>
                     </div>
@@ -342,16 +356,7 @@ function _TransactionManagement({ slug }: TransactionManagementProps) {
                       <span>Receipts</span>
                       <span className="font-medium">
                         {
-                          transactions.filter((t) => t.type === 'receipt')
-                            .length
-                        }
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Deposits</span>
-                      <span className="font-medium">
-                        {
-                          transactions.filter((t) => t.type === 'deposit')
+                          invoices.filter((invoice) => invoice.type === 'sale')
                             .length
                         }
                       </span>
@@ -365,41 +370,19 @@ function _TransactionManagement({ slug }: TransactionManagementProps) {
                     <div className="flex justify-between">
                       <span>Total Payments</span>
                       <span className="font-medium">
-                        Rs.{' '}
-                        {transactions
-                          .filter((t) => t.type === 'payment')
-                          .reduce((sum, trans) => sum + (trans.amount || 0), 0)
-                          .toFixed(2)}
+                        {formatCurrency(totalPurchaseAmount)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span>Total Receipts</span>
                       <span className="font-medium">
-                        Rs.{' '}
-                        {transactions
-                          .filter((t) => t.type === 'receipt')
-                          .reduce((sum, trans) => sum + (trans.amount || 0), 0)
-                          .toFixed(2)}
+                        {formatCurrency(totalSaleAmount)}
                       </span>
                     </div>
                     <div className="flex justify-between font-semibold border-t pt-2">
                       <span>Net</span>
                       <span>
-                        Rs.{' '}
-                        {(
-                          transactions
-                            .filter((t) => t.type === 'receipt')
-                            .reduce(
-                              (sum, trans) => sum + (trans.amount || 0),
-                              0,
-                            ) -
-                          transactions
-                            .filter((t) => t.type === 'payment')
-                            .reduce(
-                              (sum, trans) => sum + (trans.amount || 0),
-                              0,
-                            )
-                        ).toFixed(2)}
+                        {formatCurrency(totalSaleAmount - totalPurchaseAmount)}
                       </span>
                     </div>
                   </div>

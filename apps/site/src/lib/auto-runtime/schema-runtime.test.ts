@@ -45,7 +45,11 @@ describe('schema runtime helpers', () => {
         z.string().superRefine(
           fieldConfig({
             customData: {
-              derive: ({ formValues }) => ({
+              derive: ({
+                formValues,
+              }: {
+                formValues: { amount?: number };
+              }) => ({
                 value: Number(formValues.amount ?? 0) > 0 ? 'paid' : 'pending',
               }),
             },

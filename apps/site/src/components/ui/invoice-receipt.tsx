@@ -17,6 +17,13 @@ import {
 import type { Invoice, Party } from '@/lib/schema';
 import type { Product } from '../supersurkhet/products';
 
+type InvoiceLineItem = {
+  product?: string;
+  quantity?: number;
+  rate?: number;
+  total?: number;
+};
+
 interface ReceiptProps {
   invoice: Invoice;
   party: Party;
@@ -148,21 +155,23 @@ export function InvoiceReceipt({
                 </tr>
               </thead>
               <tbody>
-                {invoice.items.map((item, idx) => (
+                {(invoice.items as InvoiceLineItem[]).map((item, idx) => (
                   <tr
                     // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                     key={idx}
                     className="border-b hover:bg-muted/50 transition-colors"
                   >
                     <td className="px-2 py-2">
-                      {productsById.get(item.product)?.title}
+                      {item.product
+                        ? productsById.get(item.product)?.title
+                        : '-'}
                     </td>
                     <td className="px-2 py-2 text-right">{item.quantity}</td>
                     <td className="px-2 py-2 text-right">
-                      {formatCurrency(item.rate)}
+                      {formatCurrency(item.rate ?? 0)}
                     </td>
                     <td className="px-2 py-2 text-right font-semibold">
-                      {formatCurrency(item.total)}
+                      {formatCurrency(item.total ?? 0)}
                     </td>
                   </tr>
                 ))}

@@ -204,6 +204,25 @@ const schemaBehaviorSchema = z
   })
   .strict();
 
+const schemaFieldItemTypeSchema: z.ZodType<Omit<SchemaFieldDoc, 'key'>> =
+  z.lazy(() =>
+    z
+      .object({
+        type: fieldTypeSchema,
+        label: z.string().optional(),
+        description: z.string().optional(),
+        optional: z.boolean().optional(),
+        defaultValue: jsonValueSchema.optional(),
+        enumValues: z.array(z.string()).optional(),
+        itemType: schemaFieldItemTypeSchema.optional(),
+        fields: z.array(schemaFieldDocSchema).optional(),
+        tokens: z.record(z.string(), jsonValueSchema).optional(),
+        behavior: schemaBehaviorSchema.optional(),
+        rules: z.array(schemaRuleDocSchema).optional(),
+      })
+      .strict(),
+  );
+
 const schemaFieldDocSchema: z.ZodType<SchemaFieldDoc> = z.lazy(() =>
   z
     .object({
@@ -214,24 +233,7 @@ const schemaFieldDocSchema: z.ZodType<SchemaFieldDoc> = z.lazy(() =>
       optional: z.boolean().optional(),
       defaultValue: jsonValueSchema.optional(),
       enumValues: z.array(z.string()).optional(),
-      itemType: z
-        .object({
-          type: fieldTypeSchema,
-          label: z.string().optional(),
-          description: z.string().optional(),
-          optional: z.boolean().optional(),
-          defaultValue: jsonValueSchema.optional(),
-          enumValues: z.array(z.string()).optional(),
-          itemType: z
-            .lazy(() => schemaFieldDocSchema.omit({ key: true }))
-            .optional(),
-          fields: z.array(schemaFieldDocSchema).optional(),
-          tokens: z.record(z.string(), jsonValueSchema).optional(),
-          behavior: schemaBehaviorSchema.optional(),
-          rules: z.array(schemaRuleDocSchema).optional(),
-        })
-        .strict()
-        .optional(),
+      itemType: schemaFieldItemTypeSchema.optional(),
       fields: z.array(schemaFieldDocSchema).optional(),
       tokens: z.record(z.string(), jsonValueSchema).optional(),
       behavior: schemaBehaviorSchema.optional(),
@@ -1957,7 +1959,6 @@ export async function createPluginDraft({
         actorUserId: data.actorUserId,
         draftId: migratedDraft.draftId,
         revision: {
-          actionManifest: latestLegacyRevision.actionManifest,
           schemaDocs: latestLegacyRevision.schemaDocs,
           adminTabs: latestLegacyRevision.adminTabs,
         },

@@ -1,0 +1,10 @@
+Execute /Users/abhi/proj/personal/supersurkhet/.parallel/dm2/081/PLANS/081-datamatrix-v2-core-schema-and-signed-token.md end-to-end.
+
+Rules:
+- Follow Exclusive Write Scope only.
+- Keep changes small, non-breaking, and reversible.
+- Run verification commands listed in the plan.
+- Write progress continuously to output/parallel/datamatrix-v2/081-core-schema-and-signed-token.md.
+- Record blockers and integration risks in that artifact.
+- Respect dependency hints: -.
+- End by writing status=merged/pending_merge plus verification summary.

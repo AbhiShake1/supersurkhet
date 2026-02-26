@@ -51,6 +51,22 @@ function hasFieldOverride(
   return Boolean(derived.fieldType || derived.inputProps || derived.customData);
 }
 
+function getValueAtPath(source: unknown, path: string[]): unknown {
+  let cursor: unknown = source;
+  for (const segment of path) {
+    if (!cursor || typeof cursor !== 'object') return undefined;
+    cursor = (cursor as Record<string, unknown>)[segment];
+  }
+  return cursor;
+}
+
+function hasSoul(value: unknown): value is { _: { soul?: string } } {
+  if (!value || typeof value !== 'object') return false;
+  const nested = (value as Record<string, unknown>)._;
+  if (!nested || typeof nested !== 'object') return false;
+  return 'soul' in nested;
+}
+
 export function useDerivedField({
   field,
   path,
@@ -70,17 +86,24 @@ export function useDerivedField({
     | undefined;
   const deriveFn = getDeriveFn(customData);
   const sourceConfig = customData?.source ?? customData?.sources?.[0];
-  const rowSnapshot = useWatch({
-    // Top-level derived fields may depend on sibling fields (e.g. paidAmount <- items).
-    // Watch the full form in that case so derivations re-run on any relevant input change.
-    name: rowPathKey ? rowPathKey : undefined,
-  });
+  // Top-level derived fields may depend on sibling fields (e.g. paidAmount <- items),
+  // so we watch the full form and then scope locally when we have a row path.
+  const formSnapshot = useWatch();
+  const rowSnapshot = useMemo(
+    () =>
+      rowPathKey
+        ? getValueAtPath(formSnapshot, rowPathKey.split('.'))
+        : formSnapshot,
+    [formSnapshot, rowPathKey],
+  );
 
   const sourceSelectorKey = sourceConfig?.key ?? path[path.length - 1];
   const sourceSelectorPathJoined = rowPathKey
     ? `${rowPathKey}.${sourceSelectorKey}`
     : sourceSelectorKey;
   const selectedSourceId = useWatch({ name: sourceSelectorPathJoined });
+  const selectedSourceSoul =
+    typeof selectedSourceId === 'string' ? selectedSourceId : undefined;
   const sourceScope = business?.business?.basePath ?? '';
 
   const { data: sourceRows = [] } = useQuery({
@@ -101,16 +124,13 @@ export function useDerivedField({
   });
 
   const sourceRow = useMemo(() => {
-    if (!selectedSourceId || !Array.isArray(sourceRows)) return null;
+    if (!selectedSourceSoul || !Array.isArray(sourceRows)) return null;
     return (
       sourceRows.find(
-        (item) =>
-          item &&
-          typeof item === 'object' &&
-          item?._?.soul === selectedSourceId,
+        (item) => hasSoul(item) && item._.soul === selectedSourceSoul,
       ) ?? null
     );
-  }, [selectedSourceId, sourceRows]);
+  }, [selectedSourceSoul, sourceRows]);
 
   const { data: derivedOverride = null } = useQuery({
     queryKey: [
@@ -119,7 +139,7 @@ export function useDerivedField({
       fieldPathKey,
       rowPathKey,
       sourceConfig?.table,
-      selectedSourceId,
+      selectedSourceSoul,
       rowSnapshot,
     ],
     enabled: Boolean(deriveFn),

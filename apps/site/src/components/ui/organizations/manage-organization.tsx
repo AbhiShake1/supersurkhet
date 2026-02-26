@@ -21,14 +21,18 @@ import { Input } from '@/components/ui/input';
 import InvitationEmail from '@/emails/invitation-template';
 import { sendMail } from '@/emails/send-mail';
 import { api } from '@/lib/api';
-import type { BusinessInvitation, BusinessMember } from '@/lib/schema';
+import type { Business, BusinessInvitation } from '@/lib/schema';
 import { cn } from '@/lib/utils';
 import { AutoFormSubmit } from '../auto-form';
 import { AutoForm, fieldConfig } from '../autoform';
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
 
 type Invitation = BusinessInvitation;
-type Member = BusinessMember;
+type Member = NonNullable<Business['members']>[string];
+type InviteMemberPayload = {
+  email: string;
+  permissions: Record<string, boolean>;
+};
 
 interface ManageOrganizationProps {
   slug: string;
@@ -54,11 +58,11 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
   const updateBusinessMutation = api.business.useUpdate();
 
   // Handle inviting a new member
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  const handleInviteMember = async (data: any) => {
+  const handleInviteMember = async (data: InviteMemberPayload) => {
     try {
       if (!business) {
         toast.error('Business not found');
+        return;
       }
 
       // Generate a unique token for the invitation
@@ -78,6 +82,7 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
               inviterName={user?.name || user?.email || 'A user'}
               businessName={business?.name}
               inviteeEmail={data.email}
+              memberRole="staff"
               invitationUrl={invitationUrl}
             />,
           ),
@@ -85,7 +90,7 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
       });
 
       await updateBusinessMutation.mutateAsync({
-        id: business?.id,
+        id: business.id,
         invitations: {
           [invitationToken]: {
             email: data.email,
@@ -102,27 +107,6 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
       console.error('Error sending invitation:', error);
       toast.error('Failed to send invitation. Please try again.');
     }
-  };
-
-  // Handle updating member permissions
-  const handleUpdatePermissions = (
-    _memberId: string,
-    _permissions: string[],
-  ) => {
-    // console.log(`Updating permissions for member ${memberId}:`, permissions);
-    // // In a real app, this would make an API call
-    // setMembers(prevMembers =>
-    //   prevMembers.map(member =>
-    //     member.id === memberId ? { ...member, permissions } : member
-    //   )
-    // );
-  };
-
-  // Handle removing a member
-  const handleRemoveMember = (_memberId: string) => {
-    // console.log(`Removing member with ID: ${memberId}`);
-    // // In a real app, this would make an API call
-    // setMembers(prevMembers => prevMembers.filter(member => member.id !== memberId));
   };
 
   const navigationItems = [
@@ -198,10 +182,7 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
             showInviteForm={showInviteForm}
             setShowInviteForm={setShowInviteForm}
             onInviteMember={handleInviteMember}
-            onUpdatePermissions={handleUpdatePermissions}
-            onRemoveMember={handleRemoveMember}
             tabs={tabs}
-            slug={slug}
           />
         )}
         {activeTab === 'invitations' && (
@@ -237,22 +218,15 @@ const MembersTab = ({
   showInviteForm,
   setShowInviteForm,
   onInviteMember,
-  onUpdatePermissions,
-  onRemoveMember,
   tabs,
-  slug,
 }: {
   members: Member[];
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   showInviteForm: boolean;
   setShowInviteForm: (show: boolean) => void;
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  onInviteMember: (data: any) => void;
-  onUpdatePermissions: (id: string, permissions: string[]) => void;
-  onRemoveMember: (id: string) => void;
+  onInviteMember: (data: InviteMemberPayload) => void;
   tabs: PossibleTabConfig[];
-  slug: string;
 }) => {
   return (
     <div className="space-y-5">
@@ -295,7 +269,7 @@ const MembersTab = ({
               permissions: z.record(z.string(), z.boolean()).superRefine(
                 fieldConfig({
                   fieldType: 'permissions',
-                  customData: { tabs, slug },
+                  customData: { tabs },
                 }),
               ),
             })}
@@ -334,8 +308,6 @@ const MembersTab = ({
               <MemberRow
                 key={member.userId}
                 member={member}
-                onUpdatePermissions={onUpdatePermissions}
-                onRemoveMember={onRemoveMember}
                 searchTerm={searchTerm}
               />
             ))}
@@ -359,15 +331,9 @@ const MembersTab = ({
 // Member Row Component
 const MemberRow = ({
   member: { userId, role, permissions, joinedAt },
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  onUpdatePermissions,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  onRemoveMember,
   searchTerm,
 }: {
   member: Member;
-  onUpdatePermissions: (id: string, permissions: string[]) => void;
-  onRemoveMember: (id: string) => void;
   searchTerm: string;
 }) => {
   const { data } = api.user.useGet({

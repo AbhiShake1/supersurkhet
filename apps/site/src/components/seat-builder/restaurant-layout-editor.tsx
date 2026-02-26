@@ -164,15 +164,6 @@ function _RestaurantLayoutEditor() {
     toast.success('Floor added');
   };
 
-  const _renameFloor = (floorId: string, newName: string) => {
-    updateLayoutWithHistory({
-      ...layout,
-      floors: layout.floors.map((floor) =>
-        floor.id === floorId ? { ...floor, name: newName } : floor,
-      ),
-    });
-  };
-
   const deleteFloor = (floorId: string) => {
     if (layout.floors.length <= 1) {
       toast.error('Cannot delete floor');

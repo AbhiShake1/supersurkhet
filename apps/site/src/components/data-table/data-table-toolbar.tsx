@@ -84,7 +84,9 @@ function DataTableToolbarFilter<TData>({
         case 'text':
           return (
             <Input
-              placeholder={columnMeta.placeholder ?? columnMeta.label}
+              placeholder={
+                columnMeta.placeholder ?? columnMeta.label ?? 'Filter...'
+              }
               value={(column.getFilterValue() as string) ?? ''}
               onChange={(event) => column.setFilterValue(event.target.value)}
               className="h-8 w-40 lg:w-56"
@@ -97,7 +99,9 @@ function DataTableToolbarFilter<TData>({
               <Input
                 type="number"
                 inputMode="numeric"
-                placeholder={columnMeta.placeholder ?? columnMeta.label}
+                placeholder={
+                  columnMeta.placeholder ?? columnMeta.label ?? 'Filter...'
+                }
                 value={(column.getFilterValue() as string) ?? ''}
                 onChange={(event) => column.setFilterValue(event.target.value)}
                 className={cn('h-8 w-[120px]', columnMeta.unit && 'pr-8')}

@@ -15,6 +15,7 @@ export type RollbackExecutionFailureCode =
 export type RollbackExecutionStepTarget =
   | 'plugin-install-state'
   | 'data-snapshot'
+  | 'surface-snapshot'
   | 'health-verification';
 
 export type RollbackExecutionStepStatus =

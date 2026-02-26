@@ -1,21 +1,9 @@
 'use client';
 
 import { ArrowLeftIcon, ArrowRightIcon } from 'lucide-react';
-import type { ComponentProps } from 'react';
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from 'react';
+import type { ComponentProps, MouseEvent } from 'react';
+import { useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
-import type { CarouselApi } from '@/components/ui/carousel';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-} from '@/components/ui/carousel';
 import {
   HoverCard,
   HoverCardContent,
@@ -89,28 +77,17 @@ export const InlineCitationCardBody = ({
   <HoverCardContent className={cn('relative w-80 p-0', className)} {...props} />
 );
 
-const CarouselApiContext = createContext<CarouselApi | undefined>(undefined);
-
-const useCarouselApi = () => {
-  const context = useContext(CarouselApiContext);
-  return context;
-};
-
-export type InlineCitationCarouselProps = ComponentProps<typeof Carousel>;
+export type InlineCitationCarouselProps = ComponentProps<'div'>;
 
 export const InlineCitationCarousel = ({
   className,
   children,
   ...props
 }: InlineCitationCarouselProps) => {
-  const [api, setApi] = useState<CarouselApi>();
-
   return (
-    <CarouselApiContext.Provider value={api}>
-      <Carousel className={cn('w-full', className)} setApi={setApi} {...props}>
-        {children}
-      </Carousel>
-    </CarouselApiContext.Provider>
+    <div className={cn('w-full', className)} {...props}>
+      {children}
+    </div>
   );
 };
 
@@ -118,7 +95,7 @@ export type InlineCitationCarouselContentProps = ComponentProps<'div'>;
 
 export const InlineCitationCarouselContent = (
   props: InlineCitationCarouselContentProps,
-) => <CarouselContent {...props} />;
+) => <div {...props} />;
 
 export type InlineCitationCarouselItemProps = ComponentProps<'div'>;
 
@@ -126,10 +103,7 @@ export const InlineCitationCarouselItem = ({
   className,
   ...props
 }: InlineCitationCarouselItemProps) => (
-  <CarouselItem
-    className={cn('w-full space-y-2 p-4 pl-8', className)}
-    {...props}
-  />
+  <div className={cn('w-full space-y-2 p-4 pl-8', className)} {...props} />
 );
 
 export type InlineCitationCarouselHeaderProps = ComponentProps<'div'>;
@@ -154,29 +128,6 @@ export const InlineCitationCarouselIndex = ({
   className,
   ...props
 }: InlineCitationCarouselIndexProps) => {
-  const api = useCarouselApi();
-  const [current, setCurrent] = useState(0);
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    if (!api) {
-      return;
-    }
-
-    setCount(api.scrollSnapList().length);
-    setCurrent(api.selectedScrollSnap() + 1);
-
-    const handleSelect = () => {
-      setCurrent(api.selectedScrollSnap() + 1);
-    };
-
-    api.on('select', handleSelect);
-
-    return () => {
-      api.off('select', handleSelect);
-    };
-  }, [api]);
-
   return (
     <div
       className={cn(
@@ -185,7 +136,7 @@ export const InlineCitationCarouselIndex = ({
       )}
       {...props}
     >
-      {children ?? `${current}/${count}`}
+      {children ?? '1/1'}
     </div>
   );
 };
@@ -194,15 +145,15 @@ export type InlineCitationCarouselPrevProps = ComponentProps<'button'>;
 
 export const InlineCitationCarouselPrev = ({
   className,
+  onClick,
   ...props
 }: InlineCitationCarouselPrevProps) => {
-  const api = useCarouselApi();
-
-  const handleClick = useCallback(() => {
-    if (api) {
-      api.scrollPrev();
-    }
-  }, [api]);
+  const handleClick = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) => {
+      onClick?.(event);
+    },
+    [onClick],
+  );
 
   return (
     <button
@@ -221,15 +172,15 @@ export type InlineCitationCarouselNextProps = ComponentProps<'button'>;
 
 export const InlineCitationCarouselNext = ({
   className,
+  onClick,
   ...props
 }: InlineCitationCarouselNextProps) => {
-  const api = useCarouselApi();
-
-  const handleClick = useCallback(() => {
-    if (api) {
-      api.scrollNext();
-    }
-  }, [api]);
+  const handleClick = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) => {
+      onClick?.(event);
+    },
+    [onClick],
+  );
 
   return (
     <button

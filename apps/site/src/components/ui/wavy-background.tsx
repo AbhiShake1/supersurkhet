@@ -88,22 +88,24 @@ export const WavyBackground = ({
     }
   };
 
-  let animationId: number;
+  const animationIdRef = useRef<number | null>(null);
   const render = () => {
     ctx.fillStyle = backgroundFill || 'black';
     ctx.globalAlpha = waveOpacity || 0.5;
     ctx.fillRect(0, 0, w, h);
     drawWave(5);
-    animationId = requestAnimationFrame(render);
+    animationIdRef.current = requestAnimationFrame(render);
   };
 
   useEffect(() => {
     init();
     return () => {
-      cancelAnimationFrame(animationId);
+      if (animationIdRef.current !== null) {
+        cancelAnimationFrame(animationIdRef.current);
+      }
     };
     // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
-  }, [animationId, init]);
+  }, [init]);
 
   const [isSafari, setIsSafari] = useState(false);
   useEffect(() => {

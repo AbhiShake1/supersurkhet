@@ -36,9 +36,11 @@ export const AutoFormField: React.FC<{
   const customData = effectiveField.fieldConfig?.customData as
     | FieldConfigCustomData
     | undefined;
+  const defaultFieldValue = defaultValues[field.key];
   const isLocked =
     Array.isArray(customData?.disableWhenValueIn) &&
-    customData?.disableWhenValueIn.includes(defaultValues[field.key]);
+    typeof defaultFieldValue === 'string' &&
+    customData.disableWhenValueIn.includes(defaultFieldValue);
   const inputDisabled = Boolean(
     effectiveField.fieldConfig?.inputProps?.disabled || isLocked,
   );

@@ -39,6 +39,17 @@ function RouteComponent() {
   const business = businesses?.[0];
   const invitation = business?.invitations?.[token];
 
+  const withoutInvitationToken = (
+    invitations: Record<string, NonNullable<typeof invitation>> | undefined,
+    invitationToken: string,
+  ) => {
+    return Object.fromEntries(
+      Object.entries(invitations ?? {}).filter(
+        ([key]) => key !== invitationToken,
+      ),
+    );
+  };
+
   useEffect(() => {
     if (status === 'accepted' || status === 'rejected') {
       return;
@@ -73,9 +84,7 @@ function RouteComponent() {
         await updateBusinessMutation.mutateAsync({
           id: business.id,
           members: updatedMembers,
-          invitations: {
-            [token]: null,
-          },
+          invitations: withoutInvitationToken(business.invitations, token),
         });
 
         setStatus('accepted');
@@ -95,12 +104,7 @@ function RouteComponent() {
       }
       await updateBusinessMutation.mutateAsync({
         id: business.id,
-        invitations: {
-          [token]: {
-            ...(invitation ?? {}),
-            status: 'rejected',
-          },
-        },
+        invitations: withoutInvitationToken(business.invitations, token),
       });
       setStatus('rejected');
     } catch (error) {
@@ -110,7 +114,7 @@ function RouteComponent() {
   };
 
   const handleGoToAdmin = () => {
-    navigate({ to: `/$businessName/admin`, params: { businessName } });
+    navigate({ to: '/$businessName/admin/plugins', params: { businessName } });
   };
 
   if (status === 'loading') {

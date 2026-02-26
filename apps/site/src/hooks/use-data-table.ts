@@ -40,7 +40,10 @@ const ARRAY_SEPARATOR = ',';
 const DEBOUNCE_MS = 300;
 const THROTTLE_MS = 50;
 
-export type DataTableInitialState<TData> = Omit<Partial<TableState>, 'sorting'> & {
+export type DataTableInitialState<TData> = Omit<
+  Partial<TableState>,
+  'sorting'
+> & {
   sorting?: ExtendedColumnSort<TData>[];
 };
 

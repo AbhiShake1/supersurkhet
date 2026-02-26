@@ -50,19 +50,17 @@ export function makeSerializable(
 
     const cleaned = _.transform(
       value,
-      (result, val, key) => {
+      (result: Record<string, unknown>, val, key) => {
         const c = clean(val, depth + 1);
-        if (c !== undefined) result[key] = c;
+        if (c !== undefined) result[String(key)] = c;
       },
-      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-      {} as Record<string, any>,
+      {} as Record<string, unknown>,
     );
 
     return _.isEmpty(cleaned) ? undefined : cleaned;
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  return clean(obj, 1) as Record<string, any>;
+  return clean(obj, 1) as Record<string, unknown>;
 }
 
 export const ContextDataStoreContext = createContext<

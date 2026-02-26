@@ -6,162 +6,127 @@ import {
   Quote,
   Underline,
 } from 'lucide-react';
-import { useRef, useState } from 'react';
-import { Label } from '@/components/ui/label';
+import type React from 'react';
+import { useRef } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Toggle } from '@/components/ui/toggle';
 import { cn } from '@/lib/utils';
-import type { FieldWrapperProps } from './FieldWrapper';
+import type { AutoFormFieldProps } from '../react';
 
-export interface EditorFieldProps extends FieldWrapperProps {
-  placeholder?: string;
-  className?: string;
-  rows?: number;
+function toEditorValue(value: unknown) {
+  return typeof value === 'string' ? value : '';
 }
 
-export function EditorField({
-  field,
-  label,
-  description,
+export const EditorField: React.FC<AutoFormFieldProps> = ({
+  inputProps,
   error,
-  className,
-  placeholder,
-  rows = 6,
-  ...props
-}: EditorFieldProps) {
-  const [_isFocused, setIsFocused] = useState(false);
+  id,
+  value,
+}) => {
+  const { key, onChange, name, disabled, ...props } = inputProps;
+  void key;
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const insertMarkdown = (markdown: string, _position: number) => {
+  const emitChange = (nextValue: string) => {
+    onChange?.({
+      target: {
+        name,
+        value: nextValue,
+      },
+    } as React.ChangeEvent<HTMLTextAreaElement>);
+  };
+
+  const insertMarkdown = (markdown: string) => {
     const textarea = textareaRef.current;
-    if (!textarea) return;
+    if (!textarea || disabled) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    const text = textarea.value;
-    const before = text.substring(0, start);
-    const after = text.substring(end);
-    const selectedText = text.substring(start, end);
+    const current = toEditorValue(value);
+    const before = current.slice(0, start);
+    const selected = current.slice(start, end);
+    const after = current.slice(end);
 
-    let newText = '';
-    let newCursorPos = 0;
-
-    if (markdown === '**') {
-      newText = `${before}**${selectedText}**${after}`;
-      newCursorPos = start + 2;
-    } else if (markdown === '*') {
-      newText = `${before}*${selectedText}*${after}`;
-      newCursorPos = start + 1;
-    } else if (markdown === '__') {
-      newText = `${before}__${selectedText}__${after}`;
-      newCursorPos = start + 2;
-    } else if (markdown === '- ') {
-      newText = `${before}- ${selectedText}${after}`;
-      newCursorPos = start + 2;
-    } else if (markdown === '1. ') {
-      newText = `${before}1. ${selectedText}${after}`;
-      newCursorPos = start + 3;
-    } else if (markdown === '> ') {
-      newText = `${before}> ${selectedText}${after}`;
-      newCursorPos = start + 2;
-    } else {
-      newText = `${before}${markdown}${selectedText}${after}`;
-      newCursorPos = start + markdown.length;
+    const prefix = markdown;
+    let suffix = '';
+    if (markdown === '**' || markdown === '*' || markdown === '__') {
+      suffix = markdown;
     }
 
-    textarea.value = newText;
-    textarea.focus();
-    textarea.setSelectionRange(newCursorPos, newCursorPos);
-    field.onChange(newText);
+    const nextValue = `${before}${prefix}${selected}${suffix}${after}`;
+    emitChange(nextValue);
   };
 
   return (
-    <div className={cn('space-y-2', className)}>
-      {label && (
-        <Label
-          htmlFor={field.name}
-          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-        >
-          {label}
-        </Label>
-      )}
-
-      {/* Toolbar */}
-      <div className="flex flex-wrap gap-1 p-2 border rounded-t-lg border-input bg-muted">
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-1 rounded-t-lg border border-input bg-muted p-2">
         <Toggle
           size="sm"
-          onPressedChange={() => insertMarkdown('**', 0)}
+          onPressedChange={() => insertMarkdown('**')}
           aria-label="Bold"
+          disabled={disabled}
         >
           <Bold className="h-4 w-4" />
         </Toggle>
         <Toggle
           size="sm"
-          onPressedChange={() => insertMarkdown('*', 0)}
+          onPressedChange={() => insertMarkdown('*')}
           aria-label="Italic"
+          disabled={disabled}
         >
           <Italic className="h-4 w-4" />
         </Toggle>
         <Toggle
           size="sm"
-          onPressedChange={() => insertMarkdown('__', 0)}
+          onPressedChange={() => insertMarkdown('__')}
           aria-label="Underline"
+          disabled={disabled}
         >
           <Underline className="h-4 w-4" />
         </Toggle>
-        <div className="w-px bg-border mx-1" />
+        <div className="mx-1 w-px bg-border" />
         <Toggle
           size="sm"
-          onPressedChange={() => insertMarkdown('- ', 0)}
+          onPressedChange={() => insertMarkdown('- ')}
           aria-label="Bullet List"
+          disabled={disabled}
         >
           <List className="h-4 w-4" />
         </Toggle>
         <Toggle
           size="sm"
-          onPressedChange={() => insertMarkdown('1. ', 0)}
+          onPressedChange={() => insertMarkdown('1. ')}
           aria-label="Numbered List"
+          disabled={disabled}
         >
           <ListOrdered className="h-4 w-4" />
         </Toggle>
-        <div className="w-px bg-border mx-1" />
+        <div className="mx-1 w-px bg-border" />
         <Toggle
           size="sm"
-          onPressedChange={() => insertMarkdown('> ', 0)}
+          onPressedChange={() => insertMarkdown('> ')}
           aria-label="Quote"
+          disabled={disabled}
         >
           <Quote className="h-4 w-4" />
         </Toggle>
       </div>
 
-      {/* Textarea */}
       <Textarea
         ref={textareaRef}
-        id={field.name}
-        placeholder={placeholder}
+        id={id}
+        value={toEditorValue(value)}
         className={cn(
-          'flex min-h-[120px] w-full rounded-t-none rounded-b-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none',
+          'min-h-[120px] resize-none rounded-none rounded-b-md',
           error && 'border-destructive',
         )}
-        rows={rows}
-        {...field}
-        {...props}
-        onFocus={(e) => {
-          setIsFocused(true);
-          field.onFocus?.(e);
-        }}
-        onBlur={(e) => {
-          setIsFocused(false);
-          field.onBlur?.(e);
-        }}
+        onChange={(event) => emitChange(event.target.value)}
+        onBlur={props.onBlur}
+        disabled={disabled}
+        placeholder={props.placeholder}
+        data-testid={props['data-testid']}
       />
-
-      {description && (
-        <p className="text-sm text-muted-foreground">{description}</p>
-      )}
-      {error && (
-        <p className="text-sm font-medium text-destructive">{error.message}</p>
-      )}
     </div>
   );
-}
+};

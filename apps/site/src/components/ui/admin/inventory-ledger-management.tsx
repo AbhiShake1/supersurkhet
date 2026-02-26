@@ -25,11 +25,26 @@ import {
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { api } from '@/lib/api';
-import type { InventoryLedger } from '@/lib/schema';
+import type { SalesItem } from '@/lib/schemas/retail';
 import type { AdminComponent } from '.';
 
 interface InventoryLedgerManagementProps {
   slug: string;
+}
+
+function isSalesItem(value: unknown): value is SalesItem {
+  if (!value || typeof value !== 'object') return false;
+  const item = value as Record<string, unknown>;
+  return (
+    typeof item.product === 'string' &&
+    typeof item.quantity === 'number' &&
+    Number.isFinite(item.quantity)
+  );
+}
+
+function getSalesItems(items: unknown): SalesItem[] {
+  if (!Array.isArray(items)) return [];
+  return items.filter(isSalesItem);
 }
 
 export const InventoryLedgerManagement: AdminComponent = ({ slug }) => {
@@ -39,10 +54,10 @@ export const InventoryLedgerManagement: AdminComponent = ({ slug }) => {
 function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const {
-    data: inventoryLedgers = [],
+    data: stockImports = [],
     isLoading,
     error,
-  } = api.inventoryLedger.useGet({
+  } = api.stockImport.useGet({
     keys: [slug],
   });
   const { data: products = [] } = api.product.useGet({
@@ -51,10 +66,6 @@ function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
   const { data: invoices = [] } = api.invoice.useGet({
     keys: [slug],
   });
-
-  const _createMutation = api.inventoryLedger.useCreate();
-  const _updateMutation = api.inventoryLedger.useUpdate();
-  const _deleteMutation = api.inventoryLedger.useDelete();
 
   if (isLoading) {
     return (
@@ -76,24 +87,50 @@ function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
     );
   }
 
-  const filteredInventoryLedgers = inventoryLedgers.filter((ledger) => {
-    const product = products.find((p) => p._?.soul === ledger.productId);
-    const invoice = invoices.find((i) => i._?.soul === ledger.invoiceId);
+  const inboundMovements = stockImports.flatMap((stockImport) =>
+    getSalesItems(stockImport.items).map((item, index) => ({
+      id: `${stockImport._?.soul ?? 'stock-import'}:in:${index}`,
+      productId: item.product,
+      quantity: item.quantity,
+      date: stockImport.importDate,
+      type: 'in' as const,
+      referenceSoul: stockImport._?.soul,
+    })),
+  );
+  const outboundMovements = invoices
+    .filter((invoice) => invoice.type === 'sale')
+    .flatMap((invoice) =>
+      getSalesItems(invoice.items).map((item, index) => ({
+        id: `${invoice._?.soul ?? 'invoice'}:out:${index}`,
+        productId: item.product,
+        quantity: item.quantity,
+        date: invoice.issuedAt,
+        type: 'out' as const,
+        referenceSoul: invoice._?.soul,
+      })),
+    );
+  const movements = [...inboundMovements, ...outboundMovements].sort((a, b) => {
+    const aTimestamp = a.date ? new Date(a.date).getTime() : 0;
+    const bTimestamp = b.date ? new Date(b.date).getTime() : 0;
+    return bTimestamp - aTimestamp;
+  });
+
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+  const filteredMovements = movements.filter((movement) => {
+    if (!normalizedSearchQuery) return true;
+    const product = products.find((row) => row._?.soul === movement.productId);
+    const referenceId = movement.referenceSoul?.split('/').at(-1);
     const matchesSearch =
-      product?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      invoice?.invoiceNumber
-        ?.toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      ledger.quantityIn?.toString().includes(searchQuery.toLowerCase()) ||
-      ledger.quantityOut?.toString().includes(searchQuery.toLowerCase());
+      product?.title?.toLowerCase().includes(normalizedSearchQuery) ||
+      movement.type?.toLowerCase().includes(normalizedSearchQuery) ||
+      referenceId?.toLowerCase().includes(normalizedSearchQuery) ||
+      movement.quantity.toString().includes(normalizedSearchQuery);
     return matchesSearch;
   });
 
-  const getTransactionType = (ledger: InventoryLedger) => {
-    return ledger.quantityIn > 0 ? 'in' : 'out';
-  };
-
-  const getTransactionTypeIcon = (type: string) => {
+  const getTransactionTypeIcon = (
+    type: (typeof movements)[number]['type'] | undefined,
+  ) => {
     switch (type) {
       case 'in':
         return <ArrowUp className="w-4 h-4" />;
@@ -104,7 +141,9 @@ function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
     }
   };
 
-  const getTransactionTypeBadgeVariant = (type: string) => {
+  const getTransactionTypeBadgeVariant = (
+    type: (typeof movements)[number]['type'] | undefined,
+  ) => {
     switch (type) {
       case 'in':
         return 'default';
@@ -115,63 +154,65 @@ function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
     }
   };
 
-  const InventoryLedgerCard = ({
-    ledger,
-  }: {
-    ledger: InventoryLedger & { _?: { soul: string } };
-  }) => {
-    const product = products.find((p) => p._?.soul === ledger.productId);
-    const invoice = invoices.find((i) => i._?.soul === ledger.invoiceId);
-    const type = getTransactionType(ledger);
+  const totalQuantityIn = movements
+    .filter((movement) => movement.type === 'in')
+    .reduce((sum, movement) => sum + movement.quantity, 0);
+  const totalQuantityOut = movements
+    .filter((movement) => movement.type === 'out')
+    .reduce((sum, movement) => sum + movement.quantity, 0);
+
+  const renderMovementCard = (movement: (typeof filteredMovements)[number]) => {
+    const product = products.find((row) => row._?.soul === movement.productId);
+    const occurredAt = movement.date
+      ? format(new Date(movement.date), 'MMM dd, yyyy')
+      : 'N/A';
+    const referenceId = movement.referenceSoul?.split('/').at(-1) ?? 'N/A';
 
     return (
-      <div className="rounded-md border bg-card p-4 shadow-xs flex flex-col gap-3">
+      <div
+        key={movement.id}
+        className="rounded-md border bg-card p-4 shadow-xs flex flex-col gap-3"
+      >
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3">
             <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded-lg">
-              {getTransactionTypeIcon(type)}
+              {getTransactionTypeIcon(movement.type)}
             </div>
             <div>
               <h3 className="font-semibold text-sm">
-                {product?.name || 'Product'}
+                {product?.title || 'Product'}
               </h3>
               <Badge
-                variant={getTransactionTypeBadgeVariant(type)}
+                variant={getTransactionTypeBadgeVariant(movement.type)}
                 className="mt-1 text-xs"
               >
-                {type === 'in' ? 'Inbound' : 'Outbound'}
+                {movement.type === 'in' ? 'Inbound' : 'Outbound'}
               </Badge>
             </div>
           </div>
           <div className="text-right">
             <div className="font-bold text-sm">
-              {type === 'in' ? '+' : '-'}
-              {type === 'in' ? ledger.quantityIn : ledger.quantityOut}
+              {movement.type === 'in' ? '+' : '-'}
+              {movement.quantity}
             </div>
-            <div className="text-xs text-gray-500">
-              {format(new Date(ledger.date), 'MMM dd, yyyy')}
-            </div>
+            <div className="text-xs text-gray-500">{occurredAt}</div>
           </div>
         </div>
 
         <div className="space-y-2 text-sm">
-          {invoice && (
-            <div className="flex items-center gap-2">
-              <span className="text-gray-500">Invoice:</span>
-              <span>#{invoice.invoiceNumber}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <span className="text-gray-500">Reference:</span>
+            <span>#{referenceId}</span>
+          </div>
           <div className="flex items-center gap-2">
             <span className="text-gray-500">
-              Quantity {type === 'in' ? 'In' : 'Out'}:
+              Quantity {movement.type === 'in' ? 'In' : 'Out'}:
             </span>
-            <span>
-              {type === 'in' ? ledger.quantityIn : ledger.quantityOut}
-            </span>
+            <span>{movement.quantity}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-gray-500">Date:</span>
-            <span>{format(new Date(ledger.date), 'MMM dd, yyyy')}</span>
+            <span>{occurredAt}</span>
           </div>
         </div>
       </div>
@@ -211,7 +252,7 @@ function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
                   Total Entries
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  {inventoryLedgers.length}
+                  {movements.length}
                 </p>
               </div>
               <ShoppingCart className="w-8 h-8 text-gray-400" />
@@ -227,7 +268,10 @@ function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
                   Inbound
                 </p>
                 <p className="text-2xl font-bold text-green-600">
-                  {inventoryLedgers.filter((l) => l.quantityIn > 0).length}
+                  {
+                    movements.filter((movement) => movement.type === 'in')
+                      .length
+                  }
                 </p>
               </div>
               <ArrowUp className="w-8 h-8 text-green-500" />
@@ -243,7 +287,10 @@ function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
                   Outbound
                 </p>
                 <p className="text-2xl font-bold text-red-600">
-                  {inventoryLedgers.filter((l) => l.quantityOut > 0).length}
+                  {
+                    movements.filter((movement) => movement.type === 'out')
+                      .length
+                  }
                 </p>
               </div>
               <ArrowDown className="w-8 h-8 text-red-500" />
@@ -259,11 +306,7 @@ function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
                   Net Movement
                 </p>
                 <p className="text-2xl font-bold text-purple-600">
-                  {inventoryLedgers.reduce(
-                    (sum, l) =>
-                      sum + (l.quantityIn || 0) - (l.quantityOut || 0),
-                    0,
-                  )}
+                  {totalQuantityIn - totalQuantityOut}
                 </p>
               </div>
               <Box className="w-8 h-8 text-purple-500" />
@@ -276,7 +319,7 @@ function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
         <Input
-          placeholder="Search inventory entries by product, invoice, or quantity..."
+          placeholder="Search inventory entries by product, reference, or quantity..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10"
@@ -292,16 +335,14 @@ function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
         </TabsList>
 
         <TabsContent value="table" className="space-y-4">
-          <AutoTable schema="inventoryLedger" slug={slug} />
+          <AutoTable schema="stockImport" slug={slug} />
         </TabsContent>
 
         <TabsContent value="cards" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredInventoryLedgers.map((ledger) => (
-              <InventoryLedgerCard key={ledger._?.soul} ledger={ledger} />
-            ))}
+            {filteredMovements.map((movement) => renderMovementCard(movement))}
           </div>
-          {filteredInventoryLedgers.length === 0 && !isLoading && (
+          {filteredMovements.length === 0 && !isLoading && (
             <div className="text-center py-12">
               <ShoppingCart className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
@@ -335,7 +376,7 @@ function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
                       <span>Inbound</span>
                       <span className="font-medium">
                         {
-                          inventoryLedgers.filter((l) => l.quantityIn > 0)
+                          movements.filter((movement) => movement.type === 'in')
                             .length
                         }
                       </span>
@@ -344,8 +385,9 @@ function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
                       <span>Outbound</span>
                       <span className="font-medium">
                         {
-                          inventoryLedgers.filter((l) => l.quantityOut > 0)
-                            .length
+                          movements.filter(
+                            (movement) => movement.type === 'out',
+                          ).length
                         }
                       </span>
                     </div>
@@ -357,31 +399,15 @@ function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span>Total In</span>
-                      <span className="font-medium">
-                        {inventoryLedgers.reduce(
-                          (sum, l) => sum + (l.quantityIn || 0),
-                          0,
-                        )}
-                      </span>
+                      <span className="font-medium">{totalQuantityIn}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Total Out</span>
-                      <span className="font-medium">
-                        {inventoryLedgers.reduce(
-                          (sum, l) => sum + (l.quantityOut || 0),
-                          0,
-                        )}
-                      </span>
+                      <span className="font-medium">{totalQuantityOut}</span>
                     </div>
                     <div className="flex justify-between font-semibold border-t pt-2">
                       <span>Net</span>
-                      <span>
-                        {inventoryLedgers.reduce(
-                          (sum, l) =>
-                            sum + (l.quantityIn || 0) - (l.quantityOut || 0),
-                          0,
-                        )}
-                      </span>
+                      <span>{totalQuantityIn - totalQuantityOut}</span>
                     </div>
                   </div>
                 </div>

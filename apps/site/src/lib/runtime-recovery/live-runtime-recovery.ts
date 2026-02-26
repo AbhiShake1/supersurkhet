@@ -11,6 +11,11 @@ import type {
 import { RecoveryAuditLog, type RecoveryAuditRow } from './recovery-audit-log';
 import { RecoveryOrchestrator } from './recovery-orchestrator';
 import { RollbackCoordinator } from './rollback-coordinator';
+import {
+  buildRollbackExecutionResult,
+  type RollbackExecutionResultDoc,
+  type RollbackExecutionStepResultDoc,
+} from './rollback-health-verify';
 
 export interface RuntimeRecoveryEventTarget {
   addEventListener(
@@ -71,6 +76,49 @@ export interface LiveRuntimeRecoveryRollbackAdapter {
 export type LiveRuntimeRecoveryRollbackAdapters = Partial<
   Record<RollbackStrategyKind, LiveRuntimeRecoveryRollbackAdapter>
 >;
+
+function toRollbackStepStatus(
+  status: LiveRuntimeRecoveryExecutionStatus,
+): RollbackExecutionStepResultDoc['status'] {
+  if (status === 'success') return 'succeeded';
+  if (status === 'no-op') return 'noop';
+  return status;
+}
+
+function getExecutionFailureReason(
+  execution: RollbackExecutionResultDoc,
+): string | undefined {
+  const firstFailureStep = execution.steps.find(
+    (step) => step.failureReasons.length > 0,
+  );
+  return firstFailureStep?.failureReasons[0]?.message;
+}
+
+function buildExecutionStep(input: {
+  stepId: string;
+  target: RollbackExecutionStepResultDoc['target'];
+  status: RollbackExecutionStepResultDoc['status'];
+  failureReason?: string;
+  appliedStrategies?: RollbackStrategyKind[];
+}): RollbackExecutionStepResultDoc {
+  return {
+    stepId: input.stepId,
+    target: input.target,
+    status: input.status,
+    failureReasons: input.failureReason
+      ? [
+          {
+            code: 'unexpected_error',
+            message: input.failureReason,
+            recoverable: true,
+          },
+        ]
+      : [],
+    details: input.appliedStrategies
+      ? { appliedStrategies: input.appliedStrategies }
+      : undefined,
+  };
+}
 
 function defaultUnavailableReason(strategy: RollbackStrategyKind) {
   if (strategy === 'plugin-install-state') {
@@ -216,31 +264,39 @@ export function bootstrapLiveRuntimeRecovery(options: {
     },
     executor: {
       executePlan: async (plan) => {
-        const executionId = `runtime-recovery-exec-${now()}`;
-        const executedAt = new Date(now()).toISOString();
+        const startedAt = new Date(now()).toISOString();
         const strategy = plan.recommendedStrategy;
         if (!strategy) {
-          return {
-            executionId,
-            planId: plan.planId,
-            executedAt,
-            status: 'no-op' as const,
-            appliedStrategies: [],
-            failureReason:
-              'Rollback plan did not include an executable strategy.',
-          };
+          return buildRollbackExecutionResult({
+            startedAt,
+            completedAt: new Date(now()).toISOString(),
+            steps: [
+              buildExecutionStep({
+                stepId: `${plan.planId}-no-strategy`,
+                target: 'health-verification',
+                status: 'noop',
+                failureReason:
+                  'Rollback plan did not include an executable strategy.',
+              }),
+            ],
+          });
         }
 
         const adapter = options.rollbackAdapters?.[strategy.strategy];
         if (!adapter) {
-          return {
-            executionId,
-            planId: plan.planId,
-            executedAt,
-            status: 'no-op' as const,
-            appliedStrategies: [strategy.strategy],
-            failureReason: defaultUnavailableReason(strategy.strategy),
-          };
+          return buildRollbackExecutionResult({
+            startedAt,
+            completedAt: new Date(now()).toISOString(),
+            steps: [
+              buildExecutionStep({
+                stepId: `${plan.planId}-${strategy.strategy}-unavailable`,
+                target: strategy.strategy,
+                status: 'noop',
+                failureReason: defaultUnavailableReason(strategy.strategy),
+                appliedStrategies: [strategy.strategy],
+              }),
+            ],
+          });
         }
 
         const rollbackView =
@@ -254,27 +310,39 @@ export function bootstrapLiveRuntimeRecovery(options: {
             rollbackView,
           });
 
-          return {
-            executionId,
-            planId: plan.planId,
-            executedAt,
-            status: result.status,
-            appliedStrategies: result.appliedStrategies ?? [strategy.strategy],
-            failureReason: result.failureReason,
-          };
+          return buildRollbackExecutionResult({
+            startedAt,
+            completedAt: new Date(now()).toISOString(),
+            steps: [
+              buildExecutionStep({
+                stepId: `${plan.planId}-${strategy.strategy}`,
+                target: strategy.strategy,
+                status: toRollbackStepStatus(result.status),
+                failureReason: result.failureReason,
+                appliedStrategies: result.appliedStrategies ?? [
+                  strategy.strategy,
+                ],
+              }),
+            ],
+          });
         } catch (error) {
           const failureReason =
             error instanceof Error
               ? error.message
               : 'Rollback adapter execution failed unexpectedly.';
-          return {
-            executionId,
-            planId: plan.planId,
-            executedAt,
-            status: 'failed' as const,
-            appliedStrategies: [strategy.strategy],
-            failureReason,
-          };
+          return buildRollbackExecutionResult({
+            startedAt,
+            completedAt: new Date(now()).toISOString(),
+            steps: [
+              buildExecutionStep({
+                stepId: `${plan.planId}-${strategy.strategy}-failed`,
+                target: strategy.strategy,
+                status: 'failed',
+                failureReason,
+                appliedStrategies: [strategy.strategy],
+              }),
+            ],
+          });
         }
       },
     },
@@ -304,10 +372,10 @@ export function bootstrapLiveRuntimeRecovery(options: {
     try {
       const result = await orchestrator.resolvePromptAction(input);
       if (result.status === 'executed') {
+        const failureReason = getExecutionFailureReason(result.execution);
         toast.success('Rollback response captured', {
           description:
-            result.execution.failureReason ??
-            `Execution status: ${result.execution.status}`,
+            failureReason ?? `Execution status: ${result.execution.status}`,
         });
       } else if (result.status === 'dismissed') {
         toast.info('Rollback prompt dismissed');

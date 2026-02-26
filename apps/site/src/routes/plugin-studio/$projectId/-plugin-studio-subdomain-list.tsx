@@ -236,7 +236,6 @@ function toDraftRevisionRecencyKey(
 function toDisplayPluginTitle(input: string | undefined, pluginId: string) {
   const fallback = pluginId;
   const normalizedInput = input?.trim() ?? '';
-  const _normalizedPluginId = pluginId.trim();
   if (!normalizedInput) return fallback;
   const withoutSuffix = normalizedInput.replace(
     /(?:\s*\([^)]*\)\s*$)|(?:\s*\[[^\]]*]\s*$)/,
@@ -370,7 +369,7 @@ function toGroupSentinelSchemaId(index: number): string {
   return `${DRAFT_GROUP_SENTINEL_SCHEMA_PREFIX}${index}`;
 }
 
-function isSystemSentinelSchemaId(schemaId: unknown): boolean {
+function isSystemSentinelSchemaId(schemaId: unknown): schemaId is string {
   return (
     typeof schemaId === 'string' &&
     schemaId.startsWith(DRAFT_SYSTEM_SENTINEL_SCHEMA_PREFIX)
@@ -390,7 +389,7 @@ function parseSystemSentinelSchemaId(schemaId: unknown): SystemTabKey | null {
   return null;
 }
 
-function isSubdomainSentinelSchemaId(schemaId: unknown): boolean {
+function isSubdomainSentinelSchemaId(schemaId: unknown): schemaId is string {
   return (
     typeof schemaId === 'string' &&
     schemaId.startsWith(DRAFT_SUBDOMAIN_SENTINEL_SCHEMA_PREFIX)
@@ -762,7 +761,7 @@ function toDraftRoutesFromAdminTabs(adminTabs: readonly AdminTabDoc[]): Array<{
   id: string;
   schema: string;
   title: string;
-  group: string | null;
+  group?: string;
   order: number;
   routeSegment: string;
   routePath: string;
@@ -774,7 +773,7 @@ function toDraftRoutesFromAdminTabs(adminTabs: readonly AdminTabDoc[]): Array<{
       id: `${tab.schema}:${index}`,
       schema: tab.schema,
       title: tab.title ?? tab.schema,
-      group: tab.group?.trim() || null,
+      group: tab.group?.trim() || undefined,
       order: index,
       routeSegment,
       routePath: `/plugin-studio/${routeSegment}`,
@@ -1138,7 +1137,6 @@ export function PluginStudioSubdomainList({
       const nextTitle = activeDraftTitle || draftTitle;
       const nextDescription = activeDraftDescription || undefined;
       const nextDraft: PluginDraftDoc = {
-        id: draftId,
         draftId,
         projectId,
         pluginId: resolvedPluginId,

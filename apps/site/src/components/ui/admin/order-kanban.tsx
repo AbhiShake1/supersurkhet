@@ -6,6 +6,7 @@ import { AddRowDialog } from '@/components/auto-admin/add-row-dialog';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/intl';
 import type { Order } from '@/lib/schema';
+import type { SalesItem } from '@/lib/schemas/retail';
 import { db } from '@/lib/ssr/api';
 import { cn, soulToId } from '@/lib/utils';
 import {
@@ -23,6 +24,23 @@ type PaymentInput = {
   paidAt?: string | null;
   paidAmount?: number | string | null;
 } | null;
+
+function isOrderItem(value: unknown): value is SalesItem {
+  if (!value || typeof value !== 'object') return false;
+  const item = value as Record<string, unknown>;
+  return (
+    typeof item.product === 'string' &&
+    typeof item.quantity === 'number' &&
+    Number.isFinite(item.quantity) &&
+    typeof item.unitPrice === 'number' &&
+    Number.isFinite(item.unitPrice)
+  );
+}
+
+function getOrderItems(order: Order | undefined) {
+  if (!order || !Array.isArray(order.items)) return [] as SalesItem[];
+  return order.items.filter(isOrderItem);
+}
 
 function normalizePaymentsWithFallback(
   payments: PaymentInput[] | undefined,
@@ -66,9 +84,10 @@ const OrderKanban: AdminComponent = ({ slug }) => {
         onUpdate={(_, variables) => {
           if (variables.orderStatus !== 'done') return;
           const order = ordersBySoul.get(variables.id);
-          if (!order?.items?.length || !order?.customerId) return;
+          const orderItems = getOrderItems(order);
+          if (!orderItems.length || !order?.customerId) return;
 
-          const itemsByProductIdWithQuantity = order.items?.reduce(
+          const itemsByProductIdWithQuantity = orderItems.reduce(
             (a, item) => {
               const product = productsBySoul.get(item.product);
               let adjustedQuantity = item.quantity;
@@ -96,32 +115,29 @@ const OrderKanban: AdminComponent = ({ slug }) => {
             },
           );
 
-          const invoiceItems =
-            order.items?.map((item) => {
-              const productInfo = productsBySoul.get(item.product);
-              let adjustedQuantity = item.quantity;
+          const invoiceItems = orderItems.map((item) => {
+            const productInfo = productsBySoul.get(item.product);
+            let adjustedQuantity = item.quantity;
 
-              if (productInfo?.unit?.includes(':')) {
-                const [unitType, piecesPerUnit] = productInfo.unit.split(':');
-                if (item.unit === unitType) {
-                  adjustedQuantity =
-                    item.quantity * parseInt(piecesPerUnit, 10);
-                }
+            if (productInfo?.unit?.includes(':')) {
+              const [unitType, piecesPerUnit] = productInfo.unit.split(':');
+              if (item.unit === unitType) {
+                adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
               }
+            }
 
-              return {
-                product: item.product,
-                quantity: adjustedQuantity,
-                rate: item.unitPrice,
-                total: item.quantity * item.unitPrice,
-              };
-            }) ?? [];
+            return {
+              product: item.product,
+              quantity: adjustedQuantity,
+              rate: item.unitPrice,
+              total: item.quantity * item.unitPrice,
+            };
+          });
 
-          const totalAmount =
-            order.items?.reduce(
-              (sum, item) => sum + item.quantity * item.unitPrice,
-              0,
-            ) ?? 0;
+          const totalAmount = orderItems.reduce(
+            (sum, item) => sum + item.quantity * item.unitPrice,
+            0,
+          );
           const payments = normalizePaymentsWithFallback(
             order.payments,
             order.paidAmount,
@@ -154,7 +170,7 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
   const { data: menuItems = [] } = api.menuItem.useGet({ keys: [slug] });
   const customerById = useMemo(
     () => new Map(customers.map((c) => [c._?.soul, c])),
-    [customers.map],
+    [customers],
   );
   const { data: products = [] } = api.product.useGet({ keys: [slug] });
 
@@ -164,8 +180,8 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
   );
 
   const [open, setOpen] = useState(false);
-  if (!order?.items) return null;
-  const orderItems = order.items;
+  const orderItems = getOrderItems(order);
+  if (!orderItems.length) return null;
 
   function getBackgroundProps() {
     switch (order.orderStatus) {
@@ -323,9 +339,13 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
         <div className={cn('flex items-center justify-between gap-2')}>
           <span className="line-clamp-1 font-medium text-sm">
             {orderItems
-              .map((i) => menuItems.find((m) => m?._?.soul === i._?.soul))
-              .map((m) => m?.title)
-              .filter((m) => !!m)
+              .map((item) =>
+                menuItems.find(
+                  (menuItem) => menuItem?._?.soul === item.product,
+                ),
+              )
+              .map((menuItem) => menuItem?.title)
+              .filter((title): title is string => Boolean(title))
               .join(', ')}
           </span>
           <div className="flex items-center justify-between gap-2">
@@ -334,8 +354,8 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
               {orderItems
                 .slice(0, 3)
                 .map(
-                  (i) =>
-                    `${i.quantity}x ${productById.get(i.product)?.title ?? 'Unknown'}`,
+                  (item) =>
+                    `${item.quantity}x ${productById.get(item.product)?.title ?? 'Unknown'}`,
                 )
                 .join(', ')}
               {orderItems.length > 3

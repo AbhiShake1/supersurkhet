@@ -6,14 +6,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useBusiness } from '@/contexts/business-context';
 import { api } from '@/lib/api';
 import type { SchemaKeys } from '@/lib/gun/index';
-import type { AppSchemaType } from '@/lib/schema';
-import { cn } from '@/lib/utils';
+import type { AppSchemaType } from '@/lib/schemas/core/types';
+import { cn, getSoulFromUnknown } from '@/lib/utils';
 
 type AllCompositeSchemas = AppSchemaType['shape'];
+type AllCompositeSchemaKeys = Extract<keyof AllCompositeSchemas, string>;
 
 type Data = {
-  [K in keyof AllCompositeSchemas]: z.infer<AllCompositeSchemas[K]>;
-}[keyof AllCompositeSchemas];
+  [K in AllCompositeSchemaKeys]: z.infer<AllCompositeSchemas[K]>;
+}[AllCompositeSchemaKeys];
 
 // Data context types
 interface DataContextProps {
@@ -152,11 +153,14 @@ const DataList = React.forwardRef<HTMLDivElement, DataListProps>(
       // When asChild is true, we need to handle multiple children differently
       // because Slot expects only one child, so we wrap in a fragment first
       // and then let the parent Slot handle flattening
-      const mappedChildren = dataList.map((data) => (
-        <DataProvider key={data._?.soul} data={data}>
-          {children}
-        </DataProvider>
-      ));
+      const mappedChildren = dataList.map((data, index) => {
+        const key = getSoulFromUnknown(data) ?? `data-${index}`;
+        return (
+          <DataProvider key={key} data={data}>
+            {children}
+          </DataProvider>
+        );
+      });
 
       // If we have multiple children, we can't directly use Slot
       // Instead, we return the mapped children without a container
@@ -165,8 +169,11 @@ const DataList = React.forwardRef<HTMLDivElement, DataListProps>(
     // When asChild is false, render with default container
     return (
       <div ref={ref} className={cn(className)} {...props}>
-        {dataList.map((data) => (
-          <DataProvider key={data._?.soul} data={data}>
+        {dataList.map((data, index) => (
+          <DataProvider
+            key={getSoulFromUnknown(data) ?? `data-${index}`}
+            data={data}
+          >
             {children}
           </DataProvider>
         ))}

@@ -4,6 +4,31 @@ import { ZOD_FIELD_CONFIG_SYMBOL } from '../utils';
 
 export type SuperRefineFunction = () => unknown;
 
+type RefinementWithFieldConfig = SuperRefineFunction & {
+  [ZOD_FIELD_CONFIG_SYMBOL]?: FieldConfig;
+};
+
+function asZodType(value: unknown): z.ZodTypeAny | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  return '_def' in value ? (value as z.ZodTypeAny) : undefined;
+}
+
+function getInnerType(def: unknown): z.ZodTypeAny | undefined {
+  if (!def || typeof def !== 'object' || !('innerType' in def))
+    return undefined;
+  const innerType = (def as { innerType: unknown }).innerType;
+  if (typeof innerType === 'function') {
+    const resolved = (innerType as () => unknown)();
+    return asZodType(resolved);
+  }
+  return asZodType(innerType);
+}
+
+function getSchema(def: unknown): z.ZodTypeAny | undefined {
+  if (!def || typeof def !== 'object' || !('schema' in def)) return undefined;
+  return asZodType((def as { schema: unknown }).schema);
+}
+
 export function fieldConfig<
   AdditionalRenderable = null,
   FieldTypes = string,
@@ -30,27 +55,29 @@ export function fieldConfig<
 export function getFieldConfigInZodStack(
   schema: z.ZodTypeAny,
 ): FieldConfig | undefined {
-  const typedSchema = schema as unknown as z.ZodEffects<
-    z.ZodNumber | z.ZodString
-  >;
+  const typedSchema = schema as z.ZodTypeAny;
 
   if (typedSchema._def.typeName === 'ZodEffects') {
     const effect = typedSchema._def.effect as RefinementEffect<unknown>;
     const refinementFunction = effect.refinement;
 
-    if (ZOD_FIELD_CONFIG_SYMBOL in refinementFunction) {
-      return refinementFunction[ZOD_FIELD_CONFIG_SYMBOL] as FieldConfig;
+    if (
+      typeof refinementFunction === 'function' &&
+      ZOD_FIELD_CONFIG_SYMBOL in refinementFunction
+    ) {
+      return (refinementFunction as RefinementWithFieldConfig)[
+        ZOD_FIELD_CONFIG_SYMBOL
+      ];
     }
   }
 
-  if ('innerType' in typedSchema._def) {
-    return getFieldConfigInZodStack(
-      typedSchema._def.innerType as unknown as z.ZodAny,
-    );
+  const innerType = getInnerType(typedSchema._def);
+  if (innerType) {
+    return getFieldConfigInZodStack(innerType);
   }
-  if ('schema' in typedSchema._def) {
-    const schemaDef = typedSchema._def as { schema?: z.ZodAny };
-    return getFieldConfigInZodStack(schemaDef.schema as z.ZodAny);
+  const schemaType = getSchema(typedSchema._def);
+  if (schemaType) {
+    return getFieldConfigInZodStack(schemaType);
   }
 
   return undefined;

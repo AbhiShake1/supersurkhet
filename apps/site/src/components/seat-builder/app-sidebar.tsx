@@ -84,11 +84,12 @@ export function AppSidebar({
   onUpdateFloor,
   darkMode,
   onToggleDarkMode,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
   previewMode,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
   onTogglePreview,
 }: AppSidebarProps) {
+  void previewMode;
+  void onTogglePreview;
+
   const [elementType, setElementType] = useState<ElementType>('chair');
   const [elementSize, setElementSize] = useState<ElementSize>('medium');
   const [capacity, setCapacity] = useState<number>(1);
@@ -478,6 +479,7 @@ export function AppSidebar({
                     type="color"
                     value={color}
                     onChange={(e) => setColor(e.target.value)}
+                    placeholder="Pick color"
                     className="w-12 h-9 p-1"
                   />
                   <Input
@@ -517,6 +519,7 @@ export function AppSidebar({
                   value={currentFloor.name}
                   disabled
                   readOnly
+                  placeholder="Floor name"
                 />
               </div>
 
@@ -529,6 +532,7 @@ export function AppSidebar({
                     type="color"
                     value={floorColor}
                     onChange={(e) => setFloorColor(e.target.value)}
+                    placeholder="Pick color"
                     className="w-12 h-9 p-1"
                   />
                   <Input

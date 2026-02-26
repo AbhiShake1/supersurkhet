@@ -1,0 +1,13 @@
+plan_id	slug	plan_file	branch	worktree_rel	artifact_rel	depends_on
+081	core-schema-signed-token	081-datamatrix-v2-core-schema-and-signed-token.md	codex/dm2-081-core-schema-signed-token	.parallel/dm2/081	output/parallel/datamatrix-v2/081-core-schema-and-signed-token.md	-
+082	flow-builder-compiler-adapter	082-datamatrix-v2-flow-builder-compiler-adapter.md	codex/dm2-082-flow-builder-compiler-adapter	.parallel/dm2/082	output/parallel/datamatrix-v2/082-flow-builder-compiler-adapter.md	081
+083	scan-router-deterministic-lane	083-datamatrix-v2-scan-router-deterministic-lane.md	codex/dm2-083-scan-router-deterministic-lane	.parallel/dm2/083	output/parallel/datamatrix-v2/083-scan-router-deterministic-lane.md	081,082,084
+084	location-dwell-stability	084-datamatrix-v2-location-dwell-stability.md	codex/dm2-084-location-dwell-stability	.parallel/dm2/084	output/parallel/datamatrix-v2/084-location-dwell-stability.md	081
+085	retry-class-matrix	085-datamatrix-v2-retry-class-matrix.md	codex/dm2-085-retry-class-matrix	.parallel/dm2/085	output/parallel/datamatrix-v2/085-retry-class-matrix.md	081
+086	scheduler-worker-queue	086-datamatrix-v2-scheduler-worker-and-queue.md	codex/dm2-086-scheduler-worker-queue	.parallel/dm2/086	output/parallel/datamatrix-v2/086-scheduler-worker-and-queue.md	081,082,085
+087	device-bridge-callback-runtime	087-datamatrix-v2-device-bridge-callback-runtime.md	codex/dm2-087-device-bridge-callback-runtime	.parallel/dm2/087	output/parallel/datamatrix-v2/087-device-bridge-callback-runtime.md	085,086
+088	agent-console-opinionated-ui	088-datamatrix-v2-agent-console-opinionated-ui.md	codex/dm2-088-agent-console-opinionated-ui	.parallel/dm2/088	output/parallel/datamatrix-v2/088-agent-console-opinionated-ui.md	083,087,091
+089	qr-view-print-hardening	089-datamatrix-v2-qr-view-print-hardening.md	codex/dm2-089-qr-view-print-hardening	.parallel/dm2/089	output/parallel/datamatrix-v2/089-qr-view-print-hardening.md	081,082
+090	vision-fallback-ai-budget	090-datamatrix-v2-vision-fallback-and-ai-budget-guard.md	codex/dm2-090-vision-fallback-ai-budget	.parallel/dm2/090	output/parallel/datamatrix-v2/090-vision-fallback-and-ai-budget-guard.md	083
+091	observability-retention	091-datamatrix-v2-observability-and-retention.md	codex/dm2-091-observability-retention	.parallel/dm2/091	output/parallel/datamatrix-v2/091-observability-and-retention.md	086
+092	integration-e2e-rollup	092-datamatrix-v2-integration-e2e-rollup.md	codex/dm2-092-integration-e2e-rollup	.parallel/dm2/092	output/parallel/datamatrix-v2/092-integration-e2e-rollup.md	081,082,083,084,085,086,087,088,089,090,091

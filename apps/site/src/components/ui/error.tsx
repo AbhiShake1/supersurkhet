@@ -44,8 +44,7 @@ export function ErrorComponent({
               onClick={handleReload}
             >
               <ReloadIcon
-                className="me-2 ms-0 opacity-60 transition-transform group-hover:rotate-180"
-                size={16}
+                className="me-2 ms-0 h-4 w-4 opacity-60 transition-transform group-hover:rotate-180"
                 aria-hidden="true"
               />
               Reload

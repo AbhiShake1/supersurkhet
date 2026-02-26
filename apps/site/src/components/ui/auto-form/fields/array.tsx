@@ -1,5 +1,6 @@
 import { Plus, Trash } from 'lucide-react';
-import { useFieldArray, type useForm } from 'react-hook-form';
+import type { FieldValues, UseFormReturn } from 'react-hook-form';
+import { useFieldArray } from 'react-hook-form';
 import * as z from 'zod';
 import {
   AccordionContent,
@@ -8,22 +9,19 @@ import {
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import type { FieldConfig } from '../types';
 import { beautifyObjectName } from '../utils';
 import AutoFormObject from './object';
 
 function isZodArray(
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  item: z.ZodArray<any> | z.ZodDefault<any>,
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-): item is z.ZodArray<any> {
+  item: z.ZodArray<z.ZodTypeAny> | z.ZodDefault<z.ZodTypeAny>,
+): item is z.ZodArray<z.ZodTypeAny> {
   return item instanceof z.ZodArray;
 }
 
 function isZodDefault(
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  item: z.ZodArray<any> | z.ZodDefault<any>,
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-): item is z.ZodDefault<any> {
+  item: z.ZodArray<z.ZodTypeAny> | z.ZodDefault<z.ZodTypeAny>,
+): item is z.ZodDefault<z.ZodTypeAny> {
   return item instanceof z.ZodDefault;
 }
 
@@ -35,12 +33,10 @@ export default function AutoFormArray({
   fieldConfig,
 }: {
   name: string;
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  item: z.ZodArray<any> | z.ZodDefault<any>;
-  form: ReturnType<typeof useForm>;
+  item: z.ZodArray<z.ZodTypeAny> | z.ZodDefault<z.ZodTypeAny>;
+  form: UseFormReturn<FieldValues, unknown, FieldValues>;
   path?: string[];
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  fieldConfig?: any;
+  fieldConfig?: FieldConfig<Record<string, unknown>>;
 }) {
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -64,8 +60,7 @@ export default function AutoFormArray({
           return (
             <div className="mt-4 flex flex-col" key={`${key}`}>
               <AutoFormObject
-                // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                schema={itemDefType as z.ZodObject<any, any>}
+                schema={itemDefType as unknown as z.AnyZodObject}
                 form={form}
                 fieldConfig={fieldConfig}
                 path={[...path, index.toString()]}

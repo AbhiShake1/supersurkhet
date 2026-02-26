@@ -32,12 +32,22 @@ export const Link = TiptapLink.extend({
   },
 
   addOptions() {
+    const parentOptions = this.parent?.();
     return {
-      ...this.parent?.(),
+      ...parentOptions,
+      autolink: parentOptions?.autolink ?? true,
+      protocols: parentOptions?.protocols ?? [],
+      defaultProtocol: parentOptions?.defaultProtocol ?? 'http',
       openOnClick: false,
+      enableClickSelection: parentOptions?.enableClickSelection ?? false,
+      linkOnPaste: parentOptions?.linkOnPaste ?? true,
       HTMLAttributes: {
+        ...(parentOptions?.HTMLAttributes ?? {}),
         class: 'link',
       },
+      validate: parentOptions?.validate ?? (() => true),
+      isAllowedUri: parentOptions?.isAllowedUri ?? (() => true),
+      shouldAutoLink: parentOptions?.shouldAutoLink ?? (() => true),
     };
   },
 

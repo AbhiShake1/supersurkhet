@@ -82,7 +82,7 @@ export type WorkflowGraphCompileHealth = {
 
 export type WorkflowGraphFlowNodeData = {
   nodeId: string;
-  actionId: string;
+  actionId?: string;
   runIf?: ExpressionDoc;
 };
 
@@ -414,7 +414,7 @@ export function createWorkflowGraphFlowModel(
   const nodes: Node<WorkflowGraphFlowNodeData>[] = workflow.nodes.map(
     (node, index) => ({
       id: node.nodeId,
-      type: 'default',
+      type: 'default' as const,
       position: {
         x: index * 220,
         y: 0,
@@ -804,10 +804,16 @@ function InteractiveWorkflowGraphEditor({
   const actionOptions = useMemo(() => {
     const fromManifest = actionManifest
       .map((entry) => entry.actionId)
-      .filter(Boolean);
+      .filter(
+        (actionId): actionId is string =>
+          typeof actionId === 'string' && actionId.length > 0,
+      );
     const fromWorkflow = workflow.nodes
       .map((node) => node.actionId)
-      .filter(Boolean);
+      .filter(
+        (actionId): actionId is string =>
+          typeof actionId === 'string' && actionId.length > 0,
+      );
     return [...new Set([...fromManifest, ...fromWorkflow])].sort(
       (left, right) => left.localeCompare(right),
     );
@@ -877,26 +883,24 @@ function InteractiveWorkflowGraphEditor({
               setOutput: (output: boolean, check?: string) => void;
               setColour: (colour: number) => void;
             }) {
-              this.appendDummyInput()
-                .appendField('compare selected field')
-                .appendField(
-                  new Blockly.FieldDropdown(
-                    referenceDropdownOptionsRef.current,
-                  ),
-                  'RIGHT',
-                )
-                .appendField('with')
-                .appendField(
-                  new Blockly.FieldDropdown([
-                    ['equals', 'eq'],
-                    ['not equals', 'neq'],
-                    ['greater than', 'gt'],
-                    ['greater/equal', 'gte'],
-                    ['less than', 'lt'],
-                    ['less/equal', 'lte'],
-                  ]),
-                  'OP',
-                );
+              const input = this.appendDummyInput();
+              input.appendField('compare selected field');
+              input.appendField(
+                new Blockly.FieldDropdown(referenceDropdownOptionsRef.current),
+                'RIGHT',
+              );
+              input.appendField('with');
+              input.appendField(
+                new Blockly.FieldDropdown([
+                  ['equals', 'eq'],
+                  ['not equals', 'neq'],
+                  ['greater than', 'gt'],
+                  ['greater/equal', 'gte'],
+                  ['less than', 'lt'],
+                  ['less/equal', 'lte'],
+                ]),
+                'OP',
+              );
               this.setOutput(true, 'Boolean');
               this.setColour(210);
             },
@@ -917,21 +921,21 @@ function InteractiveWorkflowGraphEditor({
               setOutput: (output: boolean, check?: string) => void;
               setColour: (colour: number) => void;
             }) {
-              this.appendDummyInput()
-                .appendField('compare selected field')
-                .appendField(
-                  new Blockly.FieldDropdown([
-                    ['equals', 'eq'],
-                    ['not equals', 'neq'],
-                    ['greater than', 'gt'],
-                    ['greater/equal', 'gte'],
-                    ['less than', 'lt'],
-                    ['less/equal', 'lte'],
-                  ]),
-                  'OP',
-                )
-                .appendField('number')
-                .appendField(new Blockly.FieldNumber(0), 'VALUE');
+              const input = this.appendDummyInput();
+              input.appendField('compare selected field');
+              input.appendField(
+                new Blockly.FieldDropdown([
+                  ['equals', 'eq'],
+                  ['not equals', 'neq'],
+                  ['greater than', 'gt'],
+                  ['greater/equal', 'gte'],
+                  ['less than', 'lt'],
+                  ['less/equal', 'lte'],
+                ]),
+                'OP',
+              );
+              input.appendField('number');
+              input.appendField(new Blockly.FieldNumber(0), 'VALUE');
               this.setOutput(true, 'Boolean');
               this.setColour(200);
             },
@@ -952,17 +956,17 @@ function InteractiveWorkflowGraphEditor({
               setOutput: (output: boolean, check?: string) => void;
               setColour: (colour: number) => void;
             }) {
-              this.appendDummyInput()
-                .appendField('compare selected field')
-                .appendField(
-                  new Blockly.FieldDropdown([
-                    ['equals', 'eq'],
-                    ['not equals', 'neq'],
-                  ]),
-                  'OP',
-                )
-                .appendField('text')
-                .appendField(new Blockly.FieldTextInput(''), 'VALUE');
+              const input = this.appendDummyInput();
+              input.appendField('compare selected field');
+              input.appendField(
+                new Blockly.FieldDropdown([
+                  ['equals', 'eq'],
+                  ['not equals', 'neq'],
+                ]),
+                'OP',
+              );
+              input.appendField('text');
+              input.appendField(new Blockly.FieldTextInput(''), 'VALUE');
               this.setOutput(true, 'Boolean');
               this.setColour(200);
             },
@@ -983,23 +987,23 @@ function InteractiveWorkflowGraphEditor({
               setOutput: (output: boolean, check?: string) => void;
               setColour: (colour: number) => void;
             }) {
-              this.appendDummyInput()
-                .appendField('compare selected field')
-                .appendField(
-                  new Blockly.FieldDropdown([
-                    ['equals', 'eq'],
-                    ['not equals', 'neq'],
-                  ]),
-                  'OP',
-                )
-                .appendField('boolean')
-                .appendField(
-                  new Blockly.FieldDropdown([
-                    ['true', 'true'],
-                    ['false', 'false'],
-                  ]),
-                  'VALUE',
-                );
+              const input = this.appendDummyInput();
+              input.appendField('compare selected field');
+              input.appendField(
+                new Blockly.FieldDropdown([
+                  ['equals', 'eq'],
+                  ['not equals', 'neq'],
+                ]),
+                'OP',
+              );
+              input.appendField('boolean');
+              input.appendField(
+                new Blockly.FieldDropdown([
+                  ['true', 'true'],
+                  ['false', 'false'],
+                ]),
+                'VALUE',
+              );
               this.setOutput(true, 'Boolean');
               this.setColour(200);
             },
@@ -1318,9 +1322,11 @@ function InteractiveWorkflowGraphEditor({
             <div className="space-y-2">
               {workflow.nodes.map((node) => {
                 const nodeInputRefKey = readNodeInputReferenceKey(node.input);
-                const actionValue = actionOptions.includes(node.actionId)
-                  ? node.actionId
-                  : '__custom_action__';
+                const actionValue =
+                  typeof node.actionId === 'string' &&
+                  actionOptions.includes(node.actionId)
+                    ? node.actionId
+                    : '__custom_action__';
 
                 return (
                   <div
@@ -1331,6 +1337,7 @@ function InteractiveWorkflowGraphEditor({
                       <div className="space-y-1">
                         <Label className="text-xs">Node ID</Label>
                         <Input
+                          placeholder="Node ID"
                           defaultValue={node.nodeId}
                           onBlur={(event) => {
                             const nextNodeId = event.target.value.trim();

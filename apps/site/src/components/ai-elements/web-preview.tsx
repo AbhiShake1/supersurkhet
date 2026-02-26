@@ -142,6 +142,7 @@ export const WebPreviewUrl = ({
   value,
   onChange,
   onKeyDown,
+  placeholder,
   ...props
 }: WebPreviewUrlProps) => {
   const { url, setUrl } = useWebPreview();
@@ -175,7 +176,7 @@ export const WebPreviewUrl = ({
       className="h-8 flex-1 text-sm"
       onChange={onChange ?? handleChange}
       onKeyDown={handleKeyDown}
-      placeholder="Enter URL..."
+      placeholder={placeholder ?? 'Enter URL...'}
       value={value ?? inputValue}
       {...props}
     />

@@ -1,0 +1,10 @@
+Execute /Users/abhi/proj/personal/supersurkhet/.parallel/dm2/089/PLANS/089-datamatrix-v2-qr-view-print-hardening.md end-to-end.
+
+Rules:
+- Follow Exclusive Write Scope only.
+- Keep changes small, non-breaking, and reversible.
+- Run verification commands listed in the plan.
+- Write progress continuously to output/parallel/datamatrix-v2/089-qr-view-print-hardening.md.
+- Record blockers and integration risks in that artifact.
+- Respect dependency hints: 081,082.
+- End by writing status=merged/pending_merge plus verification summary.

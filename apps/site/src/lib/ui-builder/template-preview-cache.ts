@@ -1,7 +1,5 @@
-import type {
-  ComponentLayer,
-  UiTemplateInstallPreview,
-} from '@/lib/plugins/types';
+import type { ComponentLayer } from '@/components/ui/ui-builder/types';
+import type { UiTemplateInstallPreview } from '@/lib/plugins/types';
 
 const PREVIEW_CACHE_LIMIT = 128;
 

@@ -1989,8 +1989,7 @@ export class LogicEngine {
     // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     options: { top?: boolean; above?: any[] } = {},
   ): (data: TVars) => TResult {
-    // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
-    const { above = [], top = true } = options;
+    const { above = [] } = options;
 
     // Return a function that executes the logic when called
     return (data: TVars): TResult => {

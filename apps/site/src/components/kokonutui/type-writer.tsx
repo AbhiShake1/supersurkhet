@@ -93,11 +93,12 @@ export default function TypewriterTitle({
       if (!currentSequence) {
         return;
       }
+      const currentText = currentSequence.text ?? '';
 
       if (isDeletingRef.current) {
         if (charIndexRef.current > 0) {
           charIndexRef.current -= 1;
-          setDisplayText(currentSequence.text.slice(0, charIndexRef.current));
+          setDisplayText(currentText.slice(0, charIndexRef.current));
           timeoutRef.current = setTimeout(runTypewriter, deleteSpeed);
         } else {
           isDeletingRef.current = false;
@@ -116,9 +117,9 @@ export default function TypewriterTitle({
             }, 100); // Quick transition to next word
           }
         }
-      } else if (charIndexRef.current < currentSequence.text.length) {
+      } else if (charIndexRef.current < currentText.length) {
         charIndexRef.current += 1;
-        setDisplayText(currentSequence.text.slice(0, charIndexRef.current));
+        setDisplayText(currentText.slice(0, charIndexRef.current));
         timeoutRef.current = setTimeout(runTypewriter, getTypingDelay());
       } else {
         const pauseDuration = currentSequence.pauseAfter ?? pauseBeforeDelete;

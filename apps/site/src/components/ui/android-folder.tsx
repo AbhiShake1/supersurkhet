@@ -10,8 +10,8 @@ interface FolderContextType {
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   position: { x: number; y: number };
   setPosition: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>;
-  folderRef: React.RefObject<HTMLDivElement>;
-  overlayRef: React.RefObject<HTMLDivElement>;
+  folderRef: React.RefObject<HTMLDivElement | null>;
+  overlayRef: React.RefObject<HTMLDivElement | null>;
 }
 
 const FolderContext = React.createContext<FolderContextType | null>(null);

@@ -253,7 +253,7 @@ export default function EnhancedRating(props: Props) {
               allowHalf={config.allowHalf}
               readOnly={config.readOnly}
               disabled={config.disabled}
-              onHoverChange={(details) => setHoveredIndex(details.value)}
+              onHoverChange={(details) => setHoveredIndex(details.hoveredValue)}
             >
               <RatingGroup.Control
                 className={`flex ${spacingClass} justify-${config.align} flex-wrap`}

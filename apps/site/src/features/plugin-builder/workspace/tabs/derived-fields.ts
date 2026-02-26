@@ -1,9 +1,5 @@
-import type {
-  DeriveIR,
-  ExpressionDoc,
-  ExpressionRefDoc,
-  SchemaDoc,
-} from '@/lib/plugins/types';
+import type { ExpressionOpDoc, ExpressionRefDoc } from '@supersurkhet/sdk';
+import type { DeriveIR, ExpressionDoc, SchemaDoc } from '@/lib/plugins/types';
 
 export const DERIVED_FIELD_SOURCE_OPTIONS = [
   'payload',
@@ -148,7 +144,7 @@ function parseDerivationExpression(expression: ExpressionDoc): {
     return null;
   }
 
-  if (!DERIVED_FIELD_OPERATION_OPTIONS.includes(expression.op)) {
+  if (!isDerivedFieldOperation(expression.op)) {
     return null;
   }
 
@@ -226,13 +222,21 @@ function isExpressionRef(
 
 function isExpressionOp(
   expression: ExpressionDoc,
-): expression is Extract<ExpressionDoc, { kind: 'op' }> {
+): expression is ExpressionOpDoc {
   return (
     typeof expression === 'object' &&
     expression !== null &&
     'kind' in expression &&
     expression.kind === 'op' &&
     Array.isArray(expression.args)
+  );
+}
+
+function isDerivedFieldOperation(
+  operation: ExpressionOpDoc['op'],
+): operation is DerivedFieldOperation {
+  return DERIVED_FIELD_OPERATION_OPTIONS.includes(
+    operation as DerivedFieldOperation,
   );
 }
 

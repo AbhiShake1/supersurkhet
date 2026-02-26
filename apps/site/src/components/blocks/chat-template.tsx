@@ -265,7 +265,7 @@ export const Home = ({ initialPrompt }: { initialPrompt?: string }) => {
 
       {/* Main Content */}
       <SidebarInset>
-        <ResizablePanelGroup direction="horizontal" className="h-screen">
+        <ResizablePanelGroup direction={'horizontal'} className="h-screen">
           {/* Left Panel - Chat List */}
           <ResizablePanel defaultSize={25} minSize={20} className="flex-grow">
             <div className="flex flex-col h-screen border ml-1">

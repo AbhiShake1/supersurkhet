@@ -113,6 +113,7 @@ export function CustomEdge({
   data,
   markerEnd,
 }: EdgeProps) {
+  const edgeData = data as CustomEdgeData | undefined;
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -124,18 +125,14 @@ export function CustomEdge({
 
   const onAddNode = (nodeType: string) => {
     console.log('Adding node of type:', nodeType, 'to edge:', id);
-    if (
-      data?.onAddNode &&
-      'onAddNode' in data &&
-      typeof data.onAddNode === 'function'
-    ) {
-      data.onAddNode(id, nodeType);
+    if (edgeData?.onAddNode && typeof edgeData.onAddNode === 'function') {
+      edgeData.onAddNode(id, nodeType);
     } else {
       console.log('No onAddNode function found in edge data');
     }
   };
 
-  if (data?.isAddButtonHidden) {
+  if (edgeData?.isAddButtonHidden) {
     return <BaseEdge path={edgePath} markerEnd={markerEnd} />;
   }
 
@@ -187,7 +184,7 @@ export function CustomEdge({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {data?.label && (
+            {edgeData?.label && (
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -200,10 +197,12 @@ export function CustomEdge({
                 </PopoverTrigger>
                 <PopoverContent className="w-80">
                   <div className="space-y-2">
-                    <h4 className="font-medium leading-none">{data.label}</h4>
-                    {data.description && (
+                    <h4 className="font-medium leading-none">
+                      {edgeData.label}
+                    </h4>
+                    {edgeData.description && (
                       <p className="text-sm text-muted-foreground">
-                        {data.description}
+                        {edgeData.description}
                       </p>
                     )}
                   </div>

@@ -18,6 +18,7 @@ import '@xyflow/react/dist/style.css';
 import {
   DndContext,
   type DragEndEvent,
+  type DragMoveEvent,
   DragOverlay,
   type DragStartEvent,
   KeyboardSensor,
@@ -1210,8 +1211,7 @@ const NodeSetupForm = ({
   handleConfigChange,
 }: {
   selectedNode: CustomNode;
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  handleConfigChange: (key: string, value: any) => void;
+  handleConfigChange: (key: string, value: unknown) => void;
 }) => {
   switch (selectedNode.type) {
     case 'wifiConnect': {
@@ -1227,8 +1227,7 @@ const NodeSetupForm = ({
 
       // Get available networks from scan result or use mock data as fallback
       const availableNetworks = wifiScanResult?.success
-        ? // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-          wifiScanResult.networks.map((net: any) => net.ssid)
+        ? wifiScanResult.networks.map((network) => network.ssid)
         : ['HomeNetwork', 'OfficeWiFi', 'CoffeeShop-Guest', 'NeighborNetwork'];
 
       // Handle network selection from dropdown or direct input
@@ -1237,8 +1236,7 @@ const NodeSetupForm = ({
 
         // If it's a known network, also set the security type
         const network = wifiScanResult?.success
-          ? // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-            wifiScanResult.networks.find((net: any) => net.ssid === value)
+          ? wifiScanResult.networks.find((entry) => entry.ssid === value)
           : [
               { ssid: 'HomeNetwork', security: 'WPA2' },
               { ssid: 'OfficeWiFi', security: 'WPA3' },
@@ -2686,13 +2684,38 @@ const FlowBuilder = () => {
     setIsDraggingNode(true);
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  const onDragMove = (event: any) => {
+  const getClientPositionFromEvent = useCallback((event: Event | null) => {
+    if (!event) return null;
+
+    const pointerEvent = event as Event & {
+      clientX?: unknown;
+      clientY?: unknown;
+    };
+    if (
+      typeof pointerEvent.clientX === 'number' &&
+      typeof pointerEvent.clientY === 'number'
+    ) {
+      return { x: pointerEvent.clientX, y: pointerEvent.clientY };
+    }
+
+    if ('changedTouches' in event) {
+      const touchEvent = event as TouchEvent;
+      const touch = touchEvent.changedTouches[0] ?? touchEvent.touches[0];
+      if (!touch) return null;
+      return { x: touch.clientX, y: touch.clientY };
+    }
+
+    return null;
+  }, []);
+
+  const onDragMove = (event: DragMoveEvent) => {
     if (!reactFlowInstance) return;
+    const clientPosition = getClientPositionFromEvent(event.activatorEvent);
+    if (!clientPosition) return;
 
     const position = reactFlowInstance.screenToFlowPosition({
-      x: event.clientX,
-      y: event.clientY,
+      x: clientPosition.x,
+      y: clientPosition.y,
     });
 
     setDragPreviewPosition(position);
@@ -2706,9 +2729,11 @@ const FlowBuilder = () => {
 
     // Check if we're dropping on the flow area
     if (over?.id === 'flow-canvas' && reactFlowInstance) {
+      const clientPosition = getClientPositionFromEvent(event.activatorEvent);
+      if (!clientPosition) return;
       const position = reactFlowInstance.screenToFlowPosition({
-        x: event.activatorEvent.clientX,
-        y: event.activatorEvent.clientY,
+        x: clientPosition.x,
+        y: clientPosition.y,
       });
 
       const nodeType = active.data.current?.type as NodeType;

@@ -51,6 +51,28 @@ function createPlan(overrides: Partial<RollbackPlanDoc> = {}): RollbackPlanDoc {
   };
 }
 
+function createExecutionResult(
+  status: RollbackExecutionResultDoc['status'],
+  appliedStrategies: string[],
+): RollbackExecutionResultDoc {
+  return {
+    startedAt: '2026-02-25T13:41:00.000Z',
+    completedAt: '2026-02-25T13:41:05.000Z',
+    status,
+    steps: [
+      {
+        stepId: 'execution-step-1',
+        target: 'plugin-install-state',
+        status: status === 'succeeded' ? 'succeeded' : status,
+        failureReasons: [],
+        details: {
+          appliedStrategies,
+        },
+      },
+    ],
+  };
+}
+
 describe('recovery orchestrator integration', () => {
   it('does not prompt when runtime errors are below threshold', async () => {
     const rows: RecoveryAuditRow[] = [];
@@ -78,13 +100,7 @@ describe('recovery orchestrator integration', () => {
       },
       executor: {
         executePlan(): RollbackExecutionResultDoc {
-          return {
-            executionId: 'execution-1',
-            planId: 'plan-1',
-            executedAt: '2026-02-25T13:41:05.000Z',
-            status: 'success',
-            appliedStrategies: ['plugin-install-state'],
-          };
+          return createExecutionResult('succeeded', ['plugin-install-state']);
         },
       },
     });
@@ -129,13 +145,10 @@ describe('recovery orchestrator integration', () => {
       executor: {
         executePlan(nextPlan): RollbackExecutionResultDoc {
           expect(nextPlan.planId).toBe('plan-1');
-          return {
-            executionId: 'execution-1',
-            planId: nextPlan.planId,
-            executedAt: '2026-02-25T13:42:01.000Z',
-            status: 'success',
-            appliedStrategies: ['plugin-install-state', 'data-snapshot'],
-          };
+          return createExecutionResult('succeeded', [
+            'plugin-install-state',
+            'data-snapshot',
+          ]);
         },
       },
     });
@@ -164,7 +177,7 @@ describe('recovery orchestrator integration', () => {
     }
 
     expect(resolution.action).toBe('accept_rollback');
-    expect(resolution.execution.status).toBe('success');
+    expect(resolution.execution.status).toBe('succeeded');
     expect(rows).toHaveLength(2);
 
     const decisionRow = rows[0];
@@ -180,8 +193,10 @@ describe('recovery orchestrator integration', () => {
     if (outcomeRow.kind === 'rollback-outcome') {
       expect(outcomeRow.actorSource).toBe('keyboard-shortcut');
       expect(outcomeRow.planId).toBe('plan-1');
-      expect(outcomeRow.execution.status).toBe('success');
-      expect(outcomeRow.execution.appliedStrategies).toEqual([
+      expect(outcomeRow.execution.status).toBe('succeeded');
+      const appliedStrategies =
+        outcomeRow.execution.steps[0]?.details?.appliedStrategies;
+      expect(appliedStrategies).toEqual([
         'plugin-install-state',
         'data-snapshot',
       ]);
@@ -216,13 +231,7 @@ describe('recovery orchestrator integration', () => {
       },
       executor: {
         executePlan(): RollbackExecutionResultDoc {
-          return {
-            executionId: 'execution-ignored',
-            planId: 'plan-1',
-            executedAt: '2026-02-25T13:43:00.000Z',
-            status: 'success',
-            appliedStrategies: ['plugin-install-state'],
-          };
+          return createExecutionResult('succeeded', ['plugin-install-state']);
         },
       },
     });

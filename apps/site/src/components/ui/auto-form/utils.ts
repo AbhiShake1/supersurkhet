@@ -25,9 +25,9 @@ export function beautifyObjectName(string: string) {
  * Get the lowest level Zod type.
  * This will unpack optionals, refinements, etc.
  */
-export function getBaseSchema<
-  ChildType extends z.ZodAny | z.AnyZodObject = z.ZodAny,
->(schema: ChildType | z.ZodEffects<ChildType>): ChildType | null {
+export function getBaseSchema<ChildType extends z.ZodTypeAny = z.ZodTypeAny>(
+  schema: ChildType | z.ZodEffects<ChildType>,
+): ChildType | null {
   if (!schema) return null;
   if ('innerType' in schema._def) {
     return getBaseSchema(schema._def.innerType as ChildType);
@@ -43,7 +43,7 @@ export function getBaseSchema<
  * Get the type name of the lowest level Zod type.
  * This will unpack optionals, refinements, etc.
  */
-export function getBaseType(schema: z.ZodAny): string {
+export function getBaseType(schema: z.ZodTypeAny): string {
   const baseSchema = getBaseSchema(schema);
   return baseSchema ? baseSchema._def.typeName : '';
 }

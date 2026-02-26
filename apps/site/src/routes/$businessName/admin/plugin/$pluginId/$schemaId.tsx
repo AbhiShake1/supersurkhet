@@ -41,6 +41,9 @@ function RuntimePluginSchemaRoute() {
 
   const decodedPluginId = decodeURIComponentOrNull(pluginId);
   const decodedSchemaId = decodeURIComponentOrNull(schemaId);
+  const hasDecodedParams = Boolean(decodedPluginId && decodedSchemaId);
+  const pluginIdValue = decodedPluginId ?? '';
+  const schemaIdValue = decodedSchemaId ?? '';
 
   const { data: businesses = [] } = api.business.useGet({
     keys: [businessName],
@@ -58,37 +61,38 @@ function RuntimePluginSchemaRoute() {
     releaseRows as PluginReleaseDoc[],
   );
 
+  if (!hasDecodedParams) return <NotFound />;
   if (!business?.id) return <NotFound />;
   if (!hasBusinessAccess(business, user)) return <NotFound />;
 
   const installedPlugin = installRows.find(
-    (install) => install.pluginId === decodedPluginId,
+    (install) => install.pluginId === pluginIdValue,
   );
   const installedRelease = installedPlugin
     ? releases.find(
         (release) =>
-          release.id === `${decodedPluginId}@${installedPlugin.version}`,
+          release.id === `${pluginIdValue}@${installedPlugin.version}`,
       )
     : undefined;
 
   if (!installedRelease) return <NotFound />;
 
   const schemaDoc = installedRelease.schemaDocs?.find(
-    (schema) => schema.schemaId === decodedSchemaId,
+    (schema) => schema.schemaId === schemaIdValue,
   );
 
   if (!schemaDoc) return <NotFound />;
 
   const compiledSchema = compileSchemaDoc(schemaDoc);
   const pluginTab = installedRelease.adminTabs?.find(
-    (entry) => entry.schema === decodedSchemaId,
+    (entry) => entry.schema === schemaIdValue,
   );
-  const pluginSchemaNamespace = `${businessNamespace}/${decodedPluginId}/${decodedSchemaId}`;
+  const pluginSchemaNamespace = `${businessNamespace}/${pluginIdValue}/${schemaIdValue}`;
   const tabInput = resolveRuntimePluginAdminTabInput({
     tabSearchValue: tab,
     pluginTab,
     schemaDoc,
-    decodedSchemaId,
+    decodedSchemaId: schemaIdValue,
     compiledSchema,
     pluginSchemaNamespace,
   });

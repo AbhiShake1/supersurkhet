@@ -1,8 +1,47 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-function scanWifiNetworks() {}
+export type WifiNetwork = {
+  ssid: string;
+  security: string;
+  signalStrength?: number;
+  isConnected?: boolean;
+};
 
-async function connectToWifi() {}
+export type WifiScanResult = {
+  success: boolean;
+  networks: WifiNetwork[];
+};
+
+export type WifiConnectInput = {
+  ssid: string;
+  password?: string;
+  security?: string;
+};
+
+export type WifiConnectResult = {
+  success: boolean;
+  ssid: string;
+};
+
+async function scanWifiNetworks(): Promise<WifiScanResult> {
+  return {
+    success: true,
+    networks: [
+      { ssid: 'HomeNetwork', security: 'WPA2', signalStrength: 82 },
+      { ssid: 'OfficeWiFi', security: 'WPA3', signalStrength: 74 },
+      { ssid: 'CoffeeShop-Guest', security: 'open', signalStrength: 61 },
+    ],
+  };
+}
+
+async function connectToWifi(
+  input: WifiConnectInput,
+): Promise<WifiConnectResult> {
+  return {
+    success: true,
+    ssid: input.ssid,
+  };
+}
 
 // Custom hook for WiFi functionality
 export const useWifiNetworks = () => {

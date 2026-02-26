@@ -163,9 +163,7 @@ export function FileUploadField({
           {field.fieldConfig.description}
         </p>
       )}
-      {error && (
-        <p className="text-sm font-medium text-destructive">{error.message}</p>
-      )}
+      {error && <p className="text-sm font-medium text-destructive">{error}</p>}
     </div>
   );
 }

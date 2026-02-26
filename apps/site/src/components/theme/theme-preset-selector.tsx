@@ -84,22 +84,20 @@ const DemoCard = ({
 
 const DemoButton = ({
   variant = 'default',
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
   className = '',
   themeStyles,
   currentThemeMode,
 }: {
-  variant?: string;
+  variant?: Exclude<React.ComponentProps<typeof Button>['variant'], null>;
   className?: string;
   themeStyles?: ThemeStyles;
   currentThemeMode?: 'light' | 'dark';
 }) => {
-  const themeToUse = themeStyles || {};
+  const themeToUse = themeStyles;
+  if (!themeToUse) return null;
   // Use the current theme mode to determine which theme to display for the demo
   const displayTheme =
-    currentThemeMode === 'dark'
-      ? themeToUse.dark || {}
-      : themeToUse.light || {};
+    currentThemeMode === 'dark' ? themeToUse.dark : themeToUse.light;
   let buttonStyle = {};
   let buttonClassName = 'h-9 px-4 py-2 text-sm font-medium transition-colors';
 
@@ -136,9 +134,8 @@ const DemoButton = ({
 
   return (
     <Button
-      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-      variant={variant as any}
-      className={buttonClassName}
+      variant={variant}
+      className={cn(buttonClassName, className)}
       style={{
         ...buttonStyle,
         borderRadius: displayTheme.radius, // Apply the preset's radius

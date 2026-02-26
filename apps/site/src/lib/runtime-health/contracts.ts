@@ -43,10 +43,15 @@ function isSensitiveFieldName(fieldName: string): boolean {
 }
 
 export type SanitizedTelemetryScalar = string | number | boolean | null;
+export interface SanitizedTelemetryArray
+  extends Array<SanitizedTelemetryValue> {}
+export interface SanitizedTelemetryMap {
+  [key: string]: SanitizedTelemetryValue;
+}
 export type SanitizedTelemetryValue =
   | SanitizedTelemetryScalar
-  | SanitizedTelemetryValue[]
-  | Record<string, SanitizedTelemetryValue>;
+  | SanitizedTelemetryArray
+  | SanitizedTelemetryMap;
 
 export type SanitizedTelemetryObject = Record<string, SanitizedTelemetryValue>;
 

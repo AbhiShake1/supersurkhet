@@ -385,6 +385,7 @@ export function SeatingSidebar({
                   type="color"
                   value={color}
                   onChange={(e) => setColor(e.target.value)}
+                  placeholder="Pick color"
                   className="w-12 h-9 p-1"
                 />
                 <Input
@@ -410,6 +411,7 @@ export function SeatingSidebar({
                 value={currentFloor.name}
                 disabled
                 readOnly
+                placeholder="Floor name"
               />
             </div>
 
@@ -422,6 +424,7 @@ export function SeatingSidebar({
                   type="color"
                   value={floorColor}
                   onChange={(e) => setFloorColor(e.target.value)}
+                  placeholder="Pick color"
                   className="w-12 h-9 p-1"
                 />
                 <Input

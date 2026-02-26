@@ -12,8 +12,8 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { DataMatrixScanner } from '@/components/ui/datamatrix-scanner';
+import type { DataMatrixAction } from '@/lib/datamatrix';
 import { ActionExecutor } from '@/lib/datamatrix/action-executor';
-import type { DataMatrixAction } from '@/lib/schema';
 
 export function DataMatrixClientPage() {
   const [_isScannerActive, _setIsScannerActive] = useState(true);

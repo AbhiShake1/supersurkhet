@@ -403,7 +403,7 @@ export function KeyboardShortcutsProvider({
   const pendingSequenceRef = React.useRef<{
     strokes: ShortcutStroke[];
     exactMatches: RegisteredShortcutActionListener[];
-    timeoutId: ReturnType<typeof window.setTimeout> | null;
+    timeoutId: number | null;
   } | null>(null);
 
   React.useEffect(() => {
@@ -1147,9 +1147,7 @@ function ShortcutRecorder({
   const [previewBinding, setPreviewBinding] = React.useState(binding);
   const [status, setStatus] = React.useState<string | null>(null);
   const pendingSequenceRef = React.useRef<ShortcutStroke[]>([]);
-  const finalizeTimeoutRef = React.useRef<ReturnType<
-    typeof window.setTimeout
-  > | null>(null);
+  const finalizeTimeoutRef = React.useRef<number | null>(null);
 
   React.useEffect(() => {
     if (!recording) {
@@ -1401,9 +1399,7 @@ function SingleShortcutEditor({
     context?.sequenceTimeoutMs ?? DEFAULT_SEQUENCE_TIMEOUT_MS;
   const captureRef = React.useRef<HTMLButtonElement | null>(null);
   const pendingSequenceRef = React.useRef<ShortcutStroke[]>([]);
-  const finalizeTimeoutRef = React.useRef<ReturnType<
-    typeof window.setTimeout
-  > | null>(null);
+  const finalizeTimeoutRef = React.useRef<number | null>(null);
   const [isListening, setIsListening] = React.useState(true);
   const [candidate, setCandidate] = React.useState<ShortcutBinding | null>(
     null,
@@ -1716,6 +1712,7 @@ function KeyboardShortcutSettingsDialog() {
                 </span>
                 <Input
                   type="number"
+                  placeholder="Timeout"
                   min={MIN_SEQUENCE_TIMEOUT_MS}
                   max={MAX_SEQUENCE_TIMEOUT_MS}
                   step={25}

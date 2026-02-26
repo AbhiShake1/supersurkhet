@@ -1,4 +1,5 @@
-import { type useForm, useFormContext } from 'react-hook-form';
+import type { FieldValues, UseFormReturn } from 'react-hook-form';
+import { useFormContext } from 'react-hook-form';
 import * as z from 'zod';
 import {
   Accordion,
@@ -24,10 +25,35 @@ function DefaultParent({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-export default function AutoFormObject<
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  SchemaType extends z.ZodObject<any, any>,
->({
+type ZodNumberDef = {
+  typeName?: string;
+  coerce?: boolean;
+  innerType?: z.ZodTypeAny;
+};
+
+function isFieldConfigItem(
+  value: FieldConfigItem | FieldConfig<Record<string, unknown>> | undefined,
+): value is FieldConfigItem {
+  if (!value || typeof value !== 'object') return false;
+  return (
+    'description' in value ||
+    'inputProps' in value ||
+    'label' in value ||
+    'fieldType' in value ||
+    'renderParent' in value ||
+    'order' in value
+  );
+}
+
+function asNestedFieldConfig(
+  value: FieldConfigItem | FieldConfig<Record<string, unknown>> | undefined,
+): FieldConfig<Record<string, unknown>> | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  if (isFieldConfigItem(value)) return undefined;
+  return value;
+}
+
+export default function AutoFormObject<SchemaType extends z.AnyZodObject>({
   schema,
   form,
   fieldConfig,
@@ -35,7 +61,7 @@ export default function AutoFormObject<
   dependencies = [],
 }: {
   schema: SchemaType | z.ZodEffects<SchemaType>;
-  form: ReturnType<typeof useForm>;
+  form: UseFormReturn<FieldValues, unknown, FieldValues>;
   fieldConfig?: FieldConfig<z.infer<SchemaType>>;
   path?: string[];
   dependencies?: Dependency<z.infer<SchemaType>>[];
@@ -52,18 +78,15 @@ export default function AutoFormObject<
   }
 
   const handleIfZodNumber = (item: z.ZodAny) => {
-    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    const isZodNumber = (item as any)._def.typeName === 'ZodNumber';
-    const isInnerZodNumber =
-      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-      (item._def as any).innerType?._def?.typeName === 'ZodNumber';
+    const itemDef = item._def as ZodNumberDef;
+    const isZodNumber = itemDef.typeName === 'ZodNumber';
+    const innerTypeDef = itemDef.innerType?._def as ZodNumberDef | undefined;
+    const isInnerZodNumber = innerTypeDef?.typeName === 'ZodNumber';
 
     if (isZodNumber) {
-      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-      (item as any)._def.coerce = true;
+      itemDef.coerce = true;
     } else if (isInnerZodNumber) {
-      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-      (item._def as any).innerType._def.coerce = true;
+      innerTypeDef.coerce = true;
     }
 
     return item;
@@ -91,19 +114,15 @@ export default function AutoFormObject<
         }
 
         if (zodBaseType === 'ZodObject') {
+          const nestedFieldConfig = asNestedFieldConfig(fieldConfig?.[name]);
           return (
             <AccordionItem value={name} key={key} className="border-none">
               <AccordionTrigger>{itemName}</AccordionTrigger>
               <AccordionContent className="p-2">
                 <AutoFormObject
-                  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                  schema={item as unknown as z.ZodObject<any, any>}
+                  schema={item as unknown as z.AnyZodObject}
                   form={form}
-                  fieldConfig={
-                    (fieldConfig?.[name] ?? {}) as FieldConfig<
-                      z.infer<typeof item>
-                    >
-                  }
+                  fieldConfig={nestedFieldConfig}
                   path={[...path, name]}
                 />
               </AccordionContent>
@@ -111,33 +130,38 @@ export default function AutoFormObject<
           );
         }
         if (zodBaseType === 'ZodArray') {
+          const nestedFieldConfig = asNestedFieldConfig(fieldConfig?.[name]);
           return (
             <AutoFormArray
               key={key}
               name={name}
-              // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-              item={item as unknown as z.ZodArray<any>}
+              item={item as unknown as z.ZodArray<z.ZodTypeAny>}
               form={form}
-              fieldConfig={fieldConfig?.[name] ?? {}}
+              fieldConfig={nestedFieldConfig}
               path={[...path, name]}
             />
           );
         }
         if (zodBaseType === 'ZodRecord') {
+          const nestedFieldConfig = asNestedFieldConfig(fieldConfig?.[name]);
           return (
             <AutoFormRecord
               key={key}
               name={name}
-              // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-              item={item as unknown as z.ZodRecord<any, any>}
+              item={item as unknown as z.ZodRecord<z.ZodTypeAny, z.ZodTypeAny>}
               form={form}
-              fieldConfig={fieldConfig?.[name] ?? {}}
+              fieldConfig={nestedFieldConfig}
               path={[...path, name]}
             />
           );
         }
 
-        const fieldConfigItem: FieldConfigItem = fieldConfig?.[name] ?? {};
+        const fieldConfigValue = fieldConfig?.[name];
+        const fieldConfigItem: FieldConfigItem = isFieldConfigItem(
+          fieldConfigValue,
+        )
+          ? fieldConfigValue
+          : {};
         const zodInputProps = zodToHtmlInputProps(item);
         const isRequired =
           isRequiredByDependency ||

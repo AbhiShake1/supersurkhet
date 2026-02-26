@@ -92,11 +92,7 @@ type LoopNodeData = {
 };
 
 // Diamond-shaped node for conditions
-export const ConditionNode = ({
-  data,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  id,
-}: NodeProps<Node<ConditionNodeData>>) => {
+export const ConditionNode = ({ data }: NodeProps<Node<ConditionNodeData>>) => {
   return (
     <NodeStatusIndicator status={data.status}>
       <div className="relative" style={{ width: 120, height: 120 }}>
@@ -186,8 +182,7 @@ type IO_NodeData = {
 };
 
 // Parallelogram node for input/output
-// biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-export const IO_Node = ({ data, id }: NodeProps<Node<IO_NodeData>>) => {
+export const IO_Node = ({ data }: NodeProps<Node<IO_NodeData>>) => {
   return (
     <NodeStatusIndicator status={data.status}>
       <div
@@ -298,8 +293,6 @@ type PredefinedProcessNodeData = {
 // Rounded rectangle node for predefined process
 export const PredefinedProcessNode = ({
   data,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  id,
 }: NodeProps<Node<PredefinedProcessNodeData>>) => {
   return (
     <NodeStatusIndicator status={data.status}>
@@ -355,11 +348,7 @@ type DocumentNodeData = {
 };
 
 // Document node (rectangle with wavy bottom)
-export const DocumentNode = ({
-  data,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  id,
-}: NodeProps<Node<DocumentNodeData>>) => {
+export const DocumentNode = ({ data }: NodeProps<Node<DocumentNodeData>>) => {
   return (
     <NodeStatusIndicator status={data.status}>
       <div
@@ -414,8 +403,7 @@ export const DocumentNode = ({
 };
 
 // Loop node (hexagon)
-// biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-export const LoopNode = ({ data, id }: NodeProps<Node<LoopNodeData>>) => {
+export const LoopNode = ({ data }: NodeProps<Node<LoopNodeData>>) => {
   return (
     <NodeStatusIndicator status={data.status}>
       <div

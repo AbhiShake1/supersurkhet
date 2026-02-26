@@ -12,16 +12,14 @@ export function omitUndefined<T>(value: T): T {
     return value.map(omitUndefined) as T;
   }
 
-  if (_.isPlainObject(value)) {
-    return _.transform(
-      value,
-      (result, val, key) => {
-        if (val !== undefined) {
-          result[key] = omitUndefined(val);
-        }
-      },
-      {} as Record<string, unknown>,
-    ) as T;
+  if (isPlainObject(value)) {
+    const result: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(value)) {
+      if (val !== undefined) {
+        result[key] = omitUndefined(val);
+      }
+    }
+    return result as T;
   }
 
   return omitEmptyObject(value);
@@ -45,7 +43,7 @@ export function omitEmptyObject<T>(value: T): T {
       }
     }
 
-    return result;
+    return result as T;
   }
 
   return value;

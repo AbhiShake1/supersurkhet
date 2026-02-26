@@ -21,7 +21,7 @@ interface ThemeEditorProps extends React.ComponentProps<'div'> {
 export function ThemeEditor({
   compact = false,
   className,
-  props,
+  ...props
 }: ThemeEditorProps) {
   const { theme, setTheme } = useTheme();
   const [lightTheme, setLightTheme] = useState(theme.light);
@@ -85,6 +85,7 @@ export function ThemeEditor({
                   <div className="flex items-center space-x-2">
                     <Input
                       type="color"
+                      placeholder=""
                       value={lightTheme[prop] || '#000000'}
                       onChange={(e) =>
                         handleThemeChange('light', prop, e.target.value)
@@ -92,6 +93,7 @@ export function ThemeEditor({
                       className="w-16 h-8 p-0 border"
                     />
                     <Input
+                      placeholder=""
                       value={lightTheme[prop] || ''}
                       onChange={(e) =>
                         handleThemeChange('light', prop, e.target.value)
@@ -114,6 +116,7 @@ export function ThemeEditor({
                   <div className="flex items-center space-x-2">
                     <Input
                       type="color"
+                      placeholder=""
                       value={darkTheme[prop] || '#000000'}
                       onChange={(e) =>
                         handleThemeChange('dark', prop, e.target.value)
@@ -121,6 +124,7 @@ export function ThemeEditor({
                       className="w-16 h-8 p-0 border"
                     />
                     <Input
+                      placeholder=""
                       value={darkTheme[prop] || ''}
                       onChange={(e) =>
                         handleThemeChange('dark', prop, e.target.value)
@@ -170,6 +174,7 @@ export function ThemeEditor({
                 <div className="flex items-center space-x-2">
                   <Input
                     type="color"
+                    placeholder=""
                     value={lightTheme[prop] || '#000000'}
                     onChange={(e) =>
                       handleThemeChange('light', prop, e.target.value)
@@ -177,6 +182,7 @@ export function ThemeEditor({
                     className="w-16 h-8 p-0 border"
                   />
                   <Input
+                    placeholder=""
                     value={lightTheme[prop] || ''}
                     onChange={(e) =>
                       handleThemeChange('light', prop, e.target.value)
@@ -196,6 +202,7 @@ export function ThemeEditor({
                 <div className="flex items-center space-x-2">
                   <Input
                     type="color"
+                    placeholder=""
                     value={darkTheme[prop] || '#000000'}
                     onChange={(e) =>
                       handleThemeChange('dark', prop, e.target.value)
@@ -203,6 +210,7 @@ export function ThemeEditor({
                     className="w-16 h-8 p-0 border"
                   />
                   <Input
+                    placeholder=""
                     value={darkTheme[prop] || ''}
                     onChange={(e) =>
                       handleThemeChange('dark', prop, e.target.value)

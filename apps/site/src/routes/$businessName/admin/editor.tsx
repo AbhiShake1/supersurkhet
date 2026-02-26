@@ -237,7 +237,7 @@ function EditorComponent() {
 
 # Business Context:
 - Business Name: ${businessName}
-- Business Description: ${_business?.description || 'Not specified'}
+- Business Description: Not specified
 - Business Slug: ${businessName}
 
 # Root Schema Definition:
@@ -291,7 +291,7 @@ ${JSON.stringify(componentSummaries, null, 2)}
 
 # Business-Specific Guidelines:
 - Create UI components that are specifically focused on this business context
-- Align design with business description: ${_business?.description || 'unspecified'}
+- Align design with the provided business context
 - Design primarily for the core workflows implied by the business context
 - Focus your UI design on the core business functions from the available schemas and workflows
 - Use appropriate colors and styling that align with the business description and brand feel
@@ -463,18 +463,6 @@ Provide the complete UI configuration in JSON format as your response. Do not in
   //   },
   // });
 
-  // Available models
-  const _models = [
-    {
-      name: 'Gemini Pro',
-      value: 'google/gemini-pro',
-    },
-    {
-      name: 'Gemini Flash',
-      value: 'google/gemini-flash',
-    },
-  ];
-
   const editorRef = useRef<
     import('monaco-editor').editor.IStandaloneCodeEditor | null
   >(null);
@@ -492,12 +480,28 @@ Provide the complete UI configuration in JSON format as your response. Do not in
     setMonacoInstance(monaco);
 
     // Register the JSON schema for validation
-    monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+    const jsonDefaults = (
+      monaco.languages as {
+        json?: {
+          jsonDefaults?: {
+            setDiagnosticsOptions: (options: {
+              validate: boolean;
+              schemas: Array<{
+                uri: string;
+                fileMatch: string[];
+                schema: unknown;
+              }>;
+            }) => void;
+          };
+        };
+      }
+    ).json?.jsonDefaults;
+    jsonDefaults?.setDiagnosticsOptions({
       validate: true,
       schemas: [
         {
           uri: 'ui-builder-schema',
-          fileMatch: ['*'], // Apply to all files for this demo
+          fileMatch: ['*'],
           schema: rootSchema,
         },
       ],
@@ -571,6 +575,9 @@ Provide the complete UI configuration in JSON format as your response. Do not in
     } catch {}
   }
   const currentPage = currentLayers ? tryParse(currentLayers)?.[0] : undefined;
+
+  const panelDirection: 'horizontal' | 'vertical' =
+    layout === 'horizontal' ? 'horizontal' : 'vertical';
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -664,10 +671,7 @@ Provide the complete UI configuration in JSON format as your response. Do not in
       </div>
 
       {isPreviewVisible ? (
-        <ResizablePanelGroup
-          direction={layout === 'horizontal' ? 'horizontal' : 'vertical'}
-          className="flex-1"
-        >
+        <ResizablePanelGroup direction={panelDirection} className="flex-1">
           {/* Main Editor and Preview Area */}
           <ResizablePanel defaultSize={isAIChatVisible ? 70 : 100} minSize={30}>
             <ResizablePanelGroup direction="horizontal" className="h-full">

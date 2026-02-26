@@ -14,23 +14,45 @@ import type {
 
 interface JsonSchemaType {
   type?: string | string[];
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  enum?: any[];
+  enum?: unknown[];
+  const?: unknown;
   items?: JsonSchemaType;
   properties?: Record<string, JsonSchemaType>;
   required?: string[];
   additionalProperties?: boolean;
   description?: string;
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  default?: any;
+  default?: unknown;
   minimum?: number;
   maximum?: number;
   minLength?: number;
   maxLength?: number;
+  minItems?: number;
+  maxItems?: number;
   format?: string;
   pattern?: string;
   oneOf?: JsonSchemaType[];
   $defs?: Record<string, JsonSchemaType>;
+}
+
+type ZodUnionOptions = readonly [ZodTypeAny, ...ZodTypeAny[]];
+type NativeEnumLike = {
+  [key: string]: string | number;
+  [key: number]: string;
+};
+
+function readLengthConstraintValue(constraint: unknown): number | undefined {
+  if (typeof constraint === 'number') {
+    return constraint;
+  }
+  if (
+    typeof constraint === 'object' &&
+    constraint !== null &&
+    'value' in constraint
+  ) {
+    const value = (constraint as { value?: unknown }).value;
+    return typeof value === 'number' ? value : undefined;
+  }
+  return undefined;
 }
 
 export function zodToJsonSchema(
@@ -41,32 +63,29 @@ export function zodToJsonSchema(
 
   // Handle ZodEffects (transformations, refinements, etc.)
   if (schema._def.typeName === 'ZodEffects') {
-    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    const effectSchema = (schema as ZodEffects<any>)._def.schema;
+    const effectSchema = (schema as ZodEffects<ZodTypeAny, unknown, unknown>)
+      ._def.schema;
     return zodToJsonSchema(effectSchema, { definitions });
   }
 
   // Handle ZodDefault (default values)
   if (schema._def.typeName === 'ZodDefault') {
-    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    const baseSchema = (schema as ZodDefault<any>)._def.innerType;
+    const defaultSchema = schema as ZodDefault<ZodTypeAny>;
+    const baseSchema = defaultSchema._def.innerType;
     const baseJsonSchema = zodToJsonSchema(baseSchema, { definitions });
-    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    baseJsonSchema.default = (schema as ZodDefault<any>)._def.defaultValue();
+    baseJsonSchema.default = defaultSchema._def.defaultValue();
     return baseJsonSchema;
   }
 
   // Handle ZodOptional
   if (schema._def.typeName === 'ZodOptional') {
-    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    const baseSchema = (schema as ZodOptional<any>)._def.innerType;
+    const baseSchema = (schema as ZodOptional<ZodTypeAny>)._def.innerType;
     return zodToJsonSchema(baseSchema, { definitions });
   }
 
   // Handle ZodNullable
   if (schema._def.typeName === 'ZodNullable') {
-    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    const baseSchema = (schema as ZodNullable<any>)._def.innerType;
+    const baseSchema = (schema as ZodNullable<ZodTypeAny>)._def.innerType;
     const baseJsonSchema = zodToJsonSchema(baseSchema, { definitions });
     // For nullable, we'll represent as a union of the base type and null
     return {
@@ -76,8 +95,7 @@ export function zodToJsonSchema(
 
   // Handle ZodUnion (including ZodLiteral unions)
   if (schema._def.typeName === 'ZodUnion') {
-    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    const options = (schema as ZodUnion<any[]>)._def.options;
+    const options = (schema as ZodUnion<ZodUnionOptions>)._def.options;
     return {
       oneOf: options.map((option: ZodTypeAny) =>
         zodToJsonSchema(option, { definitions }),
@@ -87,18 +105,16 @@ export function zodToJsonSchema(
 
   // Handle ZodLiteral
   if (schema._def.typeName === 'ZodLiteral') {
+    const literalValue = (schema as ZodLiteral<unknown>)._def.value;
     return {
-      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-      const: (schema as ZodLiteral<any>)._def.value,
-      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-      type: typeof (schema as ZodLiteral<any>)._def.value,
+      const: literalValue,
+      type: literalValue === null ? 'null' : typeof literalValue,
     };
   }
 
   // Handle ZodEnum
   if (schema._def.typeName === 'ZodEnum') {
-    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    const values = (schema as ZodEnum<any>)._def.values;
+    const values = (schema as ZodEnum<[string, ...string[]]>)._def.values;
     return {
       type: 'string',
       enum: values,
@@ -107,8 +123,9 @@ export function zodToJsonSchema(
 
   // Handle ZodNativeEnum
   if (schema._def.typeName === 'ZodNativeEnum') {
-    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    const values = Object.values((schema as ZodNativeEnum<any>)._def.values);
+    const values = Object.values(
+      (schema as ZodNativeEnum<NativeEnumLike>)._def.values,
+    );
     const stringValues = values.filter(
       (val) => typeof val === 'string',
     ) as string[];
@@ -120,8 +137,9 @@ export function zodToJsonSchema(
 
   // Handle ZodObject
   if (schema._def.typeName === 'ZodObject') {
-    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    const shape = (schema as ZodObject<any>)._def.shape();
+    const shape = (
+      schema as ZodObject<Record<string, ZodTypeAny>>
+    )._def.shape();
     const properties: Record<string, JsonSchemaType> = {};
     const required: string[] = [];
 
@@ -152,8 +170,7 @@ export function zodToJsonSchema(
 
   // Handle ZodArray
   if (schema._def.typeName === 'ZodArray') {
-    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    const arrayDef = (schema as ZodArray<any>)._def;
+    const arrayDef = (schema as ZodArray<ZodTypeAny>)._def;
     const elementSchema = zodToJsonSchema(arrayDef.type, { definitions });
 
     const result: JsonSchemaType = {
@@ -162,13 +179,13 @@ export function zodToJsonSchema(
     };
 
     // Add min/max length constraints if present
-    if ('minLength' in arrayDef) {
-      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-      result.minItems = (arrayDef as any).minLength;
+    const minItems = readLengthConstraintValue(arrayDef.minLength);
+    if (typeof minItems === 'number') {
+      result.minItems = minItems;
     }
-    if ('maxLength' in arrayDef) {
-      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-      result.maxItems = (arrayDef as any).maxLength;
+    const maxItems = readLengthConstraintValue(arrayDef.maxLength);
+    if (typeof maxItems === 'number') {
+      result.maxItems = maxItems;
     }
 
     return result;

@@ -138,9 +138,23 @@ describe('plugin v2 schema contracts', () => {
       ],
     });
 
-    expect(
-      parsed.schemaDocs?.[0]?.fields[0]?.behavior?.derivations?.[0]?.target,
-    ).toBe('value');
+    const firstField = parsed.schemaDocs?.[0]?.fields?.[0];
+    const firstFieldBehavior =
+      firstField &&
+      typeof firstField === 'object' &&
+      'behavior' in firstField &&
+      firstField.behavior &&
+      typeof firstField.behavior === 'object'
+        ? firstField.behavior
+        : undefined;
+    const firstDerivationTarget =
+      firstFieldBehavior &&
+      'derivations' in firstFieldBehavior &&
+      Array.isArray(firstFieldBehavior.derivations)
+        ? firstFieldBehavior.derivations[0]?.target
+        : undefined;
+
+    expect(firstDerivationTarget).toBe('value');
     expect(parsed.schemaDocs?.[0]?.refinements?.[0]?.message).toContain('SKU');
     expect(
       parsed.schemaDocs?.[0]?.workflows?.[0]?.nodes[0]?.runIf,

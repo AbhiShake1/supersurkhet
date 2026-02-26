@@ -82,6 +82,6 @@ export type AutoFormInputComponentProps = {
   isRequired: boolean;
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   fieldProps: any;
-  zodItem: z.ZodAny;
+  zodItem: z.ZodTypeAny;
   className?: string;
 };

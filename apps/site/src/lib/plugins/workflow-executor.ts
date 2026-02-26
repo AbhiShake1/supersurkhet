@@ -67,6 +67,11 @@ type NormalizedEnvelope = {
   patch?: unknown;
 };
 
+type WorkflowExpressionInput = Extract<
+  NonNullable<WorkflowNodeDoc['input']>,
+  { expression: unknown }
+>;
+
 function normalizeEnvelope(
   input: ExecuteLifecycleHookInput,
 ): NormalizedEnvelope {
@@ -110,7 +115,7 @@ function buildExpressionContext(args: {
 
 function hasExpressionInput(
   input: WorkflowNodeDoc['input'],
-): input is { expression: WorkflowDoc['edges'][number]['condition'] } {
+): input is WorkflowExpressionInput {
   return (
     !!input &&
     typeof input === 'object' &&
@@ -340,6 +345,7 @@ async function executeWorkflowGraph({
         if (!node.actionId) {
           throw new Error(`Workflow node "${node.nodeId}" missing actionId`);
         }
+        const actionId = node.actionId;
 
         const idempotencyKey = node.idempotencyKeyExpr
           ? String(
@@ -356,12 +362,12 @@ async function executeWorkflowGraph({
             expressionContext,
             payload,
           );
-          if (isCoreDbActionId(node.actionId)) {
+          if (isCoreDbActionId(actionId)) {
             output = await executeNodeWithPolicy({
               node,
               run: () =>
                 executeBuiltinDbAction({
-                  actionId: node.actionId,
+                  actionId,
                   input: resolvedInput,
                   db,
                   businessId,
@@ -370,21 +376,19 @@ async function executeWorkflowGraph({
                 }),
             });
           } else {
-            const handler = actionHandlers[node.actionId];
+            const handler = actionHandlers[actionId];
             if (!handler) {
-              throw new Error(
-                `No action handler registered for "${node.actionId}"`,
-              );
+              throw new Error(`No action handler registered for "${actionId}"`);
             }
 
             const requiredCapabilities =
-              actionManifestById[node.actionId]?.capabilities ?? [];
+              actionManifestById[actionId]?.capabilities ?? [];
 
             output = await executeNodeWithPolicy({
               node,
               run: async () =>
                 runSandboxedAction({
-                  actionId: node.actionId,
+                  actionId,
                   handler,
                   input: resolvedInput,
                   context: {
@@ -402,7 +406,6 @@ async function executeWorkflowGraph({
                       table,
                       hook,
                       requestId: envelope.requestId,
-                      rowId: envelope.rowId,
                     },
                     record: {
                       before: envelope.before,

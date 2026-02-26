@@ -17,9 +17,42 @@ interface UseAutoResizeTextareaProps {
   maxHeight?: number;
 }
 
+type VercelV0ChatWizardOption = {
+  id: string;
+  label: string;
+  selected?: boolean;
+  recommended?: boolean;
+};
+
+type VercelV0ChatWizardInput = {
+  value: string;
+  placeholder: string;
+  onChange: (value: string) => void;
+  onSubmit?: () => void;
+};
+
+type VercelV0ChatWizard = {
+  stageKey: string;
+  prioritizeRecommended?: boolean;
+  prompt?: string;
+  options?: VercelV0ChatWizardOption[];
+  onSelectOption?: (id: string) => void;
+  input?: VercelV0ChatWizardInput;
+  canGoBack?: boolean;
+  canGoForward?: boolean;
+  onBack?: () => void;
+  onForward?: () => void;
+  backLabel?: string;
+  forwardLabel?: string;
+  forwardEchoLabel?: string;
+};
+
 interface VercelV0ChatProps {
   fitContainer?: boolean;
   className?: string;
+  title?: string;
+  subtitle?: string;
+  wizard?: VercelV0ChatWizard;
 }
 
 function useAutoResizeTextarea({
@@ -69,6 +102,8 @@ function useAutoResizeTextarea({
 export function VercelV0Chat({
   fitContainer = false,
   className,
+  title,
+  subtitle,
 }: VercelV0ChatProps) {
   const [value, setValue] = useState('');
   const [messages, setMessages] = useState<Message[]>([
@@ -158,11 +193,11 @@ export function VercelV0Chat({
           </div>
           <div>
             <h2 className="text-sm font-semibold text-white">
-              Business Assistant
+              {title ?? 'Business Assistant'}
             </h2>
             <p className="text-[10px] text-zinc-400 uppercase tracking-wider">
-              Explain your business needs to get personalized plugin
-              recommendations.(Powered by AI)
+              {subtitle ??
+                'Explain your business needs to get personalized plugin recommendations. (Powered by AI)'}
             </p>
           </div>
         </div>

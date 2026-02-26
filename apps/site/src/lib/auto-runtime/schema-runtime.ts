@@ -127,7 +127,7 @@ export function collectDerivedFieldFns({
   schema,
   parsedSchema,
 }: {
-  schema: z.ZodTypeAny;
+  schema: ZodObjectOrWrapped;
   parsedSchema?: ParsedSchema;
 }): Map<string, DeriveFn> {
   const fields =

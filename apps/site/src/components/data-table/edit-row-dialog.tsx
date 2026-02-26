@@ -1,6 +1,6 @@
 import { Save } from 'lucide-react';
 import * as React from 'react';
-import { z } from 'zod';
+import type { z } from 'zod';
 import { AutoForm } from '@/components/ui/autoform';
 import { SubmitButton } from '@/components/ui/autoform/components/SubmitButton';
 import type { ZodObjectOrWrapped } from '@/components/ui/autoform/zod';

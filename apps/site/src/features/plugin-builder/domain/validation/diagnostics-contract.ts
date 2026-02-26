@@ -11,7 +11,7 @@ export type PluginBuildDiagnosticCode =
 export type PluginBuildDiagnostic = {
   code: PluginBuildDiagnosticCode;
   severity: PluginBuildDiagnosticSeverity;
-  path: string[];
+  path: readonly string[];
   message: string;
   fixHint?: string;
 };

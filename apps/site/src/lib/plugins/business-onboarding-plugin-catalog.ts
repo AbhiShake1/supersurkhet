@@ -16,7 +16,7 @@ type OnboardingPluginCategory =
   | Exclude<BusinessOnboardingPluginFilter, 'all' | 'recommended'>
   | 'other';
 
-const CATEGORY_PRIORITY: OnboardingPluginCategory[] = [
+const CATEGORY_PRIORITY: Exclude<OnboardingPluginCategory, 'other'>[] = [
   'operations',
   'inventory',
   'finance',

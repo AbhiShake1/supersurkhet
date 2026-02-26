@@ -55,7 +55,6 @@ import type {
   PluginDraftDoc,
   PluginDraftRevisionDoc,
   PluginReleaseDoc,
-  SchemaBehaviorIR,
   SchemaDoc,
   SchemaFieldDoc,
   SchemaWorkflowDoc,
@@ -1088,9 +1087,9 @@ function getNextVersion(releases: PluginReleaseDoc[], currentPluginId: string) {
   return bumpPatchVersion(sorted[sorted.length - 1] ?? '0.0.0');
 }
 
-function parseJsonObject<T extends Record<string, unknown> = Record<string, unknown>>(
-  value: string | undefined,
-): T | undefined {
+function parseJsonObject<
+  T extends Record<string, unknown> = Record<string, unknown>,
+>(value: string | undefined): T | undefined {
   if (!value || value.trim() === '') return undefined;
   try {
     const parsed = JSON.parse(value) as unknown;
@@ -1964,9 +1963,12 @@ function toSchemaFieldDoc(
     )
       ? (field.type as (typeof AUTOFORM_FIELD_TYPES)[number])
       : undefined);
+  const fieldTypeForConfig =
+    resolvedFieldType === 'className' ? undefined : resolvedFieldType;
 
+  type SchemaFieldBehavior = NonNullable<SchemaFieldDoc['behavior']>;
   const parsedFieldConfig =
-    parseJsonObject<NonNullable<SchemaBehaviorIR['fieldConfig']>>(
+    parseJsonObject<NonNullable<SchemaFieldBehavior['fieldConfig']>>(
       field.fieldConfigJson,
     ) ?? {};
   const parsedInputProps = parseJsonObject<
@@ -1975,9 +1977,9 @@ function toSchemaFieldDoc(
   const parsedCustomData = parseJsonObject<
     Record<string, JsonValue | ExpressionDoc>
   >(field.customDataJson);
-  const fieldConfig: NonNullable<SchemaBehaviorIR['fieldConfig']> = {
+  const fieldConfig: NonNullable<SchemaFieldBehavior['fieldConfig']> = {
     ...parsedFieldConfig,
-    ...(resolvedFieldType ? { fieldType: resolvedFieldType } : {}),
+    ...(fieldTypeForConfig ? { fieldType: fieldTypeForConfig } : {}),
     label: field.label || field.key || 'Field',
     description: field.description || undefined,
     ...(parsedInputProps ? { inputProps: parsedInputProps } : {}),
@@ -1987,8 +1989,8 @@ function toSchemaFieldDoc(
     .map((entry) => compileDerivedFieldToDeriveIr(entry))
     .filter((entry): entry is DeriveIR => entry !== null);
 
-  const behavior: SchemaBehaviorIR = {
-    ...(parseJsonObject<SchemaBehaviorIR>(field.behaviorJson) ?? {}),
+  const behavior: SchemaFieldBehavior = {
+    ...(parseJsonObject<SchemaFieldBehavior>(field.behaviorJson) ?? {}),
     fieldConfig,
     ...(compiledDerivations.length > 0
       ? {
@@ -3756,7 +3758,7 @@ function PluginStudioPresenter({
       conditionBlock?.type === 'plugin_rule_compare'
         ? conditionBlock.getField('RIGHT')
         : null;
-    if (operatorField && selectedBlocklyField) {
+    if (operatorField && selectedBlocklyField && conditionBlock) {
       const allowedOperators = getAllowedOperators(selectedBlocklyField.type);
       const operatorOptions = getBlocklyOperatorOptions(
         selectedBlocklyField.type,
@@ -3775,7 +3777,7 @@ function PluginStudioPresenter({
         conditionBlock.setFieldValue(allowedOperators[0] ?? 'eq', 'OP');
       }
     }
-    if (!rightField) return;
+    if (!rightField || !conditionBlock) return;
     rightField.menuGenerator_ = nextOptions;
     const selectedValue = conditionBlock.getFieldValue('RIGHT');
     const hasSelection = blocklyComparableFields.includes(selectedValue);
@@ -3984,7 +3986,10 @@ function PluginStudioPresenter({
           );
         }
 
-        blocklyRuntimeRef.current = { Blockly, workspace };
+        blocklyRuntimeRef.current = {
+          Blockly,
+          workspace: workspace as unknown as BlocklyRuntime['workspace'],
+        };
         if (!cancelled) setIsBlocklyReady(true);
       } catch (error) {
         console.error(error);

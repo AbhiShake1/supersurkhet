@@ -1,0 +1,11 @@
+Execute /Users/abhi/proj/personal/supersurkhet/.parallel/080/PLANS/080-plugin-schema-contract-test-retighten.md end-to-end.
+
+Rules:
+- Follow Exclusive Write Scope only.
+- Do not ask user questions; choose safe defaults and continue.
+- Keep changes small, non-breaking, and quick.
+- Continuously append progress to output/parallel/080-plugin-schema-contract.md.
+- Run verification commands listed in the plan.
+- Commit changes on this branch with plan id in commit subject.
+- Do not modify files outside the plan scope.
+- End by writing status=merged/pending_merge and verification summary in output/parallel/080-plugin-schema-contract.md.

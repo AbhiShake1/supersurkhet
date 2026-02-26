@@ -1,4 +1,6 @@
 import { Plus, Trash } from 'lucide-react';
+import type { ChangeEvent } from 'react';
+import type { FieldValues, UseFormReturn } from 'react-hook-form';
 import { useWatch } from 'react-hook-form';
 import * as z from 'zod';
 import {
@@ -9,19 +11,41 @@ import {
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { FormField } from '../../form';
-import type { FieldConfig } from '../types';
-import { beautifyObjectName, getBaseType } from '../utils';
+import type { FieldConfig, FieldConfigItem } from '../types';
+import { beautifyObjectName, getBaseType, zodToHtmlInputProps } from '../utils';
 import AutoFormInput from './input';
 import AutoFormObject from './object';
 
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-function getRecordSchema(item: z.ZodRecord<any, any>) {
-  const keyType = item._def.keyType;
+function getRecordSchema(item: z.ZodRecord<z.ZodTypeAny, z.ZodTypeAny>) {
+  const keyType = item._def.keyType as z.ZodTypeAny | undefined;
   if (keyType) return [keyType, item._def.valueType] as const;
-  if ('innerType' in item._def)
-    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    return getRecordSchema(item._def.innerType as z.ZodRecord<any, any>);
+  if ('innerType' in item._def) {
+    const innerType = item._def.innerType as unknown;
+    if (innerType instanceof z.ZodRecord) {
+      return getRecordSchema(innerType);
+    }
+  }
   return [z.string(), z.string()] as const;
+}
+
+function isFieldConfigItem(
+  value: FieldConfigItem | FieldConfig<Record<string, unknown>> | undefined,
+): value is FieldConfigItem {
+  if (!value || typeof value !== 'object') return false;
+  return (
+    'description' in value ||
+    'inputProps' in value ||
+    'label' in value ||
+    'fieldType' in value ||
+    'renderParent' in value ||
+    'order' in value
+  );
+}
+
+function toFieldConfigItem(
+  value: FieldConfigItem | FieldConfig<Record<string, unknown>> | undefined,
+): FieldConfigItem {
+  return isFieldConfigItem(value) ? value : {};
 }
 
 export default function AutoFormRecord({
@@ -32,13 +56,10 @@ export default function AutoFormRecord({
   fieldConfig,
 }: {
   name: string;
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  item: z.ZodRecord<any, any>;
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  form: any;
+  item: z.ZodRecord<z.ZodTypeAny, z.ZodTypeAny>;
+  form: UseFormReturn<FieldValues, unknown, FieldValues>;
   path?: string[];
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  fieldConfig?: FieldConfig<any>;
+  fieldConfig?: FieldConfig<Record<string, unknown>>;
 }) {
   const title = item._def.description ?? beautifyObjectName(name);
 
@@ -50,6 +71,8 @@ export default function AutoFormRecord({
   const record = useWatch({ control: form.control, name }) ?? {};
 
   const setValue = form.setValue;
+  const keyFieldConfig = toFieldConfigItem(fieldConfig?.key);
+  const valueFieldConfig = toFieldConfigItem(fieldConfig?.value);
 
   const remove = (key: string) => {
     const clone = { ...record };
@@ -104,12 +127,13 @@ export default function AutoFormRecord({
                         label="Key"
                         isRequired
                         field={field}
-                        fieldConfigItem={fieldConfig?.key}
+                        zodInputProps={zodToHtmlInputProps(z.string())}
+                        fieldConfigItem={keyFieldConfig}
+                        zodItem={z.string()}
                         fieldProps={{
                           value: field.value ?? internalKey,
-                          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                          onChange: (e: any) =>
-                            updateKey(internalKey, e.target.value),
+                          onChange: (event: ChangeEvent<HTMLInputElement>) =>
+                            updateKey(internalKey, event.target.value),
                         }}
                       />
                     )}
@@ -130,8 +154,7 @@ export default function AutoFormRecord({
               <div>
                 {valueBaseType === 'ZodObject' ? (
                   <AutoFormObject
-                    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                    schema={valueSchema as z.ZodObject<any, any>}
+                    schema={valueSchema as z.AnyZodObject}
                     form={form}
                     fieldConfig={fieldConfig}
                     path={[...path, internalKey]}
@@ -141,17 +164,21 @@ export default function AutoFormRecord({
                     control={form.control}
                     name={valuePath}
                     render={({ field }) => {
-                      field = {
+                      const resolvedValue =
+                        (record as Record<string, unknown>)[internalKey] ?? '';
+                      const normalizedField = {
                         ...field,
-                        value: record[field.value.__key],
+                        value: resolvedValue,
                       };
                       return (
                         <AutoFormInput
                           label="Value"
                           isRequired
-                          field={field}
-                          fieldConfigItem={fieldConfig?.value}
-                          fieldProps={field}
+                          field={normalizedField}
+                          zodInputProps={zodToHtmlInputProps(valueSchema)}
+                          fieldConfigItem={valueFieldConfig}
+                          zodItem={valueSchema as z.ZodAny}
+                          fieldProps={normalizedField}
                         />
                       );
                     }}

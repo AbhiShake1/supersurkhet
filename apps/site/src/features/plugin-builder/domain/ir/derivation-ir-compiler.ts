@@ -4,7 +4,7 @@ import type {
   ExpressionOpDoc,
   ExpressionRefDoc,
   JsonPrimitive,
-} from '@/lib/plugins/types';
+} from '@supersurkhet/sdk';
 
 const LOCKED_EXPRESSION_OPERATORS = new Set<ExpressionOpDoc['op']>([
   'eq',

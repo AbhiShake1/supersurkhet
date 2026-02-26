@@ -57,7 +57,9 @@ vi.mock('@/components/ui/input', () => ({
       onChange={onChange}
       placeholder={placeholder}
       list={list}
-      onInput={onChange}
+      onInput={(event) =>
+        onChange?.(event as unknown as React.ChangeEvent<HTMLInputElement>)
+      }
     />
   ),
 }));

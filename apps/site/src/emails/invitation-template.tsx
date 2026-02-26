@@ -2,7 +2,7 @@ interface InvitationEmailProps {
   inviterName: string;
   businessName: string;
   inviteeEmail: string;
-  role: string;
+  memberRole: string;
   invitationUrl: string;
 }
 
@@ -10,7 +10,7 @@ export const InvitationEmail = ({
   inviterName,
   businessName,
   inviteeEmail,
-  role,
+  memberRole,
   invitationUrl,
 }: InvitationEmailProps) => (
   <div
@@ -50,7 +50,7 @@ export const InvitationEmail = ({
       </p>
       <p style={{ color: '#334155', marginBottom: '15px' }}>
         <strong>{inviterName}</strong> has invited you to join{' '}
-        <strong>{businessName}</strong> as a <strong>{role}</strong>.
+        <strong>{businessName}</strong> as a <strong>{memberRole}</strong>.
       </p>
       <p style={{ color: '#334155', marginBottom: '20px' }}>
         Click the button below to accept the invitation and join the

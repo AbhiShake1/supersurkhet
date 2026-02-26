@@ -166,9 +166,10 @@ export function generate(options: ZodTypegenOptions) {
   if (!sourceFile) return;
 
   if (!schema) return;
+  const resolvedSchema = schema;
 
   function getSchemaInfo() {
-    const v = sourceFile.getVariableDeclaration(schema.identifier);
+    const v = sourceFile.getVariableDeclaration(resolvedSchema.identifier);
     if (!v) return null;
     const type = v.getType();
 
@@ -188,8 +189,8 @@ export function generate(options: ZodTypegenOptions) {
     if (!outputSymbol) return null;
 
     return {
-      name: schema.name,
-      identifier: schema.identifier,
+      name: resolvedSchema.name,
+      identifier: resolvedSchema.identifier,
       typeText: normalizeTypeText(v.getType().getText(), options.output),
       variable: v,
     };

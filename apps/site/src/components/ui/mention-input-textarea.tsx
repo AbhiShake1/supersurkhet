@@ -149,7 +149,7 @@ export function MentionInputTextarea({
                 id: `context.${key}`,
                 label: `context.${key}`,
                 category: 'Context',
-                value: val,
+                value: String(val),
               });
             });
         }
@@ -169,7 +169,7 @@ export function MentionInputTextarea({
           id: key,
           label: key,
           category,
-          value: val,
+          value: String(val),
         });
       });
 

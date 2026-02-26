@@ -5,16 +5,38 @@ import {
   type BusinessInsightEngineInput,
   integrateBusinessInsights,
 } from '@/lib/business-insights';
-import type { Sale, StockImport } from '@/lib/schemas/sales';
+import type { Product } from '@/lib/schemas/listings';
+import type { Sale, SalesItem, StockImport } from '@/lib/schemas/retail';
 import { lineTotal, toFiniteNumber } from './business-analytics-number-utils';
 
+function isSalesItem(value: unknown): value is SalesItem {
+  if (!value || typeof value !== 'object') return false;
+  const item = value as Record<string, unknown>;
+  return (
+    typeof item.product === 'string' &&
+    typeof item.quantity === 'number' &&
+    Number.isFinite(item.quantity) &&
+    typeof item.unitPrice === 'number' &&
+    Number.isFinite(item.unitPrice)
+  );
+}
+
+function getSalesItems(items: unknown): SalesItem[] {
+  if (!Array.isArray(items)) return [];
+  return items.filter(isSalesItem);
+}
+
 const saleTotal = (sale: Sale) =>
-  sale.items?.reduce((sum, i) => sum + lineTotal(i.quantity, i.unitPrice), 0) ??
-  0;
+  getSalesItems(sale.items).reduce(
+    (sum, item) => sum + lineTotal(item.quantity, item.unitPrice),
+    0,
+  );
 
 const importTotal = (imp: StockImport) =>
-  imp.items?.reduce((sum, i) => sum + lineTotal(i.quantity, i.unitPrice), 0) ??
-  0;
+  getSalesItems(imp.items).reduce(
+    (sum, item) => sum + lineTotal(item.quantity, item.unitPrice),
+    0,
+  );
 
 export function useBusinessAnalytics(slug: string, period: string = 'all') {
   const { data: sales = [] } = api.sale.useGet({ keys: [slug] });
@@ -76,39 +98,33 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
 
   // Detailed breakdowns for Accounts Receivable
   const accountsReceivableBreakdown = useMemo(() => {
-    return (
-      filteredSales
-        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-        .filter((sale: any) => {
-          const total = saleTotal(sale);
-          const due = total - toFiniteNumber(sale.paidAmount);
-          return due > 0;
-        })
-        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-        .map((sale: any) => {
-          const total = saleTotal(sale);
-          const due = total - toFiniteNumber(sale.paidAmount);
-          return {
-            id: sale._?.soul || '',
-            customer: sale.customerName || 'Walk-in Customer',
-            totalAmount: total,
-            paidAmount: toFiniteNumber(sale.paidAmount),
-            dueAmount: due,
-            date:
-              sale.saleDate ||
-              (sale.timestamp ? new Date(sale.timestamp).toISOString() : ''),
-            items:
-              // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-              sale.items?.map((item: any) => ({
-                product:
-                  productsBySoul.get(item.product)?.title || item.product,
-                quantity: toFiniteNumber(item.quantity),
-                unitPrice: toFiniteNumber(item.unitPrice),
-                total: lineTotal(item.quantity, item.unitPrice),
-              })) || [],
-          };
-        })
-    );
+    return filteredSales
+      .filter((sale) => {
+        const total = saleTotal(sale);
+        const due = total - toFiniteNumber(sale.paidAmount);
+        return due > 0;
+      })
+      .map((sale) => {
+        const total = saleTotal(sale);
+        const due = total - toFiniteNumber(sale.paidAmount);
+        return {
+          id: sale._?.soul || '',
+          customer: sale.customerName || 'Walk-in Customer',
+          totalAmount: total,
+          paidAmount: toFiniteNumber(sale.paidAmount),
+          dueAmount: due,
+          date:
+            sale.saleDate ||
+            (sale.timestamp ? new Date(sale.timestamp).toISOString() : ''),
+          items: getSalesItems(sale.items).map((item) => ({
+            product: productsBySoul.get(item.product)?.title || item.product,
+            quantity: toFiniteNumber(item.quantity),
+            unit: item.unit,
+            unitPrice: toFiniteNumber(item.unitPrice),
+            total: lineTotal(item.quantity, item.unitPrice),
+          })),
+        };
+      });
   }, [filteredSales, productsBySoul]);
 
   // Detailed breakdowns for Accounts Payable
@@ -132,14 +148,14 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
           date:
             imp.importDate ||
             (imp.timestamp ? new Date(imp.timestamp).toISOString() : ''),
-          items:
-            imp.items?.map((item) => ({
-              ...item,
-              product: productsBySoul.get(item.product)?.title || item.product,
-              quantity: toFiniteNumber(item.quantity),
-              unitPrice: toFiniteNumber(item.unitPrice),
-              total: lineTotal(item.quantity, item.unitPrice),
-            })) || [],
+          items: getSalesItems(imp.items).map((item) => ({
+            ...item,
+            product: productsBySoul.get(item.product)?.title || item.product,
+            quantity: toFiniteNumber(item.quantity),
+            unit: item.unit,
+            unitPrice: toFiniteNumber(item.unitPrice),
+            total: lineTotal(item.quantity, item.unitPrice),
+          })),
         };
       });
   }, [filteredStockImports, partiesBySoul, productsBySoul]);
@@ -161,13 +177,13 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
         const party = partiesBySoul.get(partyId);
         return { name: party?.name || 'Deleted Party', total };
       });
-  }, [filteredStockImports, partiesBySoul.get]);
+  }, [filteredStockImports, partiesBySoul]);
 
   // Top Products
   const productRevenue = useMemo(() => {
     const revenue = filteredSales.reduce(
       (acc, sale) => {
-        sale.items?.forEach((item) => {
+        getSalesItems(sale.items).forEach((item) => {
           acc[item.product] =
             (acc[item.product] || 0) + lineTotal(item.quantity, item.unitPrice);
         });
@@ -221,8 +237,10 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
   // Current Inventory Levels
   const currentInventory = useMemo(() => {
     // Start with initial stock from products
-    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    const inventory = new Map<string, { product: any; currentStock: number }>();
+    const inventory = new Map<
+      string,
+      { product: Product; currentStock: number }
+    >();
 
     // Initialize with product stock quantities
     products.forEach((product) => {
@@ -324,8 +342,7 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
 
   // Revenue Breakdown - showing where revenue came from
   const revenueBreakdown = useMemo(() => {
-    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    return filteredSales.map((sale: any) => {
+    return filteredSales.map((sale) => {
       const total = saleTotal(sale);
       return {
         id: sale._?.soul || '',
@@ -336,14 +353,13 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
         date:
           sale.saleDate ||
           (sale.timestamp ? new Date(sale.timestamp).toISOString() : ''),
-        items:
-          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-          sale.items?.map((item: any) => ({
-            product: productsBySoul.get(item.product)?.title || item.product,
-            quantity: toFiniteNumber(item.quantity),
-            unitPrice: toFiniteNumber(item.unitPrice),
-            total: lineTotal(item.quantity, item.unitPrice),
-          })) || [],
+        items: getSalesItems(sale.items).map((item) => ({
+          product: productsBySoul.get(item.product)?.title || item.product,
+          quantity: toFiniteNumber(item.quantity),
+          unit: item.unit,
+          unitPrice: toFiniteNumber(item.unitPrice),
+          total: lineTotal(item.quantity, item.unitPrice),
+        })),
       };
     });
   }, [filteredSales, productsBySoul]);
@@ -356,13 +372,13 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
       .map((imp) => {
         const party = partiesBySoul.get(imp.party);
 
-        const items =
-          imp.items?.map((item) => ({
-            product: productsBySoul.get(item.product)?.title || item.product,
-            quantity: toFiniteNumber(item.quantity),
-            unitPrice: toFiniteNumber(item.unitPrice),
-            total: lineTotal(item.quantity, item.unitPrice),
-          })) || [];
+        const items = getSalesItems(imp.items).map((item) => ({
+          product: productsBySoul.get(item.product)?.title || item.product,
+          quantity: toFiniteNumber(item.quantity),
+          unit: item.unit,
+          unitPrice: toFiniteNumber(item.unitPrice),
+          total: lineTotal(item.quantity, item.unitPrice),
+        }));
 
         const totalAmount = items.reduce((s, i) => s + i.total, 0);
 
@@ -435,16 +451,16 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
 
 function buildBusinessInsightEngineInput(input: {
   salesTrends: Array<{ date: string; revenue: number }>;
-  // biome-ignore lint/suspicious/noExplicitAny: existing inventory typing
-  currentInventory: Array<{ product: any; currentStock: number }>;
+  currentInventory: Array<{ product: Product; currentStock: number }>;
   totalRevenue: number;
   totalCosts: number;
   netProfit: number;
   accountsReceivable: number;
 }): BusinessInsightEngineInput {
   const inventoryIndicators = input.currentInventory
-    .filter((item) => item.product?._?.soul)
     .map((item) => {
+      const skuId = item.product._?.soul;
+      if (!skuId) return null;
       const reorderLevel = toFiniteNumber(item.product.reorderLevel || 5);
       const currentStock = toFiniteNumber(item.currentStock);
       const avgDailyUnitsSold =
@@ -454,18 +470,17 @@ function buildBusinessInsightEngineInput(input: {
 
       return {
         schemaId: 'product',
-        skuId: item.product._.soul,
+        skuId,
         productName: item.product.title,
         table: 'products',
         currentStock,
         reorderLevel,
         avgDailyUnitsSold,
         unitCost: toFiniteNumber(item.product.costPrice),
-        unitPrice: toFiniteNumber(
-          item.product.sellingPrice ?? item.product.price ?? item.product.mrp,
-        ),
+        unitPrice: toFiniteNumber(item.product.sellingPrice),
       };
-    });
+    })
+    .filter((indicator) => indicator !== null);
 
   const metricSeries = [
     {

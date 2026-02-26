@@ -26,7 +26,7 @@ export function omitEmptyObject<T>(value: T): T {
       }
     }
 
-    return result;
+    return result as T;
   }
 
   return value;
@@ -44,7 +44,6 @@ export function create<const T extends SchemaKeys>(
   if (!options.schema) {
     throw new Error('Default schema not set for create runtime');
   }
-  const _keys = mergeKeys(key, ...restKeys) as SchemaKeys;
   const schema = getNestedZodShape(key, options.schema);
   return async (
     value: Omit<NestedSchemaType<T>, '_'> & { id?: string | number },

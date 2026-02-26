@@ -283,11 +283,6 @@ const colorClasses = {
   foreground: 'text-foreground',
 } as const;
 
-// biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
-type Size = keyof typeof sizeClasses;
-// biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
-type Color = keyof typeof colorClasses;
-
 const icons = {
   accessibility: Accessibility,
   activity: Activity,
@@ -581,7 +576,10 @@ const AnimatedIconSchema = z.object({
 });
 
 type AnimatedIconProps = z.infer<typeof AnimatedIconSchema> &
-  Omit<SVGMotionProps<SVGSVGElement>, 'animate'>;
+  Omit<
+    SVGMotionProps<SVGSVGElement>,
+    'animate' | 'name' | 'size' | 'color' | 'className'
+  >;
 
 const AnimatedIcon = ({
   name,

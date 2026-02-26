@@ -148,6 +148,7 @@ function _ProviderLogo({
     </span>
   );
 }
+void _ProviderLogo;
 
 const authModeLabelById: Record<AssistantAuthMode, string> = {
   'api-key': 'API key',
@@ -541,6 +542,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
   const _supportedAuthModes = resolveProviderSupportedAuthModes(
     selectedAssistantProviderId,
   );
+  void _supportedAuthModes;
   const stepTwoAuthModes: AssistantAuthMode[] = [
     'api-key',
     'oauth-access-token',
@@ -570,6 +572,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
   const recommendedProviderId = defaultModelOption.provider;
   const _recommendedModelId =
     providerModelOptions[0]?.id ?? selectedModelOption.id;
+  void _recommendedModelId;
   const recommendedAuthMode = resolveProviderDefaultAuthMode(
     selectedAssistantProviderId,
   );
@@ -1064,6 +1067,8 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
       setIsRevokingAuthSession(false);
     }
   }
+  void _createAuthSession;
+  void _revokeAuthSession;
 
   function handleProviderChange(nextProviderIdValue: string) {
     const nextProviderId = nextProviderIdValue;
@@ -1316,11 +1321,6 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
                     selectedAssistantAuthMode === 'api-key'
                       ? 'Paste API key'
                       : 'Paste OAuth access token',
-                  submitLabel: 'Submit',
-                  maskedEchoLabel:
-                    selectedAssistantAuthMode === 'api-key'
-                      ? 'API key provided'
-                      : 'OAuth token provided',
                   onChange: setAssistantSecretInput,
                   onSubmit: handleAssistantCredentialSubmit,
                 }

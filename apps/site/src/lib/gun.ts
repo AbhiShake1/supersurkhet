@@ -27,7 +27,8 @@ const GUN = Gun; //.scope(GUN_PREFIX)
 GUN.chain.then = function <F extends (...args: any[]) => any>(cb?: F) {
   var p = new Promise((res, _rej) => {
     this.not(() => res([])).once((data, key) => {
-      res(data, key);
+      void key;
+      res(data);
     });
   });
   return cb ? p.then(cb) : p;

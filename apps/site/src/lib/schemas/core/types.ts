@@ -25,7 +25,7 @@ export interface GTAAppConfig {
   };
 }
 
-export type ExtractZodSchema<T extends CreatedSchema<GTAAppConfig['schema']>> =
+export type ExtractZodSchema<T extends { rawShape: GTAAppConfig['schema'] }> =
   z.ZodObject<{
     -readonly [K in keyof T['rawShape']]: T['rawShape'][K]['schema'];
   }>;

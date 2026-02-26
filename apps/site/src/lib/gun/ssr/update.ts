@@ -1,5 +1,4 @@
 import type { GunMessagePut } from 'gun';
-import _ from 'lodash';
 import { runLifecycleHookPipeline } from '@/lib/plugins/runtime-pipeline';
 import type { SchemaKeys, UpdaterParams } from '..';
 import { mergeOptionsWithDefaults } from '../options';
@@ -8,27 +7,36 @@ import { encrypt } from '../utils/sea';
 import { resolveAfterNextTick, resolveLifecycleBusinessId } from './lifecycle';
 import { normalizeRowId } from './row-id';
 
-function omitMeta<T>(obj: T): T {
-  if (!obj) return obj;
-  return _.transform(obj, (result, value, key) => {
-    if (value === undefined) return;
-    if (['_', '#'].includes(key)) return;
-    if (_.isArray(value)) {
-      result[key] = value.map(omitMeta);
-    } else if (_.isPlainObject(value)) {
-      if (typeof value === 'object' && Object.keys(value).length)
-        result[key] = omitMeta(value);
-    } else {
-      result[key] = value;
+function omitMeta(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => omitMeta(item));
+  }
+
+  if (!isPlainObject(value)) {
+    return value;
+  }
+
+  const result: Record<string, unknown> = {};
+  for (const [key, entryValue] of Object.entries(value)) {
+    if (entryValue === undefined) {
+      continue;
     }
-  });
+    if (key === '_' || key === '#') {
+      continue;
+    }
+    result[key] = omitMeta(entryValue);
+  }
+
+  return result;
 }
 
-export function omitEmptyObject<T>(value: T): T {
+export function omitEmptyObject(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value
       .map(omitEmptyObject)
-      .filter((v) => !(isPlainObject(v) && Object.keys(v).length === 0)) as T;
+      .filter(
+        (entry) => !(isPlainObject(entry) && Object.keys(entry).length === 0),
+      );
   }
 
   if (isPlainObject(value)) {

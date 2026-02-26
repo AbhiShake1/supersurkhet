@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createPluginRuntimeRegistry } from '@/lib/plugins/runtime-registry';
 import type {
   BusinessPluginInstallDoc,
+  JsonValue,
   PluginRecordDoc,
   PluginReleaseDoc,
 } from '@/lib/plugins/types';
@@ -41,7 +42,7 @@ function buildInstall(version = '1.0.0'): BusinessPluginInstallDoc {
 
 function buildRecord(params: {
   rowId: string;
-  payload: Record<string, unknown>;
+  payload: JsonValue;
 }): PluginRecordDoc {
   return {
     id: `business-1/acme.inventory/inventory/${params.rowId}`,

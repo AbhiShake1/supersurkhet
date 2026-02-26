@@ -1,104 +1,71 @@
 import { Star } from 'lucide-react';
-import { useState } from 'react';
-import { Label } from '@/components/ui/label';
+import type React from 'react';
 import { cn } from '@/lib/utils';
-import type { FieldWrapperProps } from './FieldWrapper';
+import type { AutoFormFieldProps } from '../react';
 
-export interface RatingFieldProps extends FieldWrapperProps {
-  max?: number;
-  className?: string;
-  allowHalf?: boolean;
+function toRatingValue(value: unknown) {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return 0;
 }
 
-export function RatingField({
-  field,
-  label,
-  description,
-  error,
-  className,
-  max = 5,
-  allowHalf = false,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  ...props
-}: RatingFieldProps) {
-  const [hoverRating, setHoverRating] = useState(0);
-  const [currentRating, setCurrentRating] = useState(Number(field.value) || 0);
+export const RatingField: React.FC<AutoFormFieldProps> = ({
+  inputProps,
+  value,
+}) => {
+  const { key, onChange, name, disabled } = inputProps;
+  void key;
 
-  const handleMouseEnter = (rating: number) => {
-    setHoverRating(rating);
-  };
+  const max = 5;
+  const currentRating = Math.max(0, Math.min(max, toRatingValue(value)));
 
-  const handleMouseLeave = () => {
-    setHoverRating(0);
-  };
-
-  const handleClick = (rating: number) => {
-    const newRating = currentRating === rating ? 0 : rating;
-    setCurrentRating(newRating);
-    field.onChange(newRating);
-  };
-
-  const renderStars = () => {
-    const displayRating = hoverRating || currentRating;
-
-    return Array.from({ length: max }, (_, index) => {
-      const starValue = index + 1;
-      const isFilled = starValue <= displayRating;
-      const isHalfFilled =
-        allowHalf &&
-        starValue - 0.5 <= displayRating &&
-        displayRating < starValue;
-
-      return (
-        <button
-          key={starValue}
-          type="button"
-          className="p-1 focus:outline-none"
-          onMouseEnter={() => handleMouseEnter(starValue)}
-          onMouseLeave={handleMouseLeave}
-          onClick={() => handleClick(starValue)}
-          aria-label={`Rate ${starValue} out of ${max} stars`}
-        >
-          <Star
-            className={cn(
-              'h-6 w-6 transition-colors',
-              isFilled
-                ? 'fill-yellow-400 text-yellow-400'
-                : isHalfFilled
-                  ? 'fill-yellow-400 text-yellow-400 opacity-50'
-                  : 'fill-muted stroke-muted-foreground text-muted',
-              !field.disabled &&
-                'cursor-pointer hover:fill-yellow-300 hover:text-yellow-300',
-            )}
-          />
-        </button>
-      );
-    });
+  const setRating = (rating: number) => {
+    if (disabled) return;
+    const eventLike = {
+      target: {
+        name,
+        value: rating,
+      },
+    };
+    onChange?.(
+      eventLike as unknown as Parameters<NonNullable<typeof onChange>>[0],
+    );
   };
 
   return (
-    <div className={cn('space-y-2', className)}>
-      {label && (
-        <Label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-          {label}
-        </Label>
-      )}
-
-      <div className="flex items-center">
-        <div className="flex" role="radiogroup" aria-label={label}>
-          {renderStars()}
-        </div>
-        <span className="ml-2 text-sm font-medium text-muted-foreground">
-          {currentRating.toFixed(allowHalf ? 1 : 0)}
-        </span>
+    <div className="flex items-center gap-2">
+      <div className="flex" role="radiogroup" aria-label="Rating">
+        {Array.from({ length: max }, (_, index) => {
+          const starValue = index + 1;
+          const isFilled = starValue <= currentRating;
+          return (
+            <button
+              key={starValue}
+              type="button"
+              className="p-1 focus:outline-none"
+              onClick={() => setRating(starValue)}
+              aria-label={`Rate ${starValue} out of ${max} stars`}
+              disabled={disabled}
+            >
+              <Star
+                className={cn(
+                  'h-6 w-6 transition-colors',
+                  isFilled
+                    ? 'fill-yellow-400 text-yellow-400'
+                    : 'fill-muted text-muted',
+                  !disabled && 'cursor-pointer hover:fill-yellow-300',
+                )}
+              />
+            </button>
+          );
+        })}
       </div>
-
-      {description && (
-        <p className="text-sm text-muted-foreground">{description}</p>
-      )}
-      {error && (
-        <p className="text-sm font-medium text-destructive">{error.message}</p>
-      )}
+      <span className="text-sm font-medium text-muted-foreground">
+        {currentRating.toFixed(0)}
+      </span>
     </div>
   );
-}
+};

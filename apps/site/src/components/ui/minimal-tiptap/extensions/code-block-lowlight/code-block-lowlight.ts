@@ -3,11 +3,18 @@ import { common, createLowlight } from 'lowlight';
 
 export const CodeBlockLowlight = TiptapCodeBlockLowlight.extend({
   addOptions() {
+    const parentOptions = this.parent?.();
     return {
-      ...this.parent?.(),
+      ...parentOptions,
       lowlight: createLowlight(common),
-      defaultLanguage: null,
+      languageClassPrefix: parentOptions?.languageClassPrefix ?? 'language-',
+      exitOnTripleEnter: parentOptions?.exitOnTripleEnter ?? true,
+      exitOnArrowDown: parentOptions?.exitOnArrowDown ?? true,
+      defaultLanguage: parentOptions?.defaultLanguage ?? null,
+      enableTabIndentation: parentOptions?.enableTabIndentation ?? false,
+      tabSize: parentOptions?.tabSize ?? 4,
       HTMLAttributes: {
+        ...(parentOptions?.HTMLAttributes ?? {}),
         class: 'block-node',
       },
     };

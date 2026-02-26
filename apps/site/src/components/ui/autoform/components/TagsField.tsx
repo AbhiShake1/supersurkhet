@@ -1,150 +1,99 @@
 import { X } from 'lucide-react';
-import { useRef, useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import type { FieldWrapperProps } from './FieldWrapper';
+import type { AutoFormFieldProps } from '../react';
 
-export interface TagsFieldProps extends FieldWrapperProps {
-  placeholder?: string;
-  className?: string;
-  maxTags?: number;
+function toTags(value: unknown) {
+  if (!Array.isArray(value)) return [] as string[];
+  return value.filter((tag): tag is string => typeof tag === 'string');
 }
 
-export function TagsField({
-  field,
-  label,
-  description,
+export const TagsField: React.FC<AutoFormFieldProps> = ({
+  inputProps,
   error,
-  className,
-  placeholder = 'Add a tag...',
-  maxTags,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  ...props
-}: TagsFieldProps) {
+  value,
+}) => {
+  const { key, onChange, name, disabled, ...props } = inputProps;
+  void key;
+
   const [inputValue, setInputValue] = useState('');
-  const tags = Array.isArray(field.value) ? field.value : [];
-  const inputRef = useRef<HTMLInputElement>(null);
+  const tags = toTags(value);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-  };
-
-  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault();
-      addTag();
-    } else if (e.key === 'Backspace' && inputValue === '' && tags.length > 0) {
-      // Remove last tag when backspace is pressed on empty input
-      removeTag(tags.length - 1);
-    }
+  const emitChange = (nextTags: string[]) => {
+    const eventLike = {
+      target: {
+        name,
+        value: nextTags,
+      },
+    };
+    onChange?.(
+      eventLike as unknown as Parameters<NonNullable<typeof onChange>>[0],
+    );
   };
 
   const addTag = () => {
-    const trimmedValue = inputValue.trim();
-    if (
-      trimmedValue &&
-      !tags.includes(trimmedValue) &&
-      (!maxTags || tags.length < maxTags)
-    ) {
-      field.onChange([...tags, trimmedValue]);
-      setInputValue('');
-    }
+    const tag = inputValue.trim();
+    if (!tag || tags.includes(tag) || disabled) return;
+    emitChange([...tags, tag]);
+    setInputValue('');
   };
 
   const removeTag = (index: number) => {
-    field.onChange(tags.filter((_, i) => i !== index));
-  };
-
-  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    const pastedText = e.clipboardData.getData('text');
-    const newTags = pastedText
-      .split(/[,;\n]/)
-      .map((tag) => tag.trim())
-      .filter((tag) => tag && !tags.includes(tag));
-
-    if (newTags.length > 0) {
-      const availableSlots = maxTags
-        ? maxTags - tags.length
-        : Number.POSITIVE_INFINITY;
-      const tagsToAdd = newTags.slice(0, availableSlots);
-      field.onChange([...tags, ...tagsToAdd]);
-    }
+    if (disabled) return;
+    emitChange(tags.filter((_, currentIndex) => currentIndex !== index));
   };
 
   return (
-    <div className={cn('space-y-2', className)}>
-      {label && (
-        <Label
-          htmlFor={field.name}
-          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-        >
-          {label}
-        </Label>
-      )}
-
-      {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
-      {/** biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup */}
+    <div className="space-y-2">
       <div
         className={cn(
-          'flex flex-wrap items-center gap-2 rounded-md border border-input bg-background px-3 py-2 min-h-10',
+          'flex min-h-10 flex-wrap items-center gap-2 rounded-md border border-input bg-background px-3 py-2',
           error && 'border-destructive',
-          field.disabled && 'opacity-50',
+          disabled && 'opacity-50',
         )}
-        onClick={() => inputRef.current?.focus()}
       >
         {tags.map((tag, index) => (
-          <Badge
-            // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-            key={index}
-            variant="secondary"
-            className="flex items-center gap-1 pl-2 pr-1 py-1"
-          >
+          <Badge key={tag} variant="secondary" className="gap-1">
             <span className="text-xs">{tag}</span>
             <button
               type="button"
-              className="rounded-full hover:bg-muted-foreground/20 p-0.5"
-              onClick={(e) => {
-                e.stopPropagation();
-                removeTag(index);
-              }}
-              disabled={field.disabled}
+              className="rounded-full p-0.5 hover:bg-muted-foreground/20"
+              onClick={() => removeTag(index)}
               aria-label={`Remove tag ${tag}`}
+              disabled={disabled}
             >
               <X className="h-3 w-3" />
             </button>
           </Badge>
         ))}
 
-        {!field.disabled && (!maxTags || tags.length < maxTags) && (
-          <Input
-            ref={inputRef}
-            type="text"
-            value={inputValue}
-            onChange={handleInputChange}
-            onKeyDown={handleInputKeyDown}
-            onPaste={handlePaste}
-            placeholder={tags.length === 0 ? placeholder : ''}
-            className="flex-1 border-0 p-0 h-6 focus-visible:ring-0 focus-visible:ring-offset-0"
-            disabled={field.disabled}
-          />
-        )}
+        <Input
+          type="text"
+          className="h-6 flex-1 border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+          value={inputValue}
+          onChange={(event) => setInputValue(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ',') {
+              event.preventDefault();
+              addTag();
+            }
+            if (
+              event.key === 'Backspace' &&
+              inputValue === '' &&
+              tags.length > 0
+            ) {
+              removeTag(tags.length - 1);
+            }
+          }}
+          onBlur={props.onBlur}
+          placeholder={props.placeholder ?? 'Add a tag...'}
+          disabled={disabled}
+          data-testid={props['data-testid']}
+        />
       </div>
-
-      {description && (
-        <p className="text-sm text-muted-foreground">{description}</p>
-      )}
-      {error && (
-        <p className="text-sm font-medium text-destructive">{error.message}</p>
-      )}
-
-      {maxTags && (
-        <p className="text-xs text-muted-foreground text-right">
-          {tags.length}/{maxTags} tags
-        </p>
-      )}
     </div>
   );
-}
+};

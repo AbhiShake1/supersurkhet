@@ -220,8 +220,8 @@ export const MeasureRange: React.FC<MeasureRangeProps> = ({
   const transformUpdatePendingRef = useRef(false);
 
   // Get dragging context to respond to ResizableWrapper changes
-  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
   const { dragging } = useContext(DragHandleContext);
+  void dragging;
 
   // Get iframe context if we're running inside an AutoFrame
   const frameContext = useFrame();

@@ -449,7 +449,9 @@ export function AutoTable<T extends SchemaKeys>({
     const rawValue = new URL(window.location.href).searchParams.get('page');
     if (!rawValue) return 0;
     const parsedValue = Number.parseInt(rawValue, 10);
-    return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue - 1 : 0;
+    return Number.isFinite(parsedValue) && parsedValue > 0
+      ? parsedValue - 1
+      : 0;
   }, []);
 
   const { table, shallow, debounceMs, throttleMs } = useDataTable<
@@ -476,8 +478,7 @@ export function AutoTable<T extends SchemaKeys>({
         updateMutation.mutate({ id: rowId, ...data });
       },
     },
-    getRowId: (originalRow) =>
-      getRowIdFromUnknown(originalRow),
+    getRowId: (originalRow) => getRowIdFromUnknown(originalRow),
     shallow: false,
     clearOnDefault: true,
   });

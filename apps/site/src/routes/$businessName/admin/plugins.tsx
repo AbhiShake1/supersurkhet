@@ -222,7 +222,7 @@ function PluginsRouteComponent() {
             </p>
           </div>
           <Button asChild variant="outline">
-            <Link to="/$businessName/admin" params={{ businessName }}>
+            <Link to="/$businessName/admin/plugins" params={{ businessName }}>
               Back to Admin
             </Link>
           </Button>

@@ -38,10 +38,10 @@ import {
   TEMPLATE_SHORTCUTS,
   type TemplateSheetTab,
 } from '@/components/ui/ui-builder/internal/templates/shortcuts/template-shortcuts';
+import type { ComponentLayer } from '@/components/ui/ui-builder/types';
 import { api } from '@/lib/api';
 import type {
   BusinessUiTemplateInstallDoc,
-  ComponentLayer,
   UiTemplateInstallPreview,
   UiTemplateReleaseDoc,
 } from '@/lib/plugins/types';

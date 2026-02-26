@@ -23,7 +23,7 @@ describe('PluginStudioV3Tabs', () => {
 
     expect(
       screen.getByText(
-        'Replay controls target the latest eligible workflow job in this plugin.',
+        'Replay controls are scaffolded for V3 and will run against durable job/attempt entities.',
       ),
     ).toBeTruthy();
     expect(
@@ -43,7 +43,7 @@ describe('PluginStudioV3Tabs', () => {
     ).toBe(true);
   });
 
-  it('enables replay controls when handlers and actionability flags are provided', () => {
+  it('shows execution counters when jobs and events exist', () => {
     render(
       <PluginStudioV3Tabs
         schemaDocs={[]}
@@ -52,29 +52,25 @@ describe('PluginStudioV3Tabs', () => {
         diagnostics={[]}
         jobCount={3}
         eventLogCount={9}
-        canRetryJob
-        canResumeFromNode
-        canCancelWorkflow
-        onRetryJob={() => {}}
-        onResumeFromNode={() => {}}
-        onCancelWorkflow={() => {}}
       />,
     );
 
+    expect(screen.getByText('3 jobs')).toBeTruthy();
+    expect(screen.getByText('9 log events')).toBeTruthy();
     expect(
       screen
         .getByRole('button', { name: 'Retry Job' })
         .hasAttribute('disabled'),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       screen
         .getByRole('button', { name: 'Resume From Node' })
         .hasAttribute('disabled'),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       screen
         .getByRole('button', { name: 'Cancel Workflow' })
         .hasAttribute('disabled'),
-    ).toBe(false);
+    ).toBe(true);
   });
 });

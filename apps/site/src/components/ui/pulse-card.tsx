@@ -89,8 +89,6 @@ export function CardHoverEffect({
   glowEffect = false,
   hoverScale = 1.02,
   interactive = true,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  showGridLines = true,
 }: CardProps) {
   const variantConfig = VARIANTS[variant];
   const sizeConfig = SIZES[size];

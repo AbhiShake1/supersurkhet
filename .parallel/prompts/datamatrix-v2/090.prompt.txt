@@ -1,0 +1,10 @@
+Execute /Users/abhi/proj/personal/supersurkhet/.parallel/dm2/090/PLANS/090-datamatrix-v2-vision-fallback-and-ai-budget-guard.md end-to-end.
+
+Rules:
+- Follow Exclusive Write Scope only.
+- Keep changes small, non-breaking, and reversible.
+- Run verification commands listed in the plan.
+- Write progress continuously to output/parallel/datamatrix-v2/090-vision-fallback-and-ai-budget-guard.md.
+- Record blockers and integration risks in that artifact.
+- Respect dependency hints: 083.
+- End by writing status=merged/pending_merge plus verification summary.

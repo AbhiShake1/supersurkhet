@@ -1,4 +1,5 @@
 import type { SchemaKeys } from '@gta/react-hooks';
+import type { ComponentLayer } from '@/components/ui/ui-builder/types';
 import {
   dedupeAdminTabs,
   resolveAdminTabInput,
@@ -92,7 +93,7 @@ export function resolveInstallDrivenSubdomainUiLayers({
   subdomain: string;
   installs: BusinessPluginInstallDoc[];
   releases: PluginReleaseDoc[];
-}): unknown[] | null {
+}): ComponentLayer[] | null {
   const normalizedSubdomain =
     subdomain
       .trim()
@@ -132,7 +133,7 @@ export function resolveInstallDrivenSubdomainUiLayers({
     });
     const parsedLayers = surface.uiLayersBySubdomain[normalizedSubdomain];
     if (Array.isArray(parsedLayers) && parsedLayers.length > 0) {
-      return parsedLayers;
+      return parsedLayers as ComponentLayer[];
     }
   }
 

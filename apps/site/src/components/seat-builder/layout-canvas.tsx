@@ -313,7 +313,6 @@ export function LayoutCanvas({
           ? moveEvent.touches[0].clientY
           : moveEvent.clientY;
 
-      const _containerRect = containerRef.current.getBoundingClientRect();
       const deltaX = (moveClientX - clientX) / scale;
       const deltaY = (moveClientY - clientY) / scale;
 
@@ -727,6 +726,7 @@ export function LayoutCanvas({
     setPosition({ x: 0, y: 0 });
     setLastEvent('View reset');
   };
+  void _resetView;
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {

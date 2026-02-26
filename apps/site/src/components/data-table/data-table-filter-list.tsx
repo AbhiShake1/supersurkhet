@@ -1,5 +1,4 @@
-import { useSearch } from '@tanstack/react-router';
-import type { Column, ColumnMeta, Table } from '@tanstack/react-table';
+import type { Column, Table } from '@tanstack/react-table';
 import {
   CalendarIcon,
   Check,
@@ -75,6 +74,7 @@ import type {
   ExtendedColumnFilter,
   FilterOperator,
   JoinOperator,
+  Option,
 } from '@/types/data-table';
 import { DataTableRangeFilter } from './data-table-range-filter';
 
@@ -199,7 +199,7 @@ interface DataTableFilterListProps<TData>
   shallow?: boolean;
 }
 
-function parseFiltersFromUrl() {
+function parseFiltersFromUrl<TData>(): ExtendedColumnFilter<TData>[] {
   const parsedUrl = new URL(window.location.href);
   const rawFilters = parsedUrl.searchParams.get('filters');
 
@@ -207,7 +207,9 @@ function parseFiltersFromUrl() {
 
   try {
     const filters = JSON.parse(decodeURIComponent(rawFilters));
-    return filters;
+    return Array.isArray(filters)
+      ? (filters as ExtendedColumnFilter<TData>[])
+      : [];
   } catch (e) {
     console.error('Failed to parse filters:', e);
     return [];
@@ -226,7 +228,6 @@ export function DataTableFilterList<TData>({
   const descriptionId = React.useId();
   const [open, setOpen] = React.useState(false);
   const addButtonRef = React.useRef<HTMLButtonElement>(null);
-  const _search = useSearch({ from: '__root__' });
 
   const columns = React.useMemo(() => {
     return table
@@ -234,7 +235,7 @@ export function DataTableFilterList<TData>({
       .filter((column) => column.columnDef.enableColumnFilter);
   }, [table]);
 
-  const filters = React.useMemo(() => parseFiltersFromUrl(), []);
+  const filters = React.useMemo(() => parseFiltersFromUrl<TData>(), []);
 
   const [, setFilters] = useQueryState(
     FILTERS_KEY,
@@ -779,7 +780,7 @@ function onFilterInputRender<TData>({
   filter: ExtendedColumnFilter<TData>;
   inputId: string;
   column: Column<TData>;
-  columnMeta?: ColumnMeta<TData, unknown>;
+  columnMeta?: Column<TData>['columnDef']['meta'];
   onFilterUpdate: (
     filterId: string,
     updates: Partial<Omit<ExtendedColumnFilter<TData>, 'filterId'>>,
@@ -940,7 +941,7 @@ function onFilterInputRender<TData>({
             <FacetedList>
               <FacetedEmpty>No options found.</FacetedEmpty>
               <FacetedGroup>
-                {columnMeta?.options?.map((option) => (
+                {((columnMeta?.options ?? []) as Option[]).map((option) => (
                   <FacetedItem key={option.value} value={option.value}>
                     {option.icon && <option.icon />}
                     <span>{option.label}</span>

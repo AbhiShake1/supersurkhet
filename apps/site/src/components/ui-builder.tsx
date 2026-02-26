@@ -17,7 +17,7 @@ import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
 import { useAuth } from './auth-provider';
 import { NotFound } from './ui/not-found';
 import { Spinner } from './ui/spinner';
-import type { LayerChangeHandler } from './ui/ui-builder/types';
+import type { ComponentLayer, LayerChangeHandler } from './ui/ui-builder/types';
 
 const LayerRenderer = lazy(
   () => import('@/components/ui/ui-builder/layer-renderer'),
@@ -37,19 +37,26 @@ const componentRegistry = {
   ...complexComponentDefinitions, // Button, Badge, Card, etc.
 };
 
+function isRecordValue(value: unknown): value is Record<string, unknown> {
+  return _.isPlainObject(value);
+}
+
 // recursively omit #
-function omitMeta<T>(obj: T): T {
-  if (!obj) return obj;
-  return _.transform(obj, (result, value, key) => {
-    if (key === '#') return; // skip this key
-    if (_.isArray(value)) {
-      result[key] = value.map(omitMeta);
-    } else if (_.isPlainObject(value)) {
-      result[key] = omitMeta(value);
-    } else {
-      result[key] = value;
+function omitMeta(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((entry) => omitMeta(entry));
+  }
+  if (!isRecordValue(value)) {
+    return value;
+  }
+  const result: Record<string, unknown> = {};
+  for (const [key, entry] of Object.entries(value)) {
+    if (key === '#') {
+      continue;
     }
-  });
+    result[key] = omitMeta(entry);
+  }
+  return result;
 }
 
 interface UseContextDataProps {
@@ -145,7 +152,7 @@ export function CustomUiBuilderPage({ slug }: { slug: string }) {
   const { user, isAuthenticated } = useAuth();
   const { hasCredential, isLoading: isCredentialLoading } =
     useHasByoAiCredential();
-  const data = omitMeta(_data?.[0]);
+  const data = omitMeta(_data?.[0]) as Business | undefined;
   const pages = useLayerStore((state) => state.pages);
   const initializeLayers = useLayerStore((state) => state.initialize);
 
@@ -240,7 +247,7 @@ export function CustomUiRendererPage({
 }: {
   slug: string;
   pageName?: string;
-  layersOverride?: unknown[];
+  layersOverride?: ComponentLayer[];
 }) {
   'use memo';
   const search = useSearch({ from: '__root__' });
@@ -256,14 +263,15 @@ export function CustomUiRendererPage({
     const layers =
       layersOverride ??
       (business?.uiBuilder?.layers
-        ? JSON.parse(business?.uiBuilder?.layers)
+        ? (JSON.parse(business?.uiBuilder?.layers) as ComponentLayer[])
         : undefined);
     const fallback = layers?.[0];
     if (!page) return fallback;
-    const isNumber = Number.isInteger(Number(page));
-    if (isNumber) return layers?.[page] ?? fallback;
+    const pageIndex = Number(page);
+    const isNumber = Number.isInteger(pageIndex);
+    if (isNumber) return layers?.[pageIndex] ?? fallback;
     const pageByName = layers?.find(
-      (layer) => layer.name.toLowerCase() === page.toLowerCase(),
+      (layer) => layer.name?.toLowerCase() === page.toLowerCase(),
     );
     return pageByName ?? fallback;
   }
@@ -275,10 +283,12 @@ export function CustomUiRendererPage({
 
   if (!layersOverride && !business?.uiBuilder?.layers) return <NotFound />;
   if (layersOverride && layersOverride.length === 0) return <NotFound />;
+  const pageLayer = getPage();
+  if (!pageLayer) return <NotFound />;
 
   return (
     <ContextDataStore contextData={contextData}>
-      <LayerRenderer componentRegistry={componentRegistry} page={getPage()} />
+      <LayerRenderer componentRegistry={componentRegistry} page={pageLayer} />
     </ContextDataStore>
   );
 }

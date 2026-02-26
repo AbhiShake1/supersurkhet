@@ -89,8 +89,8 @@ gun.on('opt').event((instance) => {
   instance.__[SCOPE_FIELD] = (instance.__[SCOPE_FIELD] as string) || preset;
 });
 
-gun.chain.scope = function scope(name: string | null) {
-  const chain = (this as ChainNode).chain();
+gun.chain.scope = function scope(this: ChainNode, name: string | null) {
+  const chain = this.chain();
 
   if (typeof name === 'string') {
     chain._[SCOPE_FIELD] = hash(name);

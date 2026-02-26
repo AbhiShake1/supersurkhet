@@ -20,7 +20,7 @@ export const useGet = createGunHook((messenger) => {
           key: T;
         }),
     ...restKeys: string[]
-  ): UseQueryResult<NestedSchemaType<T>[] | undefined, Error> => {
+  ): UseQueryResult<NestedSchemaType<T>[], Error> => {
     const queryClient = useQueryClient();
     const isSingle = (typeof key !== 'string' && key.single) || false;
     const k = typeof key === 'string' ? key : key.key;
@@ -101,12 +101,10 @@ export const useGet = createGunHook((messenger) => {
           return Object.fromEntries(resolvedEntries);
         };
 
-        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-        async function transform(fullData: any) {
-          if (!fullData || typeof fullData !== 'object') return;
+        async function transform(fullData: unknown) {
+          if (!fullData || typeof fullData !== 'object') return [];
 
-          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-          const entries = Object.entries(fullData) as [string, any][];
+          const entries = Object.entries(fullData) as Array<[string, unknown]>;
           const newList: NestedSchemaType<T>[] = [];
 
           if (isSingle) {
@@ -160,7 +158,7 @@ export const useGet = createGunHook((messenger) => {
 
         return (queryClient.getQueryData(queryKey) ??
           (await transform(firstData)) ??
-          []) as NestedSchemaType<T>[] | undefined;
+          []) as NestedSchemaType<T>[];
       },
     });
   };

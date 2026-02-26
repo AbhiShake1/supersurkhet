@@ -574,10 +574,7 @@ export const moveLayer = (
   targetPosition: number,
 ): ComponentLayer[] => {
   let layerToMove: ComponentLayer | null = null;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let sourceParentId: string | null = null;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  let _sourcePosition = -1;
   let sourceParentType: 'children' | 'prop' | 'propArray' = 'children';
   let sourcePropName: string | null = null;
 
@@ -591,7 +588,6 @@ export const moveLayer = (
       if (layer.id === sourceLayerId) {
         layerToMove = layer;
         sourceParentId = parentId;
-        _sourcePosition = i;
         sourceParentType = 'children';
         return true;
       }
@@ -620,7 +616,6 @@ export const moveLayer = (
                 sourceParentId = layer.id;
                 sourcePropName = propName;
                 sourceParentType = 'propArray';
-                _sourcePosition = index;
                 return true;
               }
             }
@@ -770,28 +765,29 @@ export const addLayerToPropArray = (
       if (layer.id === parentId) {
         // Update the specific prop array with the new layer
         const updatedProps = { ...layer.props };
-        let currentArray = updatedProps[propName];
-        if (!Array.isArray(currentArray)) {
-          currentArray = [];
-        }
+        const currentValue = updatedProps[propName];
+        const currentArray = Array.isArray(currentValue)
+          ? currentValue.filter(isComponentLayer)
+          : [];
+        let nextArray = currentArray;
 
         if (position !== undefined) {
           if (position < 0) {
-            currentArray = [newLayer, ...currentArray];
+            nextArray = [newLayer, ...currentArray];
           } else if (position >= currentArray.length) {
-            currentArray = [...currentArray, newLayer];
+            nextArray = [...currentArray, newLayer];
           } else {
-            currentArray = [
+            nextArray = [
               ...currentArray.slice(0, position),
               newLayer,
               ...currentArray.slice(position),
             ];
           }
         } else {
-          currentArray = [...currentArray, newLayer];
+          nextArray = [...currentArray, newLayer];
         }
 
-        updatedProps[propName] = currentArray;
+        updatedProps[propName] = nextArray;
         return { ...layer, props: updatedProps };
       }
       return layer;

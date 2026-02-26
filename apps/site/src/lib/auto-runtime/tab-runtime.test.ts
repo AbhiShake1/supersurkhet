@@ -48,7 +48,7 @@ describe('tab runtime helpers', () => {
       },
       'shop-1',
     );
-    expect(withSlug.slug).toBe('shop-1');
+    expect('slug' in withSlug ? withSlug.slug : undefined).toBe('shop-1');
 
     const withData = normalizeAutoTableTab(
       {

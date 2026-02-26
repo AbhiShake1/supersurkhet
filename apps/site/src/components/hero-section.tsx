@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router';
+import type { Variants } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { HeroHeader } from '@/components/hero5-header';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,49 @@ const transitionVariants = {
       },
     },
   },
+} satisfies { item: Variants };
+
+const earthAnimationVariants = {
+  container: {
+    visible: {
+      transition: {
+        delayChildren: 1,
+      },
+    },
+  },
+  item: {
+    hidden: {
+      opacity: 0,
+      y: 20,
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: 'spring',
+        bounce: 0.3,
+        duration: 2,
+      },
+    },
+  },
+} satisfies {
+  container?: Variants;
+  item?: Variants;
+};
+
+const ctaAnimationVariants = {
+  container: {
+    visible: {
+      transition: {
+        staggerChildren: 0.05,
+        delayChildren: 0.75,
+      },
+    },
+  },
+  ...transitionVariants,
+} satisfies {
+  container?: Variants;
+  item?: Variants;
 };
 
 export default function HeroSection() {
@@ -53,30 +97,7 @@ export default function HeroSection() {
               gradientThird="radial-gradient(50% 50% at 50% 50%, hsla(332, 100%, 85%, 0.06) 0, hsla(327, 100%, 85%, 0.06) 80%, transparent 100%)"
             />
             <AnimatedGroup
-              variants={{
-                container: {
-                  visible: {
-                    transition: {
-                      delayChildren: 1,
-                    },
-                  },
-                },
-                item: {
-                  hidden: {
-                    opacity: 0,
-                    y: 20,
-                  },
-                  visible: {
-                    opacity: 1,
-                    y: 0,
-                    transition: {
-                      type: 'spring',
-                      bounce: 0.3,
-                      duration: 2,
-                    },
-                  },
-                },
-              }}
+              variants={earthAnimationVariants}
               className="absolute inset-0 -z-20 pt-[20%]"
             >
               <Earth
@@ -137,17 +158,7 @@ export default function HeroSection() {
                 </TextEffect>
 
                 <AnimatedGroup
-                  variants={{
-                    container: {
-                      visible: {
-                        transition: {
-                          staggerChildren: 0.05,
-                          delayChildren: 0.75,
-                        },
-                      },
-                    },
-                    ...transitionVariants,
-                  }}
+                  variants={ctaAnimationVariants}
                   className="mt-12 flex flex-col items-center justify-center gap-2 md:flex-row"
                 >
                   <div

@@ -56,10 +56,12 @@ const InputSchema = z.object({
   defaultValue: z.union([z.string(), z.number()]).optional(),
 });
 
-type InputProps = z.infer<typeof InputSchema> & React.ComponentProps<'input'>;
+type InputProps = React.ComponentProps<'input'> & {
+  leadingIcon?: React.ReactNode;
+  trailingIcon?: React.ReactNode;
+};
 
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-function checkNonNullish(value: any) {
+function checkNonNullish(value: unknown) {
   if (!value) return false;
   if (Array.isArray(value)) {
     if (value.length === 0) return false;

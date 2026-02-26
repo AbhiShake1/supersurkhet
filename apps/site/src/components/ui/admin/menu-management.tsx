@@ -56,7 +56,7 @@ function _MenuManagement({ onAddItem }: MenuManagementProps) {
 
   const filteredItems = items.filter((item) => {
     const matchesSearch =
-      item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.description?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory =
       selectedCategory === 'all' ||
@@ -68,13 +68,13 @@ function _MenuManagement({ onAddItem }: MenuManagementProps) {
     update({ id: itemId, isActive });
     // setItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, available: !item.available } : item)))
     const item = items.find((i) => i._?.soul === itemId);
-    toast.success(`${item?.name} ${item?.isActive ? 'disabled' : 'enabled'}`);
+    toast.success(`${item?.title} ${item?.isActive ? 'disabled' : 'enabled'}`);
   };
 
   const deleteItem = (itemId: string) => {
     const item = items.find((i) => i._?.soul === itemId);
     // setItems((prev) => prev.filter((item) => item.id !== itemId))
-    toast.success(`${item?.name} removed from menu`);
+    toast.success(`${item?.title} removed from menu`);
   };
 
   return (
@@ -155,8 +155,11 @@ function _MenuManagement({ onAddItem }: MenuManagementProps) {
                 <p className="text-2xl font-bold text-blue-600">
                   Rs.{' '}
                   {(
-                    items.reduce((sum, item) => sum + item.price, 0) /
-                      items.length || 0
+                    items.reduce(
+                      (sum, item) =>
+                        sum + (item.sellingPrice ?? item.costPrice),
+                      0,
+                    ) / items.length || 0
                   ).toFixed(2)}
                 </p>
               </div>
@@ -213,12 +216,12 @@ function _MenuManagement({ onAddItem }: MenuManagementProps) {
                       <div className="flex items-start gap-3 min-w-0 flex-1">
                         <img
                           src={item.imageUrl || '/placeholder.svg'}
-                          alt={item.name}
+                          alt={item.title}
                           className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
                         />
                         <div className="min-w-0 flex-1">
                           <CardTitle className="text-base flex items-center gap-2">
-                            {item.name}
+                            {item.title}
                             {item.isFeatured && (
                               <Star className="w-4 h-4 text-yellow-500 fill-current" />
                             )}
@@ -226,9 +229,10 @@ function _MenuManagement({ onAddItem }: MenuManagementProps) {
                           <CardDescription className="text-sm line-clamp-2">
                             {item.description}
                           </CardDescription>
-                          {item.price && (
+                          {(item.sellingPrice ?? item.costPrice) && (
                             <p className="text-lg font-bold text-green-600 mt-1">
-                              ${item.price.toFixed(2)}
+                              Rs.{' '}
+                              {(item.sellingPrice ?? item.costPrice).toFixed(2)}
                             </p>
                           )}
                         </div>

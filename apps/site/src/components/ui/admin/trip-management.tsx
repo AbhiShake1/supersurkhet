@@ -1,8 +1,7 @@
 import { format } from 'date-fns';
 import { useState } from 'react';
 import { z } from 'zod';
-import { useAuth } from '@/components/auth-provider';
-import { AutoForm } from '@/components/ui/autoform';
+import AutoForm from '@/components/ui/auto-form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +13,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { api } from '@/lib/api';
+import type { Trip } from '@/lib/schema';
 
 // Define the schema for returned products
 const ReturnedProductsSchema = z.object({
@@ -32,18 +32,16 @@ const ReturnedProductsSchema = z.object({
 });
 
 type ReturnedProductsFormData = z.infer<typeof ReturnedProductsSchema>;
+type TripProduct = ReturnedProductsFormData['returnedProducts'][number];
 
 export default function TripManagement({ slug }: { slug: string }) {
   const { data: trips = [], isLoading } = api.trip.useGet({ keys: [slug] });
   const { data: products = [] } = api.product.useGet({ keys: [slug] });
   const { data: vehicles = [] } = api.vehicle.useGet({ keys: [slug] });
   const { mutate: updateTrip } = api.trip.useUpdate({ keys: [slug] });
-  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
-  const { user } = useAuth();
 
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  const [currentTrip, setCurrentTrip] = useState<any>(null);
+  const [currentTrip, setCurrentTrip] = useState<Trip | null>(null);
   const [returnFormData, setReturnFormData] =
     useState<ReturnedProductsFormData>({ returnedProducts: [] });
 
@@ -54,29 +52,29 @@ export default function TripManagement({ slug }: { slug: string }) {
   const vehiclesMap = new Map(vehicles?.map((v) => [v._?.soul, v]));
 
   // Handle opening the return dialog
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  const handleMarkReturn = (trip: any) => {
+  const handleMarkReturn = (trip: Trip) => {
     setCurrentTrip(trip);
 
     // Pre-populate with products that were sent
-    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    const initialReturnedProducts = trip.products?.map((p: any) => ({
-      productId: p.productId,
-      quantity: 0, // Start with 0 returned
-    }));
+    const initialReturnedProducts = trip.products?.map(
+      (product: TripProduct) => ({
+        productId: product.productId,
+        quantity: 0, // Start with 0 returned
+      }),
+    );
 
-    setReturnFormData({ returnedProducts: initialReturnedProducts });
+    setReturnFormData({ returnedProducts: initialReturnedProducts ?? [] });
     setReturnDialogOpen(true);
   };
 
   // Handle form submission for returned products
-  const handleSubmitReturn = (data: ReturnedProductsFormData) => {
+  const handleSubmitReturn = (values: Record<string, unknown>) => {
     if (!currentTrip) return;
+    const data = ReturnedProductsSchema.parse(values);
 
     // Calculate sold products (dispatched - returned)
     const soldProducts = currentTrip.products
-      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-      ?.map((dispatchedProduct: any) => {
+      ?.map((dispatchedProduct: TripProduct) => {
         const returnedProduct = data.returnedProducts.find(
           (rp) => rp.productId === dispatchedProduct.productId,
         );
@@ -88,7 +86,7 @@ export default function TripManagement({ slug }: { slug: string }) {
           quantity: Math.max(0, soldQty), // Ensure non-negative
         };
       })
-      .filter((sp) => sp.quantity > 0); // Only include products that were actually sold
+      .filter((soldProduct: TripProduct) => soldProduct.quantity > 0); // Only include products that were actually sold
 
     // Update the trip with return time and returned products
     updateTrip({
@@ -183,8 +181,7 @@ export default function TripManagement({ slug }: { slug: string }) {
                                   <div className="text-center">Returned</div>
                                 </div>
                                 {trip.products?.map(
-                                  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                                  (product: any, idx: number) => {
+                                  (product: TripProduct, idx: number) => {
                                     const prod = productsMap.get(
                                       product.productId,
                                     );
@@ -248,20 +245,21 @@ export default function TripManagement({ slug }: { slug: string }) {
                     <div className="space-y-2">
                       <h4 className="font-medium">Products on Trip:</h4>
                       <div className="grid grid-cols-2 gap-2">
-                        {/** biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup */}
-                        {trip.products?.map((product: any, idx: number) => {
-                          const prod = productsMap.get(product.productId);
-                          return (
-                            <div
-                              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-                              key={idx}
-                              className="flex justify-between text-sm"
-                            >
-                              <span>{prod?.title || 'Unknown Product'}</span>
-                              <span>{product.quantity}</span>
-                            </div>
-                          );
-                        })}
+                        {trip.products?.map(
+                          (product: TripProduct, idx: number) => {
+                            const prod = productsMap.get(product.productId);
+                            return (
+                              <div
+                                // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+                                key={idx}
+                                className="flex justify-between text-sm"
+                              >
+                                <span>{prod?.title || 'Unknown Product'}</span>
+                                <span>{product.quantity}</span>
+                              </div>
+                            );
+                          },
+                        )}
                       </div>
                     </div>
                   </CardContent>

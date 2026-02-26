@@ -1,9 +1,9 @@
-import type { ReactNode } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, type Transition, useMotionValue } from 'motion/react';
 import {
   Children,
   createContext,
+  type ReactNode,
   useContext,
   useEffect,
   useRef,

@@ -152,7 +152,7 @@ export function MentionInput({
                   id: `context.${key}`,
                   label: `context.${key}`,
                   category: 'Context',
-                  value: val,
+                  value: String(val),
                 });
             });
         }
@@ -173,7 +173,7 @@ export function MentionInput({
             id: key,
             label: key,
             category,
-            value: val,
+            value: String(val),
           });
       });
 

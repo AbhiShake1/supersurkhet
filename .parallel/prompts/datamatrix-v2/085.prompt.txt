@@ -1,0 +1,10 @@
+Execute /Users/abhi/proj/personal/supersurkhet/.parallel/dm2/085/PLANS/085-datamatrix-v2-retry-class-matrix.md end-to-end.
+
+Rules:
+- Follow Exclusive Write Scope only.
+- Keep changes small, non-breaking, and reversible.
+- Run verification commands listed in the plan.
+- Write progress continuously to output/parallel/datamatrix-v2/085-retry-class-matrix.md.
+- Record blockers and integration risks in that artifact.
+- Respect dependency hints: 081.
+- End by writing status=merged/pending_merge plus verification summary.

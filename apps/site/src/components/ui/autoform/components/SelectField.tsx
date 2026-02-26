@@ -94,10 +94,14 @@ const _SelectField: React.FC<
   const form = useFormContext();
   const currentValue = String(value ?? field.default ?? '');
   const lockedValues = customData?.disableWhenValueIn;
+  const defaultFieldValue = defaultValues[field.key];
+  const lockKey =
+    typeof defaultFieldValue === 'string' ? defaultFieldValue : undefined;
   const isLocked =
     lockedValues &&
     Array.isArray(lockedValues) &&
-    lockedValues.includes(defaultValues[field.key]);
+    lockKey !== undefined &&
+    lockedValues.includes(lockKey);
 
   return (
     <Combobox
@@ -120,8 +124,12 @@ const _SelectField: React.FC<
             value,
             name: path.join('.'),
           },
-        } as React.ChangeEvent<HTMLInputElement>;
-        props.onChange(syntheticEvent);
+        };
+        props.onChange(
+          syntheticEvent as unknown as Parameters<
+            NonNullable<typeof props.onChange>
+          >[0],
+        );
       }}
       className={error ? 'border-destructive' : ''}
       disabled={props.disabled || isLocked}

@@ -241,8 +241,6 @@ export const tablePickerFieldOverrides = (_layer: ComponentLayer) => {
       isRequired,
       field,
       fieldConfigItem,
-      // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-      zodItem,
       fieldProps,
     }: AutoFormInputComponentProps) => {
       const { business } = useBusiness();
@@ -262,7 +260,7 @@ export const tablePickerFieldOverrides = (_layer: ComponentLayer) => {
       const options =
         config?.map((configItem) => ({
           value: configItem.schema,
-          label: configItem.title,
+          label: configItem.title ?? configItem.schema,
         })) || [];
 
       return (

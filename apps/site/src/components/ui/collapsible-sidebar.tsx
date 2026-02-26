@@ -1002,7 +1002,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
       const items = getVisibleSidebarFocusables();
       if (!items.length) return;
       const activeElement = document.activeElement as HTMLElement | null;
-      const currentIndex = items.indexOf(activeElement);
+      const currentIndex = activeElement ? items.indexOf(activeElement) : -1;
       const resolvedIndex =
         currentIndex >= 0
           ? (currentIndex + offset + items.length) % items.length
@@ -1446,7 +1446,6 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                     key={`frequent-${item.title}`}
                     Icon={getTabIcon(item)}
                     title={item.title}
-                    url={item.url}
                     selected={currentTab}
                     open={open}
                     onActivate={incrementFrequentUsage}
@@ -1505,6 +1504,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                         <Input
                           autoFocus
                           defaultValue={item.title}
+                          placeholder=""
                           className="h-8 text-xs"
                           onBlur={(event) => {
                             if (tabRenameHandledByKeyRef.current) {
@@ -1540,7 +1540,6 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                           iconName={item.iconName}
                           iconCatalog={iconCatalog}
                           title={item.title}
-                          url={item.url}
                           selected={currentTab}
                           open={open}
                           editable={editable}
@@ -1626,6 +1625,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                           <Input
                             autoFocus
                             defaultValue={groupName}
+                            placeholder=""
                             className="h-8 text-xs"
                             onBlur={(event) => {
                               if (groupRenameHandledByKeyRef.current) {
@@ -1879,6 +1879,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                                       <Input
                                         autoFocus
                                         defaultValue={item.title}
+                                        placeholder=""
                                         className="h-8 text-xs"
                                         onBlur={(event) => {
                                           if (
@@ -1916,7 +1917,6 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                                         iconName={item.iconName}
                                         iconCatalog={iconCatalog}
                                         title={item.title}
-                                        url={item.url}
                                         selected={currentTab}
                                         open={open}
                                         editable={editable}
@@ -2010,7 +2010,6 @@ type OptionProps = {
   iconName?: string;
   iconCatalog?: Array<[string, LucideIcon]>;
   title: string;
-  url: string;
   selected: string;
   open: boolean;
   editable?: boolean;
@@ -2345,7 +2344,6 @@ function areOptionPropsEqual(prev: OptionProps, next: OptionProps) {
     prev.iconName === next.iconName &&
     prev.iconCatalog === next.iconCatalog &&
     prev.title === next.title &&
-    prev.url === next.url &&
     prev.selected === next.selected &&
     prev.open === next.open &&
     prev.editable === next.editable &&

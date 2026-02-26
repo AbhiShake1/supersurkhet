@@ -209,13 +209,16 @@ export class RuntimeHealthService {
     pluginVersion?: string;
   }): Promise<void> {
     const parsedError = parseUnknownError(input.error);
-    const fingerprint = createErrorFingerprint(parsedError);
+    const fingerprint = createErrorFingerprint({
+      ...parsedError,
+      stack: parsedError.stack ?? undefined,
+    });
     const telemetry = sanitizeTelemetryEnvelope({
       ...(isRecord(input.telemetry) ? input.telemetry : {}),
       error: {
         name: parsedError.name,
         message: parsedError.message,
-        stack: parsedError.stack,
+        stack: parsedError.stack ?? undefined,
       },
     });
 
