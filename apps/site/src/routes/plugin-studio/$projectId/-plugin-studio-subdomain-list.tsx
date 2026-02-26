@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { GripVertical, Pencil, Plus, Shield, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { useAuth } from '@/components/auth-provider';
@@ -44,6 +44,7 @@ import type {
 import { ContextDataStore } from '@/lib/ui-builder/context/context-data-store';
 import { complexComponentDefinitions } from '@/lib/ui-builder/registry/complex-component-definitions';
 import { primitiveComponentDefinitions } from '@/lib/ui-builder/registry/primitive-component-definitions';
+import { shouldCreatePluginDraft } from '../-draft-creation-guard';
 import { toProjectScopedDraftId } from '../-plugin-studio-project-draft-id';
 
 type PluginStudioSubdomainListProps = {
@@ -939,10 +940,14 @@ export function PluginStudioSubdomainList({
 
   const [draftAdminTabs, setDraftAdminTabs] =
     useState<AdminTabDoc[]>(sourceAdminTabs);
+  const previousSourceAdminTabsRef = useRef(sourceAdminTabs);
 
-  useEffect(() => {
-    setDraftAdminTabs(sourceAdminTabs);
-  }, [sourceAdminTabs]);
+  if (previousSourceAdminTabsRef.current !== sourceAdminTabs) {
+    previousSourceAdminTabsRef.current = sourceAdminTabs;
+    if (draftAdminTabs !== sourceAdminTabs) {
+      setDraftAdminTabs(sourceAdminTabs);
+    }
+  }
 
   const parsedAdminTabs = useMemo(
     () => deserializeDraftAdminTabs(draftAdminTabs),
@@ -1029,12 +1034,11 @@ export function PluginStudioSubdomainList({
     string | null
   >(null);
   const [focusedSubdomain, setFocusedSubdomain] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (subdomains.length === 0) {
+  if (subdomains.length === 0) {
+    if (focusedSubdomain !== null) {
       setFocusedSubdomain(null);
-      return;
     }
+  } else {
     const hasCurrent =
       focusedSubdomain &&
       subdomains.some(
@@ -1043,7 +1047,7 @@ export function PluginStudioSubdomainList({
     if (!hasCurrent) {
       setFocusedSubdomain(normalizeSubdomainName(subdomains[0]?.subdomain));
     }
-  }, [focusedSubdomain, subdomains]);
+  }
 
   const persistDraftMetadata = useCallback(
     (nextMetadata: { title: string; description: string }) => {
@@ -1176,23 +1180,18 @@ export function PluginStudioSubdomainList({
     },
   });
 
-  useEffect(() => {
-    if (!resolvedPluginId.trim()) return;
-    if (isDraftLoading) return;
-    if (!isActorIdentityReady) return;
-    if (activeDraft && activeDraft.pluginId === resolvedPluginId) return;
-    if (hasAttemptedDraftCreationRef.current.has(draftId)) return;
-
+  const shouldCreateDraft = shouldCreatePluginDraft({
+    pluginId: resolvedPluginId,
+    isDraftLoading,
+    isActorIdentityReady,
+    activeDraftPluginId: activeDraft?.pluginId,
+    hasAttemptedDraftCreation:
+      hasAttemptedDraftCreationRef.current.has(draftId),
+  });
+  if (shouldCreateDraft) {
     hasAttemptedDraftCreationRef.current.add(draftId);
     void createDraft();
-  }, [
-    activeDraft,
-    createDraft,
-    draftId,
-    isActorIdentityReady,
-    isDraftLoading,
-    resolvedPluginId,
-  ]);
+  }
 
   const isInitialLoading = isDraftLoading || isDraftRevisionLoading;
 
