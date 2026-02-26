@@ -56,11 +56,8 @@ export default function TypewriterTitle({
   const isDeletingRef = useRef(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize with the sequences provided
   const sequencesRef = useRef(sequences);
-  useEffect(() => {
-    sequencesRef.current = sequences;
-  }, [sequences]);
+  sequencesRef.current = sequences;
 
   useEffect(() => {
     const getTypingDelay = () => {

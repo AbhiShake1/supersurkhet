@@ -11,7 +11,7 @@
  */
 
 import { motion, type Variants } from 'motion/react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import z from 'zod';
 import { cn } from '@/lib/utils';
 
@@ -43,11 +43,10 @@ export default function ScrollText({
   const observerRef = useRef<IntersectionObserver | null>(null);
   const itemsRef = useRef<(HTMLDivElement | null)[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  // Scroll to top on mount
-  useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.scrollTop = 0;
+  const setContainerRef = useCallback((node: HTMLDivElement | null) => {
+    containerRef.current = node;
+    if (node) {
+      node.scrollTop = 0;
     }
   }, []);
 
@@ -112,7 +111,7 @@ export default function ScrollText({
   return (
     <div className={cn('w-full max-w-3xl mx-auto', className)}>
       <div
-        ref={containerRef}
+        ref={setContainerRef}
         className={cn(
           'h-[300px] overflow-y-auto scrollbar-none',
           'relative flex flex-col items-center',

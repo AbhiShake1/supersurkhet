@@ -59,9 +59,9 @@ function CarouzelProvider({
     onIndexChange?.(newIndex);
   };
 
-  useEffect(() => {
+  if (index !== initialIndex) {
     setIndex(initialIndex);
-  }, [initialIndex]);
+  }
 
   return (
     <CarouzelContext.Provider
@@ -261,6 +261,7 @@ function CarouzelContent({
   const [visibleItemsCount, setVisibleItemsCount] = useState(1);
   const dragX = useMotionValue(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastItemsCountRef = useRef<number | null>(null);
   const itemsLength = Children.count(children);
 
   useEffect(() => {
@@ -287,13 +288,10 @@ function CarouzelContent({
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    if (!itemsLength) {
-      return;
-    }
-
+  if (itemsLength > 0 && lastItemsCountRef.current !== itemsLength) {
+    lastItemsCountRef.current = itemsLength;
     setItemsCount(itemsLength);
-  }, [itemsLength, setItemsCount]);
+  }
 
   const onDragEnd = () => {
     const x = dragX.get();

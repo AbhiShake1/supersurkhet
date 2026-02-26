@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { createNoise3D } from 'simplex-noise';
 import { cn } from '@/lib/utils';
 
@@ -107,15 +107,10 @@ export const WavyBackground = ({
     // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   }, [init]);
 
-  const [isSafari, setIsSafari] = useState(false);
-  useEffect(() => {
-    // I'm sorry but i have got to support it on safari.
-    setIsSafari(
-      typeof window !== 'undefined' &&
-        navigator.userAgent.includes('Safari') &&
-        !navigator.userAgent.includes('Chrome'),
-    );
-  }, []);
+  const isSafari =
+    typeof window !== 'undefined' &&
+    navigator.userAgent.includes('Safari') &&
+    !navigator.userAgent.includes('Chrome');
 
   return (
     <div

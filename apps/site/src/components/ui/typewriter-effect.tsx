@@ -1,7 +1,6 @@
 'use client';
 
-import { motion, stagger, useAnimate, useInView } from 'motion/react';
-import { useEffect } from 'react';
+import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
 
 export const TypewriterEffect = ({
@@ -24,29 +23,22 @@ export const TypewriterEffect = ({
     };
   });
 
-  const [scope, animate] = useAnimate();
-  const isInView = useInView(scope);
-  useEffect(() => {
-    if (isInView) {
-      animate(
-        'span',
-        {
-          display: 'inline-block',
-          opacity: 1,
-          width: 'fit-content',
-        },
-        {
-          duration: 0.3,
-          delay: stagger(0.1),
-          ease: 'easeInOut',
-        },
-      );
-    }
-  }, [isInView, animate]);
-
   const renderWords = () => {
     return (
-      <motion.div ref={scope} className="inline">
+      <motion.div
+        className="inline"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ amount: 0.4, once: true }}
+        variants={{
+          hidden: {},
+          visible: {
+            transition: {
+              staggerChildren: 0.1,
+            },
+          },
+        }}
+      >
         {wordsArray.map((word, idx) => {
           return (
             <div
@@ -58,7 +50,22 @@ export const TypewriterEffect = ({
             >
               {word.text.map((char, index) => (
                 <motion.span
-                  initial={{}}
+                  initial={{
+                    display: 'none',
+                    opacity: 0,
+                    width: 0,
+                  }}
+                  variants={{
+                    visible: {
+                      display: 'inline-block',
+                      opacity: 1,
+                      width: 'fit-content',
+                      transition: {
+                        duration: 0.3,
+                        ease: 'easeInOut',
+                      },
+                    },
+                  }}
                   key={`char-${
                     // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                     index

@@ -164,6 +164,10 @@ function AnimateIcon({
 
   const runGenRef = React.useRef(0);
   const cancelledRef = React.useRef(false);
+  const previousAnimateRef = React.useRef(animate);
+  const previousAnimationRef = React.useRef(animation);
+  const previousInViewRef = React.useRef(false);
+  const previousAnimateOnViewRef = React.useRef(animateOnView);
 
   const bumpGeneration = React.useCallback(() => {
     runGenRef.current++;
@@ -203,17 +207,20 @@ function AnimateIcon({
     setLocalAnimate(false);
   }, [bumpGeneration]);
 
-  React.useEffect(() => {
-    activeRef.current = localAnimate;
-  }, [localAnimate]);
+  activeRef.current = localAnimate;
 
-  React.useEffect(() => {
-    if (animate === undefined) return;
-    setCurrentAnimation(typeof animate === 'string' ? animate : animation);
-    if (animate) startAnimation(animate as TriggerProp);
-    else stopAnimation();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [animate, animation, startAnimation, stopAnimation]);
+  if (
+    previousAnimateRef.current !== animate ||
+    previousAnimationRef.current !== animation
+  ) {
+    previousAnimateRef.current = animate;
+    previousAnimationRef.current = animation;
+    if (animate !== undefined) {
+      setCurrentAnimation(typeof animate === 'string' ? animate : animation);
+      if (animate) startAnimation(animate as TriggerProp);
+      else stopAnimation();
+    }
+  }
 
   React.useEffect(() => {
     return () => {
@@ -241,11 +248,17 @@ function AnimateIcon({
     [controls],
   );
 
-  React.useEffect(() => {
-    if (!animateOnView) return;
-    if (isInView) startAnimation(animateOnView);
-    else stopAnimation();
-  }, [isInView, animateOnView, startAnimation, stopAnimation]);
+  if (
+    previousInViewRef.current !== isInView ||
+    previousAnimateOnViewRef.current !== animateOnView
+  ) {
+    previousInViewRef.current = isInView;
+    previousAnimateOnViewRef.current = animateOnView;
+    if (animateOnView) {
+      if (isInView) startAnimation(animateOnView);
+      else stopAnimation();
+    }
+  }
 
   React.useEffect(() => {
     const gen = ++runGenRef.current;
