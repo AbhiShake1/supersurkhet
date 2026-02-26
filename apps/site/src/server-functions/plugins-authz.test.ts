@@ -1,30 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { getCookieMock, ssrGetMock, ssrCreateMock, ssrUpdateMock, state } =
-  vi.hoisted(() => {
-    const runtimeState = {
-      sessionCookie: '',
-      pluginReleases: [] as Record<string, unknown>[],
-      businessInstalls: new Map<string, Record<string, unknown>[]>(),
-      businesses: new Map<string, Record<string, unknown>>(),
-      users: new Map<string, Record<string, unknown>>(),
-    };
-    return {
-      getCookieMock: vi.fn(),
-      ssrGetMock: vi.fn(),
-      ssrCreateMock: vi.fn(),
-      ssrUpdateMock: vi.fn(),
-      state: runtimeState,
-    };
-  });
-
-vi.mock('@tanstack/react-start/server', async () => {
-  const actual = await vi.importActual<
-    typeof import('@tanstack/react-start/server')
-  >('@tanstack/react-start/server');
+const {
+  getRuntimeCookieMock,
+  ssrGetMock,
+  ssrCreateMock,
+  ssrUpdateMock,
+  state,
+} = vi.hoisted(() => {
+  const runtimeState = {
+    sessionCookie: '',
+    pluginReleases: [] as Record<string, unknown>[],
+    businessInstalls: new Map<string, Record<string, unknown>[]>(),
+    businesses: new Map<string, Record<string, unknown>>(),
+    users: new Map<string, Record<string, unknown>>(),
+  };
   return {
-    ...actual,
-    getCookie: getCookieMock,
+    getRuntimeCookieMock: vi.fn(),
+    ssrGetMock: vi.fn(),
+    ssrCreateMock: vi.fn(),
+    ssrUpdateMock: vi.fn(),
+    state: runtimeState,
+  };
+});
+
+vi.mock('@/lib/runtime/cookies', () => {
+  return {
+    getRuntimeCookie: getRuntimeCookieMock,
   };
 });
 
@@ -92,12 +93,12 @@ describe('plugins authz trust boundary', () => {
     ]);
     state.users = new Map([['session-user', { role: 'user' }]]);
 
-    getCookieMock.mockReset();
+    getRuntimeCookieMock.mockReset();
     ssrGetMock.mockReset();
     ssrCreateMock.mockReset();
     ssrUpdateMock.mockReset();
 
-    getCookieMock.mockImplementation((name: string) => {
+    getRuntimeCookieMock.mockImplementation((name: string) => {
       if (name === 'gun-user') {
         return state.sessionCookie;
       }

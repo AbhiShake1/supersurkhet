@@ -1,5 +1,4 @@
 import { flattenSchemaWorkflows } from '@supersurkhet/sdk';
-import { getCookie } from '@tanstack/react-start/server';
 import { z } from 'zod';
 import {
   collectDesiredBusinessSubdomainHosts,
@@ -44,6 +43,7 @@ import {
   evaluateV3PublishGates,
   hasBlockingV3Gates,
 } from '@/lib/plugins/v3-gates';
+import { getRuntimeCookie } from '@/lib/runtime/cookies';
 import { uiBuilderLayerSchema } from '@/lib/schemas/ui-builder-schema';
 import { mergeUiTemplateLayers } from '@/lib/ui-builder/template-merge';
 import { runPluginsV2CompileVerifyPipeline } from './plugins-v2-compile-verify';
@@ -793,7 +793,7 @@ async function resolveBusinessRecord(
 
 function parseSessionActorAliases(): Set<string> {
   const aliases = new Set<string>();
-  const rawSessionUser = getCookie('gun-user');
+  const rawSessionUser = getRuntimeCookie('gun-user');
   if (!rawSessionUser) return aliases;
   try {
     const parsed = JSON.parse(rawSessionUser) as {
