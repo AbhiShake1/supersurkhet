@@ -2725,6 +2725,9 @@ function PluginStudioPresenter({
   const [pendingDeleteSubdomain, setPendingDeleteSubdomain] = useState<
     string | null
   >(null);
+  const [openRouteGuardSubdomain, setOpenRouteGuardSubdomain] = useState<
+    string | null
+  >(null);
   const [isWorkflowEditorOpen, setIsWorkflowEditorOpen] = useState(false);
   const [workflowEditorLockedTable, setWorkflowEditorLockedTable] = useState<
     string | null
@@ -6069,14 +6072,14 @@ function PluginStudioPresenter({
                         normalizedSubdomain === 'index' ||
                         normalizedSubdomain === 'admin';
                       const selectedAccessRule = entry.accessRule ?? null;
+                      const isRouteGuardPopoverOpen =
+                        openRouteGuardSubdomain === normalizedSubdomain;
                       const selectedAccessRuleLabel =
                         selectedAccessRule === 'organization-member'
                           ? 'Business members'
                           : selectedAccessRule === 'authenticated-user'
                             ? 'Authenticated users'
                             : 'Anyone';
-                      const isSelected =
-                        normalizedSubdomain === selectedSubdomain;
                       const isEditingTitle =
                         editingSubdomainTitle?.originalSubdomain ===
                         entry.subdomain;
@@ -6087,26 +6090,7 @@ function PluginStudioPresenter({
                           asChild
                         >
                           <div className="space-y-2">
-                            <button
-                              type="button"
-                              className={`group block h-72 w-full rounded-2xl border p-4 text-left transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 ${
-                                isSelected
-                                  ? 'border-primary/50 bg-gradient-to-br from-primary/10 via-accent/20 to-background shadow-sm'
-                                  : 'border-border/70 bg-card hover:border-primary/40 hover:bg-accent/20 hover:shadow-sm'
-                              }`}
-                              onKeyDown={(event) => {
-                                if (event.key === 'ArrowRight') {
-                                  event.preventDefault();
-                                  moveSubdomainSelection(1);
-                                }
-                                if (event.key === 'ArrowLeft') {
-                                  event.preventDefault();
-                                  moveSubdomainSelection(-1);
-                                }
-                              }}
-                              aria-label={`Select ${displayTitle} card`}
-                              aria-current={isSelected ? 'true' : undefined}
-                            >
+                            <div className="group block h-72 w-full rounded-2xl border border-border/70 bg-card p-4 text-left transition duration-300 hover:border-primary/40 hover:bg-accent/20 hover:shadow-sm">
                               <div className="mb-3 flex items-center justify-between">
                                 <div className="group/title flex items-center gap-1">
                                   {isEditingTitle ? (
@@ -6165,7 +6149,166 @@ function PluginStudioPresenter({
                                   )}
                                 </div>
                                 <div className="flex items-center gap-1.5">
-                                  <div className="mr-1 hidden items-center gap-1 group-hover:inline-flex group-focus-within:inline-flex">
+                                  <div className="relative h-7 w-[124px]">
+                                    <Badge
+                                      variant="secondary"
+                                      className={`absolute right-0 top-0 transition-opacity ${
+                                        isRouteGuardPopoverOpen
+                                          ? 'pointer-events-none opacity-0'
+                                          : 'opacity-100 group-hover:pointer-events-none group-hover:opacity-0 group-focus-within:pointer-events-none group-focus-within:opacity-0'
+                                      }`}
+                                    >
+                                      Live preview
+                                    </Badge>
+                                    <div
+                                      className={`absolute right-0 top-0 flex items-center gap-1.5 transition-opacity ${
+                                        isRouteGuardPopoverOpen
+                                          ? 'opacity-100'
+                                          : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100'
+                                      }`}
+                                    >
+                                      <Popover
+                                        open={isRouteGuardPopoverOpen}
+                                        onOpenChange={(nextOpen) => {
+                                          setOpenRouteGuardSubdomain(
+                                            nextOpen
+                                              ? normalizedSubdomain
+                                              : null,
+                                          );
+                                        }}
+                                      >
+                                        <PopoverTrigger asChild>
+                                          <Button
+                                            type="button"
+                                            size="icon"
+                                            variant="ghost"
+                                            className="size-7 rounded-md border border-border/70 bg-background/90 p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                            onClick={(event) => {
+                                              event.stopPropagation();
+                                              setOpenRouteGuardSubdomain(
+                                                isRouteGuardPopoverOpen
+                                                  ? null
+                                                  : normalizedSubdomain,
+                                              );
+                                            }}
+                                            aria-label={`Configure ${displayTitle} route guard`}
+                                          >
+                                            <Shield className="size-3.5" />
+                                          </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent
+                                          align="end"
+                                          className="w-56 p-2"
+                                          onClick={(event) => {
+                                            event.stopPropagation();
+                                          }}
+                                        >
+                                          <div className="mb-2 px-1">
+                                            <p className="text-xs font-medium text-foreground">
+                                              Route guard
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                              Current: {selectedAccessRuleLabel}
+                                            </p>
+                                          </div>
+                                          <div className="flex flex-col gap-1">
+                                            <Button
+                                              type="button"
+                                              size="sm"
+                                              variant={
+                                                selectedAccessRule === null
+                                                  ? 'secondary'
+                                                  : 'ghost'
+                                              }
+                                              className="justify-start"
+                                              onClick={() => {
+                                                handleSubdomainChange(
+                                                  entry.subdomain,
+                                                  { accessRule: null },
+                                                );
+                                                setOpenRouteGuardSubdomain(
+                                                  null,
+                                                );
+                                              }}
+                                            >
+                                              Anyone
+                                            </Button>
+                                            <Button
+                                              type="button"
+                                              size="sm"
+                                              variant={
+                                                selectedAccessRule ===
+                                                'authenticated-user'
+                                                  ? 'secondary'
+                                                  : 'ghost'
+                                              }
+                                              className="justify-start"
+                                              onClick={() => {
+                                                handleSubdomainChange(
+                                                  entry.subdomain,
+                                                  {
+                                                    accessRule:
+                                                      'authenticated-user',
+                                                  },
+                                                );
+                                                setOpenRouteGuardSubdomain(
+                                                  null,
+                                                );
+                                              }}
+                                            >
+                                              Authenticated users
+                                            </Button>
+                                            <Button
+                                              type="button"
+                                              size="sm"
+                                              variant={
+                                                selectedAccessRule ===
+                                                'organization-member'
+                                                  ? 'secondary'
+                                                  : 'ghost'
+                                              }
+                                              className="justify-start"
+                                              onClick={() => {
+                                                handleSubdomainChange(
+                                                  entry.subdomain,
+                                                  {
+                                                    accessRule:
+                                                      'organization-member',
+                                                  },
+                                                );
+                                                setOpenRouteGuardSubdomain(
+                                                  null,
+                                                );
+                                              }}
+                                            >
+                                              Business members
+                                            </Button>
+                                            <p className="px-1 pt-1 text-[11px] text-muted-foreground">
+                                              System admins always keep access.
+                                            </p>
+                                          </div>
+                                        </PopoverContent>
+                                      </Popover>
+                                      <Button
+                                        type="button"
+                                        size="icon"
+                                        variant="destructive"
+                                        className="size-7 p-0"
+                                        onClick={(event) => {
+                                          event.preventDefault();
+                                          event.stopPropagation();
+                                          setPendingDeleteSubdomain(
+                                            entry.subdomain,
+                                          );
+                                        }}
+                                        disabled={isDefaultSubdomain}
+                                        aria-label={`Delete ${displayTitle} subdomain`}
+                                      >
+                                        <Trash2 className="size-3.5" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  <div className="hidden items-center gap-1 group-hover:inline-flex group-focus-within:inline-flex">
                                     <SortableItemHandle
                                       data-subdomain-reorder-handle="true"
                                       aria-label={`Reorder ${displayTitle}`}
@@ -6187,135 +6330,6 @@ function PluginStudioPresenter({
                                       <GripVertical className="size-3.5" />
                                     </SortableItemHandle>
                                   </div>
-                                  <Badge
-                                    variant="secondary"
-                                    className="group-hover:hidden group-focus-within:hidden"
-                                  >
-                                    Live preview
-                                  </Badge>
-                                  <Popover>
-                                    <PopoverTrigger asChild>
-                                      <Button
-                                        type="button"
-                                        size="icon"
-                                        variant="ghost"
-                                        className="hidden size-7 rounded-md border border-border/70 bg-background/90 p-0 text-muted-foreground hover:bg-muted hover:text-foreground group-hover:inline-flex group-focus-within:inline-flex"
-                                        onClick={(event) => {
-                                          event.preventDefault();
-                                          event.stopPropagation();
-                                        }}
-                                        aria-label={`Configure ${displayTitle} route guard`}
-                                      >
-                                        <Shield className="size-3.5" />
-                                      </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent
-                                      align="end"
-                                      className="w-56 p-2"
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                      }}
-                                    >
-                                      <div className="mb-2 px-1">
-                                        <p className="text-xs font-medium text-foreground">
-                                          Route guard
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                          Current: {selectedAccessRuleLabel}
-                                        </p>
-                                      </div>
-                                      <div className="flex flex-col gap-1">
-                                        <Button
-                                          type="button"
-                                          size="sm"
-                                          variant={
-                                            selectedAccessRule === null
-                                              ? 'secondary'
-                                              : 'ghost'
-                                          }
-                                          className="justify-start"
-                                          onClick={(event) => {
-                                            event.preventDefault();
-                                            event.stopPropagation();
-                                            handleSubdomainChange(
-                                              entry.subdomain,
-                                              { accessRule: null },
-                                            );
-                                          }}
-                                        >
-                                          Anyone
-                                        </Button>
-                                        <Button
-                                          type="button"
-                                          size="sm"
-                                          variant={
-                                            selectedAccessRule ===
-                                            'authenticated-user'
-                                              ? 'secondary'
-                                              : 'ghost'
-                                          }
-                                          className="justify-start"
-                                          onClick={(event) => {
-                                            event.preventDefault();
-                                            event.stopPropagation();
-                                            handleSubdomainChange(
-                                              entry.subdomain,
-                                              {
-                                                accessRule:
-                                                  'authenticated-user',
-                                              },
-                                            );
-                                          }}
-                                        >
-                                          Authenticated users
-                                        </Button>
-                                        <Button
-                                          type="button"
-                                          size="sm"
-                                          variant={
-                                            selectedAccessRule ===
-                                            'organization-member'
-                                              ? 'secondary'
-                                              : 'ghost'
-                                          }
-                                          className="justify-start"
-                                          onClick={(event) => {
-                                            event.preventDefault();
-                                            event.stopPropagation();
-                                            handleSubdomainChange(
-                                              entry.subdomain,
-                                              {
-                                                accessRule:
-                                                  'organization-member',
-                                              },
-                                            );
-                                          }}
-                                        >
-                                          Business members
-                                        </Button>
-                                        <p className="px-1 pt-1 text-[11px] text-muted-foreground">
-                                          System admins always keep access.
-                                        </p>
-                                      </div>
-                                    </PopoverContent>
-                                  </Popover>
-                                  <Button
-                                    type="button"
-                                    size="icon"
-                                    variant="destructive"
-                                    className="hidden size-7 p-0 group-hover:inline-flex group-focus-within:inline-flex"
-                                    onClick={(event) => {
-                                      event.preventDefault();
-                                      event.stopPropagation();
-                                      setPendingDeleteSubdomain(
-                                        entry.subdomain,
-                                      );
-                                    }}
-                                    disabled={isDefaultSubdomain}
-                                    aria-label={`Delete ${displayTitle} subdomain`}
-                                  >
-                                    <Trash2 className="size-3.5" />
-                                  </Button>
                                 </div>
                               </div>
                               <div
@@ -6362,7 +6376,7 @@ function PluginStudioPresenter({
                                   </div>
                                 )}
                               </div>
-                            </button>
+                            </div>
                           </div>
                         </SortableItem>
                       );
