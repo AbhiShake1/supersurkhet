@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { z } from 'zod';
 import AutoForm from '@/components/ui/auto-form';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,9 @@ type FocusAwareEditorStoreState = {
 type JsonSectionKey = 'tabs' | 'bindings' | 'systemTabs' | 'dataScopes';
 type JsonSectionState = Record<JsonSectionKey, string>;
 type JsonSectionErrorState = Partial<Record<JsonSectionKey, string>>;
+type FocusedAutoAdminRootConfig = ReturnType<
+  typeof readAutoAdminRootFocusedConfig
+>;
 
 function formatJson(value: unknown) {
   return JSON.stringify(value, null, 2);
@@ -227,6 +230,46 @@ function FocusedAutoAdminRootConfigForm({
     () => readAutoAdminRootFocusedConfig(selectedLayer.props),
     [selectedLayer.props],
   );
+
+  const focusedConfigKey = useMemo(
+    () =>
+      JSON.stringify({
+        tabs: focusedConfig.tabs,
+        bindings: focusedConfig.bindings,
+        systemTabs: focusedConfig.systemTabs,
+        dataScopes: focusedConfig.dataScopes,
+      }),
+    [
+      focusedConfig.tabs,
+      focusedConfig.bindings,
+      focusedConfig.systemTabs,
+      focusedConfig.dataScopes,
+    ],
+  );
+
+  return (
+    <FocusedAutoAdminRootConfigDraftForm
+      key={focusedConfigKey}
+      selectedLayer={selectedLayer}
+      focusedConfig={focusedConfig}
+      updateLayerProps={updateLayerProps}
+    />
+  );
+}
+
+function FocusedAutoAdminRootConfigDraftForm({
+  selectedLayer,
+  focusedConfig,
+  updateLayerProps,
+}: {
+  selectedLayer: ComponentLayer;
+  focusedConfig: FocusedAutoAdminRootConfig;
+  updateLayerProps: (
+    id: string,
+    props: Record<string, unknown>,
+    rest?: Omit<ComponentLayer, 'props' | 'children'>,
+  ) => void;
+}) {
   const [drafts, setDrafts] = useState<JsonSectionState>({
     tabs: formatJson(focusedConfig.tabs),
     bindings: formatJson(focusedConfig.bindings),
@@ -234,21 +277,6 @@ function FocusedAutoAdminRootConfigForm({
     dataScopes: formatJson(focusedConfig.dataScopes),
   });
   const [errors, setErrors] = useState<JsonSectionErrorState>({});
-
-  useEffect(() => {
-    setDrafts({
-      tabs: formatJson(focusedConfig.tabs),
-      bindings: formatJson(focusedConfig.bindings),
-      systemTabs: formatJson(focusedConfig.systemTabs),
-      dataScopes: formatJson(focusedConfig.dataScopes),
-    });
-    setErrors({});
-  }, [
-    focusedConfig.tabs,
-    focusedConfig.bindings,
-    focusedConfig.systemTabs,
-    focusedConfig.dataScopes,
-  ]);
 
   const setDraft = useCallback((key: JsonSectionKey, value: string) => {
     setDrafts((current) => ({ ...current, [key]: value }));

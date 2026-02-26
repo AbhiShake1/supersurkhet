@@ -53,7 +53,7 @@ import {
 } from '@/lib/ai-policy/permission-policy-store';
 import {
   DndContextProvider,
-  useComponentDragContext,
+  useDndContext,
 } from '@/lib/ui-builder/context/dnd-context';
 import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
 import {
@@ -82,6 +82,32 @@ const TRANSFORM_DIV_STYLE = {
 const WHEEL_CONFIG = { step: 0.1 } as const;
 const DOUBLE_CLICK_CONFIG = { disabled: false } as const;
 const AI_MUTATION_POLICY_STORAGE_KEY = 'ui-builder-ai-mutation-policy-v1';
+
+function createHydratedAiPermissionPolicyStore(): AiPermissionPolicyStore {
+  const store = createAiPermissionPolicyStore();
+  if (typeof window === 'undefined') {
+    return store;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(AI_MUTATION_POLICY_STORAGE_KEY);
+    if (!raw) {
+      return store;
+    }
+    const parsed = JSON.parse(raw) as { choice?: string; updatedAt?: number };
+    if (
+      parsed.choice === 'allow_once' ||
+      parsed.choice === 'allow_always' ||
+      parsed.choice === 'deny_session'
+    ) {
+      store.setPolicy(parsed.choice, parsed.updatedAt ?? Date.now());
+    }
+  } catch {
+    // Ignore malformed local policy snapshots.
+  }
+
+  return store;
+}
 
 function appendClassTokens(
   existingClassName: string,
@@ -648,7 +674,7 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
   hasByoAiCredential,
   isByoAiLoading,
 }) => {
-  const { isDragging: isComponentDragging } = useComponentDragContext();
+  const { isDragging: isComponentDragging } = useDndContext();
   const updateLayer = useLayerStore((state) => state.updateLayer);
   const [resizing, setResizing] = useState(false);
   const [frameSize, setFrameSize] = useState<{ width: number; height: number }>(
@@ -665,28 +691,8 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
     ((granted: boolean) => void) | null
   >(null);
   const aiPolicyStoreRef = useRef<AiPermissionPolicyStore>(
-    createAiPermissionPolicyStore(),
+    createHydratedAiPermissionPolicyStore(),
   );
-
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(AI_MUTATION_POLICY_STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as { choice?: string; updatedAt?: number };
-      if (
-        parsed.choice === 'allow_once' ||
-        parsed.choice === 'allow_always' ||
-        parsed.choice === 'deny_session'
-      ) {
-        aiPolicyStoreRef.current.setPolicy(
-          parsed.choice,
-          parsed.updatedAt ?? Date.now(),
-        );
-      }
-    } catch {
-      // Ignore malformed local policy snapshots.
-    }
-  }, []);
 
   const persistMutationPolicy = useCallback(() => {
     const policy = aiPolicyStoreRef.current.getPolicy();
