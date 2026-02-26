@@ -1,6 +1,9 @@
 import { Plus, Trash } from 'lucide-react';
-import type { ChangeEvent } from 'react';
-import type { FieldValues, UseFormReturn } from 'react-hook-form';
+import type {
+  ControllerRenderProps,
+  FieldValues,
+  UseFormReturn,
+} from 'react-hook-form';
 import { useWatch } from 'react-hook-form';
 import * as z from 'zod';
 import {
@@ -48,6 +51,19 @@ function toFieldConfigItem(
   return isFieldConfigItem(value) ? value : {};
 }
 
+function getStaticField(
+  name: string,
+  value: string,
+): ControllerRenderProps<FieldValues, string> {
+  return {
+    name,
+    value,
+    onBlur: () => undefined,
+    onChange: () => undefined,
+    ref: () => undefined,
+  };
+}
+
 export default function AutoFormRecord({
   name,
   item,
@@ -63,7 +79,7 @@ export default function AutoFormRecord({
 }) {
   const title = item._def.description ?? beautifyObjectName(name);
 
-  const [_keySchema, valueSchema] = getRecordSchema(item);
+  const [keySchema, valueSchema] = getRecordSchema(item);
 
   const valueBaseType = getBaseType(valueSchema);
 
@@ -107,8 +123,11 @@ export default function AutoFormRecord({
 
       <AccordionContent className="space-y-4">
         {Object.entries(record).map(([internalKey]) => {
-          const keyPath = `${name}.${internalKey}.__key`;
           const valuePath = `${name}.${internalKey}`;
+          const keyField = getStaticField(
+            `${name}.${internalKey}`,
+            internalKey,
+          );
 
           return (
             <div
@@ -118,25 +137,19 @@ export default function AutoFormRecord({
               {/* KEY INPUT */}
               <div className="flex items-center gap-2">
                 <div className="flex-1">
-                  <FormField
-                    control={form.control}
-                    name={keyPath}
-                    defaultValue={internalKey}
-                    render={({ field }) => (
-                      <AutoFormInput
-                        label="Key"
-                        isRequired
-                        field={field}
-                        zodInputProps={zodToHtmlInputProps(z.string())}
-                        fieldConfigItem={keyFieldConfig}
-                        zodItem={z.string()}
-                        fieldProps={{
-                          value: field.value ?? internalKey,
-                          onChange: (event: ChangeEvent<HTMLInputElement>) =>
-                            updateKey(internalKey, event.target.value),
-                        }}
-                      />
-                    )}
+                  <AutoFormInput
+                    label="Key"
+                    isRequired
+                    field={keyField}
+                    zodInputProps={zodToHtmlInputProps(keySchema)}
+                    fieldConfigItem={keyFieldConfig}
+                    zodItem={keySchema}
+                    fieldProps={{
+                      ...keyFieldConfig.inputProps,
+                      value: internalKey,
+                      onChange: (nextKey: string) =>
+                        updateKey(internalKey, nextKey),
+                    }}
                   />
                 </div>
 
@@ -177,7 +190,7 @@ export default function AutoFormRecord({
                           field={normalizedField}
                           zodInputProps={zodToHtmlInputProps(valueSchema)}
                           fieldConfigItem={valueFieldConfig}
-                          zodItem={valueSchema as z.ZodAny}
+                          zodItem={valueSchema}
                           fieldProps={normalizedField}
                         />
                       );

@@ -145,28 +145,31 @@ export function getObjectFormSchema(
  * Once submitted, the schema will be validated completely.
  */
 export function zodToHtmlInputProps(
-  schema:
-    | z.ZodNumber
-    | z.ZodString
-    | z.ZodOptional<z.ZodNumber | z.ZodString>
-    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    | any,
+  schema: z.ZodTypeAny,
 ): React.InputHTMLAttributes<HTMLInputElement> {
   if (['ZodOptional', 'ZodNullable'].includes(schema._def.typeName)) {
-    const typedSchema = schema as z.ZodOptional<z.ZodNumber | z.ZodString>;
+    const typedSchema = schema as
+      | z.ZodOptional<z.ZodTypeAny>
+      | z.ZodNullable<z.ZodTypeAny>;
     return {
       ...zodToHtmlInputProps(typedSchema._def.innerType),
       required: false,
     };
   }
-  const typedSchema = schema as z.ZodNumber | z.ZodString;
 
-  if (!('checks' in typedSchema._def))
+  const schemaDef = schema._def as {
+    checks?: Array<{
+      kind?: string;
+      value?: number;
+    }>;
+  };
+
+  if (!schemaDef.checks)
     return {
       required: true,
     };
 
-  const { checks } = typedSchema._def;
+  const { checks } = schemaDef;
   const inputProps: React.InputHTMLAttributes<HTMLInputElement> = {
     required: true,
   };
