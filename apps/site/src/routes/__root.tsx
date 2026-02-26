@@ -39,6 +39,10 @@ import {
   GoogleLoginProvider,
   OneTapLoginProvider,
 } from '@/integrations/google/google-login-provider';
+import {
+  isDataMatrixDeviceCallbackMessage,
+  parseExpoBridgeMessageAndUnwrap,
+} from '@/lib/expo-communication';
 import { gun } from '@/lib/gun';
 import { setGTADefaultOptions } from '@/lib/gun/options';
 import { getGunRef, mergeKeys } from '@/lib/gun/utils';
@@ -47,6 +51,7 @@ import { bootstrapLiveRuntimeRecovery } from '@/lib/runtime-recovery';
 import { appSchema, transformSchema } from '@/lib/schema';
 import { defaultPresets } from '@/lib/theme';
 import { buildCriticalThemeCss } from '@/lib/theme/critical-theme-css';
+import { datamatrixDeviceCallback } from '@/server-functions/datamatrix-device-callback';
 import { migrateMarketplaceSeedReleases } from '@/server-functions/plugins';
 import { getUser, removeUser } from '@/server-functions/user';
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools';
@@ -382,19 +387,28 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 
     // Set up message listener for communication with Expo app
     const handleMessage = (event: MessageEvent) => {
-      try {
-        const message =
-          typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+      const message = parseExpoBridgeMessageAndUnwrap(event.data);
+      if (!message) {
+        return;
+      }
 
-        // Handle messages from the Expo app
-        if (message.type === 'DEVICE_READY') {
-          console.log('Expo app is ready and connected');
-        } else if (message.type === 'WEB_TO_NATIVE') {
-          // Handle responses from native app
-          console.log('Received response from Expo app:', message.payload);
-        }
-      } catch (error) {
-        console.error('Failed to parse message from Expo app:', error);
+      if (message.type === 'DEVICE_READY') {
+        console.log('Expo app is ready and connected');
+        return;
+      }
+
+      if (isDataMatrixDeviceCallbackMessage(message)) {
+        void datamatrixDeviceCallback({ data: message }).catch((error) => {
+          console.error(
+            'Failed to ingest DataMatrix device callback from bridge:',
+            error,
+          );
+        });
+        return;
+      }
+
+      if (message.type === 'WEB_TO_NATIVE') {
+        console.log('Received response from Expo app:', message.payload);
       }
     };
 

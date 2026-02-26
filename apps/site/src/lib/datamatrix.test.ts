@@ -136,8 +136,10 @@ describe('DataMatrix v2 core schema contracts', () => {
   });
 
   it('fails signed payload parsing when token is not active yet', () => {
-    const payload = createValidSignedRefToken().payload;
-    payload.notBefore = FIXED_NOW_SECONDS + 120;
+    const payload = {
+      ...createValidSignedRefToken().payload,
+      notBefore: FIXED_NOW_SECONDS + 120,
+    };
 
     const result = parseQrSignedRefPayload(payload, {
       nowSeconds: FIXED_NOW_SECONDS,

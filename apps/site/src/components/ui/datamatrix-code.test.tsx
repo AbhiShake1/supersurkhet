@@ -143,7 +143,9 @@ describe('DataMatrixCode', () => {
 
   it('switches cleanly from QR to DataMatrix without stale QR image state', async () => {
     const toDataURLMock = vi.mocked(toDataURL);
-    toDataURLMock.mockResolvedValue('data:image/png;base64,QR');
+    toDataURLMock.mockImplementation(() =>
+      Promise.resolve('data:image/png;base64,QR'),
+    );
 
     render(<DataMatrixCode value="payload" format="qr" />);
 

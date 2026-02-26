@@ -27,6 +27,7 @@ import {
 } from '@/lib/datamatrix/scan-router';
 import {
   createVisionFallbackState,
+  type VisionFallbackOutcome,
   type VisionFallbackResponse,
 } from '@/lib/datamatrix/vision-fallback';
 import { runDataMatrixVisionFallback } from '@/server-functions/datamatrix-vision';
@@ -177,7 +178,7 @@ export function DataMatrixScanner({
       },
       invokeFallbackAi: async (input) => {
         try {
-          const visionOutcome = await runDataMatrixVisionFallback({
+          const visionOutcome = (await runDataMatrixVisionFallback({
             data: {
               sessionId: scanSessionIdRef.current,
               scanAttemptId: input.routeId,
@@ -186,7 +187,7 @@ export function DataMatrixScanner({
               providerPreference: 'auto',
               state: visionFallbackStateRef.current,
             },
-          });
+          })) as VisionFallbackOutcome;
           visionFallbackStateRef.current = visionOutcome.state;
           return visionOutcome.response;
         } catch (error) {

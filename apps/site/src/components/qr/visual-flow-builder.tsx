@@ -130,6 +130,7 @@ import {
   type FlowBuilderEdge,
   type FlowBuilderNode,
   type FlowBuilderV2EngineDefinition,
+  type LegacyFlowBuilderV2EngineDefinition,
 } from '@/lib/datamatrix/flow-action-builder';
 import { ScrollArea } from '../ui/scroll-area';
 
@@ -2798,16 +2799,7 @@ type ExportedFlowBuilderPayloadV2 = {
   version: '2.0';
   engineDefinition:
     | FlowBuilderV2EngineDefinition
-    | {
-        version: '2.0';
-        engineId: 'datamatrix.flow-builder';
-        primaryNodeId: string;
-        orderedNodeIds: string[];
-        workflow: {
-          nodes: unknown[];
-          edges: unknown[];
-        };
-      };
+    | LegacyFlowBuilderV2EngineDefinition;
   legacyAction: DataMatrixAction;
 };
 

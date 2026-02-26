@@ -9,6 +9,8 @@ import {
   type VisionProviderPath,
 } from './ai-budget-guard';
 
+export type { VisionProviderPath } from './ai-budget-guard';
+
 export const DATAMATRIX_VISION_FEATURE_FLAGS = {
   officialPathEnabled: 'DATAMATRIX_V2_VISION_OFFICIAL_ENABLED',
   optionalPathEnabled: 'DATAMATRIX_V2_VISION_OPTIONAL_ENABLED',
@@ -39,6 +41,14 @@ export interface VisionUploadDescriptor {
   byteLength: number;
 }
 
+type VisionPayloadValue =
+  | string
+  | number
+  | boolean
+  | { [key: string]: VisionPayloadValue };
+
+export type VisionPayload = Record<string, VisionPayloadValue>;
+
 export interface VisionFallbackState {
   budget: AiBudgetGuardState;
   uploadsByScanAttempt: Record<string, VisionUploadDescriptor>;
@@ -50,7 +60,7 @@ export type VisionProviderResult =
       summary: string;
       providerId: string;
       model?: string;
-      payload?: Record<string, unknown> | null;
+      payload?: VisionPayload | null;
     }
   | {
       status: 'unavailable';
@@ -106,7 +116,7 @@ export interface VisionFallbackResponse {
   providerId: string | null;
   reason: VisionFallbackFailureCode | null;
   summary: string;
-  payload: Record<string, unknown> | null;
+  payload: VisionPayload | null;
   upload: {
     performed: boolean;
     reused: boolean;
@@ -253,11 +263,11 @@ async function defaultUploadImage(input: {
   };
 }
 
-function tryParsePayload(value: string): Record<string, unknown> | null {
+function tryParsePayload(value: string): VisionPayload | null {
   try {
     const parsed = JSON.parse(value);
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      return parsed as Record<string, unknown>;
+      return parsed as VisionPayload;
     }
     return null;
   } catch {
@@ -300,7 +310,7 @@ async function defaultRunVisionProvider(
     model: 'rule-based-text-extractor',
     payload: {
       text: normalized.slice(0, 512),
-      uploadId: input.upload?.uploadId ?? null,
+      ...(input.upload?.uploadId ? { uploadId: input.upload.uploadId } : {}),
     },
   };
 }

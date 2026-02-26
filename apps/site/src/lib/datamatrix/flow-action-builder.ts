@@ -61,7 +61,7 @@ type FlowBuilderV2ActionId =
   | 'datamatrix.navigate'
   | 'datamatrix.notification';
 
-interface LegacyFlowBuilderV2WorkflowNodeDefinition {
+export interface LegacyFlowBuilderV2WorkflowNodeDefinition {
   nodeId: string;
   kind: 'action';
   actionId: FlowBuilderV2ActionId;
@@ -69,13 +69,13 @@ interface LegacyFlowBuilderV2WorkflowNodeDefinition {
   input: Record<string, unknown>;
 }
 
-interface LegacyFlowBuilderV2WorkflowEdgeDefinition {
+export interface LegacyFlowBuilderV2WorkflowEdgeDefinition {
   from: string;
   to: string;
   on: 'success';
 }
 
-interface LegacyFlowBuilderV2EngineDefinition {
+export interface LegacyFlowBuilderV2EngineDefinition {
   version: '2.0';
   engineId: 'datamatrix.flow-builder';
   primaryNodeId: string;

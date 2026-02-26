@@ -20,6 +20,7 @@ import {
   runVisionFallback,
   type VisionFallbackFeatureFlags,
   type VisionFallbackState,
+  type VisionPayload,
   type VisionProviderPath,
   type VisionProviderRequest,
   type VisionProviderResult,
@@ -249,7 +250,7 @@ export async function runAiVisionProvider(args: {
       providerId: args.providerConfig.providerId,
       model: args.providerConfig.model,
       summary: object.summary,
-      payload: object.payload,
+      payload: object.payload as VisionPayload | null,
     };
   } catch (error) {
     console.error('DataMatrix vision provider invocation failed.', {

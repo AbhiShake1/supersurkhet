@@ -559,7 +559,9 @@ describe('workflow executor', () => {
             nodeId: 'n1',
             type: 'action',
             actionId: 'core.device',
-            retryClass: 'device_bridge',
+            retryPolicy: {
+              maxAttempts: 4,
+            },
           },
         ],
         edges: [],
