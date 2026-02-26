@@ -22,17 +22,31 @@ export const DataMatrixCode = forwardRef<HTMLDivElement, DataMatrixCodeProps>(
       typeof value === 'string' ? value : JSON.stringify(value);
 
     useEffect(() => {
-      if (format !== 'qr') return;
+      if (format !== 'qr') {
+        setDataUrl(null);
+        setError(null);
+        return;
+      }
 
-      // Generate QR Code
+      let isCurrentRender = true;
+      setDataUrl(null);
+      setError(null);
+
       toDataURL(stringValue, { width: size, margin: 2 })
         .then((url) => {
+          if (!isCurrentRender) return;
           setDataUrl(url);
-          setError(null);
         })
         .catch((err) => {
-          setError(`Failed to generate QR code: ${err.message}`);
+          if (!isCurrentRender) return;
+          setError(
+            `Failed to generate QR code: ${err instanceof Error ? err.message : 'Unknown error'}`,
+          );
         });
+
+      return () => {
+        isCurrentRender = false;
+      };
     }, [size, format, stringValue]);
 
     if (format === 'datamatrix') {
@@ -40,7 +54,11 @@ export const DataMatrixCode = forwardRef<HTMLDivElement, DataMatrixCodeProps>(
       const colorWhite = new BakeryColor(255, 255, 255);
 
       return (
-        <div ref={ref} className={cn('relative', className)}>
+        <div
+          ref={ref}
+          className={cn('relative', className)}
+          data-code-export-root="true"
+        >
           <BakeryDatamatrix
             scale={size / 50} // Adjust scale based on size
             foregroundColor={colorBlack}
@@ -56,7 +74,11 @@ export const DataMatrixCode = forwardRef<HTMLDivElement, DataMatrixCodeProps>(
     }
 
     return (
-      <div ref={ref} className={cn('relative', className)}>
+      <div
+        ref={ref}
+        className={cn('relative', className)}
+        data-code-export-root="true"
+      >
         {error ? (
           <div className="flex items-center justify-center w-full h-full bg-red-100 border border-red-300 rounded-lg p-4 text-red-700">
             {error}

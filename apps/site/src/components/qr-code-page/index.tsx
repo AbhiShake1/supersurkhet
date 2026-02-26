@@ -1,7 +1,9 @@
-import { Zap } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
+import { ArrowRight, Bot, Zap } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { VisualFlowBuilder } from '@/components/qr/visual-flow-builder';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -16,7 +18,6 @@ import {
 import { ActionExecutor } from '@/lib/datamatrix/action-executor';
 
 export function QRCodePage({ slug }: { slug: string }) {
-  void slug;
   const [_sampleAction] = useState<DataMatrixAction>(() => {
     return dataMatrixActionSchema.parse({
       version: '1.0',
@@ -57,7 +58,32 @@ export function QRCodePage({ slug }: { slug: string }) {
 
   return (
     <div className="w-full items-center flex justify-center">
-      <div className="container py-8">
+      <div className="container space-y-6 py-8">
+        <Card className="border-border/60 bg-gradient-to-br from-cyan-50 via-background to-emerald-50 dark:from-cyan-950/25 dark:to-emerald-950/25">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bot className="h-5 w-5" />
+              DataMatrix Agent Console
+            </CardTitle>
+            <CardDescription>
+              Open the dedicated deterministic scan console with runtime
+              timeline, manual retry controls, keyboard shortcuts, and
+              bridge/scheduler log slots.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <Link
+                to="/$businessName/admin/qr-agent"
+                params={{ businessName: slug }}
+              >
+                Open Opinionated Agent Console
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -65,7 +91,8 @@ export function QRCodePage({ slug }: { slug: string }) {
               Visual Flow Builder
             </CardTitle>
             <CardDescription>
-              Create sophisticated interaction flows with powerful capabilities
+              Create sophisticated interaction flows with powerful capabilities.
+              Preview print opens in a new tab and may require popup permission.
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -125,9 +125,11 @@ import {
 } from '@/lib/datamatrix';
 import { ActionExecutor } from '@/lib/datamatrix/action-executor';
 import {
-  buildDataMatrixActionFromFlowGraph,
+  adaptV2EngineDefinitionToLegacyAction,
+  compileFlowBuilderToV2EngineDefinition,
   type FlowBuilderEdge,
   type FlowBuilderNode,
+  type FlowBuilderV2EngineDefinition,
 } from '@/lib/datamatrix/flow-action-builder';
 import { ScrollArea } from '../ui/scroll-area';
 
@@ -2419,6 +2421,173 @@ export function buildFlowGraphFromAction(
   };
 }
 
+type ExportableCodeElement =
+  | HTMLCanvasElement
+  | HTMLImageElement
+  | SVGSVGElement;
+
+const CODE_EXPORT_ROOT_SELECTOR = '[data-code-export-root]';
+const CODE_RENDER_SELECTOR = 'canvas, img, svg';
+
+const isCanvasElement = (element: Element): element is HTMLCanvasElement =>
+  typeof HTMLCanvasElement !== 'undefined' &&
+  element instanceof HTMLCanvasElement;
+
+const isImageElement = (element: Element): element is HTMLImageElement =>
+  typeof HTMLImageElement !== 'undefined' &&
+  element instanceof HTMLImageElement;
+
+const isSvgElement = (element: Element): element is SVGSVGElement =>
+  typeof SVGSVGElement !== 'undefined' && element instanceof SVGSVGElement;
+
+function toSvgDataUrl(element: SVGSVGElement): string | null {
+  if (typeof XMLSerializer === 'undefined') {
+    return null;
+  }
+
+  const markup = new XMLSerializer().serializeToString(element);
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`;
+}
+
+function toBlobFromDataUrl(value: string): Blob | null {
+  if (!value.startsWith('data:')) {
+    return null;
+  }
+
+  const firstCommaIndex = value.indexOf(',');
+  if (firstCommaIndex <= 0) {
+    return null;
+  }
+
+  const meta = value.slice(5, firstCommaIndex);
+  const payload = value.slice(firstCommaIndex + 1);
+  const isBase64 = meta.includes(';base64');
+  const mimeType = (meta.split(';')[0] || 'application/octet-stream').trim();
+
+  try {
+    const decoded = isBase64
+      ? typeof atob === 'function'
+        ? atob(payload)
+        : null
+      : decodeURIComponent(payload);
+    if (decoded === null) {
+      return null;
+    }
+
+    const bytes = new Uint8Array(decoded.length);
+    for (let index = 0; index < decoded.length; index += 1) {
+      bytes[index] = decoded.charCodeAt(index);
+    }
+
+    return new Blob([bytes], { type: mimeType });
+  } catch {
+    return null;
+  }
+}
+
+function resolveCodeExportRoot(
+  root: ParentNode | null,
+): ParentNode | Element | null {
+  if (!root) return null;
+
+  if (root instanceof Element && root.matches(CODE_EXPORT_ROOT_SELECTOR)) {
+    return root;
+  }
+
+  return root.querySelector(CODE_EXPORT_ROOT_SELECTOR) ?? root;
+}
+
+export function resolveExportableCodeElement(
+  root: ParentNode | null,
+): ExportableCodeElement | null {
+  const exportRoot = resolveCodeExportRoot(root);
+  if (!exportRoot) {
+    return null;
+  }
+
+  const renderElement = exportRoot.querySelector(CODE_RENDER_SELECTOR);
+  if (!renderElement) {
+    return null;
+  }
+
+  if (
+    isCanvasElement(renderElement) ||
+    isImageElement(renderElement) ||
+    isSvgElement(renderElement)
+  ) {
+    return renderElement;
+  }
+
+  return null;
+}
+
+export function getExportableCodeDataUrl(
+  root: ParentNode | null,
+): string | null {
+  const renderElement = resolveExportableCodeElement(root);
+  if (!renderElement) {
+    return null;
+  }
+
+  if (isCanvasElement(renderElement)) {
+    return renderElement.toDataURL('image/png');
+  }
+
+  if (isImageElement(renderElement)) {
+    return renderElement.currentSrc || renderElement.src || null;
+  }
+
+  return toSvgDataUrl(renderElement);
+}
+
+export async function getExportableCodeBlob(
+  root: ParentNode | null,
+): Promise<Blob | null> {
+  const renderElement = resolveExportableCodeElement(root);
+  if (!renderElement) {
+    return null;
+  }
+
+  if (isCanvasElement(renderElement)) {
+    if (typeof renderElement.toBlob === 'function') {
+      return new Promise((resolve) => {
+        renderElement.toBlob((blob) => resolve(blob), 'image/png');
+      });
+    }
+
+    return toBlobFromDataUrl(renderElement.toDataURL('image/png'));
+  }
+
+  if (isImageElement(renderElement)) {
+    const imageSource = renderElement.currentSrc || renderElement.src;
+    if (!imageSource) {
+      return null;
+    }
+
+    const dataBlob = toBlobFromDataUrl(imageSource);
+    if (dataBlob) {
+      return dataBlob;
+    }
+
+    if (typeof fetch !== 'function') {
+      return null;
+    }
+
+    try {
+      const response = await fetch(imageSource);
+      return await response.blob();
+    } catch {
+      return null;
+    }
+  }
+
+  const svgMarkup = toSvgDataUrl(renderElement);
+  if (!svgMarkup) {
+    return null;
+  }
+  return toBlobFromDataUrl(svgMarkup);
+}
+
 // Preview panel component
 const PreviewPanel = ({
   action,
@@ -2427,6 +2596,8 @@ const PreviewPanel = ({
   action: DataMatrixAction | null;
   error: string | null;
 }) => {
+  const codeRootRef = useRef<HTMLDivElement>(null);
+
   return (
     <Card className="w-80 h-full flex flex-col">
       <CardHeader className="pb-2">
@@ -2440,7 +2611,12 @@ const PreviewPanel = ({
           {action ? (
             <>
               <div className="p-4 bg-white rounded-lg shadow-sm">
-                <DataMatrixCode value={action} size={200} format="datamatrix" />
+                <DataMatrixCode
+                  ref={codeRootRef}
+                  value={action}
+                  size={200}
+                  format="datamatrix"
+                />
               </div>
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">
@@ -2467,39 +2643,59 @@ const PreviewPanel = ({
         {action && (
           <div className="flex flex-wrap justify-center gap-2 pt-4">
             <Button
+              aria-label="Print preview code"
               variant="outline"
               size="sm"
               onClick={() => {
-                // Print functionality
-                const printWindow = window.open('', '_blank');
-                if (printWindow) {
-                  printWindow.document.write(`
-                    <html>
-                      <head>
-                        <title>DataMatrix Code</title>
-                        <style>
-                          body { 
-                            display: flex; 
-                            justify-content: center; 
-                            align-items: center; 
-                            height: 100vh; 
-                            margin: 0; 
-                          }
-                          img { 
-                            max-width: 100%; 
-                            height: auto; 
-                          }
-                        </style>
-                      </head>
-                      <body>
-                        <img src="${document.querySelector('canvas')?.toDataURL()}" alt="DataMatrix Code" />
-                      </body>
-                    </html>
-                  `);
-                  printWindow.document.close();
-                  printWindow.focus();
-                  printWindow.print();
+                const imageDataUrl = getExportableCodeDataUrl(
+                  codeRootRef.current,
+                );
+                if (!imageDataUrl) {
+                  toast.error('Preview is not ready for printing');
+                  return;
                 }
+
+                const printWindow = window.open(
+                  '',
+                  '_blank',
+                  'noopener,noreferrer',
+                );
+                if (!printWindow) {
+                  toast.info(
+                    'Allow pop-ups in your browser to print the preview',
+                  );
+                  return;
+                }
+
+                printWindow.document.write(`
+                  <html>
+                    <head>
+                      <title>DataMatrix Code</title>
+                      <style>
+                        body {
+                          display: flex;
+                          justify-content: center;
+                          align-items: center;
+                          height: 100vh;
+                          margin: 0;
+                        }
+                        img {
+                          max-width: 100%;
+                          height: auto;
+                        }
+                      </style>
+                    </head>
+                    <body>
+                      <img src="${imageDataUrl}" alt="DataMatrix Code" />
+                    </body>
+                  </html>
+                `);
+                printWindow.document.close();
+                printWindow.focus();
+                printWindow.onafterprint = () => {
+                  printWindow.close();
+                };
+                printWindow.print();
               }}
             >
               <Printer className="h-4 w-4 mr-2" />
@@ -2507,17 +2703,24 @@ const PreviewPanel = ({
             </Button>
 
             <Button
+              aria-label="Download preview code"
               variant="outline"
               size="sm"
               onClick={() => {
-                // Download functionality
-                const canvas = document.querySelector('canvas');
-                if (canvas) {
-                  const link = document.createElement('a');
-                  link.download = 'datamatrix-code.png';
-                  link.href = canvas.toDataURL('image/png');
-                  link.click();
+                const imageDataUrl = getExportableCodeDataUrl(
+                  codeRootRef.current,
+                );
+                if (!imageDataUrl) {
+                  toast.error('Preview is not ready for download');
+                  return;
                 }
+
+                const link = document.createElement('a');
+                link.download = imageDataUrl.startsWith('data:image/svg+xml')
+                  ? 'datamatrix-code.svg'
+                  : 'datamatrix-code.png';
+                link.href = imageDataUrl;
+                link.click();
               }}
             >
               <Download className="h-4 w-4 mr-2" />
@@ -2526,46 +2729,58 @@ const PreviewPanel = ({
 
             <CopyButton
               copyType="image"
-              getImage={async () => {
-                const canvas = document.querySelector('canvas');
-                if (canvas) {
-                  return new Promise((resolve) => {
-                    canvas.toBlob((blob) => resolve(blob));
-                  });
-                }
-                return null;
-              }}
+              getImage={async () => getExportableCodeBlob(codeRootRef.current)}
               variant="outline"
               size="sm"
             />
 
             <Button
+              aria-label="Share preview code"
               variant="outline"
               size="sm"
-              onClick={() => {
-                // Share functionality
-                if (navigator.share) {
-                  const canvas = document.querySelector('canvas');
-                  if (canvas) {
-                    canvas.toBlob((blob) => {
-                      if (blob) {
-                        const file = new File([blob], 'datamatrix-code.png', {
-                          type: 'image/png',
-                        });
-                        navigator
-                          .share({
-                            title: 'DataMatrix Code',
-                            text: 'Scan this DataMatrix code',
-                            files: [file],
-                          })
-                          .catch(() => {
-                            // User cancelled or share failed
-                          });
-                      }
-                    });
-                  }
-                } else {
+              onClick={async () => {
+                if (!navigator.share) {
                   toast.info('Sharing is not supported on this device');
+                  return;
+                }
+
+                const blob = await getExportableCodeBlob(codeRootRef.current);
+                if (!blob) {
+                  toast.error('Preview is not ready for sharing');
+                  return;
+                }
+
+                const isSvg = blob.type === 'image/svg+xml';
+                const file = new File(
+                  [blob],
+                  isSvg ? 'datamatrix-code.svg' : 'datamatrix-code.png',
+                  {
+                    type: blob.type || 'image/png',
+                  },
+                );
+
+                if (
+                  typeof navigator.canShare === 'function' &&
+                  !navigator.canShare({ files: [file] })
+                ) {
+                  toast.info('File sharing is not supported on this device');
+                  return;
+                }
+
+                try {
+                  await navigator.share({
+                    title: 'DataMatrix Code',
+                    text: 'Scan this DataMatrix code',
+                    files: [file],
+                  });
+                } catch (error) {
+                  if (
+                    error instanceof DOMException &&
+                    error.name === 'AbortError'
+                  ) {
+                    return;
+                  }
+                  toast.error('Failed to share preview code');
                 }
               }}
             >
@@ -2578,6 +2793,63 @@ const PreviewPanel = ({
     </Card>
   );
 };
+
+type ExportedFlowBuilderPayloadV2 = {
+  version: '2.0';
+  engineDefinition:
+    | FlowBuilderV2EngineDefinition
+    | {
+        version: '2.0';
+        engineId: 'datamatrix.flow-builder';
+        primaryNodeId: string;
+        orderedNodeIds: string[];
+        workflow: {
+          nodes: unknown[];
+          edges: unknown[];
+        };
+      };
+  legacyAction: DataMatrixAction;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isExportedFlowBuilderPayloadV2(
+  value: unknown,
+): value is ExportedFlowBuilderPayloadV2 {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  if (value.version !== '2.0') {
+    return false;
+  }
+
+  const engineDefinition = value.engineDefinition;
+  if (!isRecord(engineDefinition)) {
+    return false;
+  }
+
+  const isCanonicalEngineDefinition =
+    engineDefinition.schemaVersion === '2' &&
+    typeof engineDefinition.entryNodeId === 'string' &&
+    Array.isArray(engineDefinition.nodes) &&
+    Array.isArray(engineDefinition.edges);
+  if (isCanonicalEngineDefinition) {
+    return true;
+  }
+
+  const workflow = engineDefinition.workflow;
+  return (
+    engineDefinition.version === '2.0' &&
+    typeof engineDefinition.primaryNodeId === 'string' &&
+    Array.isArray(engineDefinition.orderedNodeIds) &&
+    isRecord(workflow) &&
+    Array.isArray(workflow.nodes) &&
+    Array.isArray(workflow.edges)
+  );
+}
 
 // Flow Builder Component
 const FlowBuilder = () => {
@@ -2767,32 +3039,40 @@ const FlowBuilder = () => {
 
   type PreviewBuildState = {
     action: DataMatrixAction | null;
+    engineDefinition: FlowBuilderV2EngineDefinition | null;
     error: string | null;
   };
 
-  // Generate preview action from nodes and edges
+  // Compile preview payload from nodes and edges.
   const generatePreviewAction = useCallback((): PreviewBuildState => {
-    const buildResult = buildDataMatrixActionFromFlowGraph(
+    const compileResult = compileFlowBuilderToV2EngineDefinition(
       nodes as FlowBuilderNode[],
       edges as FlowBuilderEdge[],
     );
-    if (!buildResult.action) {
+
+    if (
+      compileResult.errors.length > 0 ||
+      !compileResult.engineDefinition ||
+      !compileResult.legacyAction
+    ) {
       const errorMessage =
-        buildResult.errors[0] ?? 'Invalid action configuration';
+        compileResult.errors[0]?.message ?? 'Invalid action configuration';
       setPreviewAction(null);
       setIsPreviewValid(false);
       setPreviewError(errorMessage);
       return {
         action: null,
+        engineDefinition: null,
         error: errorMessage,
       };
     }
 
-    setPreviewAction(buildResult.action);
+    setPreviewAction(compileResult.legacyAction);
     setIsPreviewValid(true);
     setPreviewError(null);
     return {
-      action: buildResult.action,
+      action: compileResult.legacyAction,
+      engineDefinition: compileResult.engineDefinition,
       error: null,
     };
   }, [edges, nodes]);
@@ -2808,14 +3088,19 @@ const FlowBuilder = () => {
     }
   }, [nodes, generatePreviewAction]);
 
-  // Export functionality to generate DataMatrixAction object
+  // Export functionality to generate DataMatrix v2 payload + legacy fallback.
   const exportFlow = useCallback(() => {
-    const { action, error } = generatePreviewAction();
-    if (action && isPreviewValid) {
-      const dataStr = JSON.stringify(action, null, 2);
+    const { action, engineDefinition, error } = generatePreviewAction();
+    if (action && engineDefinition && isPreviewValid) {
+      const payload: ExportedFlowBuilderPayloadV2 = {
+        version: '2.0',
+        engineDefinition,
+        legacyAction: action,
+      };
+      const dataStr = JSON.stringify(payload, null, 2);
       const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
 
-      const exportFileDefaultName = 'datamatrix-flow.json';
+      const exportFileDefaultName = 'datamatrix-flow-v2.json';
 
       const linkElement = document.createElement('a');
       linkElement.setAttribute('href', dataUri);
@@ -2839,7 +3124,25 @@ const FlowBuilder = () => {
         try {
           const content = e.target?.result as string;
           const parsed = JSON.parse(content);
-          const action = dataMatrixActionSchema.parse(parsed);
+          let action: DataMatrixAction;
+
+          if (isExportedFlowBuilderPayloadV2(parsed)) {
+            const adapted = adaptV2EngineDefinitionToLegacyAction(
+              parsed.engineDefinition,
+            );
+            if (!adapted.action) {
+              throw new Error(
+                adapted.errors[0] ??
+                  'Failed to adapt DataMatrix v2 payload to legacy action format.',
+              );
+            }
+            action = dataMatrixActionSchema.parse(
+              parsed.legacyAction ?? adapted.action,
+            );
+          } else {
+            action = dataMatrixActionSchema.parse(parsed);
+          }
+
           const importedGraph = buildFlowGraphFromAction(
             action,
             onAddNodeToEdge,
