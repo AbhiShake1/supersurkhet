@@ -25,21 +25,77 @@ type PaymentInput = {
   paidAmount?: number | string | null;
 } | null;
 
-function isOrderItem(value: unknown): value is SalesItem {
-  if (!value || typeof value !== 'object') return false;
-  const item = value as Record<string, unknown>;
-  return (
-    typeof item.product === 'string' &&
-    typeof item.quantity === 'number' &&
-    Number.isFinite(item.quantity) &&
-    typeof item.unitPrice === 'number' &&
-    Number.isFinite(item.unitPrice)
-  );
+function toFiniteNumber(value: unknown) {
+  const parsedValue = Number(value);
+  return Number.isFinite(parsedValue) ? parsedValue : null;
 }
 
-function getOrderItems(order: Order | undefined) {
-  if (!order || !Array.isArray(order.items)) return [] as SalesItem[];
-  return order.items.filter(isOrderItem);
+function toNonEmptyString(value: unknown) {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim();
+  return normalized.length ? normalized : null;
+}
+
+function getOrderItemProductId(
+  item: Record<string, unknown>,
+  fallbackProductId?: string,
+): string | null {
+  const directProductId = toNonEmptyString(item.product);
+  if (directProductId) return directProductId;
+
+  const legacyProductId = toNonEmptyString(item.productId);
+  if (legacyProductId) return legacyProductId;
+
+  if (item._ && typeof item._ === 'object') {
+    const legacySoul = toNonEmptyString(
+      (item._ as Record<string, unknown>).soul,
+    );
+    if (legacySoul) return legacySoul;
+  }
+
+  return toNonEmptyString(fallbackProductId);
+}
+
+function parseOrderItem(
+  value: unknown,
+  fallbackProductId?: string,
+): SalesItem | null {
+  if (!value || typeof value !== 'object') return null;
+  const item = value as Record<string, unknown>;
+  const product = getOrderItemProductId(item, fallbackProductId);
+  if (!product) return null;
+
+  const quantity = toFiniteNumber(item.quantity);
+  const unitPrice = toFiniteNumber(item.unitPrice);
+  if (quantity === null || unitPrice === null) return null;
+
+  return {
+    ...item,
+    product,
+    quantity,
+    unitPrice,
+  } as SalesItem;
+}
+
+function getOrderItems(order: Order | undefined): SalesItem[] {
+  if (!order?.items) return [] as SalesItem[];
+
+  const itemsWithProductHints: Array<[string | undefined, unknown]> =
+    Array.isArray(order.items)
+    ? order.items.map(
+        (item: unknown) => [undefined, item] as [string | undefined, unknown],
+      )
+    : typeof order.items === 'object'
+      ? (Object.entries(order.items as Record<string, unknown>) as Array<
+          [string, unknown]
+        >)
+      : [];
+
+  return itemsWithProductHints
+    .map(([fallbackProductId, item]: [string | undefined, unknown]) =>
+      parseOrderItem(item, fallbackProductId),
+    )
+    .filter((item: SalesItem | null): item is SalesItem => item !== null);
 }
 
 function normalizePaymentsWithFallback(
@@ -87,7 +143,9 @@ const OrderKanban: AdminComponent = ({ slug }) => {
           const orderItems = getOrderItems(order);
           if (!orderItems.length || !order?.customerId) return;
 
-          const itemsByProductIdWithQuantity = orderItems.reduce(
+          const itemsByProductIdWithQuantity = orderItems.reduce<
+            Record<string, number>
+          >(
             (a, item) => {
               const product = productsBySoul.get(item.product);
               let adjustedQuantity = item.quantity;
@@ -101,11 +159,11 @@ const OrderKanban: AdminComponent = ({ slug }) => {
               a[item.product] = (a[item.product] || 0) + adjustedQuantity;
               return a;
             },
-            {} as Record<string, number>,
+            {},
           );
 
-          Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(
-            ([productId, quantity]) => {
+          Object.entries(itemsByProductIdWithQuantity).forEach(
+            ([productId, quantity]: [string, number]) => {
               const product = productsBySoul.get(productId);
               if (!product?._?.soul) return;
               db.product.update(slug)({
@@ -115,7 +173,7 @@ const OrderKanban: AdminComponent = ({ slug }) => {
             },
           );
 
-          const invoiceItems = orderItems.map((item) => {
+          const invoiceItems = orderItems.map((item: SalesItem) => {
             const productInfo = productsBySoul.get(item.product);
             let adjustedQuantity = item.quantity;
 
@@ -135,7 +193,7 @@ const OrderKanban: AdminComponent = ({ slug }) => {
           });
 
           const totalAmount = orderItems.reduce(
-            (sum, item) => sum + item.quantity * item.unitPrice,
+            (sum: number, item: SalesItem) => sum + item.quantity * item.unitPrice,
             0,
           );
           const payments = normalizePaymentsWithFallback(
@@ -223,7 +281,7 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
               <div className="grid grid-cols-4 items-center gap-4">
                 <span className="text-right font-semibold">Items:</span>
                 <span className="col-span-3">
-                  {orderItems.map((item) => {
+                  {orderItems.map((item: SalesItem) => {
                     return (
                       <div key={item._?.soul} className="flex justify-between">
                         <span>
@@ -339,13 +397,14 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
         <div className={cn('flex items-center justify-between gap-2')}>
           <span className="line-clamp-1 font-medium text-sm">
             {orderItems
-              .map((item) =>
+              .map((item: SalesItem) =>
                 menuItems.find(
-                  (menuItem) => menuItem?._?.soul === item.product,
+                  (menuItem: { _?: { soul?: string } }) =>
+                    menuItem?._?.soul === item.product,
                 ),
               )
-              .map((menuItem) => menuItem?.title)
-              .filter((title): title is string => Boolean(title))
+              .map((menuItem: { title?: string } | undefined) => menuItem?.title)
+              .filter((title: string | undefined): title is string => Boolean(title))
               .join(', ')}
           </span>
           <div className="flex items-center justify-between gap-2">
@@ -354,7 +413,7 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
               {orderItems
                 .slice(0, 3)
                 .map(
-                  (item) =>
+                  (item: SalesItem) =>
                     `${item.quantity}x ${productById.get(item.product)?.title ?? 'Unknown'}`,
                 )
                 .join(', ')}
@@ -372,7 +431,7 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
 
               <TooltipContent className="max-w-xs">
                 <div className="flex flex-col gap-2 justify-between w-full">
-                  {orderItems.map((item) => (
+                  {orderItems.map((item: SalesItem) => (
                     <div key={item._?.soul}>
                       <div className=" flex justify-between gap-2">
                         <span className="font-medium">

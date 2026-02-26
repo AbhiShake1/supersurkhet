@@ -94,6 +94,26 @@ const PartyManagement = React.lazy(
 const InvoiceManagement = React.lazy(
   () => import('@/components/ui/admin/invoice-management'),
 );
+const InventoryLedgerManagement = React.lazy(
+  () =>
+    import('@/components/ui/admin/inventory-ledger-management').then(
+      (module) => ({
+        default: module.InventoryLedgerManagement,
+      }),
+    ),
+);
+const PaymentManagement = React.lazy(
+  () =>
+    import('@/components/ui/admin/payment-management').then((module) => ({
+      default: module.PaymentManagement,
+    })),
+);
+const TransactionManagement = React.lazy(
+  () =>
+    import('@/components/ui/admin/transaction-management').then((module) => ({
+      default: module.TransactionManagement,
+    })),
+);
 const DataMatrixFlowBuilder = React.lazy(
   () => import('@/components/ui/admin/datamatrix-flow-builder'),
 );
