@@ -1904,7 +1904,7 @@ export function PluginStudioSubdomainList({
 
                         <button
                           type="button"
-                          className="relative h-[calc(100%-2.25rem)] overflow-hidden rounded-xl border border-border/70 bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+                          className="relative h-[calc(100%-2.25rem)] w-full overflow-hidden rounded-xl border border-border/70 bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
                           onClick={(event) => {
                             event.preventDefault();
                             event.stopPropagation();
