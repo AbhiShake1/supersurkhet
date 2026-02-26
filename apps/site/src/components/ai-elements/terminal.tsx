@@ -246,13 +246,21 @@ export const TerminalContent = ({
 }: TerminalContentProps) => {
   const { output, isStreaming, autoScroll } = useContext(TerminalContext);
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastOutputRef = useRef(output);
+  const wasAutoScrollEnabledRef = useRef(autoScroll);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: output triggers auto-scroll when new content arrives
-  useEffect(() => {
-    if (autoScroll && containerRef.current) {
-      containerRef.current.scrollTop = containerRef.current.scrollHeight;
-    }
-  }, [output, autoScroll]);
+  if (
+    autoScroll &&
+    (output !== lastOutputRef.current || !wasAutoScrollEnabledRef.current)
+  ) {
+    queueMicrotask(() => {
+      const container = containerRef.current;
+      if (!container) return;
+      container.scrollTop = container.scrollHeight;
+    });
+  }
+  lastOutputRef.current = output;
+  wasAutoScrollEnabledRef.current = autoScroll;
 
   return (
     <div

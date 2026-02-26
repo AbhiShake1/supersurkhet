@@ -12,7 +12,6 @@ import {
   memo,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
 } from 'react';
@@ -203,12 +202,9 @@ export const MessageBranchContent = ({
     [children],
   );
 
-  // Use useEffect to update branches when they change
-  useEffect(() => {
-    if (branches.length !== childrenArray.length) {
-      setBranches(childrenArray);
-    }
-  }, [childrenArray, branches, setBranches]);
+  if (branches.length !== childrenArray.length) {
+    setBranches(childrenArray);
+  }
 
   return childrenArray.map((branch, index) => (
     <div

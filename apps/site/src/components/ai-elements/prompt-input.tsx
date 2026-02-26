@@ -224,10 +224,7 @@ export const PromptInputProvider = ({
 
   // Keep a ref to attachments for cleanup on unmount (avoids stale closure)
   const attachmentsRef = useRef(attachmentFiles);
-
-  useEffect(() => {
-    attachmentsRef.current = attachmentFiles;
-  }, [attachmentFiles]);
+  attachmentsRef.current = attachmentFiles;
 
   // Cleanup blob URLs on unmount to prevent memory leaks
   useEffect(
@@ -392,7 +389,7 @@ export const PromptInput = ({
   accept,
   multiple,
   globalDrop,
-  syncHiddenInput,
+  syncHiddenInput: _syncHiddenInput,
   maxFiles,
   maxFileSize,
   onError,
@@ -400,6 +397,7 @@ export const PromptInput = ({
   children,
   ...props
 }: PromptInputProps) => {
+  void _syncHiddenInput;
   // Try to use a provider controller if present
   const controller = useOptionalPromptInputController();
   const usingProvider = !!controller;
@@ -419,10 +417,7 @@ export const PromptInput = ({
 
   // Keep a ref to files for cleanup on unmount (avoids stale closure)
   const filesRef = useRef(files);
-
-  useEffect(() => {
-    filesRef.current = files;
-  }, [files]);
+  filesRef.current = files;
 
   const openFileDialogLocal = useCallback(() => {
     inputRef.current?.click();
@@ -590,20 +585,9 @@ export const PromptInput = ({
   }, [clearAttachments, clearReferencedSources]);
 
   // Let provider know about our hidden file input so external menus can call openFileDialog()
-  useEffect(() => {
-    if (!usingProvider) {
-      return;
-    }
+  if (usingProvider) {
     controller.__registerFileInput(inputRef, () => inputRef.current?.click());
-  }, [usingProvider, controller]);
-
-  // Note: File input cannot be programmatically set for security reasons
-  // The syncHiddenInput prop is no longer functional
-  useEffect(() => {
-    if (syncHiddenInput && inputRef.current && files.length === 0) {
-      inputRef.current.value = '';
-    }
-  }, [files, syncHiddenInput]);
+  }
 
   // Attach drop handlers on nearest form and document (opt-in)
   useEffect(() => {

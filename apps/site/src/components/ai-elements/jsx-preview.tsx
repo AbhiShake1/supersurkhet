@@ -7,7 +7,6 @@ import {
   memo,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -167,12 +166,12 @@ export const JSXPreviewContent = memo(
     const { processedJsx, components, bindings, setError, onErrorProp } =
       useJSXPreview();
     const errorReportedRef = useRef<string | null>(null);
+    const previousProcessedJsxRef = useRef(processedJsx);
 
-    // Reset error tracking when jsx changes
-    // biome-ignore lint/correctness/useExhaustiveDependencies: processedJsx change should reset tracking
-    useEffect(() => {
+    if (previousProcessedJsxRef.current !== processedJsx) {
+      previousProcessedJsxRef.current = processedJsx;
       errorReportedRef.current = null;
-    }, [processedJsx]);
+    }
 
     const handleError = useCallback(
       (err: Error) => {

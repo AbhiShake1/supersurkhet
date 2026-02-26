@@ -145,14 +145,17 @@ const PersonaWithModel = memo(
       viewModelInstance,
     );
 
-    useEffect(() => {
-      if (!(viewModelInstanceColor && source.dynamicColor)) {
-        return;
+    const lastColorSignatureRef = useRef<string | null>(null);
+    if (viewModelInstanceColor && source.dynamicColor) {
+      const colorSignature = theme === 'dark' ? '255,255,255' : '0,0,0';
+      if (lastColorSignatureRef.current !== colorSignature) {
+        lastColorSignatureRef.current = colorSignature;
+        const [r, g, b] = theme === 'dark' ? [255, 255, 255] : [0, 0, 0];
+        viewModelInstanceColor.setRgb(r, g, b);
       }
-
-      const [r, g, b] = theme === 'dark' ? [255, 255, 255] : [0, 0, 0];
-      viewModelInstanceColor.setRgb(r, g, b);
-    }, [viewModelInstanceColor, theme, source.dynamicColor]);
+    } else {
+      lastColorSignatureRef.current = null;
+    }
 
     return children;
   },
@@ -197,17 +200,14 @@ export const Persona: FC<PersonaProps> = memo(
       onReady,
       onStop,
     });
-
-    useEffect(() => {
-      callbacksRef.current = {
-        onLoad,
-        onLoadError,
-        onPause,
-        onPlay,
-        onReady,
-        onStop,
-      };
-    }, [onLoad, onLoadError, onPause, onPlay, onReady, onStop]);
+    callbacksRef.current = {
+      onLoad,
+      onLoadError,
+      onPause,
+      onPlay,
+      onReady,
+      onStop,
+    };
 
     const stableCallbacks = useMemo(
       () => ({
@@ -250,8 +250,27 @@ export const Persona: FC<PersonaProps> = memo(
     const thinkingInput = useStateMachineInput(rive, stateMachine, 'thinking');
     const speakingInput = useStateMachineInput(rive, stateMachine, 'speaking');
     const asleepInput = useStateMachineInput(rive, stateMachine, 'asleep');
+    const previousStateRef = useRef(state);
+    const previousInputsRef = useRef({
+      asleepInput,
+      listeningInput,
+      speakingInput,
+      thinkingInput,
+    });
+    const inputsChanged =
+      previousInputsRef.current.listeningInput !== listeningInput ||
+      previousInputsRef.current.thinkingInput !== thinkingInput ||
+      previousInputsRef.current.speakingInput !== speakingInput ||
+      previousInputsRef.current.asleepInput !== asleepInput;
 
-    useEffect(() => {
+    if (previousStateRef.current !== state || inputsChanged) {
+      previousStateRef.current = state;
+      previousInputsRef.current = {
+        asleepInput,
+        listeningInput,
+        speakingInput,
+        thinkingInput,
+      };
       if (listeningInput) {
         listeningInput.value = state === 'listening';
       }
@@ -264,7 +283,7 @@ export const Persona: FC<PersonaProps> = memo(
       if (asleepInput) {
         asleepInput.value = state === 'asleep';
       }
-    }, [state, listeningInput, thinkingInput, speakingInput, asleepInput]);
+    }
 
     const Component = source.hasModel ? PersonaWithModel : PersonaWithoutModel;
 
