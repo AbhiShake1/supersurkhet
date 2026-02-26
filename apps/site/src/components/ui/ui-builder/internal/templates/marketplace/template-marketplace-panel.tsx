@@ -1,4 +1,4 @@
-import { type RefObject, useEffect, useMemo, useState } from 'react';
+import { type RefObject, useMemo, useRef, useState } from 'react';
 import type {
   BusinessUiTemplateInstallDoc,
   UiTemplateReleaseDoc,
@@ -274,38 +274,44 @@ export function TemplateMarketplacePanel({
     ? (selectedEntry?.releases[0]?.version ?? '')
     : selectedVersion || selectedEntry?.releases[0]?.version || '';
 
-  useEffect(() => {
-    if (!selectedTemplateIdFromParent) {
-      return;
-    }
+  if (selectedTemplateIdFromParent) {
     const targetEntry = entries.find(
       (entry) => entry.templateId === selectedTemplateIdFromParent,
     );
-    if (!targetEntry) {
-      return;
+    const targetVersion = targetEntry?.releases[0]?.version ?? '';
+    if (
+      targetEntry &&
+      (selectedTemplateId !== targetEntry.templateId ||
+        selectedVersion !== targetVersion ||
+        !preferLatestVersion)
+    ) {
+      setSelectedTemplateId(targetEntry.templateId);
+      setSelectedVersion(targetVersion);
+      setPreferLatestVersion(true);
     }
-    setSelectedTemplateId(targetEntry.templateId);
-    setSelectedVersion(targetEntry.releases[0]?.version ?? '');
-    setPreferLatestVersion(true);
-  }, [entries, selectedTemplateIdFromParent]);
+  }
 
-  useEffect(() => {
-    if (!selectedEntry || !resolvedVersion) {
-      return;
-    }
-    onSelectionChange?.({
+  const lastSelectionDispatchKeyRef = useRef<string | null>(null);
+  if (selectedEntry && resolvedVersion) {
+    const nextSelection = {
       templateId: selectedEntry.templateId,
       selectedVersion,
       resolvedVersion,
       preferLatestVersion,
-    });
-  }, [
-    onSelectionChange,
-    preferLatestVersion,
-    resolvedVersion,
-    selectedEntry,
-    selectedVersion,
-  ]);
+    } satisfies TemplateMarketplaceSelection;
+    const dispatchKey = JSON.stringify(nextSelection);
+    if (lastSelectionDispatchKeyRef.current !== dispatchKey) {
+      lastSelectionDispatchKeyRef.current = dispatchKey;
+      queueMicrotask(() => {
+        if (lastSelectionDispatchKeyRef.current !== dispatchKey) {
+          return;
+        }
+        onSelectionChange?.(nextSelection);
+      });
+    }
+  } else if (lastSelectionDispatchKeyRef.current !== null) {
+    lastSelectionDispatchKeyRef.current = null;
+  }
 
   const showInstalledGroup =
     filters.installState === 'all' || filters.installState === 'installed';

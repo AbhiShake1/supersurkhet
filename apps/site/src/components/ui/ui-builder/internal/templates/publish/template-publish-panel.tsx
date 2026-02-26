@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useCallback, useId, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,31 @@ import {
   slugifyTemplateSlug,
 } from './template-publish-guardrails';
 
+function readInitialPublishDraft(draftStorageKey: string) {
+  if (typeof window === 'undefined') {
+    return {
+      draft: DEFAULT_TEMPLATE_PUBLISH_DRAFT,
+      slugTouched: false,
+    };
+  }
+
+  const parsed = readTemplatePublishDraft(window.localStorage, draftStorageKey);
+  if (!parsed) {
+    return {
+      draft: DEFAULT_TEMPLATE_PUBLISH_DRAFT,
+      slugTouched: false,
+    };
+  }
+
+  return {
+    draft: {
+      ...DEFAULT_TEMPLATE_PUBLISH_DRAFT,
+      ...parsed,
+    },
+    slugTouched: Boolean(parsed.templateSlug?.trim()),
+  };
+}
+
 type TemplatePublishPanelProps = {
   businessId: string;
   layers: ComponentLayer[];
@@ -48,49 +73,27 @@ export function TemplatePublishPanel({
   onPublish,
   onOpenPublishedTemplate,
 }: TemplatePublishPanelProps) {
+  const draftStorageKey = getTemplatePublishDraftStorageKey(businessId);
   const [publishDraft, setPublishDraft] = useState<TemplatePublishDraft>(
-    DEFAULT_TEMPLATE_PUBLISH_DRAFT,
+    () => readInitialPublishDraft(draftStorageKey).draft,
   );
-  const [slugTouched, setSlugTouched] = useState(false);
-  const [hasHydratedDraft, setHasHydratedDraft] = useState(false);
+  const [slugTouched, setSlugTouched] = useState<boolean>(
+    () => readInitialPublishDraft(draftStorageKey).slugTouched,
+  );
   const categoryDatalistId = useId();
 
-  const draftStorageKey = getTemplatePublishDraftStorageKey(businessId);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    const parsed = readTemplatePublishDraft(
-      window.localStorage,
-      draftStorageKey,
-    );
-    if (parsed) {
-      setPublishDraft((current) => ({
-        ...current,
-        ...parsed,
-      }));
-
-      if (parsed.templateSlug?.trim()) {
-        setSlugTouched(true);
-      }
-    }
-    setHasHydratedDraft(true);
-  }, [draftStorageKey]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    if (!hasHydratedDraft) {
-      return;
-    }
-    writeTemplatePublishDraft(
-      window.localStorage,
-      draftStorageKey,
-      publishDraft,
-    );
-  }, [draftStorageKey, publishDraft, hasHydratedDraft]);
+  const updatePublishDraft = useCallback(
+    (updater: (current: TemplatePublishDraft) => TemplatePublishDraft) => {
+      setPublishDraft((current) => {
+        const next = updater(current);
+        if (typeof window !== 'undefined') {
+          writeTemplatePublishDraft(window.localStorage, draftStorageKey, next);
+        }
+        return next;
+      });
+    },
+    [draftStorageKey],
+  );
 
   const suggestedTags = useMemo(
     () => collectSuggestedPublishTags(layers),
@@ -154,7 +157,7 @@ export function TemplatePublishPanel({
         value={publishDraft.templateSlug}
         onChange={(event) => {
           setSlugTouched(true);
-          setPublishDraft((current) => ({
+          updatePublishDraft((current) => ({
             ...current,
             templateSlug: slugifyTemplateSlug(event.target.value),
           }));
@@ -165,7 +168,7 @@ export function TemplatePublishPanel({
         value={publishDraft.title}
         onChange={(event) => {
           const nextTitle = event.target.value;
-          setPublishDraft((current) => ({
+          updatePublishDraft((current) => ({
             ...current,
             title: nextTitle,
             templateSlug: slugTouched
@@ -178,7 +181,7 @@ export function TemplatePublishPanel({
       <Textarea
         value={publishDraft.description}
         onChange={(event) =>
-          setPublishDraft((current) => ({
+          updatePublishDraft((current) => ({
             ...current,
             description: event.target.value,
           }))
@@ -188,7 +191,7 @@ export function TemplatePublishPanel({
       <Input
         value={publishDraft.category}
         onChange={(event) =>
-          setPublishDraft((current) => ({
+          updatePublishDraft((current) => ({
             ...current,
             category: event.target.value,
           }))
@@ -204,7 +207,7 @@ export function TemplatePublishPanel({
       <Input
         value={publishDraft.tags}
         onChange={(event) =>
-          setPublishDraft((current) => ({
+          updatePublishDraft((current) => ({
             ...current,
             tags: event.target.value,
           }))
@@ -218,7 +221,7 @@ export function TemplatePublishPanel({
           size="sm"
           disabled={suggestedTags.length === 0}
           onClick={() =>
-            setPublishDraft((current) => ({
+            updatePublishDraft((current) => ({
               ...current,
               tags: suggestedTags.join(', '),
             }))
@@ -230,7 +233,7 @@ export function TemplatePublishPanel({
           variant="ghost"
           size="sm"
           onClick={() => {
-            setPublishDraft(DEFAULT_TEMPLATE_PUBLISH_DRAFT);
+            updatePublishDraft(() => DEFAULT_TEMPLATE_PUBLISH_DRAFT);
             setSlugTouched(false);
           }}
         >

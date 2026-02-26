@@ -1,6 +1,6 @@
 'use client';
 import { CheckIcon, InfoIcon, MoonIcon, SunIcon } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Toggle } from '@/components/ui/toggle';
@@ -26,19 +26,41 @@ export function TailwindThemePanel() {
     findLayerById,
   } = useLayerStore();
   const selectedPageData = findLayerById(selectedPageId) as ComponentLayer;
-  const [isCustomTheme, setIsCustomTheme] = useState(
-    selectedPageData?.props['data-color-theme'] !== undefined,
-  );
-  //if not isCustomTheme we delete the themeColors from the pageLayer
-  useEffect(() => {
-    if (!isCustomTheme) {
-      updateLayerProps(selectedPageId, RESET_THEME_PROPS);
-    }
-  }, [isCustomTheme, selectedPageId, updateLayerProps]);
+  const isCustomTheme =
+    selectedPageData?.props['data-color-theme'] !== undefined;
 
   const handleOnToggle = useCallback(() => {
-    setIsCustomTheme(!isCustomTheme);
-  }, [isCustomTheme]);
+    if (!selectedPageData) return;
+    if (isCustomTheme) {
+      updateLayerProps(selectedPageId, RESET_THEME_PROPS);
+      return;
+    }
+
+    const colorThemeValue = selectedPageData.props?.['data-color-theme'];
+    const modeValue = selectedPageData.props?.['data-mode'];
+    const borderRadiusValue =
+      selectedPageData.props?.['data-border-radius'] ??
+      selectedPageData.props?.borderRadius;
+    const nextColorTheme = (
+      typeof colorThemeValue === 'string' ? colorThemeValue : 'red'
+    ) as BaseColor['name'];
+    const nextMode = (typeof modeValue === 'string' ? modeValue : 'light') as
+      | 'light'
+      | 'dark';
+    const nextBorderRadius =
+      typeof borderRadiusValue === 'number' ? borderRadiusValue : 0.5;
+    const themeStyle = resolveThemeLayerStyle(
+      nextColorTheme,
+      nextMode,
+      nextBorderRadius,
+    );
+    updateLayerProps(selectedPageId, {
+      style: themeStyle,
+      'data-mode': nextMode,
+      'data-color-theme': nextColorTheme,
+      'data-border-radius': nextBorderRadius,
+    });
+  }, [isCustomTheme, selectedPageData, selectedPageId, updateLayerProps]);
 
   return (
     <div className="flex flex-col gap-4 mt-4">
@@ -79,56 +101,38 @@ function ThemePicker({
   // Safely extract values with type checking
   const colorThemeValue = pageLayer.props?.['data-color-theme'];
   const modeValue = pageLayer.props?.['data-mode'];
-  const borderRadiusValue = pageLayer.props?.borderRadius;
+  const borderRadiusValue =
+    pageLayer.props?.['data-border-radius'] ?? pageLayer.props?.borderRadius;
+  const colorTheme = (
+    typeof colorThemeValue === 'string' ? colorThemeValue : 'red'
+  ) as BaseColor['name'];
+  const borderRadius =
+    typeof borderRadiusValue === 'number' ? borderRadiusValue : 0.5;
+  const mode = (typeof modeValue === 'string' ? modeValue : 'light') as
+    | 'light'
+    | 'dark';
 
-  const [colorTheme, setColorTheme] = useState<BaseColor['name']>(
-    (typeof colorThemeValue === 'string'
-      ? colorThemeValue
-      : 'red') as BaseColor['name'],
-  );
-  const [borderRadius, setBorderRadius] = useState(
-    typeof borderRadiusValue === 'number' ? borderRadiusValue : 0.5,
-  );
-  const [mode, setMode] = useState<'light' | 'dark'>(
-    (typeof modeValue === 'string' ? modeValue : 'light') as 'light' | 'dark',
-  );
-
-  useEffect(() => {
-    if (isDisabled) return;
-
-    const colorThemeData = baseColors.find(
-      (color) => color.name === colorTheme,
-    );
-
-    if (colorThemeData) {
-      const colorDataWithBorder = {
-        ...colorThemeData,
-        cssVars: {
-          ...colorThemeData.cssVars,
-          [mode]: {
-            ...colorThemeData.cssVars[mode],
-            radius: `${borderRadius}rem`,
-          },
-        },
-      } as const;
-
-      const themeStyle = themeToStyleVars(colorDataWithBorder.cssVars[mode]);
-
+  const applyTheme = useCallback(
+    (
+      nextColorTheme: BaseColor['name'],
+      nextMode: 'light' | 'dark',
+      nextBorderRadius: number,
+    ) => {
+      if (isDisabled) return;
+      const themeStyle = resolveThemeLayerStyle(
+        nextColorTheme,
+        nextMode,
+        nextBorderRadius,
+      );
       updateLayerProps(pageLayer.id, {
         style: themeStyle,
-        'data-mode': mode,
-        'data-color-theme': colorTheme,
-        'data-border-radius': borderRadius,
+        'data-mode': nextMode,
+        'data-color-theme': nextColorTheme,
+        'data-border-radius': nextBorderRadius,
       });
-    }
-  }, [
-    pageLayer.id,
-    updateLayerProps,
-    colorTheme,
-    borderRadius,
-    mode,
-    isDisabled,
-  ]);
+    },
+    [isDisabled, pageLayer.id, updateLayerProps],
+  );
 
   const colorOptions = useMemo(
     () =>
@@ -139,11 +143,13 @@ function ThemePicker({
             color={color}
             colorTheme={colorTheme}
             mode={mode}
-            onClick={setColorTheme}
+            onClick={(nextColorTheme) =>
+              applyTheme(nextColorTheme, mode, borderRadius)
+            }
           />
         );
       }),
-    [colorTheme, mode],
+    [applyTheme, borderRadius, colorTheme, mode],
   );
   const borderRadiusOptions = useMemo(
     () =>
@@ -153,11 +159,13 @@ function ThemePicker({
             key={radius}
             radius={radius}
             borderRadius={borderRadius}
-            onClick={setBorderRadius}
+            onClick={(nextBorderRadius) =>
+              applyTheme(colorTheme, mode, nextBorderRadius)
+            }
           />
         );
       }),
-    [borderRadius],
+    [applyTheme, borderRadius, colorTheme, mode],
   );
 
   const modeOptions = useMemo(
@@ -168,11 +176,13 @@ function ThemePicker({
             key={modeOption}
             mode={mode}
             modeOption={modeOption}
-            onClick={setMode}
+            onClick={(nextMode) =>
+              applyTheme(colorTheme, nextMode, borderRadius)
+            }
           />
         );
       }),
-    [mode],
+    [applyTheme, borderRadius, colorTheme, mode],
   );
 
   return (
@@ -307,6 +317,28 @@ function ThemeModeOption({
       {modeOption}
     </Button>
   );
+}
+
+export function resolveThemeLayerStyle(
+  colorTheme: BaseColor['name'],
+  mode: 'light' | 'dark',
+  borderRadius: number,
+) {
+  const colorThemeData = baseColors.find((color) => color.name === colorTheme);
+  if (!colorThemeData) {
+    return undefined;
+  }
+  const colorDataWithBorder = {
+    ...colorThemeData,
+    cssVars: {
+      ...colorThemeData.cssVars,
+      [mode]: {
+        ...colorThemeData.cssVars[mode],
+        radius: `${borderRadius}rem`,
+      },
+    },
+  } as const;
+  return themeToStyleVars(colorDataWithBorder.cssVars[mode]);
 }
 
 function themeToStyleVars(
