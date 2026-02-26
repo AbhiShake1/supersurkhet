@@ -45,7 +45,7 @@ import {
 } from './ui/form';
 import { Input } from './ui/input';
 import { ScrollArea } from './ui/scroll-area';
-import { VercelV0Chat } from './ui/v0-ai-chat';
+import { VercelV0Chat, type VercelV0ChatWizardInput } from './ui/v0-ai-chat';
 
 export const businessCreationSchema = businessSchema
   .pick({
@@ -1315,15 +1315,20 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
           },
           input:
             assistantStage === 'credential'
-              ? {
+              ? ({
                   value: assistantSecretInput,
                   placeholder:
                     selectedAssistantAuthMode === 'api-key'
                       ? 'Paste API key'
                       : 'Paste OAuth access token',
+                  submitLabel: 'Submit',
+                  maskedEchoLabel:
+                    selectedAssistantAuthMode === 'api-key'
+                      ? 'API key provided'
+                      : 'OAuth token provided',
                   onChange: setAssistantSecretInput,
                   onSubmit: handleAssistantCredentialSubmit,
-                }
+                } satisfies VercelV0ChatWizardInput)
               : undefined,
           canGoBack: assistantStage !== 'provider',
           onBack: handleAssistantBack,

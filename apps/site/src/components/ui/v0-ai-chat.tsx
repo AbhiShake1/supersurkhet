@@ -24,9 +24,11 @@ type VercelV0ChatWizardOption = {
   recommended?: boolean;
 };
 
-type VercelV0ChatWizardInput = {
+export type VercelV0ChatWizardInput = {
   value: string;
   placeholder: string;
+  submitLabel?: string;
+  maskedEchoLabel?: string;
   onChange: (value: string) => void;
   onSubmit?: () => void;
 };
