@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 function toBase64(file: File): Promise<string> {
@@ -35,17 +35,15 @@ export function useImageUpload({
       toast.error('Failed to upload image');
     },
   });
-  const previewRef = useRef<string | null>(null);
+  const isControlled = value !== undefined;
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(
+  const [internalPreviewUrl, setInternalPreviewUrl] = useState<string | null>(
     defaultValue ?? null,
   );
-  useEffect(() => {
-    setFileName('Image');
-    setPreviewUrl(value ?? null);
-    previewRef.current = value ?? null;
-  }, [value]);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const previewUrl = isControlled ? (value ?? null) : internalPreviewUrl;
+  const [fileName, setFileName] = useState<string | null>(() =>
+    previewUrl ? 'Image' : null,
+  );
 
   const handleThumbnailClick = useCallback(() => {
     fileInputRef.current?.click();
@@ -56,21 +54,27 @@ export function useImageUpload({
       const file = event.target.files?.[0];
       if (!file) return;
       const url = await uploadImage(file);
-      setPreviewUrl(url);
-      previewRef.current = url;
+      if (!isControlled) {
+        setInternalPreviewUrl(url);
+      }
+      setFileName(file.name);
       onUpload?.(url);
     },
-    [onUpload, uploadImage],
+    [isControlled, onUpload, uploadImage],
   );
 
   const handleRemove = useCallback(() => {
-    setPreviewUrl(null);
+    if (!isControlled) {
+      setInternalPreviewUrl(null);
+    }
     setFileName(null);
-    previewRef.current = null;
+    if (isControlled) {
+      onUpload?.('');
+    }
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  }, []);
+  }, [isControlled, onUpload]);
 
   return {
     previewUrl,
