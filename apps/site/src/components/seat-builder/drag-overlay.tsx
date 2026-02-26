@@ -1,6 +1,5 @@
 import type React from 'react';
 
-import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 interface DragOverlayProps {
@@ -9,14 +8,7 @@ interface DragOverlayProps {
 }
 
 export function DragOverlay({ isDragging, children }: DragOverlayProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    return () => setMounted(false);
-  }, []);
-
-  if (!mounted || !isDragging) return null;
+  if (typeof document === 'undefined' || !isDragging) return null;
 
   // Create a portal to render the overlay at the document body level
   return createPortal(

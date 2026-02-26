@@ -17,7 +17,7 @@ import {
   UtensilsCrossed,
   AppWindowIcon as Window,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Accordion,
   AccordionContent,
@@ -100,8 +100,11 @@ export function AppSidebar({
   );
   const [activeTab, setActiveTab] = useState<string>('add-elements');
 
-  // Update state when selected element changes
-  useEffect(() => {
+  const previousSelectedElementIdRef = useRef<string | null>(
+    selectedElement?.id ?? null,
+  );
+  if (previousSelectedElementIdRef.current !== (selectedElement?.id ?? null)) {
+    previousSelectedElementIdRef.current = selectedElement?.id ?? null;
     if (selectedElement) {
       setElementType(selectedElement.type);
       setElementSize(selectedElement.size);
@@ -109,7 +112,7 @@ export function AppSidebar({
       setLabel(selectedElement.label);
       setColor(selectedElement.color || '');
     }
-  }, [selectedElement]);
+  }
 
   const handleAddOrUpdateElement = () => {
     if (selectedElement && onUpdateElement) {
