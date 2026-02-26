@@ -11,6 +11,7 @@ import {
   type LucideIcon,
   Pencil,
   Plus,
+  Shield,
   Trash2,
   Wand2,
 } from 'lucide-react';
@@ -65,6 +66,11 @@ import {
   useShortcutAction,
 } from '@/components/ui/keyboard-shortcuts';
 import { Label } from '@/components/ui/label';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -321,13 +327,17 @@ const DRAFT_SYSTEM_SENTINEL_SCHEMA_PREFIX = '__plugin_studio_system__/';
 const DRAFT_SUBDOMAIN_SENTINEL_SCHEMA_PREFIX = '__plugin_studio_subdomain__/';
 const DRAFT_SUBDOMAIN_UI_SENTINEL_SCHEMA_PREFIX =
   '__plugin_studio_subdomain_ui__/';
+const DRAFT_SUBDOMAIN_GUARD_SENTINEL_SCHEMA_PREFIX =
+  '__plugin_studio_subdomain_guard__/';
 const DRAFT_DNS_SENTINEL_SCHEMA_ID = '__plugin_studio_dns__/cloudflare';
+type SubdomainAccessRule = 'authenticated-user' | 'organization-member';
 type SubdomainUiProjectKind = 'index' | 'admin' | 'custom';
 type SubdomainPipelineState = Array<{
   subdomain: string;
   basePath: string;
   uiProject: SubdomainUiProjectKind;
   autoAdminInjected: boolean;
+  accessRule: SubdomainAccessRule | null;
 }>;
 type SubdomainUiLayersState = Record<string, string>;
 const DEFAULT_SUBDOMAIN_PIPELINE: SubdomainPipelineState = [
@@ -336,12 +346,14 @@ const DEFAULT_SUBDOMAIN_PIPELINE: SubdomainPipelineState = [
     basePath: '/',
     uiProject: 'index',
     autoAdminInjected: false,
+    accessRule: null,
   },
   {
     subdomain: 'admin',
     basePath: '/',
     uiProject: 'admin',
     autoAdminInjected: true,
+    accessRule: null,
   },
 ];
 const DEFAULT_DRAFT_ADMIN_TABS = serializeDraftAdminTabs({
@@ -688,6 +700,30 @@ function parseSubdomainUiSentinelSchemaId(schemaId: string): string | null {
   return normalizeSubdomainName(value);
 }
 
+function parseSubdomainGuardSentinelSchemaId(schemaId: string): string | null {
+  if (!schemaId.startsWith(DRAFT_SUBDOMAIN_GUARD_SENTINEL_SCHEMA_PREFIX)) {
+    return null;
+  }
+  const value = schemaId
+    .slice(DRAFT_SUBDOMAIN_GUARD_SENTINEL_SCHEMA_PREFIX.length)
+    .trim();
+  if (!value) return null;
+  return normalizeSubdomainName(value);
+}
+
+function toSubdomainGuardSentinelSchemaId(subdomain: string): string {
+  return `${DRAFT_SUBDOMAIN_GUARD_SENTINEL_SCHEMA_PREFIX}${subdomain}`;
+}
+
+function normalizeSubdomainAccessRule(
+  value: string | undefined,
+): SubdomainAccessRule | null {
+  if (value === 'authenticated-user' || value === 'organization-member') {
+    return value;
+  }
+  return null;
+}
+
 function toSubdomainUiSentinelSchemaId(subdomain: string): string {
   return `${DRAFT_SUBDOMAIN_UI_SENTINEL_SCHEMA_PREFIX}${subdomain}`;
 }
@@ -857,6 +893,17 @@ function serializeDraftAdminTabs({
     group: entry.uiProject,
     icon: entry.autoAdminInjected ? 'autoadmin' : 'none',
   }));
+  const subdomainGuardSentinels: AdminTabDoc[] = subdomains.flatMap((entry) => {
+    const normalizedSubdomain = normalizeSubdomainName(entry.subdomain);
+    const accessRule = entry.accessRule ?? null;
+    if (!accessRule) return [];
+    return [
+      {
+        schema: toSubdomainGuardSentinelSchemaId(normalizedSubdomain),
+        title: accessRule,
+      } satisfies AdminTabDoc,
+    ];
+  });
   const subdomainUiSentinels: AdminTabDoc[] = subdomains
     .map((entry) => normalizeSubdomainName(entry.subdomain))
     .flatMap((subdomain) => {
@@ -912,6 +959,7 @@ function serializeDraftAdminTabs({
   return [
     ...groupSentinels,
     ...subdomainSentinels,
+    ...subdomainGuardSentinels,
     ...subdomainUiSentinels,
     dnsSentinel,
     ...orderedTabs,
@@ -935,6 +983,8 @@ function deserializeDraftAdminTabs(
   const systemTabs: SystemTabState = { ...DEFAULT_SYSTEM_TABS };
   const subdomains: SubdomainPipelineState = [];
   const subdomainUiLayers: SubdomainUiLayersState = {};
+  const subdomainAccessRuleBySubdomain: Record<string, SubdomainAccessRule> =
+    {};
   let cloudflareDnsAutoConfigured = true;
   const tabOrder: string[] = [];
 
@@ -997,6 +1047,15 @@ function deserializeDraftAdminTabs(
       continue;
     }
 
+    const subdomainGuard = parseSubdomainGuardSentinelSchemaId(tab.schema);
+    if (subdomainGuard) {
+      const accessRule = normalizeSubdomainAccessRule(tab.title?.trim());
+      if (accessRule) {
+        subdomainAccessRuleBySubdomain[subdomainGuard] = accessRule;
+      }
+      continue;
+    }
+
     if (tab.schema === DRAFT_DNS_SENTINEL_SCHEMA_ID) {
       cloudflareDnsAutoConfigured = (tab.title?.trim() || 'auto') !== 'manual';
       continue;
@@ -1019,8 +1078,16 @@ function deserializeDraftAdminTabs(
     schemaTabs,
     orderedGroups,
     systemTabs,
-    subdomains:
-      subdomains.length > 0 ? subdomains : [...DEFAULT_SUBDOMAIN_PIPELINE],
+    subdomains: (subdomains.length > 0
+      ? subdomains
+      : [...DEFAULT_SUBDOMAIN_PIPELINE]
+    ).map((entry) => {
+      const normalizedSubdomain = normalizeSubdomainName(entry.subdomain);
+      return {
+        ...entry,
+        accessRule: subdomainAccessRuleBySubdomain[normalizedSubdomain] ?? null,
+      };
+    }),
     subdomainUiLayers,
     cloudflareDnsAutoConfigured,
     tabOrder: computeOrderedTabTokens({
@@ -4622,6 +4689,7 @@ function PluginStudioPresenter({
     patch: Partial<SubdomainPipelineState[number]>,
   ) {
     const normalizedPrevious = normalizeSubdomainName(previousSubdomain);
+    const hasAccessRulePatch = Object.hasOwn(patch, 'accessRule');
     updateSidebarAdminTabs((state) => {
       let renamedTo: string | null = null;
       state.subdomains = state.subdomains.map((entry) => {
@@ -4646,6 +4714,9 @@ function PluginStudioPresenter({
             nextUiProject === 'admin'
               ? true
               : (patch.autoAdminInjected ?? entry.autoAdminInjected),
+          accessRule: hasAccessRulePatch
+            ? (patch.accessRule ?? null)
+            : (entry.accessRule ?? null),
         };
       });
       if (renamedTo && renamedTo !== normalizedPrevious) {
@@ -4678,6 +4749,7 @@ function PluginStudioPresenter({
           basePath: '/',
           uiProject: 'custom',
           autoAdminInjected: false,
+          accessRule: null,
         },
       ];
       state.subdomainUiLayers[candidate] = JSON.stringify(
@@ -5996,6 +6068,13 @@ function PluginStudioPresenter({
                       const isDefaultSubdomain =
                         normalizedSubdomain === 'index' ||
                         normalizedSubdomain === 'admin';
+                      const selectedAccessRule = entry.accessRule ?? null;
+                      const selectedAccessRuleLabel =
+                        selectedAccessRule === 'organization-member'
+                          ? 'Business members'
+                          : selectedAccessRule === 'authenticated-user'
+                            ? 'Authenticated users'
+                            : 'Anyone';
                       const isSelected =
                         normalizedSubdomain === selectedSubdomain;
                       const isEditingTitle =
@@ -6114,6 +6193,112 @@ function PluginStudioPresenter({
                                   >
                                     Live preview
                                   </Badge>
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button
+                                        type="button"
+                                        size="icon"
+                                        variant="ghost"
+                                        className="hidden size-7 rounded-md border border-border/70 bg-background/90 p-0 text-muted-foreground hover:bg-muted hover:text-foreground group-hover:inline-flex group-focus-within:inline-flex"
+                                        onClick={(event) => {
+                                          event.preventDefault();
+                                          event.stopPropagation();
+                                        }}
+                                        aria-label={`Configure ${displayTitle} route guard`}
+                                      >
+                                        <Shield className="size-3.5" />
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent
+                                      align="end"
+                                      className="w-56 p-2"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                      }}
+                                    >
+                                      <div className="mb-2 px-1">
+                                        <p className="text-xs font-medium text-foreground">
+                                          Route guard
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                          Current: {selectedAccessRuleLabel}
+                                        </p>
+                                      </div>
+                                      <div className="flex flex-col gap-1">
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          variant={
+                                            selectedAccessRule === null
+                                              ? 'secondary'
+                                              : 'ghost'
+                                          }
+                                          className="justify-start"
+                                          onClick={(event) => {
+                                            event.preventDefault();
+                                            event.stopPropagation();
+                                            handleSubdomainChange(
+                                              entry.subdomain,
+                                              { accessRule: null },
+                                            );
+                                          }}
+                                        >
+                                          Anyone
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          variant={
+                                            selectedAccessRule ===
+                                            'authenticated-user'
+                                              ? 'secondary'
+                                              : 'ghost'
+                                          }
+                                          className="justify-start"
+                                          onClick={(event) => {
+                                            event.preventDefault();
+                                            event.stopPropagation();
+                                            handleSubdomainChange(
+                                              entry.subdomain,
+                                              {
+                                                accessRule:
+                                                  'authenticated-user',
+                                              },
+                                            );
+                                          }}
+                                        >
+                                          Authenticated users
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          variant={
+                                            selectedAccessRule ===
+                                            'organization-member'
+                                              ? 'secondary'
+                                              : 'ghost'
+                                          }
+                                          className="justify-start"
+                                          onClick={(event) => {
+                                            event.preventDefault();
+                                            event.stopPropagation();
+                                            handleSubdomainChange(
+                                              entry.subdomain,
+                                              {
+                                                accessRule:
+                                                  'organization-member',
+                                              },
+                                            );
+                                          }}
+                                        >
+                                          Business members
+                                        </Button>
+                                        <p className="px-1 pt-1 text-[11px] text-muted-foreground">
+                                          System admins always keep access.
+                                        </p>
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
                                   <Button
                                     type="button"
                                     size="sm"
