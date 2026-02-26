@@ -2,6 +2,23 @@ import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { resolveRuntimePluginAdminTabInput } from './$pluginId/$schemaId';
 
+const PLUGIN_SCHEMA_NAMESPACE = 'biz-1/acme/orders';
+
+function expectRuntimePluginSchemaTab(
+  tab: ReturnType<typeof resolveRuntimePluginAdminTabInput>,
+  expectedTitle: string,
+) {
+  expect(tab).toEqual(
+    expect.objectContaining({
+      title: expectedTitle,
+      slug: PLUGIN_SCHEMA_NAMESPACE,
+      treatSlugAsAbsolute: true,
+      parsedSchema: expect.any(z.ZodObject),
+    }),
+  );
+  expect(tab).not.toHaveProperty('schema');
+}
+
 describe('plugin schema route contract', () => {
   it('prefers search tab title over plugin and schema defaults', () => {
     const tab = resolveRuntimePluginAdminTabInput({
@@ -18,14 +35,11 @@ describe('plugin schema route contract', () => {
       },
       decodedSchemaId: 'orders',
       compiledSchema: z.object({ title: z.string() }),
-      pluginSchemaNamespace: 'biz-1/acme/orders',
+      pluginSchemaNamespace: PLUGIN_SCHEMA_NAMESPACE,
     });
 
-    expect(tab.title).toBe('Custom Table');
-    expect('slug' in tab ? tab.slug : undefined).toBe('biz-1/acme/orders');
-    expect(
-      'treatSlugAsAbsolute' in tab ? tab.treatSlugAsAbsolute : undefined,
-    ).toBe(true);
+    expectRuntimePluginSchemaTab(tab, 'Custom Table');
+    expect(tab.group).toBe('Operations');
   });
 
   it('falls back from plugin tab to schema doc to schema id', () => {
@@ -41,9 +55,9 @@ describe('plugin schema route contract', () => {
       },
       decodedSchemaId: 'orders',
       compiledSchema: z.object({ title: z.string() }),
-      pluginSchemaNamespace: 'biz-1/acme/orders',
+      pluginSchemaNamespace: PLUGIN_SCHEMA_NAMESPACE,
     });
-    expect(fromPluginTab.title).toBe('Plugin Orders');
+    expectRuntimePluginSchemaTab(fromPluginTab, 'Plugin Orders');
 
     const fromSchemaDoc = resolveRuntimePluginAdminTabInput({
       pluginTab: {
@@ -56,9 +70,9 @@ describe('plugin schema route contract', () => {
       },
       decodedSchemaId: 'orders',
       compiledSchema: z.object({ title: z.string() }),
-      pluginSchemaNamespace: 'biz-1/acme/orders',
+      pluginSchemaNamespace: PLUGIN_SCHEMA_NAMESPACE,
     });
-    expect(fromSchemaDoc.title).toBe('Schema Orders');
+    expectRuntimePluginSchemaTab(fromSchemaDoc, 'Schema Orders');
 
     const fromSchemaId = resolveRuntimePluginAdminTabInput({
       pluginTab: {
@@ -70,8 +84,8 @@ describe('plugin schema route contract', () => {
       },
       decodedSchemaId: 'orders',
       compiledSchema: z.object({ title: z.string() }),
-      pluginSchemaNamespace: 'biz-1/acme/orders',
+      pluginSchemaNamespace: PLUGIN_SCHEMA_NAMESPACE,
     });
-    expect(fromSchemaId.title).toBe('orders');
+    expectRuntimePluginSchemaTab(fromSchemaId, 'orders');
   });
 });
