@@ -582,8 +582,8 @@ declare global {
      paidAt: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
      paidAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
     }, "strip", import("zod").ZodTypeAny, {
-     paidAt: string;
      paidAmount: number;
+     paidAt: string;
     }, {
      paidAmount: number;
      paidAt?: string | undefined;
@@ -606,6 +606,8 @@ declare global {
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      type: "sale" | "purchase";
+     paidAmount: number;
+     paymentStatus: string;
      items: {
      product: string;
      quantity: number;
@@ -614,8 +616,6 @@ declare global {
     }[];
      subTotal: number;
      tax: number;
-     paidAmount: number;
-     paymentStatus: string;
      fiscalYear: string;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -630,8 +630,8 @@ declare global {
      issuedAt?: string | undefined;
      dueDate?: string | undefined;
      payments?: {
-     paidAt: string;
      paidAmount: number;
+     paidAt: string;
     }[] | undefined;
     }, {
      type: "sale" | "purchase";
@@ -644,6 +644,8 @@ declare global {
      subTotal: number;
      fiscalYear: string;
      timestamp?: number | undefined;
+     paidAmount?: number | undefined;
+     paymentStatus?: string | undefined;
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
@@ -656,12 +658,10 @@ declare global {
      issuedAt?: string | undefined;
      dueDate?: string | undefined;
      tax?: number | undefined;
-     paidAmount?: number | undefined;
      payments?: {
      paidAmount: number;
      paidAt?: string | undefined;
     }[] | undefined;
-     paymentStatus?: string | undefined;
     }>;
      readonly title: "Invoices";
      readonly icon: React.ForwardRefExoticComponent<import("@tabler/icons-react").IconProps & React.RefAttributes<SVGSVGElement>>;
@@ -697,8 +697,8 @@ declare global {
     }, "strip", import("zod").ZodTypeAny, {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -709,8 +709,8 @@ declare global {
     }, {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -723,8 +723,8 @@ declare global {
      paidAt: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
      paidAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
     }, "strip", import("zod").ZodTypeAny, {
-     paidAt: string;
      paidAmount: number;
+     paidAt: string;
     }, {
      paidAmount: number;
      paidAt?: string | undefined;
@@ -747,11 +747,13 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
+     paidAmount: number;
+     paymentStatus: string;
      items: {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -760,8 +762,6 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }[];
-     paidAmount: number;
-     paymentStatus: string;
      customerId: string;
      saleDate: string;
      timestamp?: number | undefined;
@@ -772,16 +772,17 @@ declare global {
     } | undefined;
      notes?: string | undefined;
      payments?: {
-     paidAt: string;
      paidAmount: number;
+     paidAt: string;
     }[] | undefined;
      paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
     }, {
+     paidAmount: number;
      items: {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -790,9 +791,9 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }[];
-     paidAmount: number;
      customerId: string;
      timestamp?: number | undefined;
+     paymentStatus?: string | undefined;
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
@@ -803,15 +804,16 @@ declare global {
      paidAmount: number;
      paidAt?: string | undefined;
     }[] | undefined;
-     paymentStatus?: string | undefined;
      saleDate?: string | undefined;
      paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
     }>, {
+     paidAmount: number;
+     paymentStatus: string;
      items: {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -820,8 +822,6 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }[];
-     paidAmount: number;
-     paymentStatus: string;
      customerId: string;
      saleDate: string;
      timestamp?: number | undefined;
@@ -832,16 +832,17 @@ declare global {
     } | undefined;
      notes?: string | undefined;
      payments?: {
-     paidAt: string;
      paidAmount: number;
+     paidAt: string;
     }[] | undefined;
      paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
     }, {
+     paidAmount: number;
      items: {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -850,9 +851,9 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }[];
-     paidAmount: number;
      customerId: string;
      timestamp?: number | undefined;
+     paymentStatus?: string | undefined;
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
@@ -863,7 +864,6 @@ declare global {
      paidAmount: number;
      paidAt?: string | undefined;
     }[] | undefined;
-     paymentStatus?: string | undefined;
      saleDate?: string | undefined;
      paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
     }>;
@@ -897,8 +897,8 @@ declare global {
     }, "strip", import("zod").ZodTypeAny, {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -909,8 +909,8 @@ declare global {
     }, {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -924,8 +924,8 @@ declare global {
      paidAt: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
      paidAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
     }, "strip", import("zod").ZodTypeAny, {
-     paidAt: string;
      paidAmount: number;
+     paidAt: string;
     }, {
      paidAmount: number;
      paidAt?: string | undefined;
@@ -948,11 +948,13 @@ declare global {
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      party: string;
+     paidAmount: number;
+     paymentStatus: string;
      items: {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -961,8 +963,6 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }[];
-     paidAmount: number;
-     paymentStatus: string;
      totalAmount: number;
      importDate: string;
      timestamp?: number | undefined;
@@ -973,16 +973,17 @@ declare global {
     } | undefined;
      notes?: string | undefined;
      payments?: {
-     paidAt: string;
      paidAmount: number;
+     paidAt: string;
     }[] | undefined;
     }, {
      party: string;
+     paidAmount: number;
      items: {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -991,9 +992,9 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }[];
-     paidAmount: number;
      totalAmount: number;
      timestamp?: number | undefined;
+     paymentStatus?: string | undefined;
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
@@ -1004,15 +1005,16 @@ declare global {
      paidAmount: number;
      paidAt?: string | undefined;
     }[] | undefined;
-     paymentStatus?: string | undefined;
      importDate?: string | undefined;
     }>, {
      party: string;
+     paidAmount: number;
+     paymentStatus: string;
      items: {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -1021,8 +1023,6 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }[];
-     paidAmount: number;
-     paymentStatus: string;
      totalAmount: number;
      importDate: string;
      timestamp?: number | undefined;
@@ -1033,16 +1033,17 @@ declare global {
     } | undefined;
      notes?: string | undefined;
      payments?: {
-     paidAt: string;
      paidAmount: number;
+     paidAt: string;
     }[] | undefined;
     }, {
      party: string;
+     paidAmount: number;
      items: {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -1051,9 +1052,9 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }[];
-     paidAmount: number;
      totalAmount: number;
      timestamp?: number | undefined;
+     paymentStatus?: string | undefined;
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
@@ -1064,7 +1065,6 @@ declare global {
      paidAmount: number;
      paidAt?: string | undefined;
     }[] | undefined;
-     paymentStatus?: string | undefined;
      importDate?: string | undefined;
     }>;
      readonly title: "Stock Imports";
@@ -1096,8 +1096,8 @@ declare global {
     }, "strip", import("zod").ZodTypeAny, {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -1108,8 +1108,8 @@ declare global {
     }, {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -1122,8 +1122,8 @@ declare global {
      paidAt: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
      paidAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
     }, "strip", import("zod").ZodTypeAny, {
-     paidAt: string;
      paidAmount: number;
+     paidAt: string;
     }, {
      paidAmount: number;
      paidAt?: string | undefined;
@@ -1147,11 +1147,13 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
+     paidAmount: number;
+     paymentStatus: string;
      items: {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -1160,8 +1162,6 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }[];
-     paidAmount: number;
-     paymentStatus: string;
      customerId: string;
      orderStatus: "pending" | "done" | "cancelled";
      timestamp?: number | undefined;
@@ -1172,16 +1172,17 @@ declare global {
     } | undefined;
      notes?: string | undefined;
      payments?: {
-     paidAt: string;
      paidAmount: number;
+     paidAt: string;
     }[] | undefined;
      paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
     }, {
+     paidAmount: number;
      items: {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -1190,9 +1191,9 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }[];
-     paidAmount: number;
      customerId: string;
      timestamp?: number | undefined;
+     paymentStatus?: string | undefined;
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
@@ -1203,15 +1204,16 @@ declare global {
      paidAmount: number;
      paidAt?: string | undefined;
     }[] | undefined;
-     paymentStatus?: string | undefined;
      paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
      orderStatus?: "pending" | "done" | "cancelled" | undefined;
     }>, {
+     paidAmount: number;
+     paymentStatus: string;
      items: {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -1220,8 +1222,6 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }[];
-     paidAmount: number;
-     paymentStatus: string;
      customerId: string;
      orderStatus: "pending" | "done" | "cancelled";
      timestamp?: number | undefined;
@@ -1232,16 +1232,17 @@ declare global {
     } | undefined;
      notes?: string | undefined;
      payments?: {
-     paidAt: string;
      paidAmount: number;
+     paidAt: string;
     }[] | undefined;
      paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
     }, {
+     paidAmount: number;
      items: {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -1250,9 +1251,9 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }[];
-     paidAmount: number;
      customerId: string;
      timestamp?: number | undefined;
+     paymentStatus?: string | undefined;
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
@@ -1263,7 +1264,6 @@ declare global {
      paidAmount: number;
      paidAt?: string | undefined;
     }[] | undefined;
-     paymentStatus?: string | undefined;
      paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
      orderStatus?: "pending" | "done" | "cancelled" | undefined;
     }>;
@@ -2645,8 +2645,8 @@ declare global {
     }, "strip", import("zod").ZodTypeAny, {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -2657,8 +2657,8 @@ declare global {
     }, {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -2689,8 +2689,8 @@ declare global {
     }, "strip", import("zod").ZodTypeAny, {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -2701,8 +2701,8 @@ declare global {
     }, {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -2730,8 +2730,8 @@ declare global {
      products: {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -2743,8 +2743,8 @@ declare global {
      returnedProducts: {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -2766,8 +2766,8 @@ declare global {
      products: {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -2779,8 +2779,8 @@ declare global {
      returnedProducts: {
      product: string;
      quantity: number;
-     unitPrice: number;
      totalAmount: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
