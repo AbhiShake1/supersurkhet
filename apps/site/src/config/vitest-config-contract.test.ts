@@ -9,6 +9,6 @@ describe('vitest config contracts', () => {
       'utf8',
     );
     expect(content).toContain('test:');
-    expect(content).toContain('"tests/**"');
+    expect(content).toMatch(/['"]tests\/\*\*['"]/);
   });
 });
