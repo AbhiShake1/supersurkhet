@@ -14,7 +14,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { useAuth } from '@/components/auth-provider';
-import { AutoAdmin } from '@/components/auto-admin';
+import { AutoAdmin, type AutoAdminTabInput } from '@/components/auto-admin';
 import { useConfetti } from '@/components/confetti-provider';
 import { useLoginPrompt } from '@/components/login-prompt-provider';
 import { PluginPreviewDialog } from '@/components/plugin-preview-dialog';
@@ -36,17 +36,20 @@ import { Textarea } from '@/components/ui/textarea';
 import LayerRenderer from '@/components/ui/ui-builder/layer-renderer';
 import type { ComponentLayer } from '@/components/ui/ui-builder/types';
 import { Unauthorized } from '@/components/ui/unauthorized';
+import { useBusinessConfig } from '@/config/business-config';
 import { api } from '@/lib/api';
 import { buildPluginCatalog } from '@/lib/plugins/admin-plugin-catalog';
 import {
   buildMarketplaceGroups,
   buildPluginDetailView,
   groupPluginReviewsByUser,
+  type PluginMarketItem,
   type PluginUserReview,
   pickSimilarPlugins,
 } from '@/lib/plugins/admin-plugin-market';
 import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
 import {
+  isPluginSystemSentinelSchema,
   resolveReleaseSubdomainSurface,
   toAdminFallbackUiLayers,
 } from '@/lib/plugins/subdomain-surface';
@@ -105,6 +108,25 @@ function decodeURIComponentOrNull(value: string): string | null {
   }
 }
 
+function toReleaseAdminTabs(
+  plugin: PluginMarketItem,
+  businessSlug: string,
+): AutoAdminTabInput[] {
+  return (plugin.latestRelease.adminTabs ?? [])
+    .filter(
+      (tab) =>
+        typeof tab.schema === 'string' &&
+        tab.schema.trim().length > 0 &&
+        !isPluginSystemSentinelSchema(tab.schema),
+    )
+    .map((tab) => ({
+      schema: tab.schema,
+      title: tab.title ?? tab.schema,
+      group: tab.group,
+      slug: businessSlug,
+    })) as unknown as AutoAdminTabInput[];
+}
+
 function PluginDetailsPage() {
   const { businessName, pluginId } = Route.useParams();
   const search = Route.useSearch();
@@ -143,6 +165,10 @@ function PluginDetailsPage() {
       : user?.role === 'admin'
         ? 'admin'
         : 'staff';
+  const currentBusinessTabs = useBusinessConfig({
+    slug: businessName,
+    businessId: businessNamespace,
+  }) as AutoAdminTabInput[];
 
   useEffect(() => {
     if (!isAuthenticated && !isUserLoading)
@@ -293,17 +319,35 @@ function PluginDetailsPage() {
       previewSurface.uiLayersBySubdomain[activeSubdomain] ?? null,
     );
   }, [activeSubdomain, previewSurface.uiLayersBySubdomain]);
+  const simulatedTabs = useMemo(() => {
+    if (!decoratedPlugin) return [];
+    const releaseTabs = toReleaseAdminTabs(decoratedPlugin, businessName);
+    const merged = [...currentBusinessTabs, ...releaseTabs];
+    const deduped = new Map<string, AutoAdminTabInput>();
+
+    for (const tab of merged) {
+      const tabRecord = tab as Record<string, unknown>;
+      const key = JSON.stringify({
+        schema: tabRecord.schema ?? '',
+        title: tabRecord.title ?? '',
+        group: tabRecord.group ?? '',
+      });
+      deduped.set(key, tab);
+    }
+
+    return [...deduped.values()];
+  }, [decoratedPlugin, businessName, currentBusinessTabs]);
   const previewComponentRegistry = useMemo(() => {
     const autoAdminEntry = baseComponentRegistry.AutoAdmin;
     return {
       ...baseComponentRegistry,
       AutoAdmin: {
         ...autoAdminEntry,
-        component: () => <AutoAdmin tabs={[]} />,
+        component: () => <AutoAdmin tabs={simulatedTabs} />,
         schema: z.object({}),
       },
     };
-  }, []);
+  }, [simulatedTabs]);
 
   const persistedReviewSourceKey =
     details?.userReview?.id ??

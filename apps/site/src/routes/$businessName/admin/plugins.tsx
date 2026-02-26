@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { z } from 'zod';
 import { useAuth } from '@/components/auth-provider';
-import { AutoAdmin } from '@/components/auto-admin';
+import { AutoAdmin, type AutoAdminTabInput } from '@/components/auto-admin';
 import { useLoginPrompt } from '@/components/login-prompt-provider';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import LayerRenderer from '@/components/ui/ui-builder/layer-renderer';
 import type { ComponentLayer } from '@/components/ui/ui-builder/types';
 import { Unauthorized } from '@/components/ui/unauthorized';
+import { useBusinessConfig } from '@/config/business-config';
 import { api } from '@/lib/api';
 import { buildPluginCatalog } from '@/lib/plugins/admin-plugin-catalog';
 import {
@@ -22,6 +23,7 @@ import {
 } from '@/lib/plugins/admin-plugin-market';
 import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
 import {
+  isPluginSystemSentinelSchema,
   resolveReleaseSubdomainSurface,
   toAdminFallbackUiLayers,
 } from '@/lib/plugins/subdomain-surface';
@@ -69,6 +71,25 @@ function toSubdomainPreviewPage(
   } satisfies ComponentLayer;
 }
 
+function toReleaseAdminTabs(
+  plugin: PluginMarketItem,
+  businessSlug: string,
+): AutoAdminTabInput[] {
+  return (plugin.latestRelease.adminTabs ?? [])
+    .filter(
+      (tab) =>
+        typeof tab.schema === 'string' &&
+        tab.schema.trim().length > 0 &&
+        !isPluginSystemSentinelSchema(tab.schema),
+    )
+    .map((tab) => ({
+      schema: tab.schema,
+      title: tab.title ?? tab.schema,
+      group: tab.group,
+      slug: businessSlug,
+    })) as unknown as AutoAdminTabInput[];
+}
+
 function PluginsRouteComponent() {
   const { businessName } = Route.useParams();
   const { isAuthenticated, isLoading: isUserLoading, user } = useAuth();
@@ -91,6 +112,10 @@ function PluginsRouteComponent() {
     user?.role === 'admin' ||
     business?.created_by === userSoul ||
     isBusinessMember;
+  const currentBusinessTabs = useBusinessConfig({
+    slug: businessName,
+    businessId: businessNamespace,
+  }) as AutoAdminTabInput[];
 
   useEffect(() => {
     if (!isAuthenticated && !isUserLoading)
@@ -238,6 +263,7 @@ function PluginsRouteComponent() {
               key={`${plugin.pluginId}:${index.toString()}`}
               plugin={plugin}
               businessName={businessName}
+              currentBusinessTabs={currentBusinessTabs}
               subtitle={plugin.category}
               meta={`${plugin.installs.toLocaleString()} installs`}
             />
@@ -279,6 +305,7 @@ function PluginsRouteComponent() {
                       key={plugin.pluginId}
                       plugin={plugin}
                       businessName={businessName}
+                      currentBusinessTabs={currentBusinessTabs}
                       subtitle={plugin.publisher}
                       meta={`${plugin.installs.toLocaleString()} installs`}
                       description={plugin.description}
@@ -296,12 +323,14 @@ function PluginsRouteComponent() {
 function MarketplacePluginCard({
   plugin,
   businessName,
+  currentBusinessTabs,
   subtitle,
   meta,
   description,
 }: {
   plugin: PluginMarketItem;
   businessName: string;
+  currentBusinessTabs: AutoAdminTabInput[];
   subtitle?: string;
   meta?: string;
   description?: string;
@@ -330,17 +359,34 @@ function MarketplacePluginCard({
         previewSurface.uiLayersBySubdomain[activeSubdomain] ?? null,
       )
     : null;
+  const simulatedTabs = useMemo(() => {
+    const releaseTabs = toReleaseAdminTabs(plugin, businessName);
+    const merged = [...currentBusinessTabs, ...releaseTabs];
+    const deduped = new Map<string, AutoAdminTabInput>();
+
+    for (const tab of merged) {
+      const tabRecord = tab as Record<string, unknown>;
+      const key = JSON.stringify({
+        schema: tabRecord.schema ?? '',
+        title: tabRecord.title ?? '',
+        group: tabRecord.group ?? '',
+      });
+      deduped.set(key, tab);
+    }
+
+    return [...deduped.values()];
+  }, [plugin, businessName, currentBusinessTabs]);
   const previewComponentRegistry = useMemo(() => {
     const autoAdminEntry = baseComponentRegistry.AutoAdmin;
     return {
       ...baseComponentRegistry,
       AutoAdmin: {
         ...autoAdminEntry,
-        component: () => <AutoAdmin tabs={[]} />,
+        component: () => <AutoAdmin tabs={simulatedTabs} />,
         schema: z.object({}),
       },
     };
-  }, []);
+  }, [simulatedTabs]);
 
   const scaleStyle = {
     transform: `scale(${MINI_SUBDOMAIN_PREVIEW_SCALE.toString()})`,
