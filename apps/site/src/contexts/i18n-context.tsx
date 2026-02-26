@@ -23,24 +23,28 @@ interface I18nProviderProps {
   initialLanguage?: Language;
 }
 
-export const I18nProvider: React.FC<I18nProviderProps> = ({ children }) => {
-  // Hydrate language from localStorage or use provided initial language or default
-  const getInitialLanguage = (): Language => {
-    if (typeof window !== 'undefined') {
-      const savedLanguage = localStorage.getItem(
-        'i18n-language',
-      ) as Language | null;
-      if (savedLanguage && AVAILABLE_LANGUAGES.includes(savedLanguage)) {
-        return savedLanguage;
-      }
+const getInitialLanguage = (): Language => {
+  if (typeof window !== 'undefined') {
+    const savedLanguage = localStorage.getItem(
+      'i18n-language',
+    ) as Language | null;
+    if (savedLanguage && AVAILABLE_LANGUAGES.includes(savedLanguage)) {
+      return savedLanguage;
     }
+  }
 
-    return DEFAULT_LANGUAGE;
-  };
+  return DEFAULT_LANGUAGE;
+};
 
+export const I18nProvider: React.FC<I18nProviderProps> = ({ children }) => {
   // Set the initial language
-  const [language, setLanguageState] =
-    React.useState<Language>(getInitialLanguage);
+  const [language, setLanguageState] = React.useState<Language>(() => {
+    const initialLanguage = getInitialLanguage();
+    if (AVAILABLE_LANGUAGES.includes(initialLanguage)) {
+      void i18n.changeLanguage(initialLanguage);
+    }
+    return initialLanguage;
+  });
 
   // Function to change language
   const changeLanguage = async (lang: Language) => {
@@ -53,16 +57,6 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({ children }) => {
       }
     }
   };
-
-  // Set initial language on mount
-  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
-  React.useEffect(() => {
-    const initialLang = getInitialLanguage();
-    if (AVAILABLE_LANGUAGES.includes(initialLang)) {
-      i18n.changeLanguage(initialLang);
-      setLanguageState(initialLang);
-    }
-  }, []);
 
   // Memoize the context value
   // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
