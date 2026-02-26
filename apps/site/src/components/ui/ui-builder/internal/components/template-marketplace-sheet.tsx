@@ -405,6 +405,7 @@ export function TemplateMarketplaceSheet({
 
             <TabsContent value="publish" className="space-y-3">
               <TemplatePublishPanel
+                key={businessId}
                 businessId={businessId}
                 layers={layers}
                 availableCategories={availableCategories}

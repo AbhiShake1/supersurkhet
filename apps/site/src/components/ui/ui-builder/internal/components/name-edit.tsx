@@ -1,6 +1,6 @@
 import { Check, X as XIcon } from 'lucide-react';
 import type React from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -43,10 +43,6 @@ export const NameEdit: React.FC<NameEditProps> = ({
     },
     [handleSave, handleCancel],
   );
-
-  useEffect(() => {
-    setNewName(initialName);
-  }, [initialName]);
 
   return (
     <div className="flex items-center">

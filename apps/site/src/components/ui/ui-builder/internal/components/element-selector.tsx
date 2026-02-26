@@ -314,11 +314,6 @@ export const MeasureRange: React.FC<MeasureRangeProps> = ({
     }, [measureElements]),
   );
 
-  // Re-measure when dragging state changes (for ResizableWrapper)
-  useEffect(() => {
-    measureElements();
-  }, [measureElements]);
-
   // Cache elements and set up ResizeObservers (without transform state dependency)
   useLayoutEffect(() => {
     const wrapper = wrapperRef.current;
@@ -338,6 +333,7 @@ export const MeasureRange: React.FC<MeasureRangeProps> = ({
     );
 
     elementsRef.current = elements;
+    measureElements();
 
     if (elements.length === 0) return;
 

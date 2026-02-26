@@ -153,6 +153,7 @@ export const TreeRowNode: React.FC<TreeRowNodeProps> = memo(
 
         {isRenaming ? (
           <NameEdit
+            key={`${node.id}:${node.name ?? ''}`}
             initialName={node.name ?? ''}
             onSave={handleSaveRename}
             onCancel={handleCancelRename}
