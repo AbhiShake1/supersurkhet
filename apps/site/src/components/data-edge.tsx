@@ -1,16 +1,16 @@
-import { useMemo } from 'react';
 import {
   BaseEdge,
+  type Edge,
   EdgeLabelRenderer,
+  type EdgeProps,
   getBezierPath,
   getSmoothStepPath,
   getStraightPath,
+  type Node,
   type Position,
   useStore,
-  type Edge,
-  type EdgeProps,
-  type Node,
 } from '@xyflow/react';
+import { useMemo } from 'react';
 
 export type DataEdge<T extends Node = Node> = Edge<{
   /**

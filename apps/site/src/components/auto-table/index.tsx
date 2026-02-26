@@ -255,14 +255,13 @@ type EnhancedColumnDef<TData> = ColumnDef<TData> & {
   filterable?: boolean;
   sortable?: boolean;
   exportable?: boolean;
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  previewOverrides?: PreviewOverrides<any>;
+  previewOverrides?: PreviewOverrides<SchemaKeys>;
   readOnly?: boolean;
 };
 
 export type AutoTableProps<T extends SchemaKeys> = {
   className?: string;
-  transformer?: (data: any[]) => NestedSchemaType<T>[];
+  transformer?: (data: NestedSchemaType<T>[]) => NestedSchemaType<T>[];
   enableAdvancedFiltering?: boolean;
   enableAdvancedSorting?: boolean;
   enableAggregations?: boolean;

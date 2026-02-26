@@ -1,6 +1,6 @@
-import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as LucideIcons from 'lucide-react';
+import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 export type LucideIconName = keyof typeof LucideIcons;

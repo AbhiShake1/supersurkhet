@@ -1,7 +1,7 @@
-import { api } from '@/lib/api';
-import type { Business } from '@/lib/schema';
 import { Search, Settings, XCircle } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { api } from '@/lib/api';
+import type { Business } from '@/lib/schema';
 import { Button } from '../ui/button';
 import {
   Credenza,
@@ -15,8 +15,8 @@ import { Input } from '../ui/input';
 import { ScrollArea } from '../ui/scroll-area';
 import { Skeleton } from '../ui/skeleton';
 import { AppGrid } from './app-grid';
-import { useRecentlyUsedApps } from './recently-used-apps-context';
 import { useFolders } from './folders-context';
+import { useRecentlyUsedApps } from './recently-used-apps-context';
 import { AppDrawerSettings } from './settings';
 
 export interface AppDrawerProps

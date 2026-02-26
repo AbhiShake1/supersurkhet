@@ -1,7 +1,8 @@
 'use client';
 
-import { LabelList, Pie, PieChart, Cell } from 'recharts';
-
+import { TrendingDown } from 'lucide-react';
+import { Cell, LabelList, Pie, PieChart } from 'recharts';
+import { Badge } from '@/components/ui/badge';
 import {
   Card,
   CardContent,
@@ -15,8 +16,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import { Badge } from '@/components/ui/badge';
-import { TrendingDown } from 'lucide-react';
 
 const chartData = [
   { browser: 'chrome', visitors: 275, fill: 'var(--color-chrome)' },

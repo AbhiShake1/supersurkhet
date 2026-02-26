@@ -7,8 +7,8 @@ export type SuperRefineFunction = () => unknown;
 export function fieldConfig<
   AdditionalRenderable = null,
   FieldTypes = string,
-  FieldWrapper = any,
-  CustomData = Record<string, any>,
+  FieldWrapper = unknown,
+  CustomData = Record<string, unknown>,
 >(
   config: FieldConfig<
     AdditionalRenderable,
@@ -35,7 +35,7 @@ export function getFieldConfigInZodStack(
   >;
 
   if (typedSchema._def.typeName === 'ZodEffects') {
-    const effect = typedSchema._def.effect as RefinementEffect<any>;
+    const effect = typedSchema._def.effect as RefinementEffect<unknown>;
     const refinementFunction = effect.refinement;
 
     if (ZOD_FIELD_CONFIG_SYMBOL in refinementFunction) {
@@ -49,9 +49,8 @@ export function getFieldConfigInZodStack(
     );
   }
   if ('schema' in typedSchema._def) {
-    return getFieldConfigInZodStack(
-      (typedSchema._def as any).schema as z.ZodAny,
-    );
+    const schemaDef = typedSchema._def as { schema?: z.ZodAny };
+    return getFieldConfigInZodStack(schemaDef.schema as z.ZodAny);
   }
 
   return undefined;

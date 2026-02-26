@@ -15,11 +15,7 @@ describe('plugin studio new plugin id helper', () => {
     expect(
       resolveNewPluginId({
         basePluginId: 'plugin.sales',
-        existingPluginIds: [
-          'plugin.sales',
-          'plugin.sales.1',
-          'plugin.sales.2',
-        ],
+        existingPluginIds: ['plugin.sales', 'plugin.sales.1', 'plugin.sales.2'],
       }),
     ).toBe('plugin.sales.3');
   });

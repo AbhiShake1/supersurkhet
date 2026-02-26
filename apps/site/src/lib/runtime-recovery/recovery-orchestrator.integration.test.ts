@@ -4,8 +4,8 @@ import type {
   RollbackThresholdEvaluationDoc,
 } from './contracts';
 import {
-  RecoveryAuditLog,
   type RecoveryAuditGraphPort,
+  RecoveryAuditLog,
   type RecoveryAuditRow,
   type RollbackExecutionResultDoc,
 } from './recovery-audit-log';
@@ -61,13 +61,18 @@ describe('recovery orchestrator integration', () => {
       },
     };
 
-    const auditLog = new RecoveryAuditLog(graphPort, () => new Date('2026-02-25T13:41:00.000Z'));
+    const auditLog = new RecoveryAuditLog(
+      graphPort,
+      () => new Date('2026-02-25T13:41:00.000Z'),
+    );
     const orchestrator = new RecoveryOrchestrator({
       threshold: 3,
       thresholdWindowMs: 60000,
       auditLog,
       coordinator: {
-        resolvePlan(_evaluation: RollbackThresholdEvaluationDoc): RollbackPlanDoc {
+        resolvePlan(
+          _evaluation: RollbackThresholdEvaluationDoc,
+        ): RollbackPlanDoc {
           return createPlan();
         },
       },
@@ -103,13 +108,18 @@ describe('recovery orchestrator integration', () => {
     };
 
     const plan = createPlan();
-    const auditLog = new RecoveryAuditLog(graphPort, () => new Date('2026-02-25T13:42:00.000Z'));
+    const auditLog = new RecoveryAuditLog(
+      graphPort,
+      () => new Date('2026-02-25T13:42:00.000Z'),
+    );
     const orchestrator = new RecoveryOrchestrator({
       threshold: 3,
       thresholdWindowMs: 60000,
       auditLog,
       coordinator: {
-        resolvePlan(evaluation: RollbackThresholdEvaluationDoc): RollbackPlanDoc {
+        resolvePlan(
+          evaluation: RollbackThresholdEvaluationDoc,
+        ): RollbackPlanDoc {
           return {
             ...plan,
             thresholdEvaluation: evaluation,
@@ -186,13 +196,18 @@ describe('recovery orchestrator integration', () => {
       },
     };
 
-    const auditLog = new RecoveryAuditLog(graphPort, () => new Date('2026-02-25T13:43:00.000Z'));
+    const auditLog = new RecoveryAuditLog(
+      graphPort,
+      () => new Date('2026-02-25T13:43:00.000Z'),
+    );
     const orchestrator = new RecoveryOrchestrator({
       threshold: 3,
       thresholdWindowMs: 60000,
       auditLog,
       coordinator: {
-        resolvePlan(evaluation: RollbackThresholdEvaluationDoc): RollbackPlanDoc {
+        resolvePlan(
+          evaluation: RollbackThresholdEvaluationDoc,
+        ): RollbackPlanDoc {
           return {
             ...createPlan(),
             thresholdEvaluation: evaluation,

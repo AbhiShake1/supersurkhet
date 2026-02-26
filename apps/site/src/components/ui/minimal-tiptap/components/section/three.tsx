@@ -1,14 +1,13 @@
-import * as React from 'react';
-import type { Editor } from '@tiptap/react';
-import type { toggleVariants } from '@/components/ui/toggle';
-import type { VariantProps } from 'class-variance-authority';
 import { CaretDownIcon, CheckIcon } from '@radix-ui/react-icons';
-import { ToolbarButton } from '../toolbar-button';
+import type { Editor } from '@tiptap/react';
+import type { VariantProps } from 'class-variance-authority';
+import * as React from 'react';
 import {
   Popover,
-  PopoverTrigger,
   PopoverContent,
+  PopoverTrigger,
 } from '@/components/ui/popover';
+import type { toggleVariants } from '@/components/ui/toggle';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
   Tooltip,
@@ -16,6 +15,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useTheme } from '../../hooks/use-theme';
+import { ToolbarButton } from '../toolbar-button';
 
 interface ColorItem {
   cssVar: string;

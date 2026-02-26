@@ -17,7 +17,9 @@ vi.mock('@/components/ui/keyboard-shortcuts', () => ({
 }));
 
 vi.mock('@/components/ui/badge', () => ({
-  Badge: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+  Badge: ({ children }: { children: React.ReactNode }) => (
+    <span>{children}</span>
+  ),
 }));
 
 vi.mock('@/components/ui/button', () => ({
@@ -210,8 +212,8 @@ describe('TemplatePublishPanel', () => {
     );
     await flush();
 
-    const publishButton = [...container.querySelectorAll('button')].find((button) =>
-      button.textContent?.includes('Publish Template'),
+    const publishButton = [...container.querySelectorAll('button')].find(
+      (button) => button.textContent?.includes('Publish Template'),
     );
 
     expect(publishButton).toBeTruthy();

@@ -1,30 +1,30 @@
 'use client';
+import {
+  autoUpdate,
+  limitShift,
+  offset,
+  shift,
+  useFloating,
+} from '@floating-ui/react';
 import type React from 'react';
 import {
   useCallback,
+  useContext,
   useEffect,
-  useRef,
-  useState,
   useLayoutEffect,
   useMemo,
-  useContext,
+  useRef,
+  useState,
 } from 'react';
 import { useTransformEffect } from 'react-zoom-pan-pinch';
-import type { ComponentLayer } from '@/components/ui/ui-builder/types';
+import { useFrame } from '@/components/ui/ui-builder/internal/canvas/auto-frame';
+import { DragHandleContext } from '@/components/ui/ui-builder/internal/canvas/resizable-wrapper';
 import { LayerMenu } from '@/components/ui/ui-builder/internal/components/layer-menu';
 import { DragHandle as ComponentDragHandle } from '@/components/ui/ui-builder/internal/dnd/drag-handle';
-import { DragHandleContext } from '@/components/ui/ui-builder/internal/canvas/resizable-wrapper';
+import type { ComponentLayer } from '@/components/ui/ui-builder/types';
 import { useDndContext } from '@/lib/ui-builder/context/dnd-context';
-import { cn } from '@/lib/utils';
-import {
-  offset,
-  useFloating,
-  autoUpdate,
-  shift,
-  limitShift,
-} from '@floating-ui/react';
 import { getScrollParent } from '@/lib/ui-builder/utils/get-scroll-parent';
-import { useFrame } from '@/components/ui/ui-builder/internal/canvas/auto-frame';
+import { cn } from '@/lib/utils';
 
 const style: React.CSSProperties = {
   display: 'contents',

@@ -9,12 +9,12 @@ export interface PasswordInputProps
   buttonClassName?: string;
 }
 
-import { useId, useMemo, useState } from 'react';
 import { CheckIcon, EyeIcon, EyeOffIcon, XIcon } from 'lucide-react';
+import { useId, useMemo, useState } from 'react';
 
 import { Input } from '@/components/ui/input';
-import { Label } from './label';
 import { cn } from '@/lib/utils';
+import { Label } from './label';
 
 export function PasswordInput({
   label,

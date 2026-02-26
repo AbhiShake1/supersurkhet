@@ -1,42 +1,7 @@
-import type {
-  ActionManifestDoc,
-  AdminTabDoc,
-  BusinessPluginDraftInstallDoc,
-  BusinessPluginInstallDoc,
-  DeriveIR,
-  ExpressionDoc,
-  FieldConfigIR,
-  JsonValue,
-  LifecycleHook,
-  PluginDraftDoc,
-  PluginDraftRevisionDoc,
-  PluginProjectDoc,
-  PluginProjectInviteDoc,
-  PluginProjectMemberDoc,
-  PluginProjectRole,
-  PluginRecordDoc,
-  PluginReleaseDoc,
-  RefineIssueIR,
-  SchemaDoc,
-  SchemaFieldDoc,
-  SchemaRuleDoc,
-  WorkflowDoc,
-  WorkflowEdgeDoc,
-  WorkflowNodeDoc,
-} from '@supersurkhet/sdk';
+import type { PluginReleaseDoc } from '@supersurkhet/sdk';
 import { Link } from '@tanstack/react-router';
 import { AnimatePresence, motion } from 'framer-motion';
-import {
-  Bot,
-  Check,
-  ChevronsUpDown,
-  Info,
-  Plus,
-  Rocket,
-  Search,
-  Sparkles,
-  X,
-} from 'lucide-react';
+import { Bot, Check, Plus, Rocket, Search, Sparkles, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -63,7 +28,6 @@ import { buildPluginCatalog } from '@/lib/plugins/admin-plugin-catalog';
 import {
   buildMarketplaceGroups,
   buildPluginDetailView,
-  type PluginMarketItem,
 } from '@/lib/plugins/admin-plugin-market';
 import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
 
@@ -155,7 +119,7 @@ function resolveModelsDevProviderLogoUrl(providerId: string): string {
   )}.svg`;
 }
 
-function ProviderLogo({
+function _ProviderLogo({
   providerId,
   label,
   className,
@@ -486,9 +450,9 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
   const [providerBaseUrl, setProviderBaseUrl] = useState(
     resolveProviderDefaultBaseUrl(defaultModelOption.provider) ?? '',
   );
-  const [providerRegion, setProviderRegion] = useState('');
-  const [providerOrganization, setProviderOrganization] = useState('');
-  const [providerProject, setProviderProject] = useState('');
+  const [providerRegion, _setProviderRegion] = useState('');
+  const [providerOrganization, _setProviderOrganization] = useState('');
+  const [providerProject, _setProviderProject] = useState('');
   const [providerOauthMethods, setProviderOauthMethods] = useState<
     readonly ProviderOauthMethodOption[]
   >(() => resolveProviderOauthMethods(defaultModelOption.provider));
@@ -501,19 +465,19 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     );
   const [isSavingProviderCredential, setIsSavingProviderCredential] =
     useState(false);
-  const [isRefreshingProviderCredential, setIsRefreshingProviderCredential] =
+  const [_isRefreshingProviderCredential, setIsRefreshingProviderCredential] =
     useState(false);
   const [isStartingProviderOauth, setIsStartingProviderOauth] = useState(false);
-  const [isCreatingAuthSession, setIsCreatingAuthSession] = useState(false);
-  const [isRevokingAuthSession, setIsRevokingAuthSession] = useState(false);
+  const [_isCreatingAuthSession, setIsCreatingAuthSession] = useState(false);
+  const [_isRevokingAuthSession, setIsRevokingAuthSession] = useState(false);
   const [providerCredentialSavedAt, setProviderCredentialSavedAt] = useState<
     number | null
   >(null);
   const [authSessionToken, setAuthSessionToken] = useState('');
-  const [authSessionExpiresAt, setAuthSessionExpiresAt] = useState<
+  const [_authSessionExpiresAt, setAuthSessionExpiresAt] = useState<
     number | null
   >(null);
-  const [oauthFlowState, setOauthFlowState] = useState<OauthFlowState>('idle');
+  const [_oauthFlowState, setOauthFlowState] = useState<OauthFlowState>('idle');
   const [oauthFlowMessage, setOauthFlowMessage] = useState('');
   const [oauthAuthorizationUrl, setOauthAuthorizationUrl] = useState('');
   const [oauthVerificationCode, setOauthVerificationCode] = useState('');
@@ -574,7 +538,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
       resolveAssistantModelOption(DEFAULT_BUSINESS_ONBOARDING_MODEL_ID),
     [providerModelOptions, selectedAssistantModelId],
   );
-  const supportedAuthModes = resolveProviderSupportedAuthModes(
+  const _supportedAuthModes = resolveProviderSupportedAuthModes(
     selectedAssistantProviderId,
   );
   const stepTwoAuthModes: AssistantAuthMode[] = [
@@ -604,7 +568,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
   const [assistantPickedOauthMethod, setAssistantPickedOauthMethod] =
     useState(false);
   const recommendedProviderId = defaultModelOption.provider;
-  const recommendedModelId =
+  const _recommendedModelId =
     providerModelOptions[0]?.id ?? selectedModelOption.id;
   const recommendedAuthMode = resolveProviderDefaultAuthMode(
     selectedAssistantProviderId,
@@ -1021,7 +985,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     }
   }
 
-  async function createAuthSession() {
+  async function _createAuthSession() {
     const hasStoredCredential =
       providerCredentialSavedAt || (await refreshStoredProviderCredential());
     const payload = buildProviderPayload();
@@ -1073,7 +1037,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     }
   }
 
-  async function revokeAuthSession() {
+  async function _revokeAuthSession() {
     if (!authSessionToken) return;
 
     setIsRevokingAuthSession(true);
@@ -1437,191 +1401,162 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
 function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
   const [query, setQuery] = useState('');
+  const [selectedDetailsPluginId, setSelectedDetailsPluginId] = useState<
+    string | null
+  >(null);
+  const [chartType, setChartType] = useState<
+    'top-installed' | 'recently-updated'
+  >('top-installed');
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const releases = useMemo(
     () => mergeMarketplaceReleasesWithSeed(releaseRows as PluginReleaseDoc[]),
     [releaseRows],
+  );
+  const selectedReleaseIds = form.watch('selectedPluginReleaseIds') ?? [];
+  const selectedReleaseIdSet = useMemo(
+    () => new Set(selectedReleaseIds),
+    [selectedReleaseIds],
+  );
+
+  const catalog = useMemo(() => {
+    const catalogInput = {
+      releases,
+      installs: [],
+      query,
+      filter: 'all' as const,
+      sort: 'name' as const,
+    };
+    return buildPluginCatalog(catalogInput);
+  }, [query, releases]);
+
+  const marketplace = useMemo(
+    () => buildMarketplaceGroups(catalog, { installs: [], reviews: [] }),
+    [catalog],
+  );
+
+  const visibleItems = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    return marketplace.all.filter((plugin) => {
+      const matchesQuery =
+        normalized.length === 0 ||
+        [plugin.title, plugin.description, plugin.pluginId, plugin.category]
+          .join(' ')
+          .toLowerCase()
+          .includes(normalized);
+      const matchesCategory =
+        selectedCategory === 'All' || plugin.category === selectedCategory;
+      return matchesQuery && matchesCategory;
+    });
+  }, [marketplace, query, selectedCategory]);
+
+  const topCharts =
+    chartType === 'recently-updated'
+      ? marketplace.recentlyUpdated
+      : marketplace.topInstalled;
+  const recommendedPlugins = marketplace.topInstalled.slice(0, 6);
+
+  const selectedPlugin = useMemo(
+    () =>
+      selectedDetailsPluginId
+        ? marketplace.all.find(
+            (plugin) => plugin.pluginId === selectedDetailsPluginId,
+          )
+        : null,
+    [marketplace.all, selectedDetailsPluginId],
+  );
+
+  const selectedPluginDetails = useMemo(
+    () =>
+      selectedPlugin
+        ? (buildPluginDetailView(selectedPlugin, {
+            reviews: [],
+            userId: 'anon',
+          }) as unknown as PluginDetailView)
+        : null,
+    [selectedPlugin],
+  );
+
+  const handleToggleSelection = useCallback(
+    (releaseId: string) => {
+      const nextSelection = selectedReleaseIdSet.has(releaseId)
+        ? selectedReleaseIds.filter((id) => id !== releaseId)
+        : [...selectedReleaseIds, releaseId];
+
+      form.setValue('selectedPluginReleaseIds', nextSelection, {
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: true,
+      });
+    },
+    [form, selectedReleaseIdSet, selectedReleaseIds],
   );
 
   return (
     <FormField
       control={form.control}
       name="selectedPluginReleaseIds"
-      render={({ field }) => {
-        const selectedReleaseIds = field.value ?? [];
-        const selectedReleaseIdSet = new Set(selectedReleaseIds);
-        const normalizedQuery = query.trim().toLowerCase();
-
-        const filteredReleases = releases.filter((release) => {
-          if (!normalizedQuery) return true;
-          const releaseId = toReleaseId(release.pluginId, release.version);
-          const docs = release.docs as
-            | ({ title?: string; description?: string } & Record<
-                string,
-                unknown
-              >)
-            | undefined;
-          const searchText = [
-            releaseId,
-            release.pluginId,
-            release.version,
-            docs?.title,
-            docs?.description,
-          ]
-            .filter(
-              (value): value is string =>
-                typeof value === 'string' && value.trim().length > 0,
-            )
-            .join(' ')
-            .toLowerCase();
-          return searchText.includes(normalizedQuery);
-        });
-
-        const orderedReleases = [...filteredReleases].sort((a, b) => {
-          const aReleaseId = toReleaseId(a.pluginId, a.version);
-          const bReleaseId = toReleaseId(b.pluginId, b.version);
-          const aSelected = selectedReleaseIdSet.has(aReleaseId);
-          const bSelected = selectedReleaseIdSet.has(bReleaseId);
-          if (aSelected !== bSelected) return aSelected ? -1 : 1;
-          return aReleaseId.localeCompare(bReleaseId);
-        });
-
-        const [selectedDetailsPluginId, setSelectedDetailsPluginId] = useState<
-          string | null
-        >(null);
-        const [chartType, setChartType] = useState<
-          'top-installed' | 'recently-updated'
-        >('top-installed');
-        const [selectedCategory, setSelectedCategory] = useState('All');
-
-        const catalog = useMemo(() => {
-          const catalogInput = {
-            releases,
-            installs: [],
-            query,
-            filter: 'all' as const,
-            sort: 'name' as const,
-          };
-          return buildPluginCatalog(catalogInput);
-        }, [releases, query]);
-
-        const marketplace = useMemo(
-          () => buildMarketplaceGroups(catalog, { installs: [], reviews: [] }),
-          [catalog],
-        );
-
-        const visibleItems = useMemo(() => {
-          const normalized = query.trim().toLowerCase();
-          return marketplace.all.filter((plugin) => {
-            const matchesQuery =
-              normalized.length === 0 ||
-              [
-                plugin.title,
-                plugin.description,
-                plugin.pluginId,
-                plugin.category,
-              ]
-                .join(' ')
-                .toLowerCase()
-                .includes(normalized);
-            const matchesCategory =
-              selectedCategory === 'All' ||
-              plugin.category === selectedCategory;
-            return matchesQuery && matchesCategory;
-          });
-        }, [marketplace, query, selectedCategory]);
-
-        const topCharts =
-          chartType === 'recently-updated'
-            ? marketplace.recentlyUpdated
-            : marketplace.topInstalled;
-        const recommendedPlugins = marketplace.topInstalled.slice(0, 6);
-
-        const selectedPlugin = useMemo(
-          () =>
-            selectedDetailsPluginId
-              ? marketplace.all.find(
-                  (p) => p.pluginId === selectedDetailsPluginId,
-                )
-              : null,
-          [selectedDetailsPluginId, marketplace.all],
-        );
-
-        const selectedPluginDetails = useMemo(
-          () =>
-            selectedPlugin
-              ? (buildPluginDetailView(selectedPlugin, {
-                  reviews: [],
-                  userId: 'anon',
-                }) as unknown as PluginDetailView)
-              : null,
-          [selectedPlugin],
-        );
-
-        const handleToggleSelection = (releaseId: string) => {
-          if (selectedReleaseIdSet.has(releaseId)) {
-            field.onChange(selectedReleaseIds.filter((id) => id !== releaseId));
-          } else {
-            field.onChange([...selectedReleaseIds, releaseId]);
-          }
-        };
-
+      render={() => {
         return (
           <FormItem className="space-y-6">
             <AnimatePresence>
-              {selectedDetailsPluginId && selectedPluginDetails && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-[100] flex flex-col bg-background"
-                >
-                  <div className="flex h-16 items-center justify-between border-b px-4 shrink-0 bg-background/95 backdrop-blur">
-                    <div className="flex items-center gap-3">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedDetailsPluginId(null)}
-                      >
-                        <X className="h-5 w-5" />
-                        <span className="ml-2 font-medium">Back to Wizard</span>
-                      </Button>
+              {selectedDetailsPluginId &&
+                selectedPlugin &&
+                selectedPluginDetails && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-[100] flex flex-col bg-background"
+                  >
+                    <div className="flex h-16 items-center justify-between border-b px-4 shrink-0 bg-background/95 backdrop-blur">
+                      <div className="flex items-center gap-3">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedDetailsPluginId(null)}
+                        >
+                          <X className="h-5 w-5" />
+                          <span className="ml-2 font-medium">
+                            Back to Wizard
+                          </span>
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex-1 overflow-y-auto">
-                    <PluginDetailsView
-                      plugin={selectedPlugin!}
-                      details={selectedPluginDetails!}
-                      businessName="new-business"
-                      onInstall={async () => {
-                        const releaseId = toReleaseId(
-                          selectedPlugin!.pluginId,
-                          selectedPlugin!.latestRelease.version,
-                        );
-                        if (!selectedReleaseIdSet.has(releaseId)) {
-                          handleToggleSelection(releaseId);
-                        }
-                        setSelectedDetailsPluginId(null);
-                        return true;
-                      }}
-                      onUninstall={async () => {
-                        const releaseId = toReleaseId(
-                          selectedPlugin!.pluginId,
-                          selectedPlugin!.latestRelease.version,
-                        );
-                        if (selectedReleaseIdSet.has(releaseId)) {
-                          handleToggleSelection(releaseId);
-                        }
-                        setSelectedDetailsPluginId(null);
-                      }}
-                      onSaveReview={async () => {}}
-                      onBack={() => setSelectedDetailsPluginId(null)}
-                      isInstalling={false}
-                      isUninstalling={false}
-                      isSavingReview={false}
-                    />
-                  </div>
-                </motion.div>
-              )}
+                    <div className="flex-1 overflow-y-auto">
+                      <PluginDetailsView
+                        plugin={selectedPlugin}
+                        details={selectedPluginDetails}
+                        businessName="new-business"
+                        onInstall={async () => {
+                          const releaseId = toReleaseId(
+                            selectedPlugin.pluginId,
+                            selectedPlugin.latestRelease.version,
+                          );
+                          if (!selectedReleaseIdSet.has(releaseId)) {
+                            handleToggleSelection(releaseId);
+                          }
+                          setSelectedDetailsPluginId(null);
+                          return true;
+                        }}
+                        onUninstall={async () => {
+                          const releaseId = toReleaseId(
+                            selectedPlugin.pluginId,
+                            selectedPlugin.latestRelease.version,
+                          );
+                          if (selectedReleaseIdSet.has(releaseId)) {
+                            handleToggleSelection(releaseId);
+                          }
+                          setSelectedDetailsPluginId(null);
+                        }}
+                        onSaveReview={async () => {}}
+                        onBack={() => setSelectedDetailsPluginId(null)}
+                        isInstalling={false}
+                        isUninstalling={false}
+                        isSavingReview={false}
+                      />
+                    </div>
+                  </motion.div>
+                )}
             </AnimatePresence>
             <div className="grid gap-6 lg:grid-cols-2">
               {/* Column 1: AI Chat Assistant */}
@@ -1652,6 +1587,7 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                   />
                   {query && (
                     <button
+                      type="button"
                       onClick={() => setQuery('')}
                       className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
@@ -1739,20 +1675,7 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                                         plugin.pluginId,
                                         plugin.latestRelease.version,
                                       );
-                                      const isSelected =
-                                        selectedReleaseIdSet.has(releaseId);
-                                      if (isSelected) {
-                                        field.onChange(
-                                          selectedReleaseIds.filter(
-                                            (id) => id !== releaseId,
-                                          ),
-                                        );
-                                      } else {
-                                        field.onChange([
-                                          ...selectedReleaseIds,
-                                          releaseId,
-                                        ]);
-                                      }
+                                      handleToggleSelection(releaseId);
                                     }}
                                     className={cn(
                                       'shrink-0 rounded-lg p-1.5 transition-all',
@@ -2068,13 +1991,7 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                           <button
                             type="button"
                             className="text-muted-foreground hover:text-destructive transition-colors"
-                            onClick={() =>
-                              field.onChange(
-                                selectedReleaseIds.filter(
-                                  (current) => current !== releaseId,
-                                ),
-                              )
-                            }
+                            onClick={() => handleToggleSelection(releaseId)}
                           >
                             <X className="h-3 w-3" />
                           </button>

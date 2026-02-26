@@ -1,12 +1,12 @@
-import type { ComponentRegistry } from '@/components/ui/ui-builder/types';
 import z from 'zod';
-import { commonFieldOverrides } from './form-field-overrides';
+import { ThemeEditor } from '@/components/theme/theme-editor';
+import { ThemePresetSelector } from '@/components/theme/theme-preset-selector';
 
 import { ThemeToggle } from '@/components/theme/theme-toggle';
-import { ThemePresetSelector } from '@/components/theme/theme-preset-selector';
-import { ThemeEditor } from '@/components/theme/theme-editor';
 import { ButtonSchema } from '@/components/ui/button';
+import type { ComponentRegistry } from '@/components/ui/ui-builder/types';
 import { DivSchema } from './div-component-definitions';
+import { commonFieldOverrides } from './form-field-overrides';
 
 export const themeComponentDefinitions: ComponentRegistry = {
   ThemeToggle: {

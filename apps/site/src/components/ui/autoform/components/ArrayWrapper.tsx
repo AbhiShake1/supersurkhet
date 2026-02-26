@@ -1,6 +1,6 @@
+import { PlusIcon } from 'lucide-react';
 import type React from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusIcon } from 'lucide-react';
 import type { ArrayWrapperProps } from '../react';
 
 export const ArrayWrapper: React.FC<ArrayWrapperProps> = ({

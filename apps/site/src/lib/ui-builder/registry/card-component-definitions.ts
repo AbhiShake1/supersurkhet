@@ -1,18 +1,17 @@
+import z from 'zod';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import type {
   ComponentLayer,
   ComponentRegistry,
 } from '@/components/ui/ui-builder/types';
-import z from 'zod';
 import { commonFieldOverrides } from './form-field-overrides';
-
-import {
-  Card,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from '@/components/ui/card';
 
 export const cardComponentDefinitions: ComponentRegistry = {
   Card: {

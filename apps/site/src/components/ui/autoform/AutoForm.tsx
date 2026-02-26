@@ -152,7 +152,7 @@ export function AutoForm<F extends ZodObjectOrWrapped>({
   );
 }
 
-type AutoFormDefaultValues = Record<string, any>;
+type AutoFormDefaultValues = Record<string, unknown>;
 
 const AutoFormDefaultValuesContext = React.createContext<
   AutoFormDefaultValues | undefined

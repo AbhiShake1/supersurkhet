@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { getItemsTotalForPaymentStatus, getPaymentStatusFromTotals } from './payment-status-derivation';
+import {
+  getItemsTotalForPaymentStatus,
+  getPaymentStatusFromTotals,
+} from './payment-status-derivation';
 
 describe('payment status derivation', () => {
   it('uses quantity x unitPrice when available', () => {
@@ -39,10 +42,14 @@ describe('payment status derivation', () => {
   });
 
   it('returns paid when paid amount equals total', () => {
-    expect(getPaymentStatusFromTotals({ paidAmount: 250, totalAmount: 250 })).toBe('paid');
+    expect(
+      getPaymentStatusFromTotals({ paidAmount: 250, totalAmount: 250 }),
+    ).toBe('paid');
   });
 
   it('returns pending when paid amount is zero', () => {
-    expect(getPaymentStatusFromTotals({ paidAmount: 0, totalAmount: 250 })).toBe('pending');
+    expect(
+      getPaymentStatusFromTotals({ paidAmount: 0, totalAmount: 250 }),
+    ).toBe('pending');
   });
 });

@@ -1,6 +1,6 @@
-import { logicEngine, type LogicExpr } from '@/lib/language/core';
 import { useAuth } from '@/components/auth-provider';
 import { useBusiness } from '@/contexts/business-context';
+import { type LogicExpr, logicEngine } from '@/lib/language/core';
 import type { Business, User } from '../schema';
 // import { db } from "@/lib/ssr/api";
 

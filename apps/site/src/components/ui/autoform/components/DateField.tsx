@@ -1,8 +1,6 @@
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
-import type { AutoFormFieldProps } from '../react';
 import type React from 'react';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -10,6 +8,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import type { AutoFormFieldProps } from '../react';
 
 export const DateField: React.FC<AutoFormFieldProps> = ({
   inputProps,

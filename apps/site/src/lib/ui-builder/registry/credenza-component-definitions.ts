@@ -1,9 +1,4 @@
-import type {
-  ComponentLayer,
-  ComponentRegistry,
-} from '@/components/ui/ui-builder/types';
 import z from 'zod';
-import { commonFieldOverrides } from './form-field-overrides';
 import {
   Credenza,
   CredenzaBody,
@@ -11,6 +6,11 @@ import {
   CredenzaHeader,
   CredenzaTrigger,
 } from '@/components/ui/credenza';
+import type {
+  ComponentLayer,
+  ComponentRegistry,
+} from '@/components/ui/ui-builder/types';
+import { commonFieldOverrides } from './form-field-overrides';
 
 export const credenzaComponentDefinitions: ComponentRegistry = {
   Credenza: {

@@ -1,8 +1,3 @@
-import type React from 'react';
-
-import { Button } from '@/components/ui/button';
-import { SidebarProvider } from './ui/sidebar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Download,
   Moon,
@@ -14,12 +9,16 @@ import {
   Undo,
   Upload,
 } from 'lucide-react';
+import type React from 'react';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppSidebar } from './app-sidebar';
 import { HistoryProvider, useHistory } from './history-provider';
 import { LayoutCanvas } from './layout-canvas';
 import { PreviewMode } from './preview-mode';
-import { toast } from 'sonner';
+import { SidebarProvider } from './ui/sidebar';
 
 // Define types for our layout data
 export type ElementType =

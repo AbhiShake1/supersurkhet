@@ -1,8 +1,7 @@
 'use client';
 
-import * as React from 'react';
 import { Check, ChevronDown, Plus } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -10,12 +9,13 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
+import { Input } from '@/components/ui/input';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 interface CustomSelectProps {
   value?: string;

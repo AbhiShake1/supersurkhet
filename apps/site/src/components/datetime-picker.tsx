@@ -5,34 +5,32 @@
  */
 'use client';
 
-import type * as React from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarIcon } from '@radix-ui/react-icons';
 import {
+  addHours,
+  addMonths,
+  endOfDay,
   endOfHour,
   endOfMinute,
+  endOfMonth,
+  endOfYear,
   format,
-  parse,
   getMonth,
   getYear,
+  parse,
   setHours,
+  setMilliseconds,
   setMinutes,
   setMonth as setMonthFns,
   setSeconds,
   setYear,
+  startOfDay,
   startOfHour,
   startOfMinute,
-  startOfYear,
   startOfMonth,
-  endOfMonth,
-  endOfYear,
-  addMonths,
-  subMonths,
-  setMilliseconds,
-  addHours,
+  startOfYear,
   subHours,
-  startOfDay,
-  endOfDay,
+  subMonths,
 } from 'date-fns';
 import {
   CheckIcon,
@@ -43,9 +41,9 @@ import {
   Clock,
   XCircle,
 } from 'lucide-react';
+import type * as React from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DayPicker, type Matcher, TZDate } from 'react-day-picker';
-
-import { cn } from '@/lib/utils';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Popover,
@@ -53,6 +51,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 export type CalendarProps = Omit<
   React.ComponentProps<typeof DayPicker>,

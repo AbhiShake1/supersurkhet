@@ -1,36 +1,10 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  HoverablePopover,
-  HoverablePopoverContent,
-  HoverablePopoverTrigger,
-} from '@/components/ui/hoverable-popover';
-import { Info } from 'lucide-react';
-import { useBusinessAnalytics } from '@/hooks/use-business-analytics';
-import { api } from '@/lib/api';
-import {
-  exportAnalyticsToCSV,
-  exportAnalyticsToJSON,
-  generatePrintHTML,
-} from '@/lib/export-analytics';
 import {
   AlertTriangle,
   Building2,
   CreditCard,
   DollarSign,
   Download,
+  Info,
   Package,
   Package2,
   Printer,
@@ -40,19 +14,44 @@ import {
   Users,
 } from 'lucide-react';
 import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  HoverablePopover,
+  HoverablePopoverContent,
+  HoverablePopoverTrigger,
+} from '@/components/ui/hoverable-popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { useBusinessAnalytics } from '@/hooks/use-business-analytics';
+import { api } from '@/lib/api';
+import {
+  exportAnalyticsToCSV,
+  exportAnalyticsToJSON,
+  generatePrintHTML,
+} from '@/lib/export-analytics';
+import { formatCurrency } from '@/lib/intl';
 import {
   InventoryStatusChart,
   PaymentMethodsChart,
   SalesTrendsChart,
 } from './reports-page/charts';
 import { CardDescription } from './ui/card-hover-effect';
-import { formatCurrency } from '@/lib/intl';
-
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 
 interface ReportsPageProps {
   slug: string;

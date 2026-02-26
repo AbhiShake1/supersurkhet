@@ -1,12 +1,12 @@
 import React, {
-  type ReactNode,
-  useCallback,
-  useMemo,
   memo,
+  type ReactNode,
   Suspense,
-  useState,
+  useCallback,
   useEffect,
+  useMemo,
   useRef,
+  useState,
 } from 'react';
 
 import {
@@ -24,15 +24,15 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
-import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
-import { cn } from '@/lib/utils';
 import LayerRenderer from '@/components/ui/ui-builder/layer-renderer';
 import type {
   ComponentLayer,
   ComponentRegistry,
 } from '@/components/ui/ui-builder/types';
+import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
 import { createComponentLayer } from '@/lib/ui-builder/store/layer-utils';
+import { cn } from '@/lib/utils';
 
 const fallback = (
   <div className="w-full h-full bg-muted rounded border animate-pulse" />

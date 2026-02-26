@@ -1,9 +1,10 @@
 import React, {
   createContext,
+  type ReactNode,
   useContext,
   useState,
-  type ReactNode,
 } from 'react';
+import { CredenzaBody } from '@/components/ui/credenza';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +13,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
-import { CredenzaBody } from '@/components/ui/credenza';
 
 type DialogContentProps = {
   title?: string;

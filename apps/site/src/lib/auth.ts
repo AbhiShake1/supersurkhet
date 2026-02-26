@@ -1,11 +1,11 @@
 import { pixelArt } from '@dicebear/collection';
 import { createAvatar } from '@dicebear/core';
+import { createServerFn } from '@tanstack/react-start';
 import type { IGunUserInstance } from 'gun/types';
 import { z } from 'zod';
-import { gun } from './gun';
-import { setUser } from '@/server-functions/user';
 import { getGunRef, mergeKeys } from '@/lib/gun/utils';
-import { createServerFn } from '@tanstack/react-start';
+import { setUser } from '@/server-functions/user';
+import { gun } from './gun';
 
 export const googleLoginSchema = z.object({
   email: z.string().email(),

@@ -1,8 +1,8 @@
-import { cn } from '@/lib/utils';
 import {
   Scanner as BaseScanner,
   type IScannerProps,
 } from '@yudiel/react-qr-scanner';
+import { cn } from '@/lib/utils';
 
 export type ScannerProps = Pick<
   IScannerProps,

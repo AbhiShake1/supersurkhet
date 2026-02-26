@@ -1,11 +1,11 @@
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { ChevronDown, ChevronRight } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
-import type { PossibleTabConfig } from './auto-admin';
 import { generatePermissions } from '@/lib/permissions/generate-permissions';
+import type { PossibleTabConfig } from './auto-admin';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
 interface RolesMatrixProps {
   slug?: string;

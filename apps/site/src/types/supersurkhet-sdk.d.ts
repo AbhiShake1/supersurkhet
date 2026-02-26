@@ -5,5 +5,3 @@ declare module '@supersurkhet/sdk' {
     FieldTypes?: AutoformFieldTypes;
   }
 }
-
-export {};

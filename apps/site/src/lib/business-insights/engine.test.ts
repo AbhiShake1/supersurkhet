@@ -220,7 +220,9 @@ describe('generateBusinessInsights', () => {
     expect(first).toEqual(second);
     expect(first.totalCandidates).toBeGreaterThanOrEqual(first.insights.length);
     expect(first.insights.length).toBeGreaterThan(0);
-    expect(first.insights.every((insight) => insight.sourceRefs.length > 0)).toBe(true);
+    expect(
+      first.insights.every((insight) => insight.sourceRefs.length > 0),
+    ).toBe(true);
     expect(
       first.insights.every(
         (insight) =>
@@ -237,4 +239,3 @@ describe('generateBusinessInsights', () => {
     expect(scores).toEqual(sortedScores);
   });
 });
-

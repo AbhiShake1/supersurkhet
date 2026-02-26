@@ -1,11 +1,11 @@
+import { z } from 'zod';
 import {
   Card,
   CardContent,
-  CardHeader,
   CardDescription,
+  CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { z } from 'zod';
 
 export const CardBottomImageSchema = z.object({
   title: z.string().default('Fluid Gradient Flow'),

@@ -1,14 +1,14 @@
-import { buttonVariants } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { useMediaQuery } from '@/hooks/use-media-query';
-import { cn } from '@/lib/utils';
 import NumberFlow from '@number-flow/react';
 import { Link } from '@tanstack/react-router';
 import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
 import { Check, Star } from 'lucide-react';
 import { useRef, useState } from 'react';
+import { buttonVariants } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { useMediaQuery } from '@/hooks/use-media-query';
+import { cn } from '@/lib/utils';
 
 interface PricingPlan {
   name: string;

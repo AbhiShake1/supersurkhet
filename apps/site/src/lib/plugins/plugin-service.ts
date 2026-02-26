@@ -1,3 +1,6 @@
+import { createServerFn } from '@tanstack/react-start';
+import { v4 as uuidv4 } from 'uuid';
+import z from 'zod';
 import type {
   AdminTabDoc,
   BusinessPluginDraftInstallDoc,
@@ -8,9 +11,6 @@ import type {
   PluginReleaseDoc,
   SchemaDoc,
 } from '@/lib/plugins/types';
-import { createServerFn } from '@tanstack/react-start';
-import { v4 as uuidv4 } from 'uuid';
-import z from 'zod';
 
 export function toReleaseId(pluginId: string, version: string) {
   return `${pluginId}@${version}`;
@@ -131,15 +131,13 @@ export type PluginPlatformStore = {
   putDraftInstall: (install: BusinessPluginDraftInstallDoc) => void;
 };
 
-export function createInMemoryPluginPlatformStore(
-  seed?: {
-    releases?: PluginReleaseDoc[];
-    publishedInstalls?: BusinessPluginInstallDoc[];
-    drafts?: PluginDraftDoc[];
-    draftRevisions?: PluginDraftRevisionDoc[];
-    draftInstalls?: BusinessPluginDraftInstallDoc[];
-  },
-): PluginPlatformStore {
+export function createInMemoryPluginPlatformStore(seed?: {
+  releases?: PluginReleaseDoc[];
+  publishedInstalls?: BusinessPluginInstallDoc[];
+  drafts?: PluginDraftDoc[];
+  draftRevisions?: PluginDraftRevisionDoc[];
+  draftInstalls?: BusinessPluginDraftInstallDoc[];
+}): PluginPlatformStore {
   const releasesById = new Map<string, PluginReleaseDoc>();
   const publishedInstallsByKey = new Map<string, BusinessPluginInstallDoc>();
   const draftsById = new Map<string, PluginDraftDoc>();
@@ -159,7 +157,10 @@ export function createInMemoryPluginPlatformStore(
     draftsById.set(draft.draftId, draft);
   }
   for (const revision of seed?.draftRevisions ?? []) {
-    draftRevisionsByKey.set(`${revision.draftId}::${revision.revisionId}`, revision);
+    draftRevisionsByKey.set(
+      `${revision.draftId}::${revision.revisionId}`,
+      revision,
+    );
   }
   for (const install of seed?.draftInstalls ?? []) {
     draftInstallsByKey.set(
@@ -484,8 +485,11 @@ export function createPluginPlatformService({
       draft,
     }: {
       actorUserId: string;
-      draft: Pick<PluginDraftDoc, 'pluginId' | 'title' | 'collaboratorUserIds'> &
-      Partial<Pick<PluginDraftDoc, 'draftId' | 'status'>>;
+      draft: Pick<
+        PluginDraftDoc,
+        'pluginId' | 'title' | 'collaboratorUserIds'
+      > &
+        Partial<Pick<PluginDraftDoc, 'draftId' | 'status'>>;
     }) {
       const now = new Date().toISOString();
       const created: PluginDraftDoc = {
@@ -606,7 +610,9 @@ export function createPluginPlatformService({
     },
 
     listMarketplaceReleases() {
-      return store.listReleases().filter((release) => release.visibility === 'public');
+      return store
+        .listReleases()
+        .filter((release) => release.visibility === 'public');
     },
 
     listBusinessPublishedInstalls(businessId: string) {
@@ -637,16 +643,18 @@ export function createPluginPlatformService({
       pluginId: string;
     }) {
       assertCanInstallPublishedRelease(actorRole);
-      
+
       const existing = store.getPublishedInstall(businessId, pluginId);
-      
+
       if (!existing) {
-        throw new Error(`Plugin "${pluginId}" is not installed for business "${businessId}"`);
+        throw new Error(
+          `Plugin "${pluginId}" is not installed for business "${businessId}"`,
+        );
       }
 
       // Remove the install from the store
       store.removePublishedInstall(businessId, pluginId);
-      
+
       return existing;
     },
   };

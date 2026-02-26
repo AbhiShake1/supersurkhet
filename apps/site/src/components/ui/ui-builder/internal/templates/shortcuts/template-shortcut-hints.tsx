@@ -33,7 +33,9 @@ export function TemplateShortcutHint({
 export function TemplateShortcutSettingsEntry() {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[11px] text-muted-foreground">Shortcut settings</span>
+      <span className="text-[11px] text-muted-foreground">
+        Shortcut settings
+      </span>
       <ShortcutKbd
         actionId={TEMPLATE_SHORTCUTS.openSheet.id}
         interaction="open-settings"

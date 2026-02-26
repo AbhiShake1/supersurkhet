@@ -1,10 +1,9 @@
 'use client';
 
-import * as React from 'react';
 import * as SliderPrimitive from '@radix-ui/react-slider';
-
-import { cn } from '@/lib/utils';
+import * as React from 'react';
 import { z } from 'zod';
+import { cn } from '@/lib/utils';
 
 // Helper for numeric fields that might come as strings from forms
 const numericField = (defaultValue = 0) =>

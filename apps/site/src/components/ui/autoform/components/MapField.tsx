@@ -1,3 +1,5 @@
+import type React from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import {
   // biome-ignore lint/suspicious/noShadowRestrictedNames: lint debt cleanup
@@ -8,8 +10,6 @@ import {
   useMap,
 } from '@/components/ui/map';
 import type { AutoFormFieldProps } from '../react';
-import type React from 'react';
-import { useState, useEffect, useCallback } from 'react';
 
 type GpsCoordinate = [number, number]; // [latitude, longitude]
 

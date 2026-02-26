@@ -1,16 +1,15 @@
+import { ChevronsUpDown, X as XIcon } from 'lucide-react';
 import { useCallback } from 'react';
-
-import { X as XIcon, ChevronsUpDown } from 'lucide-react';
-import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
-import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
-import type { ComponentLayer } from '@/components/ui/ui-builder/types';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { AddComponentsPopover } from '@/components/ui/ui-builder/internal/components/add-component-popover';
+import type { ComponentLayer } from '@/components/ui/ui-builder/types';
+import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
 import {
+  createComponentLayer,
   hasLayerChildren,
   isComponentLayer,
-  createComponentLayer,
 } from '@/lib/ui-builder/store/layer-utils';
 
 interface ChildrenSearchableSelectProps {

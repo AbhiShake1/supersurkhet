@@ -1,17 +1,16 @@
-"use client";
+'use client';
 
-import type { LucideProps } from "lucide-react";
-import type { ComponentProps, HTMLAttributes } from "react";
-
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import type { LucideProps } from 'lucide-react';
+import { BookmarkIcon } from 'lucide-react';
+import type { ComponentProps, HTMLAttributes } from 'react';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { BookmarkIcon } from "lucide-react";
+} from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 export type CheckpointProps = HTMLAttributes<HTMLDivElement>;
 
@@ -22,8 +21,8 @@ export const Checkpoint = ({
 }: CheckpointProps) => (
   <div
     className={cn(
-      "flex items-center gap-0.5 overflow-hidden text-muted-foreground",
-      className
+      'flex items-center gap-0.5 overflow-hidden text-muted-foreground',
+      className,
     )}
     {...props}
   >
@@ -40,7 +39,7 @@ export const CheckpointIcon = ({
   ...props
 }: CheckpointIconProps) =>
   children ?? (
-    <BookmarkIcon className={cn("size-4 shrink-0", className)} {...props} />
+    <BookmarkIcon className={cn('size-4 shrink-0', className)} {...props} />
   );
 
 export type CheckpointTriggerProps = ComponentProps<typeof Button> & {
@@ -49,8 +48,8 @@ export type CheckpointTriggerProps = ComponentProps<typeof Button> & {
 
 export const CheckpointTrigger = ({
   children,
-  variant = "ghost",
-  size = "sm",
+  variant = 'ghost',
+  size = 'sm',
   tooltip,
   ...props
 }: CheckpointTriggerProps) =>

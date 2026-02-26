@@ -1,7 +1,7 @@
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Settings2, Sparkles, Zap } from 'lucide-react';
 import React, { type ReactNode } from 'react';
 import { z } from 'zod';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
 const FeatureItemSchema = z.object({
   title: z.string().default('Feature Title'),

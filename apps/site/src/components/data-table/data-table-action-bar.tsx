@@ -1,9 +1,14 @@
+import type { Table } from '@tanstack/react-table';
+import { Loader, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import * as React from 'react';
+import * as ReactDOM from 'react-dom';
 import { Button } from '@/components/ui/button';
 import {
+  type ShortcutDefinition,
   ShortcutKbd,
   useRegisterShortcut,
   useShortcutAction,
-  type ShortcutDefinition,
 } from '@/components/ui/keyboard-shortcuts';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -12,11 +17,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import type { Table } from '@tanstack/react-table';
-import { Loader, X } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
 
 interface DataTableActionBarProps<TData>
   extends React.ComponentProps<typeof motion.div> {
@@ -143,7 +143,9 @@ function DataTableActionBarAction({
         className="flex items-center gap-2 border bg-accent font-semibold text-foreground dark:bg-zinc-900 [&>span]:hidden"
       >
         <p>{tooltip}</p>
-        {shortcut ? <ShortcutKbd actionId={shortcut.id} interactive={false} /> : null}
+        {shortcut ? (
+          <ShortcutKbd actionId={shortcut.id} interactive={false} />
+        ) : null}
       </TooltipContent>
     </Tooltip>
   );

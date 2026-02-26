@@ -1,19 +1,19 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import ClassNameMultiselect from '@/components/ui/ui-builder/internal/form-fields/classname-control/classname-multiselect';
 import { ClassNameItemControl } from '@/components/ui/ui-builder/internal/form-fields/classname-control/classname-item-control';
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
+import ClassNameMultiselect from '@/components/ui/ui-builder/internal/form-fields/classname-control/classname-multiselect';
 
 interface BreakpointClassNameControlProps {
   onChange?: (classes: string) => void;

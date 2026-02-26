@@ -1,8 +1,4 @@
-import type {
-  ActionManifestDoc,
-  AdminTabDoc,
-  SchemaDoc,
-} from './types';
+import type { ActionManifestDoc, AdminTabDoc, SchemaDoc } from './types';
 
 type JsonValue =
   | null

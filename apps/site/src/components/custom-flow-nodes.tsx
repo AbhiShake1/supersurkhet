@@ -1,23 +1,5 @@
 'use client';
 
-import { BaseHandle } from '@/components/base-handle';
-import {
-  BaseNode,
-  BaseNodeContent,
-  BaseNodeHeader,
-  BaseNodeHeaderTitle,
-} from '@/components/base-node';
-import {
-  NodeStatusIndicator,
-  type NodeStatus,
-} from '@/components/node-status-indicator';
-import { Button } from '@/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import {
   type Node,
   type NodeProps,
@@ -26,6 +8,24 @@ import {
 } from '@xyflow/react';
 import { Trash } from 'lucide-react';
 import { useCallback } from 'react';
+import { BaseHandle } from '@/components/base-handle';
+import {
+  BaseNode,
+  BaseNodeContent,
+  BaseNodeHeader,
+  BaseNodeHeaderTitle,
+} from '@/components/base-node';
+import {
+  type NodeStatus,
+  NodeStatusIndicator,
+} from '@/components/node-status-indicator';
+import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 export function DeleteNodeButton({ id }: { id: string }) {
   const { setNodes } = useReactFlow();

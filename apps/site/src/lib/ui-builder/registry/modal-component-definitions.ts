@@ -1,21 +1,20 @@
+import {
+  Modal,
+  ModalBody,
+  ModalBodySchema,
+  ModalContent,
+  ModalContentSchema,
+  ModalFooter,
+  ModalFooterSchema,
+  ModalSchema,
+  ModalTrigger,
+  ModalTriggerSchema,
+} from '@/components/ui/animated-modal';
 import type {
   ComponentLayer,
   ComponentRegistry,
 } from '@/components/ui/ui-builder/types';
 import { commonFieldOverrides } from './form-field-overrides';
-
-import {
-  Modal,
-  ModalTrigger,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalSchema,
-  ModalTriggerSchema,
-  ModalBodySchema,
-  ModalContentSchema,
-  ModalFooterSchema,
-} from '@/components/ui/animated-modal';
 
 export const modalComponentDefinitions: ComponentRegistry = {
   Modal: {

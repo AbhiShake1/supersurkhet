@@ -428,7 +428,6 @@ const EditorPanel: React.FC<EditorPanelProps> = ({
   const selectedPage = findLayerById(selectedPageId) as
     | ComponentLayer
     | undefined;
-  if (!selectedPage) return null;
   const selectedLayer = selectedLayerCandidate ?? selectedPage;
   const isLayerAPage = useLayerStore((state) =>
     state.isLayerAPage(selectedLayerId || ''),
@@ -445,7 +444,7 @@ const EditorPanel: React.FC<EditorPanelProps> = ({
   const [commandOpen, setCommandOpen] = useState(false);
 
   const resolvedFocusStack = useMemo(
-    () => sanitizeFocusStack(selectedPage, focusStack),
+    () => (selectedPage ? sanitizeFocusStack(selectedPage, focusStack) : []),
     [focusStack, selectedPage],
   );
 
@@ -455,10 +454,11 @@ const EditorPanel: React.FC<EditorPanelProps> = ({
   }, [focusModeEnabled, resolvedFocusStack, selectedPage]);
   const focusRootLayer =
     focusRootId != null ? (findLayerById(focusRootId) as ComponentLayer) : null;
-  const effectiveRootLayer = focusRootLayer ?? selectedPage;
+  const effectiveRootLayer = focusRootLayer ?? selectedPage ?? null;
 
   const canFocusSelected =
     focusModeEnabled &&
+    selectedPage != null &&
     Boolean(selectedLayerId) &&
     selectedLayerId !== selectedPageId &&
     isLayerInsideSubtree(selectedPage, selectedLayerId);
@@ -532,6 +532,7 @@ const EditorPanel: React.FC<EditorPanelProps> = ({
 
   const onSelectElement = useCallback(
     (layerId: string) => {
+      if (!effectiveRootLayer) return;
       if (
         !focusModeEnabled ||
         isLayerInsideSubtree(effectiveRootLayer, layerId)
@@ -554,6 +555,8 @@ const EditorPanel: React.FC<EditorPanelProps> = ({
     }
   }, [selectedLayer, duplicateLayer, isLayerAPage]);
 
+  if (!selectedPage || !selectedLayer || !effectiveRootLayer) return null;
+
   return (
     <DndContextProvider>
       <EditorPanelContent
@@ -561,7 +564,6 @@ const EditorPanel: React.FC<EditorPanelProps> = ({
         selectedLayerId={selectedLayerId}
         selectedPageId={selectedPageId}
         selectedLayer={selectedLayer}
-        selectedPage={selectedPage}
         effectiveRootLayer={effectiveRootLayer}
         isLayerAPage={isLayerAPage}
         allowPagesCreation={allowPagesCreation}
@@ -595,7 +597,6 @@ interface EditorPanelContentProps {
   selectedLayerId: string | null;
   selectedPageId: string;
   selectedLayer: ComponentLayer;
-  selectedPage: ComponentLayer;
   effectiveRootLayer: ComponentLayer;
   isLayerAPage: boolean;
   allowPagesCreation: boolean;
@@ -626,7 +627,6 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
   selectedPageId,
   selectedLayerId,
   selectedLayer,
-  selectedPage,
   effectiveRootLayer,
   allowPagesCreation,
   allowPagesDeletion,
@@ -772,11 +772,7 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
     const query = encodeURIComponent(
       `Explain the selected layer "${selectedLayer?.name ?? selectedLayerId ?? 'unknown'}" and suggest safe improvements.`,
     );
-    window.open(
-      `/chat?prompt=${query}`,
-      '_blank',
-      'noopener,noreferrer',
-    );
+    window.open(`/chat?prompt=${query}`, '_blank', 'noopener,noreferrer');
   }, [
     hasByoAiCredential,
     isAuthenticated,

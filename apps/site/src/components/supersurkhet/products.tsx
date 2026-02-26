@@ -1,11 +1,11 @@
 import * as React from 'react';
-import { cn } from '@/lib/utils';
+import { z } from 'zod';
+import { NotFound } from '@/components/ui/not-found';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useBusiness } from '@/contexts/business-context';
 import { api } from '@/lib/api';
 import type { Product } from '@/lib/schemas/listings';
-import { NotFound } from '@/components/ui/not-found';
-import { useBusiness } from '@/contexts/business-context';
-import { z } from 'zod';
+import { cn } from '@/lib/utils';
 
 // Product context types
 interface ProductContextProps {

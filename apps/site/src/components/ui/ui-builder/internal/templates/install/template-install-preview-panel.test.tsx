@@ -37,7 +37,9 @@ vi.mock('@/components/ui/button', () => ({
 }));
 
 vi.mock('@/components/ui/badge', () => ({
-  Badge: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+  Badge: ({ children }: { children: React.ReactNode }) => (
+    <span>{children}</span>
+  ),
 }));
 
 import { TemplateInstallPreviewPanel } from './template-install-preview-panel';
@@ -103,8 +105,8 @@ describe('TemplateInstallPreviewPanel', () => {
 
     await flush();
 
-    const applyButton = [...container.querySelectorAll('button')].find((button) =>
-      button.textContent?.includes('Apply Template'),
+    const applyButton = [...container.querySelectorAll('button')].find(
+      (button) => button.textContent?.includes('Apply Template'),
     );
 
     expect(applyButton).toBeTruthy();
@@ -150,8 +152,8 @@ describe('TemplateInstallPreviewPanel', () => {
 
     await flush();
 
-    const applyButton = [...container.querySelectorAll('button')].find((button) =>
-      button.textContent?.includes('Apply Template'),
+    const applyButton = [...container.querySelectorAll('button')].find(
+      (button) => button.textContent?.includes('Apply Template'),
     );
 
     expect(applyButton).toBeTruthy();

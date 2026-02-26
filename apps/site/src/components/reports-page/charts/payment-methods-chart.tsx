@@ -1,8 +1,8 @@
 'use client';
 
-import { Pie, PieChart } from 'recharts';
+import { Banknote, CreditCard, PiggyBank, Wallet } from 'lucide-react';
 import React from 'react';
-
+import { Pie, PieChart } from 'recharts';
 import {
   Card,
   CardContent,
@@ -15,7 +15,6 @@ import {
   ChartContainer,
   ChartTooltip,
 } from '@/components/ui/chart';
-import { CreditCard, Wallet, Banknote, PiggyBank } from 'lucide-react';
 
 interface PaymentMethodsChartProps {
   data: {

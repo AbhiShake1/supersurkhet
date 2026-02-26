@@ -85,7 +85,9 @@ export function TemplateInstallHistoryPanel({
     () =>
       installs
         .filter((row) => row.businessId === businessId)
-        .sort((left, right) => right.installedAt.localeCompare(left.installedAt)),
+        .sort((left, right) =>
+          right.installedAt.localeCompare(left.installedAt),
+        ),
     [businessId, installs],
   );
 
@@ -152,9 +154,7 @@ export function TemplateInstallHistoryPanel({
         }));
       }
 
-      const preview =
-        cachedPreview ??
-        (await resolvePreview(row, input));
+      const preview = cachedPreview ?? (await resolvePreview(row, input));
 
       if (preview.hardConflicts.length > 0) {
         toast.error('Hard conflicts found. Resolve conflicts before re-apply.');
@@ -178,7 +178,10 @@ export function TemplateInstallHistoryPanel({
     } catch (error) {
       toast.error(normalizeErrorMessage(error));
     } finally {
-      setApplyLoadingByInstallKey((current) => ({ ...current, [row.id]: false }));
+      setApplyLoadingByInstallKey((current) => ({
+        ...current,
+        [row.id]: false,
+      }));
     }
   }
 
@@ -212,7 +215,9 @@ export function TemplateInstallHistoryPanel({
                   <p className="text-sm font-semibold">
                     {release?.docs.title ?? row.templateId}
                   </p>
-                  <p className="text-xs text-muted-foreground">{row.templateId}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {row.templateId}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     Installed {formatInstallTime(row.installedAt)}
                   </p>
@@ -228,7 +233,8 @@ export function TemplateInstallHistoryPanel({
                   pages +{row.summary.pagesAdded} / ~{row.summary.pagesMerged}
                 </div>
                 <div className="rounded border p-2">
-                  plugins +{row.summary.pluginsInstalled} / ~{row.summary.pluginsUpdated}
+                  plugins +{row.summary.pluginsInstalled} / ~
+                  {row.summary.pluginsUpdated}
                 </div>
               </div>
 
@@ -248,7 +254,9 @@ export function TemplateInstallHistoryPanel({
                   onClick={() => void handleReapply(row)}
                   disabled={Boolean(applyLoadingByInstallKey[row.id])}
                 >
-                  {applyLoadingByInstallKey[row.id] ? 'Re-applying...' : 'Re-apply'}
+                  {applyLoadingByInstallKey[row.id]
+                    ? 'Re-applying...'
+                    : 'Re-apply'}
                 </Button>
               </div>
 
@@ -260,8 +268,8 @@ export function TemplateInstallHistoryPanel({
                     {preview.mergeSummary.hardConflicts}
                   </p>
                   <p>
-                    Plugin plan: install {preview.pluginPlan.install.length}, update{' '}
-                    {preview.pluginPlan.update.length}, no-op{' '}
+                    Plugin plan: install {preview.pluginPlan.install.length},
+                    update {preview.pluginPlan.update.length}, no-op{' '}
                     {preview.pluginPlan.noOp.length}
                   </p>
                 </div>
@@ -279,4 +287,3 @@ export function TemplateInstallHistoryPanel({
     </section>
   );
 }
-

@@ -63,9 +63,9 @@ export const Route = createFileRoute('/plugin-studio/$projectId/')({
 function buildActorUserIdAliases(
   user:
     | {
-      pub?: string;
-      _?: { soul?: string };
-    }
+        pub?: string;
+        _?: { soul?: string };
+      }
     | null
     | undefined,
 ): string[] {
@@ -304,7 +304,7 @@ function PluginStudioProjectRoute() {
         const draftInstall = draftInstallsByPluginId.get(pluginId);
         const installStatus: 'active' | 'paused' | undefined =
           publishedInstall?.status === 'paused' ||
-            draftInstall?.status === 'paused'
+          draftInstall?.status === 'paused'
             ? 'paused'
             : publishedInstall || draftInstall
               ? 'active'
@@ -738,10 +738,11 @@ function PluginStudioProjectRoute() {
                           <button
                             type="button"
                             key={entry.id}
-                            className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm transition ${isActive
-                              ? 'bg-muted/60 text-foreground'
-                              : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
-                              }`}
+                            className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm transition ${
+                              isActive
+                                ? 'bg-muted/60 text-foreground'
+                                : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
+                            }`}
                             onMouseEnter={() => setHoveredProjectId(entry.id)}
                             onFocus={() => setHoveredProjectId(entry.id)}
                             onClick={() => {
@@ -1037,7 +1038,7 @@ function PluginStudioProjectRoute() {
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             {editingField?.pluginId === card.pluginId &&
-                              editingField.field === 'title' ? (
+                            editingField.field === 'title' ? (
                               <Input
                                 value={editingValue}
                                 autoFocus
@@ -1079,7 +1080,7 @@ function PluginStudioProjectRoute() {
                               </div>
                             )}
                             {editingField?.pluginId === card.pluginId &&
-                              editingField.field === 'description' ? (
+                            editingField.field === 'description' ? (
                               <Textarea
                                 value={editingValue}
                                 autoFocus
@@ -1107,7 +1108,7 @@ function PluginStudioProjectRoute() {
                               />
                             ) : null}
                             {editingField?.pluginId === card.pluginId &&
-                              editingField.field === 'description' ? null : (
+                            editingField.field === 'description' ? null : (
                               <div className="group/description mt-2 flex items-start gap-2">
                                 <p className="text-sm text-muted-foreground">
                                   {card.description || 'No description yet'}

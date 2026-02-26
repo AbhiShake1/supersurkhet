@@ -25,7 +25,7 @@ type ResolveRuntimeSchemaInput = {
 
 export type RuntimeSchemaResolution = {
   schema: ZodObjectOrWrapped;
-  schemaObject: z.ZodObject<any>;
+  schemaObject: z.ZodObject<z.ZodRawShape>;
   parsedSchema: ParsedSchema;
 };
 
@@ -54,7 +54,9 @@ function getBaseRuntimeSchema({
   return getSchema(zodShape) as ZodObjectOrWrapped;
 }
 
-function unwrapSchemaObject(schema: ZodObjectOrWrapped): z.ZodObject<any> {
+function unwrapSchemaObject(
+  schema: ZodObjectOrWrapped,
+): z.ZodObject<z.ZodRawShape> {
   let current: z.ZodTypeAny = schema;
 
   for (let depth = 0; depth < 32; depth += 1) {

@@ -10,10 +10,10 @@
  * @github: https://github.com/kokonut-labs/kokonutui
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'motion/react';
-import { cn } from '@/lib/utils';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import z from 'zod';
+import { cn } from '@/lib/utils';
 
 interface LetterState {
   char: string;

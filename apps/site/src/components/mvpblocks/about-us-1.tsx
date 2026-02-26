@@ -1,19 +1,19 @@
 'use client';
 
 import { motion, useInView } from 'framer-motion';
-import { useRef } from 'react';
-import { Spotlight } from '@/components/ui/spotlight';
-import { BorderBeam } from '@/components/ui/border-beam';
-import { CardHoverEffect } from '@/components/ui/pulse-card';
 import {
   Globe,
-  Users,
   Heart,
   Lightbulb,
-  Sparkles,
   Rocket,
+  Sparkles,
   Target,
+  Users,
 } from 'lucide-react';
+import { useRef } from 'react';
+import { BorderBeam } from '@/components/ui/border-beam';
+import { CardHoverEffect } from '@/components/ui/pulse-card';
+import { Spotlight } from '@/components/ui/spotlight';
 
 interface AboutUsProps {
   title?: string;

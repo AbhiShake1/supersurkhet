@@ -31,7 +31,7 @@ export const table = {
   _: z
     .object({
       soul: z.string().optional(),
-      ">": z.record(z.union([z.string(), z.number()])).optional(),
+      '>': z.record(z.union([z.string(), z.number()])).optional(),
     })
     .optional(),
 };

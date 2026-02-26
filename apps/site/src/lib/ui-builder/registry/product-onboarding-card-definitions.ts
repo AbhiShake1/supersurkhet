@@ -1,12 +1,12 @@
+import {
+  ProductOnboardingCard,
+  ProductOnboardingCardSchema,
+} from '@/components/onboarding/product-definition';
 import type {
   ComponentLayer,
   ComponentRegistry,
 } from '@/components/ui/ui-builder/types';
 import { commonFieldOverrides } from './form-field-overrides';
-import {
-  ProductOnboardingCard,
-  ProductOnboardingCardSchema,
-} from '@/components/onboarding/product-definition';
 
 export const productOnboardingComponentDefinitions: ComponentRegistry = {
   ProductOnboardingCard: {

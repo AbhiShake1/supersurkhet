@@ -1,15 +1,15 @@
 import type {
-  ZodTypeAny,
-  ZodEnum,
   ZodArray,
+  ZodDefault,
+  ZodEffects,
+  ZodEnum,
+  ZodLiteral,
+  ZodNativeEnum,
+  ZodNullable,
   ZodObject,
   ZodOptional,
-  ZodNullable,
+  ZodTypeAny,
   ZodUnion,
-  ZodLiteral,
-  ZodEffects,
-  ZodDefault,
-  ZodNativeEnum,
 } from 'zod';
 
 interface JsonSchemaType {

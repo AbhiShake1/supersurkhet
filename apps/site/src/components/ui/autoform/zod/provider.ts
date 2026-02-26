@@ -44,7 +44,7 @@ export class ZodProvider<T extends ZodObjectOrWrapped>
     }
   }
 
-  getDefaultValues(): Record<string, any> {
+  getDefaultValues(): Record<string, unknown> {
     return getDefaultValues(this.schema);
   }
 }

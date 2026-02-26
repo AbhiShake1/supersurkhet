@@ -1,8 +1,12 @@
-import { AutoKanban } from '@/components/auto-admin';
-import type { AdminComponent } from '.';
-import type { Order } from '@/lib/schema';
-import { api } from '@/lib/api';
+import { Plus } from 'lucide-react';
+import NepaliDate from 'nepali-datetime';
 import { useMemo, useState } from 'react';
+import { AutoKanban } from '@/components/auto-admin';
+import { AddRowDialog } from '@/components/auto-admin/add-row-dialog';
+import { api } from '@/lib/api';
+import { formatCurrency } from '@/lib/intl';
+import type { Order } from '@/lib/schema';
+import { db } from '@/lib/ssr/api';
 import { cn, soulToId } from '@/lib/utils';
 import {
   Credenza,
@@ -12,12 +16,8 @@ import {
   CredenzaHeader,
   CredenzaTitle,
 } from '../credenza';
-import { AddRowDialog } from '@/components/auto-admin/add-row-dialog';
-import { Plus } from 'lucide-react';
-import { formatCurrency } from '@/lib/intl';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip';
-import { db } from '@/lib/ssr/api';
-import NepaliDate from 'nepali-datetime';
+import type { AdminComponent } from '.';
 
 type PaymentInput = {
   paidAt?: string | null;
@@ -61,8 +61,7 @@ const OrderKanban: AdminComponent = ({ slug }) => {
         groupKey="orderStatus"
         schema="order"
         isItemLocked={(order) =>
-          order.orderStatus === 'done' ||
-          order.orderStatus === 'cancelled'
+          order.orderStatus === 'done' || order.orderStatus === 'cancelled'
         }
         onUpdate={(_, variables) => {
           if (variables.orderStatus !== 'done') return;

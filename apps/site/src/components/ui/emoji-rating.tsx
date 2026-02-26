@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { cn } from '@/lib/utils';
 import z from 'zod';
+import { cn } from '@/lib/utils';
 
 export const RatingInteractionSchema = z.object({
   onChange: z.custom<(rating: number) => void>().optional(),

@@ -1,8 +1,8 @@
-import { z } from 'zod';
-import type { SchemaKeys } from '..';
-import type { appSchema } from '@/lib/schema';
-import { GUN_PREFIX } from '../utils/mergeKeys';
 import _ from 'lodash';
+import { z } from 'zod';
+import type { appSchema } from '@/lib/schema';
+import type { SchemaKeys } from '..';
+import { GUN_PREFIX } from '../utils/mergeKeys';
 
 export type ParseOptions = {
   key: SchemaKeys;
@@ -43,14 +43,14 @@ type UnwrapObject<S> = S extends z.ZodEffects<
 >
   ? z.ZodObject<Shape, UK, Catchall, Out, In>
   : S extends z.ZodObject<
-    infer Shape,
-    infer UK,
-    infer Catchall,
-    infer Out,
-    infer In
-  >
-  ? z.ZodObject<Shape, UK, Catchall, Out, In>
-  : never;
+        infer Shape,
+        infer UK,
+        infer Catchall,
+        infer Out,
+        infer In
+      >
+    ? z.ZodObject<Shape, UK, Catchall, Out, In>
+    : never;
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 type ObjectLike = z.ZodObject<any> | z.ZodEffects<z.ZodObject<any>>;
@@ -212,7 +212,7 @@ async function transformBySchema(
           await option.parseAsync(value);
         }
         return await transformBySchema(value, option);
-      } catch { }
+      } catch {}
     }
     return value;
   }

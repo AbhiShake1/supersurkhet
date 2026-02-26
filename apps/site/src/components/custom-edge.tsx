@@ -4,6 +4,21 @@ import {
   type EdgeProps,
   getBezierPath,
 } from '@xyflow/react';
+import {
+  Bell,
+  Database,
+  Globe,
+  GripVertical,
+  Info,
+  Navigation,
+  Play,
+  Plus,
+  Repeat,
+  Settings,
+  ShoppingCart,
+  User,
+  Wifi,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -19,18 +34,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Plus, Info, Play, Globe } from 'lucide-react';
-import {
-  Wifi,
-  User,
-  Settings,
-  ShoppingCart,
-  Database,
-  Navigation,
-  Bell,
-  GripVertical,
-  Repeat,
-} from 'lucide-react';
 
 // Define node types with icons and colors
 const nodeTypes = [

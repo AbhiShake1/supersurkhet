@@ -10,12 +10,14 @@ import type {
 import { executeLifecycleHook } from '@/lib/plugins/workflow-executor';
 import { runPluginsV2CompileVerifyPipeline } from '@/server-functions/plugins-v2-compile-verify';
 import {
-  PluginSchemaHashMismatchError,
   createInMemoryPluginSchemaRecordStore,
   createPluginsV2SchemaCrudService,
+  PluginSchemaHashMismatchError,
 } from '@/server-functions/plugins-v2-schema-crud';
 
-function createRelease(overrides: Partial<PluginReleaseDoc> = {}): PluginReleaseDoc {
+function createRelease(
+  overrides: Partial<PluginReleaseDoc> = {},
+): PluginReleaseDoc {
   const pluginId = overrides.pluginId ?? 'acme.inventory';
   const version = overrides.version ?? '1.0.0';
   return {
@@ -259,9 +261,9 @@ describe('plugin builder v2 lifecycle verification suite', () => {
       },
     });
     expect(releaseRuntimeResult.executedNodeIds).toEqual(['release-node-1']);
-    expect(releaseRuntimeResult.actionOutputsByNodeId['release-node-1']).toEqual([
-      'inventory:write',
-    ]);
+    expect(
+      releaseRuntimeResult.actionOutputsByNodeId['release-node-1'],
+    ).toEqual(['inventory:write']);
 
     const crud = createPluginsV2SchemaCrudService({
       registry,

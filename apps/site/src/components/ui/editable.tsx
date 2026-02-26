@@ -1,11 +1,11 @@
 'use client';
 
+import { Slot } from '@radix-ui/react-slot';
+import * as React from 'react';
+import { VisuallyHiddenInput } from '@/components/visually-hidden-input';
 import { composeEventHandlers, useComposedRefs } from '@/lib/composition';
 import { cn } from '@/lib/utils';
-import { VisuallyHiddenInput } from '@/components/visually-hidden-input';
-import { Slot } from '@radix-ui/react-slot';
 import { Spinner } from './spinner';
-import * as React from 'react';
 
 const ROOT_NAME = 'Editable';
 const AREA_NAME = 'EditableArea';

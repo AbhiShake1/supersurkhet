@@ -43,14 +43,20 @@ function RouteComponent() {
   const tabs = entries
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([schemaKey]) => {
-      const transformer = (rows: any[]): any[] => {
+      const transformer = (rows: Array<Record<string, unknown>>) => {
         if (rows.length === 0) return rows;
         const first = rows[0];
         if ('timestamp' in first) return rows;
 
         const flattened = rows
           .flatMap((row) => {
-            const business = row._?.soul;
+            const businessSource = row._;
+            const business =
+              businessSource &&
+              typeof businessSource === 'object' &&
+              'soul' in businessSource
+                ? businessSource.soul
+                : undefined;
             return Object.values(row).map((value) =>
               !value || typeof value !== 'object'
                 ? null

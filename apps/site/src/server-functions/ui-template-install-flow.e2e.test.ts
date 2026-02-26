@@ -197,7 +197,9 @@ describe('ui template install flow e2e', () => {
           return { ok: true };
         }
         if (key === 'business') {
-          const existing = state.businesses.get(String(row.id)) ?? { id: row.id };
+          const existing = state.businesses.get(String(row.id)) ?? {
+            id: row.id,
+          };
           state.businesses.set(String(row.id), { ...existing, ...row });
           return { ok: true };
         }
@@ -301,11 +303,10 @@ describe('ui template install flow e2e', () => {
     expect(installed.version).toBe('0.0.1');
     expect(installed.layers).toHaveLength(1);
     expect(
-      state.businessInstalls.get('business-1')?.find(
-        (entry) => entry.pluginId === 'acme.inventory',
-      )?.version,
+      state.businessInstalls
+        .get('business-1')
+        ?.find((entry) => entry.pluginId === 'acme.inventory')?.version,
     ).toBe('1.0.0');
     expect(state.businessTemplateInstalls.get('business-1')).toHaveLength(1);
   });
 });
-

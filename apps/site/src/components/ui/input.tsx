@@ -1,6 +1,6 @@
-import { cn } from '@/lib/utils';
 import * as React from 'react';
 import { z } from 'zod';
+import { cn } from '@/lib/utils';
 
 const InputSchema = z.object({
   placeholder: z.string().default('Write something...'),

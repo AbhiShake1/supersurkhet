@@ -1,17 +1,16 @@
-import type React from 'react';
-
-import { useState, useEffect } from 'react';
-import type { Floor, LayoutElement } from './restaurant-layout-editor';
-import { Button } from '@/components/ui/button';
 import {
   Eye,
   EyeOff,
   Maximize2,
   Minimize2,
-  RotateCw,
   RotateCcw,
+  RotateCw,
 } from 'lucide-react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import type { Floor, LayoutElement } from './restaurant-layout-editor';
 
 interface PreviewModeProps {
   floor: Floor;

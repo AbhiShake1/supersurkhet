@@ -1,12 +1,12 @@
-import * as React from 'react';
 import { motion } from 'framer-motion';
-import { z } from 'zod';
-import { cn } from '@/lib/utils';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
-  Sparkles as SparklesIcon,
   CheckCircle as CheckCircleIcon,
+  Sparkles as SparklesIcon,
 } from 'lucide-react';
+import * as React from 'react';
+import { z } from 'zod';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 // Zod Schema
 export const ProductOnboardingCardSchema = z.object({

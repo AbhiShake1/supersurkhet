@@ -1,14 +1,28 @@
+import {
+  Bath,
+  RockingChairIcon as ChairIcon,
+  Columns,
+  DoorOpenIcon as Door,
+  Flower2,
+  GlassWater,
+  PaintBucket,
+  Sofa,
+  Square,
+  StepBackIcon as Stairs,
+  TreesIcon as Tree,
+  UtensilsCrossed,
+  AppWindowIcon as Window,
+} from 'lucide-react';
 import { useState } from 'react';
-import type {
-  Floor,
-  LayoutElement,
-  ElementType,
-  ElementSize,
-} from './restaurant-layout-editor';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -17,28 +31,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import {
-  RockingChairIcon as ChairIcon,
-  Sofa,
-  Square,
-  StepBackIcon as Stairs,
-  TreesIcon as Tree,
-  DoorOpenIcon as Door,
-  Columns,
-  GlassWater,
-  Bath,
-  UtensilsCrossed,
-  Flower2,
-  AppWindowIcon as Window,
-  PaintBucket,
-} from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import type {
+  ElementSize,
+  ElementType,
+  Floor,
+  LayoutElement,
+} from './restaurant-layout-editor';
 
 interface SeatingSidebarProps {
   currentFloor: Floor;

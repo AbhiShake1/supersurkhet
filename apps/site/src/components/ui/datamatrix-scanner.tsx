@@ -1,11 +1,3 @@
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  dataMatrixActionSchema,
-  type DataMatrixAction,
-} from '@/lib/datamatrix';
 import { Scanner as QrScanner } from '@yudiel/react-qr-scanner';
 import {
   Camera,
@@ -18,6 +10,14 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  type DataMatrixAction,
+  dataMatrixActionSchema,
+} from '@/lib/datamatrix';
 
 interface ScannerProps {
   onActionDetected?: (action: DataMatrixAction) => void;

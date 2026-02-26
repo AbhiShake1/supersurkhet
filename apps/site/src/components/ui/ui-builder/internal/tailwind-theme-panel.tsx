@@ -1,16 +1,16 @@
 'use client';
+import { CheckIcon, InfoIcon, MoonIcon, SunIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  baseColors,
-  type BaseColor,
-} from '@/components/ui/ui-builder/internal/utils/base-colors';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { CheckIcon, InfoIcon, MoonIcon, SunIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
-import type { ComponentLayer } from '@/components/ui/ui-builder/types';
 import { Toggle } from '@/components/ui/toggle';
+import {
+  type BaseColor,
+  baseColors,
+} from '@/components/ui/ui-builder/internal/utils/base-colors';
+import type { ComponentLayer } from '@/components/ui/ui-builder/types';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
+import { cn } from '@/lib/utils';
 
 const RESET_THEME_PROPS = {
   style: undefined,

@@ -1,6 +1,6 @@
 'use client';
-import { Children, useMemo, type ReactNode } from 'react';
 import { motion, type Variants } from 'motion/react';
+import { Children, type ReactNode, useMemo } from 'react';
 
 export type PresetType =
   | 'fade'

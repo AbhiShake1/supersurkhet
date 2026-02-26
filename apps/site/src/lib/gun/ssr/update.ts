@@ -86,7 +86,11 @@ export function update<const T extends SchemaKeys>(
         envelope: {
           rowId,
           before: beforeRow,
-          after: { ...(isPlainObject(beforeRow) ? beforeRow : {}), id, ...value },
+          after: {
+            ...(isPlainObject(beforeRow) ? beforeRow : {}),
+            id,
+            ...value,
+          },
           patch: { id, ...value },
         },
       });
@@ -109,13 +113,17 @@ export function update<const T extends SchemaKeys>(
               businessId,
               table: key,
               hook: 'afterUpdate',
-                payload: { id, ...value },
-                envelope: {
-                  rowId,
-                  before: beforeRow,
-                  after: { ...(isPlainObject(beforeRow) ? beforeRow : {}), id, ...value },
-                  patch: { id, ...value },
+              payload: { id, ...value },
+              envelope: {
+                rowId,
+                before: beforeRow,
+                after: {
+                  ...(isPlainObject(beforeRow) ? beforeRow : {}),
+                  id,
+                  ...value,
                 },
+                patch: { id, ...value },
+              },
             })
               .then(() => resolve(ack))
               .catch(reject);

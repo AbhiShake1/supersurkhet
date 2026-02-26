@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  bootstrapRuntimeHealth,
   InMemoryRuntimeHealthGraphMirrorStore,
   InMemoryRuntimeHealthLocalStore,
   RuntimeHealthService,
-  bootstrapRuntimeHealth,
 } from './index';
 
 class MockRuntimeTarget extends EventTarget {
@@ -88,7 +88,8 @@ describe('runtime health integration', () => {
       },
     });
 
-    const readinessWithoutCheckpoint = await service.evaluateIntegrationReadiness();
+    const readinessWithoutCheckpoint =
+      await service.evaluateIntegrationReadiness();
     expect(readinessWithoutCheckpoint.ready).toBe(false);
     expect(readinessWithoutCheckpoint.reasons).toContain(
       'missing last_known_good snapshot',

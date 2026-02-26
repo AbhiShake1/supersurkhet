@@ -1,6 +1,6 @@
+import type { Editor } from '@tiptap/react';
 import * as React from 'react';
 import type { ShouldShowProps } from '../../types';
-import type { Editor } from '@tiptap/react';
 
 interface LinkBubbleMenuProps {
   editor: Editor;

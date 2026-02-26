@@ -1,3 +1,9 @@
+import {
+  BentoCard,
+  BentoCardSchema,
+  BentoGrid,
+  BentoGridSchema,
+} from '@/components/ui/bento-grid';
 import type {
   ComponentLayer,
   ComponentRegistry,
@@ -6,12 +12,6 @@ import {
   commonFieldOverrides,
   iconNameFieldOverrides,
 } from './form-field-overrides';
-import {
-  BentoCard,
-  BentoGrid,
-  BentoCardSchema,
-  BentoGridSchema,
-} from '@/components/ui/bento-grid';
 
 export const bentoComponentDefinitions: ComponentRegistry = {
   BentoGrid: {

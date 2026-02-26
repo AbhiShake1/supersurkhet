@@ -78,11 +78,7 @@ import { cn } from '@/lib/utils';
 const Z_INDEX = 40;
 const DIALOG_Z_INDEX = 1200;
 
-export function NavBar({
-  extraActions,
-}: {
-  extraActions?: React.ReactNode;
-}) {
+export function NavBar({ extraActions }: { extraActions?: React.ReactNode }) {
   const selectedPageId = useLayerStore((state) => state.selectedPageId);
   const findLayerById = useLayerStore((state) => state.findLayerById);
   const componentRegistry = useEditorStore((state) => state.registry);

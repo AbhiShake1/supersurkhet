@@ -1,4 +1,4 @@
-import _ from "lodash";
+import _ from 'lodash';
 
 export function undefinedToNull<T>(value: T): T {
   return _.cloneDeepWith(value, (v) => {
@@ -20,7 +20,7 @@ export function omitUndefined<T>(value: T): T {
           result[key] = omitUndefined(val);
         }
       },
-      {} as any
+      {} as Record<string, unknown>,
     ) as T;
   }
 
@@ -35,7 +35,7 @@ export function omitEmptyObject<T>(value: T): T {
   }
 
   if (isPlainObject(value)) {
-    const result: any = {};
+    const result: Record<string, unknown> = {};
 
     for (const [k, v] of Object.entries(value)) {
       const cleaned = omitEmptyObject(v);
@@ -51,6 +51,6 @@ export function omitEmptyObject<T>(value: T): T {
   return value;
 }
 
-function isPlainObject(x: unknown): x is Record<string, any> {
-  return typeof x === "object" && x !== null && !Array.isArray(x);
+function isPlainObject(x: unknown): x is Record<string, unknown> {
+  return typeof x === 'object' && x !== null && !Array.isArray(x);
 }

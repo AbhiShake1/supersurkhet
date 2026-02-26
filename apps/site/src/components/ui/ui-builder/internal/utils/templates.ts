@@ -1,5 +1,5 @@
-import { hasLayerChildren } from '@/lib/ui-builder/store/layer-utils';
 import type { ComponentLayer } from '@/components/ui/ui-builder/types';
+import { hasLayerChildren } from '@/lib/ui-builder/store/layer-utils';
 
 // Helper function to convert display name to valid JavaScript identifier
 

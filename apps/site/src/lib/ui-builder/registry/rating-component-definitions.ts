@@ -1,6 +1,6 @@
+import Rating, { RatingSchema } from '@/components/ui/rating-group.tsx';
 import type { ComponentRegistry } from '@/components/ui/ui-builder/types';
 import { commonFieldOverrides } from './form-field-overrides';
-import Rating, { RatingSchema } from '@/components/ui/rating-group.tsx';
 
 export const ratingComponentDefinitions: ComponentRegistry = {
   Rating: {

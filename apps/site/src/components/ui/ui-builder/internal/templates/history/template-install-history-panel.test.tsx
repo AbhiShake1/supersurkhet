@@ -35,7 +35,9 @@ vi.mock('@/components/ui/button', () => ({
 }));
 
 vi.mock('@/components/ui/badge', () => ({
-  Badge: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+  Badge: ({ children }: { children: React.ReactNode }) => (
+    <span>{children}</span>
+  ),
 }));
 
 vi.mock('@/server-functions/plugins', () => ({
@@ -168,7 +170,9 @@ describe('TemplateInstallHistoryPanel', () => {
     expect(container.textContent).toContain('Starter Kit');
     expect(container.textContent).toContain('acme/site/starter');
     expect(container.textContent).not.toContain('owner-2');
-    expect(container.textContent).not.toContain('business-2::acme/site/starter');
+    expect(container.textContent).not.toContain(
+      'business-2::acme/site/starter',
+    );
   });
 
   it('uses cached preview to re-apply without waiting for another preview call', async () => {
@@ -242,4 +246,3 @@ describe('TemplateInstallHistoryPanel', () => {
     expect(previewUiTemplateInstallMock).toHaveBeenCalledTimes(1);
   });
 });
-

@@ -1,4 +1,4 @@
-import type { LogicExpr, EngineOptions, MethodDefinition } from './types';
+import type { EngineOptions, LogicExpr, MethodDefinition } from './types';
 
 /**
  * Splits a path string into an array of parts, supporting escaped characters.

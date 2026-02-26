@@ -1,10 +1,10 @@
-import type { ComponentRegistry } from '@/components/ui/ui-builder/types';
+import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
 import { z } from 'zod';
-import { motion, AnimatePresence, LayoutGroup } from 'motion/react';
+import type { ComponentRegistry } from '@/components/ui/ui-builder/types';
 import {
-  commonFieldOverrides,
   childrenAsTextareaFieldOverrides,
   classNameFieldOverrides,
+  commonFieldOverrides,
 } from '@/lib/ui-builder/registry/form-field-overrides';
 
 // Define Zod schemas for Framer Motion components

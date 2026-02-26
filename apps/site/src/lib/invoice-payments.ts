@@ -30,7 +30,10 @@ export function getInvoicePayments(invoice: Invoice): InvoicePayment[] {
 export function getInvoicePaidAmount(invoice: Invoice): number {
   const payments = getInvoicePayments(invoice);
   if (!payments.length) return toSafeNumber(invoice.paidAmount);
-  return payments.reduce((sum, payment) => sum + toSafeNumber(payment.paidAmount), 0);
+  return payments.reduce(
+    (sum, payment) => sum + toSafeNumber(payment.paidAmount),
+    0,
+  );
 }
 
 export function getInvoiceTotalAmount(invoice: Invoice): number {

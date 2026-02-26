@@ -1,10 +1,11 @@
-import * as React from 'react';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
+  ClipboardCopyIcon,
+  DotsHorizontalIcon,
+  DownloadIcon,
+  Link2Icon,
+  SizeIcon,
+} from '@radix-ui/react-icons';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,12 +14,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  ClipboardCopyIcon,
-  DotsHorizontalIcon,
-  DownloadIcon,
-  Link2Icon,
-  SizeIcon,
-} from '@radix-ui/react-icons';
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 interface ImageActionsProps {
   shouldMerge?: boolean;

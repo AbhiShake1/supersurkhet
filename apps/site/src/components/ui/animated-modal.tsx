@@ -1,16 +1,16 @@
 'use client';
-import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'motion/react';
-import { z } from 'zod';
 import type React from 'react';
 import {
-  type ReactNode,
   createContext,
+  type ReactNode,
   useContext,
   useEffect,
   useRef,
   useState,
 } from 'react';
+import { z } from 'zod';
+import { cn } from '@/lib/utils';
 
 interface ModalContextType {
   open: boolean;

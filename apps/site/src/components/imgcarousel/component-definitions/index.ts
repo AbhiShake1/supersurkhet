@@ -1,15 +1,15 @@
+import { z } from 'zod';
+import {
+  CarouselCard,
+  CarouselItem as CarouselItemSchema,
+  EnhancedCarousel,
+  mockCarouselItems,
+} from '@/components/imgcarousel/imgcarousel';
 import type {
   ComponentLayer,
   ComponentRegistry,
 } from '@/components/ui/ui-builder/types';
-import { z } from 'zod';
 import { commonFieldOverrides } from '@/lib/ui-builder/registry/form-field-overrides';
-import {
-  CarouselCard,
-  EnhancedCarousel,
-  mockCarouselItems,
-} from '@/components/imgcarousel/imgcarousel';
-import { CarouselItem as CarouselItemSchema } from '@/components/imgcarousel/imgcarousel';
 
 export const imgCarouselComponentDefinitions: ComponentRegistry = {
   Carousel: {

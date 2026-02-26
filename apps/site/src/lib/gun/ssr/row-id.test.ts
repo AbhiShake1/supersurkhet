@@ -24,4 +24,3 @@ describe('gun ssr row id helpers', () => {
     expect(first).toBe(second);
   });
 });
-

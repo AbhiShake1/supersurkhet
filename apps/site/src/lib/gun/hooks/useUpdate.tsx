@@ -1,4 +1,4 @@
-import { useMutation, type UseMutationOptions } from '@tanstack/react-query';
+import { type UseMutationOptions, useMutation } from '@tanstack/react-query';
 import type { GunMessagePut } from 'gun/types';
 import type { NestedSchemaType, SchemaKeys } from '..';
 import { update } from '../ssr/update';

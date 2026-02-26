@@ -1,27 +1,11 @@
 import type { z } from 'zod';
-import type { ZodObjectOrWrapped } from '@/components/ui/autoform/zod';
-
-type Primitives = string | number | bigint | boolean | null | undefined;
-type JoinWithDot<K extends string, T extends Primitives> = T extends never | ''
-  ? K
-  : `${K}.${T}`;
-
-type ExtractFromShape<T extends z.ZodObject<any>> = {
-  [K in keyof T['shape']]: T['shape'][K] extends ZodObjectOrWrapped
-    ? JoinWithDot<
-        // @ts-expect-error if K is number, it will work unless it has nested object shape. if nested, entire object will be removed from type
-        K,
-        ExtractFromShape<T['shape'][K]>
-      >
-    : '';
-}[keyof z.infer<T>];
 
 type UnwrapEffects<T> = T extends z.ZodEffects<infer Inner>
   ? UnwrapEffects<Inner>
   : T;
 
 type FindNestedShapeInternal<
-  T extends z.ZodObject<any>,
+  T extends z.ZodObject<z.ZodRawShape>,
   K extends string,
 > = K extends `${infer Head}.${infer Tail}`
   ? Head extends keyof T['shape']

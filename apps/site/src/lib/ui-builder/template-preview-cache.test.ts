@@ -5,8 +5,8 @@ import {
   getTemplatePreviewFromCache,
   hashTemplatePreviewLayers,
   setTemplatePreviewInCache,
-  toTemplatePreviewCacheKey,
   type TemplatePreviewCacheKeyInput,
+  toTemplatePreviewCacheKey,
 } from './template-preview-cache';
 
 function preview(version: string): UiTemplateInstallPreview {
@@ -149,4 +149,3 @@ describe('template preview cache', () => {
     expect(hashA).not.toBe(hashC);
   });
 });
-

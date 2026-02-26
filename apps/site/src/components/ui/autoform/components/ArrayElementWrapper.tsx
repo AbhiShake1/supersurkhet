@@ -1,6 +1,6 @@
+import { TrashIcon } from 'lucide-react';
 import type React from 'react';
 import { Button } from '@/components/ui/button';
-import { TrashIcon } from 'lucide-react';
 import type { ArrayElementWrapperProps } from '../react';
 
 export const ArrayElementWrapper: React.FC<ArrayElementWrapperProps> = ({

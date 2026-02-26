@@ -1,19 +1,19 @@
+import type { z } from 'zod';
 import {
   applyTransformerRequestParsers,
   applyTransformerResponseParsers,
   getSchema,
 } from './parser';
-import type { z } from 'zod';
 
 // const secret = "#supersekret";
 
 // const isServer = typeof window === "undefined";
 
+type SupportedSchema = z.AnyZodObject | z.ZodEffects<z.AnyZodObject>;
+
 export async function encrypt<
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  T extends Record<string, any>,
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  TSchema extends z.ZodObject<any> | z.ZodEffects<any>,
+  T extends Record<string, unknown>,
+  TSchema extends SupportedSchema,
 >(_obj: T, schema: TSchema) {
   return applyTransformerRequestParsers(_obj, getSchema(schema));
   // if (isServer) return;
@@ -33,13 +33,7 @@ export async function encrypt<
 
 export async function decrypt<
   T,
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  TSchema extends
-    | z.ZodObject<any>
-    | z.ZodEffects<any> = // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    | z.ZodObject<any>
-    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    | z.ZodEffects<any>,
+  TSchema extends SupportedSchema = SupportedSchema,
 >(o: T, schema: TSchema) {
   return applyTransformerResponseParsers(o, getSchema(schema));
   // if (isServer) return;

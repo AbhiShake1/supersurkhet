@@ -1,7 +1,8 @@
 'use client';
 
+import { TrendingUp } from 'lucide-react';
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
-
+import { Badge } from '@/components/ui/badge';
 import {
   Card,
   CardContent,
@@ -15,8 +16,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import { Badge } from '@/components/ui/badge';
-import { TrendingUp } from 'lucide-react';
 
 interface SalesTrendsChartProps {
   data: {

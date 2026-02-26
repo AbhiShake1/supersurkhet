@@ -11,11 +11,7 @@ export type PluginCatalogFilter =
   | 'upgradable'
   | 'not-installed';
 
-export type PluginCatalogSort =
-  | 'recent'
-  | 'name'
-  | 'capabilities'
-  | 'versions';
+export type PluginCatalogSort = 'recent' | 'name' | 'capabilities' | 'versions';
 
 export type PluginCatalogEntry = {
   pluginId: string;
@@ -147,45 +143,54 @@ export function buildPluginCatalog({
 
   const normalizedQuery = query.trim().toLowerCase();
 
-  const entries = [...releasesByPluginId.entries()].map(([pluginId, bucket]) => {
-    const sortedReleases = [...bucket].sort((left, right) => {
-      const versionComparison = comparePluginVersions(right.version, left.version);
-      if (versionComparison !== 0) return versionComparison;
+  const entries = [...releasesByPluginId.entries()].map(
+    ([pluginId, bucket]) => {
+      const sortedReleases = [...bucket].sort((left, right) => {
+        const versionComparison = comparePluginVersions(
+          right.version,
+          left.version,
+        );
+        if (versionComparison !== 0) return versionComparison;
 
-      const leftPublished = left.publishedAt ? Date.parse(left.publishedAt) : 0;
-      const rightPublished = right.publishedAt ? Date.parse(right.publishedAt) : 0;
-      return rightPublished - leftPublished;
-    });
+        const leftPublished = left.publishedAt
+          ? Date.parse(left.publishedAt)
+          : 0;
+        const rightPublished = right.publishedAt
+          ? Date.parse(right.publishedAt)
+          : 0;
+        return rightPublished - leftPublished;
+      });
 
-    const latestRelease = sortedReleases[0];
-    if (!latestRelease) {
-      throw new Error(`Expected at least one release for plugin ${pluginId}`);
-    }
+      const latestRelease = sortedReleases[0];
+      if (!latestRelease) {
+        throw new Error(`Expected at least one release for plugin ${pluginId}`);
+      }
 
-    const installed = installsByPluginId.get(pluginId);
-    const capabilities = collectCapabilities(sortedReleases);
-    const title = latestRelease.docs?.title?.trim() || pluginId;
-    const description = latestRelease.docs?.description?.trim() || '';
-    const isInstalled = Boolean(installed);
-    const isUpgradable = installed
-      ? comparePluginVersions(latestRelease.version, installed.version) > 0
-      : false;
+      const installed = installsByPluginId.get(pluginId);
+      const capabilities = collectCapabilities(sortedReleases);
+      const title = latestRelease.docs?.title?.trim() || pluginId;
+      const description = latestRelease.docs?.description?.trim() || '';
+      const isInstalled = Boolean(installed);
+      const isUpgradable = installed
+        ? comparePluginVersions(latestRelease.version, installed.version) > 0
+        : false;
 
-    return {
-      pluginId,
-      latestRelease,
-      releases: sortedReleases,
-      availableVersions: sortedReleases.map((release) => release.version),
-      installed,
-      isInstalled,
-      isUpgradable,
-      capabilityCount: capabilities.length,
-      capabilities,
-      title,
-      description,
-      latestPublishedAt: latestRelease.publishedAt,
-    } satisfies PluginCatalogEntry;
-  });
+      return {
+        pluginId,
+        latestRelease,
+        releases: sortedReleases,
+        availableVersions: sortedReleases.map((release) => release.version),
+        installed,
+        isInstalled,
+        isUpgradable,
+        capabilityCount: capabilities.length,
+        capabilities,
+        title,
+        description,
+        latestPublishedAt: latestRelease.publishedAt,
+      } satisfies PluginCatalogEntry;
+    },
+  );
 
   const filteredByQuery = entries.filter((entry) => {
     if (!normalizedQuery) return true;
@@ -251,7 +256,9 @@ export function summarizePluginPortfolio({
 }: SummarizePluginPortfolioInput) {
   const totalPlugins = catalog.length;
   const installedPlugins = catalog.filter((entry) => entry.isInstalled).length;
-  const upgradablePlugins = catalog.filter((entry) => entry.isUpgradable).length;
+  const upgradablePlugins = catalog.filter(
+    (entry) => entry.isUpgradable,
+  ).length;
   const totalDrafts = drafts.length;
 
   const installedDraftIds = new Set(

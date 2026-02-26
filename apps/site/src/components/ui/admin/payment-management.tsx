@@ -1,6 +1,19 @@
 'use client';
 
+import { format } from 'date-fns';
+import _ from 'lodash';
+import {
+  CheckCircle,
+  Clock,
+  RotateCcw,
+  Search,
+  Wallet,
+  XCircle,
+} from 'lucide-react';
 import { useState } from 'react';
+import { AutoKanban } from '@/components/auto-admin';
+import { AutoTable } from '@/components/auto-table';
+import { Badge } from '@/components/ui/badge';
 import {
   Card,
   CardContent,
@@ -9,22 +22,9 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Search,
-  Wallet,
-  Clock,
-  CheckCircle,
-  XCircle,
-  RotateCcw,
-} from 'lucide-react';
-import type { AdminComponent } from '.';
 import { api } from '@/lib/api';
-import _ from 'lodash';
-import { format } from 'date-fns';
-import { AutoKanban } from '@/components/auto-admin';
-import { AutoTable } from '@/components/auto-table';
+import type { AdminComponent } from '.';
 
 interface PaymentManagementProps {
   slug: string;

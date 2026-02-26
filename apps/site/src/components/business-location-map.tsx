@@ -1,3 +1,4 @@
+import type React from 'react';
 import { Card } from '@/components/ui/card';
 import {
   // biome-ignore lint/suspicious/noShadowRestrictedNames: lint debt cleanup
@@ -7,7 +8,6 @@ import {
   MarkerContent,
 } from '@/components/ui/map';
 import type { Business } from '@/lib/schema';
-import type React from 'react';
 
 interface BusinessLocationMapProps {
   business: Business;

@@ -42,7 +42,7 @@ export function TemplateVersionSelector({
 
   const resolvedVersion = preferLatestVersion
     ? (sortedReleases[0]?.version ?? '')
-    : (selectedVersion || sortedReleases[0]?.version || '');
+    : selectedVersion || sortedReleases[0]?.version || '';
 
   useEffect(() => {
     onResolvedSelectionChange?.({

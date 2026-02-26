@@ -1,4 +1,24 @@
 import {
+  Bath,
+  RockingChairIcon as ChairIcon,
+  ChevronDown,
+  Columns,
+  DoorOpenIcon as Door,
+  Flower2,
+  GlassWater,
+  HelpCircle,
+  PaintBucket,
+  Palette,
+  Settings,
+  Sofa,
+  Square,
+  StepBackIcon as Stairs,
+  TreesIcon as Tree,
+  UtensilsCrossed,
+  AppWindowIcon as Window,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -22,26 +42,6 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import {
-  Bath,
-  RockingChairIcon as ChairIcon,
-  ChevronDown,
-  Columns,
-  DoorOpenIcon as Door,
-  Flower2,
-  GlassWater,
-  HelpCircle,
-  PaintBucket,
-  Palette,
-  Settings,
-  Sofa,
-  Square,
-  StepBackIcon as Stairs,
-  TreesIcon as Tree,
-  UtensilsCrossed,
-  AppWindowIcon as Window,
-} from 'lucide-react';
-import { useEffect, useState } from 'react';
 import type {
   ElementSize,
   ElementType,

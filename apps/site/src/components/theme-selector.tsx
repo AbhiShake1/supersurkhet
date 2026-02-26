@@ -1,3 +1,4 @@
+import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -6,7 +7,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useTheme } from '@/contexts/theme-context';
-import { ThemeToggle } from '@/components/theme/theme-toggle';
 
 export function ThemeSelector() {
   const { currentThemeName, getAvailablePresets, applyPreset } = useTheme();

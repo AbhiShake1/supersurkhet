@@ -62,8 +62,8 @@ export function get<const T extends SchemaKeys>(
   key:
     | T
     | (GetBuilder<T> & {
-      key: T;
-    }),
+        key: T;
+      }),
   ...restKeys: string[]
 ) {
   const options = mergeOptionsWithDefaults({});
@@ -99,8 +99,8 @@ export function get<const T extends SchemaKeys>(
         error instanceof Error
           ? error
           : new Error(
-            `SSR get failed for "${keys}" with non-Error rejection: ${String(error)}`,
-          ),
+              `SSR get failed for "${keys}" with non-Error rejection: ${String(error)}`,
+            ),
       );
     };
 

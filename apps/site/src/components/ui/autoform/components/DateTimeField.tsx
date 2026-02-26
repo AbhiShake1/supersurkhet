@@ -1,8 +1,8 @@
+import React from 'react';
 import { DateTimeInput } from '@/components/datetime-input';
 import { DateTimePicker } from '@/components/datetime-picker';
-import type { AutoFormFieldProps } from '../react';
-import React from 'react';
 import { cn } from '@/lib/utils';
+import type { AutoFormFieldProps } from '../react';
 
 export const DateTimeField: React.FC<AutoFormFieldProps> = ({
   inputProps,
@@ -11,9 +11,13 @@ export const DateTimeField: React.FC<AutoFormFieldProps> = ({
   value,
   field,
 }) => {
-  const { key, ...props } = inputProps;
+  const props = inputProps;
   const [date, setDate] = React.useState<Date | undefined>(
-    field.default ? new Date(field.default) : value ? new Date(value) : undefined,
+    field.default
+      ? new Date(field.default)
+      : value
+        ? new Date(value)
+        : undefined,
   );
 
   const handleDateChange = (newDate: Date | undefined) => {

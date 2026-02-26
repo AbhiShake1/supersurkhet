@@ -44,9 +44,10 @@ export function validateWorkflowDags(
   const diagnostics = workflows.flatMap(
     (workflow) =>
       validateWorkflowDag(workflow, {
-        pathPrefix:
-          options?.workflowPathPrefixById?.[workflow.workflowId] ??
-          ['workflows', workflow.workflowId || '(unknown-workflow)'],
+        pathPrefix: options?.workflowPathPrefixById?.[workflow.workflowId] ?? [
+          'workflows',
+          workflow.workflowId || '(unknown-workflow)',
+        ],
       }).diagnostics,
   );
 
@@ -63,8 +64,10 @@ export function validateWorkflowDag(
   },
 ): WorkflowDagValidationResult {
   const diagnostics: WorkflowDagValidatorDiagnostic[] = [];
-  const pathPrefix =
-    options?.pathPrefix ?? ['workflows', workflow.workflowId || '(unknown-workflow)'];
+  const pathPrefix = options?.pathPrefix ?? [
+    'workflows',
+    workflow.workflowId || '(unknown-workflow)',
+  ];
   const pathOf = (...suffix: string[]) => [...pathPrefix, ...suffix];
 
   const graph = buildGraph(workflow, diagnostics, pathOf);

@@ -1,7 +1,7 @@
-import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { cn } from '@/lib/utils';
+import React from 'react';
 import { useDndContext } from '@/lib/ui-builder/context/dnd-context';
+import { cn } from '@/lib/utils';
 
 // Constants for repeated class patterns
 const BEFORE_CENTER_TRANSFORM =

@@ -1,5 +1,9 @@
-import type { DeriveConfig, DeriveFn, FieldConfigCustomData } from '../ui/autoform';
 import { runDeriveWithRuntimeFormValues } from '@/lib/zod/with-derivations';
+import type {
+  DeriveConfig,
+  DeriveFn,
+  FieldConfigCustomData,
+} from '../ui/autoform';
 
 export function getDeriveFn(
   customData: FieldConfigCustomData | undefined,

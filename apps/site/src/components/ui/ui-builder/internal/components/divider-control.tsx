@@ -1,12 +1,12 @@
-import { AddComponentsPopover } from '@/components/ui/ui-builder/internal/components/add-component-popover';
-import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { AddComponentsPopover } from '@/components/ui/ui-builder/internal/components/add-component-popover';
+import { cn } from '@/lib/utils';
 
 type DividerControlProps = {
   className?: string;

@@ -1,3 +1,7 @@
+import { Zap } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { VisualFlowBuilder } from '@/components/qr/visual-flow-builder';
 import {
   Card,
   CardContent,
@@ -10,11 +14,6 @@ import {
   dataMatrixActionSchema,
 } from '@/lib/datamatrix';
 import { ActionExecutor } from '@/lib/datamatrix/action-executor';
-import { Zap } from 'lucide-react';
-import { useState } from 'react';
-import { toast } from 'sonner';
-
-import { VisualFlowBuilder } from '@/components/qr/visual-flow-builder';
 
 // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
 export function QRCodePage({ slug }: { slug: string }) {

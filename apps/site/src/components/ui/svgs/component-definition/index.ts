@@ -1,6 +1,6 @@
 import type { ComponentRegistry } from '@/components/ui/ui-builder/types';
-import { SvgIcon, SvgIconSchema } from '../SvgIcon';
 import { commonFieldOverrides } from '@/lib/ui-builder/registry/form-field-overrides';
+import { SvgIcon, SvgIconSchema } from '../SvgIcon';
 
 export const svgsComponentDefinitions: ComponentRegistry = {
   SvgIcon: {

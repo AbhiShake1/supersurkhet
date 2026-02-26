@@ -1,8 +1,8 @@
-import React, { createContext, useContext, type ReactNode } from 'react';
+import React, { createContext, type ReactNode, useContext } from 'react';
 import i18n, {
-  type Language,
-  DEFAULT_LANGUAGE,
   AVAILABLE_LANGUAGES,
+  DEFAULT_LANGUAGE,
+  type Language,
 } from '../lib/i18n';
 
 // Define the context type

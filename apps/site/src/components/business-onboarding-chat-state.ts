@@ -256,7 +256,10 @@ export function resolveBusinessOnboardingRecoveryPromptAction(input: {
     return input.action;
   }
 
-  if (input.key && input.key !== BUSINESS_ONBOARDING_RECOVERY_ACCEPT_SHORTCUT.key) {
+  if (
+    input.key &&
+    input.key !== BUSINESS_ONBOARDING_RECOVERY_ACCEPT_SHORTCUT.key
+  ) {
     return 'dismiss';
   }
 

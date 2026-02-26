@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'vitest';
-import { buildCriticalThemeCss, type CriticalThemeStyles } from './critical-theme-css';
+import {
+  buildCriticalThemeCss,
+  type CriticalThemeStyles,
+} from './critical-theme-css';
 
 const fallbackTheme: CriticalThemeStyles = {
   light: {

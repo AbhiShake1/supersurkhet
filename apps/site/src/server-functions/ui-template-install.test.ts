@@ -1,11 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const {
-  ssrGetMock,
-  ssrCreateMock,
-  ssrUpdateMock,
-  state,
-} = vi.hoisted(() => {
+const { ssrGetMock, ssrCreateMock, ssrUpdateMock, state } = vi.hoisted(() => {
   const runtimeState = {
     pluginReleases: [] as Record<string, unknown>[],
     uiTemplateReleases: [] as Record<string, unknown>[],
@@ -193,7 +188,9 @@ describe('ui template install server functions', () => {
           return { ok: true };
         }
         if (key === 'business') {
-          const existing = state.businesses.get(String(row.id)) ?? { id: row.id };
+          const existing = state.businesses.get(String(row.id)) ?? {
+            id: row.id,
+          };
           state.businesses.set(String(row.id), { ...existing, ...row });
           return { ok: true };
         }
@@ -337,9 +334,13 @@ describe('ui template install server functions', () => {
 
     expect(installed.version).toBe('1.0.0');
     expect(
-      state.pluginReleases.some((release) => release.id === 'acme.inventory@2.0.0'),
+      state.pluginReleases.some(
+        (release) => release.id === 'acme.inventory@2.0.0',
+      ),
     ).toBe(true);
-    expect(state.businessInstalls.get('business-1')?.[0]?.version).toBe('2.0.0');
+    expect(state.businessInstalls.get('business-1')?.[0]?.version).toBe(
+      '2.0.0',
+    );
     expect(state.businessTemplateInstalls.get('business-1')).toHaveLength(1);
   });
 });

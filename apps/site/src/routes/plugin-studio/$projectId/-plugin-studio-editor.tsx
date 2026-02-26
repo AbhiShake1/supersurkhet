@@ -3,16 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import deepEqual from 'fast-deep-equal';
 import * as LucideIcons from 'lucide-react';
-import {
-  ArrowLeft,
-  BadgePlus,
-  CloudUpload,
-  type LucideIcon,
-  Pencil,
-  Plus,
-  Trash2,
-  Wand2,
-} from 'lucide-react';
+import { ArrowLeft, type LucideIcon, Plus, Trash2 } from 'lucide-react';
 import {
   useCallback,
   useEffect,
@@ -24,21 +15,9 @@ import {
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { useAuth } from '@/components/auth-provider';
-import { AutoAdmin } from '@/components/auto-admin';
 import { PluginStudioEditableAutoAdmin } from '@/components/auto-admin/auto-admin-plugin-studio-editable';
 import { useConfetti } from '@/components/confetti-provider';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { AUTOFORM_FIELD_TYPES } from '@/components/ui/autoform';
-import { ClassNameFieldControl } from '@/components/ui/autoform/components/ClassNameField';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -48,57 +27,17 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Combobox } from '@/components/ui/combobox';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import {
-  ShortcutKbd,
-  useShortcutAction,
-} from '@/components/ui/keyboard-shortcuts';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+import { useShortcutAction } from '@/components/ui/keyboard-shortcuts';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import UIBuilder from '@/components/ui/ui-builder';
 import type { ComponentLayer } from '@/components/ui/ui-builder/types';
 import { buildDerivationPathOptions } from '@/features/plugin-builder/workspace/tabs/derivation-path-options';
 import {
   compileDerivedFieldToDeriveIr,
-  DERIVED_FIELD_OPERATION_OPTIONS,
-  DERIVED_FIELD_SOURCE_OPTIONS,
-  type DerivedFieldOperation,
   parseDerivedFieldsFromSchemaDoc,
   type SchemaBuilderDerivedField,
 } from '@/features/plugin-builder/workspace/tabs/derived-fields';
-import { PluginStudioV3Tabs } from '@/features/plugin-builder/workspace/tabs/plugin-studio-v3-tabs';
-import { WorkflowGraphEditor } from '@/features/plugin-builder/workspace/tabs/workflow-graph-editor';
 import { api } from '@/lib/api';
 import { toDraftRevisionRowId } from '@/lib/plugins/draft-revision-row-id';
 import {
@@ -1172,11 +1111,11 @@ const BUILDER_FIELD_TYPES = [
 const BUILDER_LEAF_FIELD_TYPES = BUILDER_FIELD_TYPES.filter(
   (fieldType) => fieldType !== 'array' && fieldType !== 'object',
 ) as Exclude<(typeof BUILDER_FIELD_TYPES)[number], 'array' | 'object'>[];
-const BUILDER_FIELD_TYPE_OPTIONS = BUILDER_FIELD_TYPES.map((fieldType) => ({
+const _BUILDER_FIELD_TYPE_OPTIONS = BUILDER_FIELD_TYPES.map((fieldType) => ({
   value: fieldType,
   label: fieldType,
 }));
-const BUILDER_LEAF_FIELD_TYPE_OPTIONS = BUILDER_LEAF_FIELD_TYPES.map(
+const _BUILDER_LEAF_FIELD_TYPE_OPTIONS = BUILDER_LEAF_FIELD_TYPES.map(
   (fieldType) => ({
     value: fieldType,
     label: fieldType,
@@ -1217,7 +1156,7 @@ function isNumericFieldType(fieldType: BuilderFieldType | undefined) {
   return fieldType ? NUMERIC_FIELD_TYPES.has(fieldType) : false;
 }
 
-function resolveFieldTypeSelection(
+function _resolveFieldTypeSelection(
   selectedType: BuilderFieldType,
   currentFieldType: BuilderLeafFieldType,
 ) {
@@ -1368,7 +1307,7 @@ function setJsonStringEntry(
   return stringifyJsonInput(next);
 }
 
-function setJsonNumberEntry(
+function _setJsonNumberEntry(
   value: string | undefined,
   key: string,
   nextValue: string | undefined,
@@ -1384,7 +1323,7 @@ function setJsonNumberEntry(
   return stringifyJsonInput(next);
 }
 
-function setJsonBooleanEntry(
+function _setJsonBooleanEntry(
   value: string | undefined,
   key: string,
   nextValue: boolean | undefined,
@@ -1403,7 +1342,7 @@ function readJsonStringEntry(value: string | undefined, key: string): string {
   return typeof record[key] === 'string' ? (record[key] as string) : '';
 }
 
-function readJsonNumberEntry(value: string | undefined, key: string): string {
+function _readJsonNumberEntry(value: string | undefined, key: string): string {
   const record = parseJsonRecord(value);
   const entry = record[key];
   if (typeof entry === 'number') return String(entry);
@@ -1411,13 +1350,16 @@ function readJsonNumberEntry(value: string | undefined, key: string): string {
   return '';
 }
 
-function readJsonBooleanEntry(value: string | undefined, key: string): boolean {
+function _readJsonBooleanEntry(
+  value: string | undefined,
+  key: string,
+): boolean {
   const record = parseJsonRecord(value);
   const entry = record[key];
   return entry === true || entry === 'true';
 }
 
-function readJsonStringArrayEntry(
+function _readJsonStringArrayEntry(
   value: string | undefined,
   key: string,
 ): string[] {
@@ -1429,7 +1371,7 @@ function readJsonStringArrayEntry(
     .filter(Boolean);
 }
 
-function setJsonStringArrayEntry(
+function _setJsonStringArrayEntry(
   value: string | undefined,
   key: string,
   nextValues: readonly string[],
@@ -1444,13 +1386,13 @@ function setJsonStringArrayEntry(
   return stringifyJsonInput(next);
 }
 
-function readJsonEntryText(value: string | undefined, key: string): string {
+function _readJsonEntryText(value: string | undefined, key: string): string {
   const record = parseJsonRecord(value);
   const entry = record[key];
   return entry === undefined ? '' : stringifyJsonEntryValue(entry);
 }
 
-function setJsonEntryValue(
+function _setJsonEntryValue(
   value: string | undefined,
   key: string,
   nextValue: string | undefined,
@@ -1470,7 +1412,7 @@ type OptionPair = {
   label: string;
 };
 
-function readJsonOptionPairsEntry(
+function _readJsonOptionPairsEntry(
   value: string | undefined,
   key: string,
 ): OptionPair[] {
@@ -1490,7 +1432,7 @@ function readJsonOptionPairsEntry(
   return pairs;
 }
 
-function setJsonOptionPairsEntry(
+function _setJsonOptionPairsEntry(
   value: string | undefined,
   key: string,
   nextPairs: readonly OptionPair[],
@@ -1550,7 +1492,7 @@ function parseJsonEntryValue(rawValue: string): unknown {
   return rawValue;
 }
 
-function listJsonEntries(
+function _listJsonEntries(
   value: string | undefined,
   options?: {
     excludeKeys?: ReadonlySet<string>;
@@ -1565,7 +1507,7 @@ function listJsonEntries(
     }));
 }
 
-function getNextJsonEntryKey(
+function _getNextJsonEntryKey(
   record: Record<string, unknown>,
   prefix: string,
   blockedKeys?: ReadonlySet<string>,
@@ -1582,7 +1524,7 @@ function getNextJsonEntryKey(
   }
 }
 
-function upsertJsonEntry(
+function _upsertJsonEntry(
   value: string | undefined,
   currentKey: string,
   nextKey: string,
@@ -1608,7 +1550,7 @@ function upsertJsonEntry(
   return stringifyJsonInput(record);
 }
 
-function removeJsonEntry(value: string | undefined, key: string): string {
+function _removeJsonEntry(value: string | undefined, key: string): string {
   const record = parseJsonRecord(value);
   const normalizedKey = key.trim();
   if (normalizedKey) {
@@ -1617,7 +1559,7 @@ function removeJsonEntry(value: string | undefined, key: string): string {
   return stringifyJsonInput(record);
 }
 
-const BUILDER_INPUT_PROP_RESERVED_KEYS = new Set<string>([
+const _BUILDER_INPUT_PROP_RESERVED_KEYS = new Set<string>([
   'placeholder',
   'step',
   'rows',
@@ -1626,7 +1568,7 @@ const BUILDER_INPUT_PROP_RESERVED_KEYS = new Set<string>([
   'className',
 ]);
 
-const BUILDER_FIELD_CONFIG_RESERVED_KEYS = new Set<string>([
+const _BUILDER_FIELD_CONFIG_RESERVED_KEYS = new Set<string>([
   'fieldType',
   'label',
   'description',
@@ -1634,7 +1576,7 @@ const BUILDER_FIELD_CONFIG_RESERVED_KEYS = new Set<string>([
   'customData',
 ]);
 
-const BUILDER_CUSTOM_DATA_RESERVED_KEYS = new Set<string>([
+const _BUILDER_CUSTOM_DATA_RESERVED_KEYS = new Set<string>([
   'displayKey',
   'source',
   'sources',
@@ -1858,7 +1800,7 @@ type StringListEditorProps = {
   itemPlaceholder: string;
 };
 
-function StringListEditor({
+function _StringListEditor({
   values,
   onChange,
   addLabel,
@@ -2168,7 +2110,7 @@ type BlocklyBlockLike = {
   getInputTargetBlock: (inputName: string) => BlocklyBlockLike | null;
 };
 
-function buildConditionFromBlocklyBlock(
+function _buildConditionFromBlocklyBlock(
   block: BlocklyBlockLike | null,
   leftField: string,
 ): ExpressionDoc | null {
@@ -2229,11 +2171,11 @@ function buildConditionFromBlocklyBlock(
   }
 
   if (block.type === 'plugin_logic_and' || block.type === 'plugin_logic_or') {
-    const leftCondition = buildConditionFromBlocklyBlock(
+    const leftCondition = _buildConditionFromBlocklyBlock(
       block.getInputTargetBlock('A'),
       leftField,
     );
-    const rightCondition = buildConditionFromBlocklyBlock(
+    const rightCondition = _buildConditionFromBlocklyBlock(
       block.getInputTargetBlock('B'),
       leftField,
     );
@@ -2246,7 +2188,7 @@ function buildConditionFromBlocklyBlock(
   }
 
   if (block.type === 'plugin_logic_not') {
-    const nestedCondition = buildConditionFromBlocklyBlock(
+    const nestedCondition = _buildConditionFromBlocklyBlock(
       block.getInputTargetBlock('VALUE'),
       leftField,
     );
@@ -2584,7 +2526,7 @@ function PluginStudioPresenter({
     'title' | 'description' | null
   >(null);
   const [editingMetadataValue, setEditingMetadataValue] = useState('');
-  const [selectedTemplateLabel, setSelectedTemplateLabel] = useState<string>();
+  const [_selectedTemplateLabel, setSelectedTemplateLabel] = useState<string>();
   const [coreExtensionSchemaIds, setCoreExtensionSchemaIds] = useState<
     Record<string, true>
   >({});
@@ -2611,7 +2553,7 @@ function PluginStudioPresenter({
   const [columnSheetMode, setColumnSheetMode] =
     useState<ColumnSheetMode>('add');
   const [editingColumnKey, setEditingColumnKey] = useState<string | null>(null);
-  const [isDeleteColumnDialogOpen, setIsDeleteColumnDialogOpen] =
+  const [_isDeleteColumnDialogOpen, setIsDeleteColumnDialogOpen] =
     useState(false);
   const [pendingDeleteColumnKey, setPendingDeleteColumnKey] = useState<
     string | null
@@ -2620,40 +2562,40 @@ function PluginStudioPresenter({
     schemaId: string;
     tabTitle: string;
   } | null>(null);
-  const [isSchemaEditorOpen, setIsSchemaEditorOpen] = useState(false);
-  const [isTemplatesDialogOpen, setIsTemplatesDialogOpen] = useState(false);
-  const [isWorkflowEditorOpen, setIsWorkflowEditorOpen] = useState(false);
+  const [_isSchemaEditorOpen, setIsSchemaEditorOpen] = useState(false);
+  const [_isTemplatesDialogOpen, setIsTemplatesDialogOpen] = useState(false);
+  const [_isWorkflowEditorOpen, setIsWorkflowEditorOpen] = useState(false);
   const [workflowEditorLockedTable, setWorkflowEditorLockedTable] = useState<
     string | null
   >(null);
-  const [blocklyDraft, setBlocklyDraft] = useState<BlocklyDraft>({
+  const [blocklyDraft, _setBlocklyDraft] = useState<BlocklyDraft>({
     fieldId: null,
     operator: 'eq',
     rightField: '',
     message: 'Validation rule failed',
   });
-  const [isBlocklyComposerOpen, setIsBlocklyComposerOpen] = useState(false);
-  const [isBlocklyReady, setIsBlocklyReady] = useState(false);
-  const [blocklyError, setBlocklyError] = useState<string | null>(null);
+  const [isBlocklyComposerOpen, _setIsBlocklyComposerOpen] = useState(false);
+  const [_isBlocklyReady, setIsBlocklyReady] = useState(false);
+  const [_blocklyError, setBlocklyError] = useState<string | null>(null);
   const blocklyWorkspaceId = useId();
   const addColumnFieldIdBase = useId();
   const schemaEditorFieldIdBase = useId();
   const workflowEditorFieldIdBase = useId();
-  const addColumnKeyId = `${addColumnFieldIdBase}-key`;
-  const addColumnLabelId = `${addColumnFieldIdBase}-label`;
-  const addColumnDescriptionId = `${addColumnFieldIdBase}-description`;
-  const addColumnClassNameId = `${addColumnFieldIdBase}-className`;
-  const addColumnDefaultId = `${addColumnFieldIdBase}-default`;
-  const addColumnEnumId = `${addColumnFieldIdBase}-enum`;
-  const addColumnMinId = `${addColumnFieldIdBase}-min`;
-  const addColumnMaxId = `${addColumnFieldIdBase}-max`;
-  const schemaEditorSchemaIdInputId = `${schemaEditorFieldIdBase}-schema-id`;
-  const schemaEditorSchemaTitleInputId = `${schemaEditorFieldIdBase}-schema-title`;
-  const workflowEditorSelectorId = `${workflowEditorFieldIdBase}-selector`;
-  const workflowEditorWorkflowIdInputId = `${workflowEditorFieldIdBase}-workflow-id`;
-  const workflowEditorTableInputId = `${workflowEditorFieldIdBase}-table`;
-  const workflowEditorHookId = `${workflowEditorFieldIdBase}-hook`;
-  const logicComposerFieldId = `${blocklyWorkspaceId}-logic-composer-field`;
+  const _addColumnKeyId = `${addColumnFieldIdBase}-key`;
+  const _addColumnLabelId = `${addColumnFieldIdBase}-label`;
+  const _addColumnDescriptionId = `${addColumnFieldIdBase}-description`;
+  const _addColumnClassNameId = `${addColumnFieldIdBase}-className`;
+  const _addColumnDefaultId = `${addColumnFieldIdBase}-default`;
+  const _addColumnEnumId = `${addColumnFieldIdBase}-enum`;
+  const _addColumnMinId = `${addColumnFieldIdBase}-min`;
+  const _addColumnMaxId = `${addColumnFieldIdBase}-max`;
+  const _schemaEditorSchemaIdInputId = `${schemaEditorFieldIdBase}-schema-id`;
+  const _schemaEditorSchemaTitleInputId = `${schemaEditorFieldIdBase}-schema-title`;
+  const _workflowEditorSelectorId = `${workflowEditorFieldIdBase}-selector`;
+  const _workflowEditorWorkflowIdInputId = `${workflowEditorFieldIdBase}-workflow-id`;
+  const _workflowEditorTableInputId = `${workflowEditorFieldIdBase}-table`;
+  const _workflowEditorHookId = `${workflowEditorFieldIdBase}-hook`;
+  const _logicComposerFieldId = `${blocklyWorkspaceId}-logic-composer-field`;
   const [blocklyMountElement, setBlocklyMountElement] =
     useState<HTMLDivElement | null>(null);
   const schemaEditorOpenTimeoutRef = useRef<ReturnType<
@@ -2675,7 +2617,7 @@ function PluginStudioPresenter({
     null,
   );
   const [hydratedDraftKey, setHydratedDraftKey] = useState<string | null>(null);
-  const handleBlocklyContainerRef = useCallback(
+  const _handleBlocklyContainerRef = useCallback(
     (node: HTMLDivElement | null) => {
       setBlocklyMountElement((current) => (current === node ? current : node));
     },
@@ -2799,8 +2741,6 @@ function PluginStudioPresenter({
   const deleteRoutesTabsConfigMutation = api.pluginRoutesTabsConfig.useDelete({
     keys: draftDocScopeKeys,
   });
-  const { data: workflowJobs = [] } = api.pluginWorkflowJob.useGet();
-  const { data: workflowEventLogs = [] } = api.pluginWorkflowEventLog.useGet();
 
   const workspaceSchemaDocs = useMemo(() => {
     const rows = schemaDocRows;
@@ -3087,22 +3027,26 @@ function PluginStudioPresenter({
       blocklyRefinements,
     );
   }
-  function setSchemaRefinements(
-    value:
-      | BuilderRefinement[]
-      | ((current: BuilderRefinement[]) => BuilderRefinement[]),
-  ) {
-    const nextSchemaRefinements =
-      typeof value === 'function' ? value(schemaRefinements) : value;
-    if (deepEqual(nextSchemaRefinements, schemaRefinements)) {
-      return;
-    }
-    persistSchemaEditorState(
-      schemaBuilder,
-      nextSchemaRefinements,
-      blocklyRefinements,
-    );
-  }
+  // biome-ignore lint/correctness/useExhaustiveDependencies: persist helper identity is intentionally omitted to keep this callback stable.
+  const setSchemaRefinements = useCallback(
+    (
+      value:
+        | BuilderRefinement[]
+        | ((current: BuilderRefinement[]) => BuilderRefinement[]),
+    ) => {
+      const nextSchemaRefinements =
+        typeof value === 'function' ? value(schemaRefinements) : value;
+      if (deepEqual(nextSchemaRefinements, schemaRefinements)) {
+        return;
+      }
+      persistSchemaEditorState(
+        schemaBuilder,
+        nextSchemaRefinements,
+        blocklyRefinements,
+      );
+    },
+    [blocklyRefinements, schemaBuilder, schemaRefinements],
+  );
   function setBlocklyRefinements(
     value:
       | BlocklyRefinement[]
@@ -3147,7 +3091,7 @@ function PluginStudioPresenter({
     );
   }, [activeWorkflowId, availableWorkflows]);
 
-  const isValidInputs = useMemo(() => {
+  const _isValidInputs = useMemo(() => {
     const hasInvalidFieldConfig = schemaBuilder.fields.some((field) =>
       hasFieldValidationErrors(field),
     );
@@ -3190,7 +3134,7 @@ function PluginStudioPresenter({
     expectedHydratedDraftKey && hydratedDraftKey === expectedHydratedDraftKey,
   );
 
-  const beginMetadataEdit = useCallback(
+  const _beginMetadataEdit = useCallback(
     (field: 'title' | 'description') => {
       setEditingMetadataField(field);
       setEditingMetadataValue(
@@ -3240,7 +3184,7 @@ function PluginStudioPresenter({
     ],
   );
 
-  const commitMetadataEdit = useCallback(() => {
+  const _commitMetadataEdit = useCallback(() => {
     if (!editingMetadataField) return;
     const nextValue = editingMetadataValue;
     const nextTitle =
@@ -3263,7 +3207,7 @@ function PluginStudioPresenter({
     persistDraftMetadata,
   ]);
 
-  const stopMetadataEdit = useCallback(() => {
+  const _stopMetadataEdit = useCallback(() => {
     setEditingMetadataField(null);
     setEditingMetadataValue('');
   }, []);
@@ -3428,11 +3372,9 @@ function PluginStudioPresenter({
   }, [
     pluginId,
     activeDraft,
-    isAuthenticated,
     isDraftLoading,
     isActorIdentityReady,
     draftId,
-    actorUserId,
     createDraft,
   ]);
 
@@ -3488,9 +3430,6 @@ function PluginStudioPresenter({
     lastRequestedDraftSnapshotRef.current = requestedSnapshotKey;
     void saveDraftRevision(activeDraft.draftId);
   }, [
-    pluginId,
-    actorUserId,
-    draftId,
     parsed,
     isDraftHydrated,
     currentDraftSnapshot,
@@ -3504,7 +3443,7 @@ function PluginStudioPresenter({
     saveDraftRevision,
   ]);
 
-  const { mutateAsync: publishRelease, isPending: isPublishing } = useMutation({
+  useMutation({
     mutationKey: ['plugin-studio', 'publish-release'],
     mutationFn: async () => {
       if (!parsed) {
@@ -3589,7 +3528,7 @@ function PluginStudioPresenter({
     [availableRuleFields, compatibleRuleFieldsByLeftField],
   );
   const isInitialLoading = isReleaseLoading && releases.length === 0;
-  const v3PublishGateDiagnostics = useMemo(() => {
+  const _v3PublishGateDiagnostics = useMemo(() => {
     if (!parsed) return [];
     return evaluateV3PublishGates({
       actionManifest: parsed.actionManifest ?? [],
@@ -3667,17 +3606,17 @@ function PluginStudioPresenter({
       )
       .map((field) => field.key.trim());
   }, [schemaBuilder.fields, selectedBlocklyField]);
-  const blocklyPresets = useMemo(
+  const _blocklyPresets = useMemo(
     () => getBlocklyPresets(selectedBlocklyField?.type),
     [selectedBlocklyField?.type],
   );
   const firstBlocklyComparableField = blocklyComparableFields[0] ?? '';
-  const derivationPathOptions = useMemo(
+  const _derivationPathOptions = useMemo(
     () =>
       buildDerivationPathOptions(parsed?.schemaDocs ?? [DEFAULT_SCHEMA_DOC]),
     [parsed?.schemaDocs],
   );
-  const derivedTargetFieldOptions = useMemo(
+  const _derivedTargetFieldOptions = useMemo(
     () =>
       schemaBuilder.fields
         .map((field) => field.key.trim())
@@ -3698,9 +3637,10 @@ function PluginStudioPresenter({
     workflowEditorLockedTable ??
     workspaceWorkflow.table ??
     activeSchemaDocForEditor.schemaId;
-  const workflowEditorScopedWorkflows = useMemo(() => {
+  const _workflowEditorScopedWorkflows = useMemo(() => {
     return availableWorkflows;
   }, [availableWorkflows]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: helper callbacks are intentionally excluded from dependencies.
   const livePreviewTabs = useMemo(() => {
     const schemaById = new Map(
       (parsed?.schemaDocs ?? []).map((schemaDoc) => [
@@ -3744,14 +3684,7 @@ function PluginStudioPresenter({
         return [];
       }
     });
-  }, [
-    parsed?.adminTabs,
-    parsed?.schemaDocs,
-    pluginId,
-    openAddColumnSheet,
-    openEditColumnSheet,
-    requestDeleteColumn,
-  ]);
+  }, [parsed?.adminTabs, parsed?.schemaDocs, pluginId]);
   useEffect(() => {
     const nextOptions = blocklyComparableFields.length
       ? blocklyComparableFields.map(
@@ -4581,7 +4514,7 @@ function PluginStudioPresenter({
     });
   }
 
-  function handleSubdomainChange(
+  function _handleSubdomainChange(
     previousSubdomain: string,
     patch: Partial<SubdomainPipelineState[number]>,
   ) {
@@ -4655,7 +4588,7 @@ function PluginStudioPresenter({
     });
   }
 
-  function handleRemoveSubdomain(subdomain: string) {
+  function _handleRemoveSubdomain(subdomain: string) {
     const normalized = normalizeSubdomainName(subdomain);
     if (normalized === 'index' || normalized === 'admin') {
       toast.error('Default subdomains index and admin cannot be removed.');
@@ -4769,6 +4702,7 @@ function PluginStudioPresenter({
     },
   };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: updater helper identity is intentionally excluded from dependencies.
   const handleSubdomainBuilderLayersChange = useCallback(
     (layers: ComponentLayer[]) => {
       const nextLayers = JSON.stringify(layers);
@@ -4837,7 +4771,7 @@ function PluginStudioPresenter({
     resetColumnSheetState();
   }
 
-  function handleColumnSheetOpenChange(nextOpen: boolean) {
+  function _handleColumnSheetOpenChange(nextOpen: boolean) {
     setIsAddColumnSheetOpen(nextOpen);
     if (!nextOpen) {
       resetColumnSheetState();
@@ -4923,7 +4857,7 @@ function PluginStudioPresenter({
     }
   }
 
-  function confirmDeleteColumn() {
+  function _confirmDeleteColumn() {
     const normalizedColumnKey = pendingDeleteColumnKey?.trim();
     if (!normalizedColumnKey) {
       handleDeleteColumnDialogOpenChange(false);
@@ -5299,7 +5233,7 @@ function PluginStudioPresenter({
     }
   }
 
-  function confirmDeleteTable() {
+  function _confirmDeleteTable() {
     const schemaId = pendingDeleteTable?.schemaId?.trim();
     if (!schemaId) {
       handleDeleteTableDialogOpenChange(false);
@@ -5471,7 +5405,7 @@ function PluginStudioPresenter({
     }
   }
 
-  function handleAddWorkflow() {
+  function _handleAddWorkflow() {
     const nextWorkflow: WorkflowDoc = {
       workflowId: getNextWorkflowId(),
       table:
@@ -5490,7 +5424,7 @@ function PluginStudioPresenter({
     setActiveWorkflowId(nextWorkflow.workflowId);
   }
 
-  function handleRemoveWorkflow(workflowId: string) {
+  function _handleRemoveWorkflow(workflowId: string) {
     if (availableWorkflows.length <= 1) {
       toast.error('At least one workflow is required.');
       return;
@@ -5506,7 +5440,7 @@ function PluginStudioPresenter({
     }
   }
 
-  function handleDuplicateActiveWorkflow() {
+  function _handleDuplicateActiveWorkflow() {
     if (!workspaceWorkflow) return;
     const nextWorkflow: WorkflowDoc = {
       ...workspaceWorkflow,
@@ -5523,7 +5457,7 @@ function PluginStudioPresenter({
     setActiveWorkflowId(nextWorkflow.workflowId);
   }
 
-  function updateActiveWorkflow(
+  function _updateActiveWorkflow(
     updater: (workflow: WorkflowDoc) => WorkflowDoc,
   ) {
     const selectedWorkflow =
@@ -5543,7 +5477,7 @@ function PluginStudioPresenter({
     }
   }
 
-  function applyTemplatePreset(releaseId: string) {
+  function _applyTemplatePreset(releaseId: string) {
     let parsedReleaseId = parseReleaseId(releaseId);
 
     if (!parsedReleaseId) {
@@ -5620,7 +5554,7 @@ function PluginStudioPresenter({
     );
   }
 
-  function openSchemaEditor(
+  function _openSchemaEditor(
     schemaId: string,
     options?: { closeWorkflowEditor?: boolean },
   ) {
@@ -5702,7 +5636,6 @@ function PluginStudioPresenter({
       </div>
     );
   }
-
 
   return (
     <div className="container py-12">

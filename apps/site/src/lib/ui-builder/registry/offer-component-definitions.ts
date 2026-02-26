@@ -1,11 +1,11 @@
-import type { ComponentRegistry } from '@/components/ui/ui-builder/types';
-import { commonFieldOverrides } from './form-field-overrides';
 import {
   OfferCard,
   OfferCardSchema,
   OfferCarousel,
   OfferCarouselSchema,
 } from '@/components/ui/offer-carousel';
+import type { ComponentRegistry } from '@/components/ui/ui-builder/types';
+import { commonFieldOverrides } from './form-field-overrides';
 
 export const offerComponentDefinitions: ComponentRegistry = {
   OfferCarousel: {

@@ -1,21 +1,21 @@
 'use client';
 
-import * as React from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ArrowRight, Tag } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ArrowRight, ChevronLeft, ChevronRight, Tag } from 'lucide-react';
+import * as React from 'react';
+import { z } from 'zod';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Progress } from '@/components/ui/progress';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { z } from 'zod';
+import { cn } from '@/lib/utils';
 
 //Schemas
 export const BaseCarouselItem = z.object({

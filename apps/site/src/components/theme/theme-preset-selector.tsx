@@ -1,10 +1,10 @@
+import { motion } from 'framer-motion';
 import { useState } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { motion } from 'framer-motion';
 import { useTheme } from '@/contexts/theme-context';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { defaultPresets, type ThemeStyles } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 

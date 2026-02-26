@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  businessUiTemplateInstallSchema,
   businessPluginDraftInstallSchema,
   businessPluginInstallSchema,
+  businessUiTemplateInstallSchema,
   coreSchema,
   pluginActionCapabilityEnvelopeSchema,
   pluginDraftRevisionSchema,

@@ -1,16 +1,7 @@
-"use client";
+'use client';
 
-import type { ComponentProps } from "react";
-
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-  InputGroupText,
-} from "@/components/ui/input-group";
-import { cn } from "@/lib/utils";
-import { CheckIcon, CopyIcon } from "lucide-react";
+import { CheckIcon, CopyIcon } from 'lucide-react';
+import type { ComponentProps } from 'react';
 import {
   createContext,
   useCallback,
@@ -18,14 +9,22 @@ import {
   useEffect,
   useRef,
   useState,
-} from "react";
+} from 'react';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+  InputGroupText,
+} from '@/components/ui/input-group';
+import { cn } from '@/lib/utils';
 
 interface SnippetContextType {
   code: string;
 }
 
 const SnippetContext = createContext<SnippetContextType>({
-  code: "",
+  code: '',
 });
 
 export type SnippetProps = ComponentProps<typeof InputGroup> & {
@@ -39,7 +38,7 @@ export const Snippet = ({
   ...props
 }: SnippetProps) => (
   <SnippetContext.Provider value={{ code }}>
-    <InputGroup className={cn("font-mono", className)} {...props}>
+    <InputGroup className={cn('font-mono', className)} {...props}>
       {children}
     </InputGroup>
   </SnippetContext.Provider>
@@ -55,14 +54,14 @@ export type SnippetTextProps = ComponentProps<typeof InputGroupText>;
 
 export const SnippetText = ({ className, ...props }: SnippetTextProps) => (
   <InputGroupText
-    className={cn("pl-2 font-normal text-muted-foreground", className)}
+    className={cn('pl-2 font-normal text-muted-foreground', className)}
     {...props}
   />
 );
 
 export type SnippetInputProps = Omit<
   ComponentProps<typeof InputGroupInput>,
-  "readOnly" | "value"
+  'readOnly' | 'value'
 >;
 
 export const SnippetInput = ({ className, ...props }: SnippetInputProps) => {
@@ -70,7 +69,7 @@ export const SnippetInput = ({ className, ...props }: SnippetInputProps) => {
 
   return (
     <InputGroupInput
-      className={cn("text-foreground", className)}
+      className={cn('text-foreground', className)}
       readOnly
       value={code}
       {...props}
@@ -97,8 +96,8 @@ export const SnippetCopyButton = ({
   const { code } = useContext(SnippetContext);
 
   const copyToClipboard = useCallback(async () => {
-    if (typeof window === "undefined" || !navigator?.clipboard?.writeText) {
-      onError?.(new Error("Clipboard API not available"));
+    if (typeof window === 'undefined' || !navigator?.clipboard?.writeText) {
+      onError?.(new Error('Clipboard API not available'));
       return;
     }
 
@@ -109,7 +108,7 @@ export const SnippetCopyButton = ({
         onCopy?.();
         timeoutRef.current = window.setTimeout(
           () => setIsCopied(false),
-          timeout
+          timeout,
         );
       }
     } catch (error) {
@@ -121,7 +120,7 @@ export const SnippetCopyButton = ({
     () => () => {
       window.clearTimeout(timeoutRef.current);
     },
-    []
+    [],
   );
 
   const Icon = isCopied ? CheckIcon : CopyIcon;

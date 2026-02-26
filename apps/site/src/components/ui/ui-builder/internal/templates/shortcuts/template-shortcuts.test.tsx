@@ -8,20 +8,20 @@ import {
   useShortcutAction,
 } from '@/components/ui/keyboard-shortcuts';
 import {
-  TemplateShortcutSettingsEntry,
-  TemplateShortcutHint,
-} from './template-shortcut-hints';
-import {
-  TEMPLATE_SHORTCUT_DEFINITIONS,
-  TEMPLATE_SHORTCUTS,
-} from './template-shortcuts';
-import {
   focusFirstTemplateTarget,
   getFocusOrderForTab,
   getNextTemplateTab,
   getTemplateTabOrder,
   isEventWithinTemplateScope,
 } from './template-keyboard-nav';
+import {
+  TemplateShortcutHint,
+  TemplateShortcutSettingsEntry,
+} from './template-shortcut-hints';
+import {
+  TEMPLATE_SHORTCUT_DEFINITIONS,
+  TEMPLATE_SHORTCUTS,
+} from './template-shortcuts';
 
 vi.mock('@/components/ui/tooltip', () => ({
   Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -44,8 +44,12 @@ vi.mock('@/components/ui/dialog', () => ({
   DialogContent: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
-  DialogHeader: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DialogTitle: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DialogHeader: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DialogTitle: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
   DialogDescription: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
@@ -154,7 +158,9 @@ describe('template shortcuts governance', () => {
 
   it('defines the full template action map with default bindings', () => {
     expect(TEMPLATE_SHORTCUT_DEFINITIONS).toHaveLength(7);
-    expect(TEMPLATE_SHORTCUTS.openSheet.id).toBe('uiBuilder.templates.openSheet');
+    expect(TEMPLATE_SHORTCUTS.openSheet.id).toBe(
+      'uiBuilder.templates.openSheet',
+    );
     expect(TEMPLATE_SHORTCUTS.switchMarketplaceTab.id).toBe(
       'uiBuilder.templates.switchMarketplaceTab',
     );
@@ -231,7 +237,9 @@ describe('template shortcuts governance', () => {
     );
     await flush();
 
-    const shortcutSettingsButton = [...container.querySelectorAll('button')].find(
+    const shortcutSettingsButton = [
+      ...container.querySelectorAll('button'),
+    ].find(
       (button) =>
         button.getAttribute('aria-label') ===
         `Configure shortcut for ${TEMPLATE_SHORTCUTS.openSheet.id}`,
@@ -254,7 +262,9 @@ describe('template shortcuts governance', () => {
     window.dispatchEvent(conflictingEvent);
     await flush();
 
-    expect(container.textContent).toContain('Already in use by Switch to marketplace tab');
+    expect(container.textContent).toContain(
+      'Already in use by Switch to marketplace tab',
+    );
 
     const saveButtonWhenConflict = findButtonByText('Save');
     expect(saveButtonWhenConflict?.getAttribute('disabled')).not.toBeNull();
@@ -317,7 +327,9 @@ describe('template shortcuts governance', () => {
     );
     await flush();
 
-    const shortcutSettingsButton = [...container.querySelectorAll('button')].find(
+    const shortcutSettingsButton = [
+      ...container.querySelectorAll('button'),
+    ].find(
       (button) =>
         button.getAttribute('aria-label') ===
         `Configure shortcut for ${TEMPLATE_SHORTCUTS.openSheet.id}`,
@@ -325,7 +337,8 @@ describe('template shortcuts governance', () => {
     shortcutSettingsButton?.click();
     await flush();
 
-    const prefixBinding = TEMPLATE_SHORTCUTS.switchMarketplaceTab.defaultBinding;
+    const prefixBinding =
+      TEMPLATE_SHORTCUTS.switchMarketplaceTab.defaultBinding;
     window.dispatchEvent(
       new KeyboardEvent('keydown', {
         key: prefixBinding.key,
@@ -406,7 +419,9 @@ describe('template shortcuts governance', () => {
     };
     window.addEventListener('keydown', onKeyDown, { once: true });
 
-    child.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', bubbles: true }));
+    child.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'k', bubbles: true }),
+    );
     expect(insideScope).toBe(true);
 
     searchInput.remove();

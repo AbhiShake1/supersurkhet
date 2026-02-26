@@ -1,16 +1,15 @@
-import { defineConfig } from 'vitest/config';
+import { fileURLToPath, URL } from 'node:url';
+import tailwindcss from '@tailwindcss/vite';
 import { devtools } from '@tanstack/devtools-vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import viteReact from '@vitejs/plugin-react';
-import viteTsConfigPaths from 'vite-tsconfig-paths';
-import { fileURLToPath, URL } from 'node:url';
-
-import tailwindcss from '@tailwindcss/vite';
 import { nitro } from 'nitro/vite';
+import viteTsConfigPaths from 'vite-tsconfig-paths';
+import { defineConfig } from 'vitest/config';
 import { zodTypegen } from './scripts/vite/zod-typegen';
 
 const config = defineConfig(({ command }) => {
-  return ({
+  return {
     test: {
       include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
       exclude: ['tests/**'],
@@ -53,11 +52,13 @@ const config = defineConfig(({ command }) => {
       }),
       tailwindcss(),
       tanstackStart(),
-      command === "serve" &&
-      zodTypegen({
-        entry: fileURLToPath(new URL('./src/lib/schema.ts', import.meta.url)),
-        output: fileURLToPath(new URL('./src/types/db.d.ts', import.meta.url)),
-      }),
+      command === 'serve' &&
+        zodTypegen({
+          entry: fileURLToPath(new URL('./src/lib/schema.ts', import.meta.url)),
+          output: fileURLToPath(
+            new URL('./src/types/db.d.ts', import.meta.url),
+          ),
+        }),
       viteReact({
         babel: {
           plugins: [
@@ -72,7 +73,7 @@ const config = defineConfig(({ command }) => {
         },
       }),
     ],
-  });
-})
+  };
+});
 
 export default config;

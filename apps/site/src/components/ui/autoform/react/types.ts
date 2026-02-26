@@ -1,11 +1,11 @@
-import type { ReactNode } from 'react';
 import type {
+  FieldConfig as BaseFieldConfig,
   ParsedField,
   ParsedSchema,
   Renderable,
   SchemaProvider,
-  FieldConfig as BaseFieldConfig,
 } from '@autoform/core';
+import type { ReactNode } from 'react';
 import type { FieldValues, UseFormReturn } from 'react-hook-form';
 
 export interface AutoFormProps<T extends FieldValues> {

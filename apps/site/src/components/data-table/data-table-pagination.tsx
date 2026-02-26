@@ -8,16 +8,16 @@ import {
 
 import { Button } from '@/components/ui/button';
 import {
+  ShortcutKbd,
+  useShortcutAction,
+} from '@/components/ui/keyboard-shortcuts';
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  ShortcutKbd,
-  useShortcutAction,
-} from '@/components/ui/keyboard-shortcuts';
 import {
   Tooltip,
   TooltipContent,

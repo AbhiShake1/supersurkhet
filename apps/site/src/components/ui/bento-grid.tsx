@@ -1,10 +1,9 @@
-import type { ComponentPropsWithoutRef } from 'react';
 import { ArrowRightIcon } from '@radix-ui/react-icons';
-import { z } from 'zod';
-
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import type { ComponentPropsWithoutRef } from 'react';
 import React from 'react';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export const BentoGridSchema = z.object({
   children: z.any(),

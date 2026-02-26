@@ -3,8 +3,8 @@ import {
   pointerWithin,
   rectIntersection,
 } from '@dnd-kit/core';
-import { getIframeElements } from '@/lib/ui-builder/context/dnd-utils';
 import { debugCollisionDetection } from '@/lib/ui-builder/context/collision-debug';
+import { getIframeElements } from '@/lib/ui-builder/context/dnd-utils';
 
 // Transform state interface
 interface TransformState {

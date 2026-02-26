@@ -1,8 +1,8 @@
+import { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import type { FieldWrapperProps } from './FieldWrapper';
-import { useState, useEffect } from 'react';
 
 export interface CurrencyFieldProps extends FieldWrapperProps {
   placeholder?: string;

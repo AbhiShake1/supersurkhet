@@ -1,4 +1,4 @@
-import { useSensors, useSensor, MouseSensor, TouchSensor } from '@dnd-kit/core';
+import { MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 
 export const useDndSensors = () => {
   return useSensors(

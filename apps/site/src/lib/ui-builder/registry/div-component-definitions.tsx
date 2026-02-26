@@ -1,5 +1,5 @@
-import type { ComponentRegistry } from '@/components/ui/ui-builder/types';
 import z from 'zod';
+import type { ComponentRegistry } from '@/components/ui/ui-builder/types';
 import { commonFieldOverrides } from './form-field-overrides';
 
 export const DivSchema = z.object({

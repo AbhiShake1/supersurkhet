@@ -44,7 +44,7 @@ export function create<const T extends SchemaKeys>(
   if (!options.schema) {
     throw new Error('Default schema not set for create runtime');
   }
-  const keys = mergeKeys(key, ...restKeys) as SchemaKeys;
+  const _keys = mergeKeys(key, ...restKeys) as SchemaKeys;
   const schema = getNestedZodShape(key, options.schema);
   return async (
     value: Omit<NestedSchemaType<T>, '_'> & { id?: string | number },

@@ -10,7 +10,9 @@ type TemplateConflictReportProps = {
   conflicts: UiTemplateInstallPreview['hardConflicts'];
 };
 
-function toDiagnosticsText(conflicts: UiTemplateInstallPreview['hardConflicts']) {
+function toDiagnosticsText(
+  conflicts: UiTemplateInstallPreview['hardConflicts'],
+) {
   return conflicts
     .map((conflict) => {
       const metadata = [
@@ -32,13 +34,18 @@ function toDiagnosticsText(conflicts: UiTemplateInstallPreview['hardConflicts'])
 export function TemplateConflictReport({
   conflicts,
 }: TemplateConflictReportProps) {
-  const diagnosticsText = useMemo(() => toDiagnosticsText(conflicts), [conflicts]);
+  const diagnosticsText = useMemo(
+    () => toDiagnosticsText(conflicts),
+    [conflicts],
+  );
   const { isCopied, copyToClipboard } = useCopyToClipboard({ timeout: 1200 });
 
   if (conflicts.length === 0) {
     return (
       <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm">
-        <p className="font-semibold text-emerald-700">No hard conflicts detected.</p>
+        <p className="font-semibold text-emerald-700">
+          No hard conflicts detected.
+        </p>
       </div>
     );
   }
@@ -76,7 +83,9 @@ export function TemplateConflictReport({
               page={conflict.pageKey}
               {conflict.source ? ` source=${conflict.source}` : ''}
               {conflict.targetType ? ` target=${conflict.targetType}` : ''}
-              {conflict.templateType ? ` template=${conflict.templateType}` : ''}
+              {conflict.templateType
+                ? ` template=${conflict.templateType}`
+                : ''}
             </p>
           </li>
         ))}

@@ -1,15 +1,15 @@
+import { Copy, Plus, Trash } from 'lucide-react';
 import type React from 'react';
 import { useMemo, useState } from 'react';
-import { Plus, Trash, Copy } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
-import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
-import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
 import { AddComponentsPopover } from '@/components/ui/ui-builder/internal/components/add-component-popover';
-import { cn } from '@/lib/utils';
+import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
 import {
   hasAnyChildrenField,
   hasChildrenFieldOfTypeString,
 } from '@/lib/ui-builder/store/schema-utils';
+import { cn } from '@/lib/utils';
 
 interface MenuProps {
   layerId: string;

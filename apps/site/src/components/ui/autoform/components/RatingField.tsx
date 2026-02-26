@@ -1,8 +1,8 @@
+import { Star } from 'lucide-react';
+import { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { Star } from 'lucide-react';
 import type { FieldWrapperProps } from './FieldWrapper';
-import { useState } from 'react';
 
 export interface RatingFieldProps extends FieldWrapperProps {
   max?: number;

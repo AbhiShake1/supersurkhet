@@ -1,28 +1,26 @@
-import React, { memo, Suspense, useMemo, useRef } from 'react';
 import isDeepEqual from 'fast-deep-equal';
-
-import { ElementSelector } from '@/components/ui/ui-builder/internal/components/element-selector';
-import { DropPlaceholder } from '@/components/ui/ui-builder/internal/dnd/drop-zone';
-import { useDndContext } from '@/lib/ui-builder/context/dnd-context';
+import React, { memo, Suspense, useMemo, useRef } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-
-import { ErrorFallback } from '@/components/ui/ui-builder/internal/components/error-fallback';
-import { isPrimitiveComponent } from '@/lib/ui-builder/store/editor-utils';
-import {
-  hasLayerChildren,
-  canLayerAcceptChildren,
-} from '@/lib/ui-builder/store/layer-utils';
 import { DevProfiler } from '@/components/ui/ui-builder/internal/components/dev-profiler';
+import { ElementSelector } from '@/components/ui/ui-builder/internal/components/element-selector';
+import { ErrorFallback } from '@/components/ui/ui-builder/internal/components/error-fallback';
+import { DropPlaceholder } from '@/components/ui/ui-builder/internal/dnd/drop-zone';
 import type {
-  ComponentRegistry,
   ComponentLayer,
+  ComponentRegistry,
   PropValue,
 } from '@/components/ui/ui-builder/types';
-import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
-import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
-import { resolveContextualMentions } from '@/lib/ui-builder/utils/variable-resolver';
 import { useContextData } from '@/lib/ui-builder/context/context-data-store';
-import { isComponentLayer } from '@/lib/ui-builder/store/layer-utils';
+import { useDndContext } from '@/lib/ui-builder/context/dnd-context';
+import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
+import { isPrimitiveComponent } from '@/lib/ui-builder/store/editor-utils';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
+import {
+  canLayerAcceptChildren,
+  hasLayerChildren,
+  isComponentLayer,
+} from '@/lib/ui-builder/store/layer-utils';
+import { resolveContextualMentions } from '@/lib/ui-builder/utils/variable-resolver';
 
 // Custom hook to safely use DND context
 const useSafeDndContext = () => {

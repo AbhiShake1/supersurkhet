@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { BusinessInsightDoc } from './contracts';
 import {
-  integrateBusinessInsights,
   type InsightEnginePort,
   type InsightExplanationPort,
   type InsightTelemetrySink,
+  integrateBusinessInsights,
 } from './index';
 
 const baseEngineInput = {
@@ -48,7 +48,9 @@ function createEngine(insights: BusinessInsightDoc[]): InsightEnginePort {
 }
 
 function createExplainer(
-  overrides?: Partial<ReturnType<InsightExplanationPort['explainInsights']>[number]>,
+  overrides?: Partial<
+    ReturnType<InsightExplanationPort['explainInsights']>[number]
+  >,
 ): InsightExplanationPort {
   return {
     explainInsights(insights) {

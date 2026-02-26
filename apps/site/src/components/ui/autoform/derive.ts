@@ -6,8 +6,8 @@ import { useBusinessSafe } from '@/contexts/business-context';
 import { runDeriveWithRuntimeFormValues } from '@/lib/zod/with-derivations';
 import type {
   DeriveConfig,
-  DerivedFieldResult,
   DerivedFieldOverride,
+  DerivedFieldResult,
   DeriveFn,
   FieldConfigCustomData,
 } from './utils';
@@ -48,9 +48,7 @@ function hasFieldOverride(
   derived: DerivedFieldResult,
 ): derived is Exclude<DerivedFieldOverride, null> {
   if (!derived) return false;
-  return Boolean(
-    derived.fieldType || derived.inputProps || derived.customData,
-  );
+  return Boolean(derived.fieldType || derived.inputProps || derived.customData);
 }
 
 export function useDerivedField({
@@ -128,19 +126,16 @@ export function useDerivedField({
     async queryFn() {
       if (!deriveFn) return null;
       const formValues = form.getValues() as Record<string, unknown>;
-      return runDeriveWithRuntimeFormValues(
-        formValues,
-        async () => {
-          return (
-            (await deriveFn({
-              formValues,
-              rowPath: rowPathKey ? rowPathKey.split('.') : [],
-              fieldPath: fieldPathKey.split('.'),
-              sourceRow: (sourceRow ?? null) as never,
-            })) ?? null
-          );
-        },
-      );
+      return runDeriveWithRuntimeFormValues(formValues, async () => {
+        return (
+          (await deriveFn({
+            formValues,
+            rowPath: rowPathKey ? rowPathKey.split('.') : [],
+            fieldPath: fieldPathKey.split('.'),
+            sourceRow: (sourceRow ?? null) as never,
+          })) ?? null
+        );
+      });
     },
   });
 

@@ -23,6 +23,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { TemplateInstallHistoryPanel } from '@/components/ui/ui-builder/internal/templates/history/template-install-history-panel';
+import { TemplateInstallPreviewPanel } from '@/components/ui/ui-builder/internal/templates/install/template-install-preview-panel';
+import {
+  TemplateMarketplacePanel,
+  type TemplateMarketplaceSelection,
+} from '@/components/ui/ui-builder/internal/templates/marketplace/template-marketplace-panel';
+import { TemplatePublishPanel } from '@/components/ui/ui-builder/internal/templates/publish/template-publish-panel';
 import {
   TemplateShortcutHint,
   TemplateShortcutSettingsEntry,
@@ -31,13 +38,6 @@ import {
   TEMPLATE_SHORTCUTS,
   type TemplateSheetTab,
 } from '@/components/ui/ui-builder/internal/templates/shortcuts/template-shortcuts';
-import { TemplateInstallHistoryPanel } from '@/components/ui/ui-builder/internal/templates/history/template-install-history-panel';
-import { TemplateInstallPreviewPanel } from '@/components/ui/ui-builder/internal/templates/install/template-install-preview-panel';
-import {
-  TemplateMarketplacePanel,
-  type TemplateMarketplaceSelection,
-} from '@/components/ui/ui-builder/internal/templates/marketplace/template-marketplace-panel';
-import { TemplatePublishPanel } from '@/components/ui/ui-builder/internal/templates/publish/template-publish-panel';
 import { api } from '@/lib/api';
 import type {
   BusinessUiTemplateInstallDoc,
@@ -160,7 +160,9 @@ export function TemplateMarketplaceSheet({
     },
   );
 
-  async function handlePreviewInstall(selection?: TemplateMarketplaceSelection) {
+  async function handlePreviewInstall(
+    selection?: TemplateMarketplaceSelection,
+  ) {
     const templateId = selection?.templateId ?? selectedTemplateId;
     const version = selection?.resolvedVersion ?? resolvedVersion;
     if (!templateId) {
@@ -309,113 +311,120 @@ export function TemplateMarketplaceSheet({
             />
           </TooltipContent>
         </Tooltip>
-      <SheetContent side="right" className="w-full sm:max-w-3xl overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>UI Templates</SheetTitle>
-          <SheetDescription>
-            Install from marketplace or publish this builder snapshot as an immutable
-            template release.
-          </SheetDescription>
-        </SheetHeader>
-
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">{templateCount} templates</Badge>
-            <Badge variant="secondary">{templateReleases.length} total versions</Badge>
-            <Badge variant="secondary">{installedTemplates.length} installed here</Badge>
-          </div>
-          <div className="flex items-center gap-2">
-            <TemplateShortcutSettingsEntry />
-          </div>
-        </div>
-
-        <Tabs
-          value={activeTab}
-          onValueChange={(value) => setActiveTab(value as TemplateSheetTab)}
-          className="mt-6"
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-3xl overflow-y-auto"
         >
-          <TabsList className="grid w-full grid-cols-2">
-            <TemplateShortcutHint
-              label="Switch to marketplace"
-              actionId={TEMPLATE_SHORTCUTS.switchMarketplaceTab.id}
-            >
-              <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
-            </TemplateShortcutHint>
-            <TemplateShortcutHint
-              label="Switch to publish"
-              actionId={TEMPLATE_SHORTCUTS.switchPublishTab.id}
-            >
-              <TabsTrigger value="publish">Publish</TabsTrigger>
-            </TemplateShortcutHint>
-          </TabsList>
+          <SheetHeader>
+            <SheetTitle>UI Templates</SheetTitle>
+            <SheetDescription>
+              Install from marketplace or publish this builder snapshot as an
+              immutable template release.
+            </SheetDescription>
+          </SheetHeader>
 
-          <TabsContent value="marketplace" className="space-y-4">
-            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-              <span>Focus search</span>
-              <ShortcutKbd
-                actionId={TEMPLATE_SHORTCUTS.focusMarketplaceSearch.id}
-                interactive={false}
-              />
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="secondary">{templateCount} templates</Badge>
+              <Badge variant="secondary">
+                {templateReleases.length} total versions
+              </Badge>
+              <Badge variant="secondary">
+                {installedTemplates.length} installed here
+              </Badge>
             </div>
-            <TemplateMarketplacePanel
-              templateReleases={templateReleases}
-              installedTemplates={installedTemplates}
-              searchInputRef={marketplaceSearchRef}
-              selectedTemplateId={selectedTemplateId}
-              isPreviewLoading={isPreviewLoading}
-              onSelectionChange={(selection) => {
-                setSelectedTemplateId(selection.templateId);
-                setResolvedVersion(selection.resolvedVersion);
-                setPreview(null);
-              }}
-              onPreviewInstall={(selection) => {
-                void handlePreviewInstall(selection);
-              }}
-            />
+            <div className="flex items-center gap-2">
+              <TemplateShortcutSettingsEntry />
+            </div>
+          </div>
 
-            <TemplateInstallPreviewPanel
-              preview={preview}
-              confirmPluginUpdates={confirmPluginUpdates}
-              isInstallLoading={isInstallLoading}
-              onConfirmPluginUpdatesChange={setConfirmPluginUpdates}
-              onApplyTemplate={() => {
-                void handleInstall();
-              }}
-            />
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) => setActiveTab(value as TemplateSheetTab)}
+            className="mt-6"
+          >
+            <TabsList className="grid w-full grid-cols-2">
+              <TemplateShortcutHint
+                label="Switch to marketplace"
+                actionId={TEMPLATE_SHORTCUTS.switchMarketplaceTab.id}
+              >
+                <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
+              </TemplateShortcutHint>
+              <TemplateShortcutHint
+                label="Switch to publish"
+                actionId={TEMPLATE_SHORTCUTS.switchPublishTab.id}
+              >
+                <TabsTrigger value="publish">Publish</TabsTrigger>
+              </TemplateShortcutHint>
+            </TabsList>
 
-            <TemplateInstallHistoryPanel
-              businessId={businessId}
-              actorUserId={actorUserId}
-              actorRole={actorRole}
-              layers={layers}
-              installs={installedTemplates}
-              releases={templateReleases}
-              onInstallApplied={onInstallApplied}
-            />
-          </TabsContent>
+            <TabsContent value="marketplace" className="space-y-4">
+              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                <span>Focus search</span>
+                <ShortcutKbd
+                  actionId={TEMPLATE_SHORTCUTS.focusMarketplaceSearch.id}
+                  interactive={false}
+                />
+              </div>
+              <TemplateMarketplacePanel
+                templateReleases={templateReleases}
+                installedTemplates={installedTemplates}
+                searchInputRef={marketplaceSearchRef}
+                selectedTemplateId={selectedTemplateId}
+                isPreviewLoading={isPreviewLoading}
+                onSelectionChange={(selection) => {
+                  setSelectedTemplateId(selection.templateId);
+                  setResolvedVersion(selection.resolvedVersion);
+                  setPreview(null);
+                }}
+                onPreviewInstall={(selection) => {
+                  void handlePreviewInstall(selection);
+                }}
+              />
 
-          <TabsContent value="publish" className="space-y-3">
-            <TemplatePublishPanel
-              businessId={businessId}
-              layers={layers}
-              availableCategories={availableCategories}
-              isPublishLoading={isPublishLoading}
-              publishedRef={publishedRef}
-              publishShortcut={TEMPLATE_SHORTCUTS.publishTemplate}
-              isActive={open && activeTab === 'publish'}
-              onPublish={(draft) => {
-                void handlePublish(draft);
-              }}
-              onOpenPublishedTemplate={(templateId) => {
-                setActiveTab('marketplace');
-                setSelectedTemplateId(templateId);
-                setResolvedVersion('');
-                setPreview(null);
-              }}
-            />
-          </TabsContent>
-        </Tabs>
-      </SheetContent>
+              <TemplateInstallPreviewPanel
+                preview={preview}
+                confirmPluginUpdates={confirmPluginUpdates}
+                isInstallLoading={isInstallLoading}
+                onConfirmPluginUpdatesChange={setConfirmPluginUpdates}
+                onApplyTemplate={() => {
+                  void handleInstall();
+                }}
+              />
+
+              <TemplateInstallHistoryPanel
+                businessId={businessId}
+                actorUserId={actorUserId}
+                actorRole={actorRole}
+                layers={layers}
+                installs={installedTemplates}
+                releases={templateReleases}
+                onInstallApplied={onInstallApplied}
+              />
+            </TabsContent>
+
+            <TabsContent value="publish" className="space-y-3">
+              <TemplatePublishPanel
+                businessId={businessId}
+                layers={layers}
+                availableCategories={availableCategories}
+                isPublishLoading={isPublishLoading}
+                publishedRef={publishedRef}
+                publishShortcut={TEMPLATE_SHORTCUTS.publishTemplate}
+                isActive={open && activeTab === 'publish'}
+                onPublish={(draft) => {
+                  void handlePublish(draft);
+                }}
+                onOpenPublishedTemplate={(templateId) => {
+                  setActiveTab('marketplace');
+                  setSelectedTemplateId(templateId);
+                  setResolvedVersion('');
+                  setPreview(null);
+                }}
+              />
+            </TabsContent>
+          </Tabs>
+        </SheetContent>
       </Sheet>
     </KeyboardShortcutsBoundary>
   );

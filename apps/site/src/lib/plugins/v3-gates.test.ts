@@ -11,7 +11,9 @@ describe('v3 gates', () => {
           capabilities: ['inventory:write'],
         },
       ],
-      schemaDocs: [{ schemaId: 'inventory', fields: [{ key: 'status', type: 'string' }] }],
+      schemaDocs: [
+        { schemaId: 'inventory', fields: [{ key: 'status', type: 'string' }] },
+      ],
       workflows: [
         {
           workflowId: 'wf-1',
@@ -41,7 +43,9 @@ describe('v3 gates', () => {
           capabilities: ['inventory:write'],
         },
       ],
-      schemaDocs: [{ schemaId: 'inventory', fields: [{ key: 'status', type: 'string' }] }],
+      schemaDocs: [
+        { schemaId: 'inventory', fields: [{ key: 'status', type: 'string' }] },
+      ],
       workflows: [
         {
           pluginContractVersion: '3',

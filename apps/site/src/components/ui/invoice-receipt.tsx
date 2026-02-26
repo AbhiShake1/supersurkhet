@@ -1,14 +1,12 @@
 'use client';
 
 import {
+  AlertCircle,
   Calendar,
+  CheckCircle,
   DollarSign,
   TrendingDown,
-  AlertCircle,
-  CheckCircle,
 } from 'lucide-react';
-import type { Invoice, Party } from '@/lib/schema';
-import type { Product } from '../supersurkhet/products';
 import { formatCurrency } from '@/lib/intl';
 import {
   getInvoiceOutstandingAmount,
@@ -16,6 +14,8 @@ import {
   getInvoicePayments,
   getInvoiceTotalAmount,
 } from '@/lib/invoice-payments';
+import type { Invoice, Party } from '@/lib/schema';
+import type { Product } from '../supersurkhet/products';
 
 interface ReceiptProps {
   invoice: Invoice;
@@ -200,9 +200,7 @@ export function InvoiceReceipt({
               </div>
               <div className="flex justify-between items-center pb-2 border-b-2 mb-2 text-sm">
                 <span className="text-muted-foreground">Total Amount</span>
-                <span className="font-bold">
-                  {formatCurrency(totalAmount)}
-                </span>
+                <span className="font-bold">{formatCurrency(totalAmount)}</span>
               </div>
 
               {/* Payment Details */}
@@ -249,7 +247,6 @@ export function InvoiceReceipt({
                     <div className="space-y-1.5">
                       {payments.map((payment, index) => (
                         <div
-                          // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                           key={`${payment.paidAt}-${index}`}
                           className="flex items-center justify-between text-xs"
                         >

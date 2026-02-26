@@ -10,9 +10,9 @@
  * @github: https://github.com/kokonut-labs/kokonutui
  */
 
-import { cn } from '@/lib/utils';
 import { motion } from 'motion/react';
 import z from 'zod';
+import { cn } from '@/lib/utils';
 
 export const SwooshTextSchema = z.object({
   text: z.string().optional(),

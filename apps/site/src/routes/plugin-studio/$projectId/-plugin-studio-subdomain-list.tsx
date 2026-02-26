@@ -18,12 +18,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   Popover,
@@ -241,7 +236,7 @@ function toDraftRevisionRecencyKey(
 function toDisplayPluginTitle(input: string | undefined, pluginId: string) {
   const fallback = pluginId;
   const normalizedInput = input?.trim() ?? '';
-  const normalizedPluginId = pluginId.trim();
+  const _normalizedPluginId = pluginId.trim();
   if (!normalizedInput) return fallback;
   const withoutSuffix = normalizedInput.replace(
     /(?:\s*\([^)]*\)\s*$)|(?:\s*\[[^\]]*]\s*$)/,
@@ -520,10 +515,12 @@ function serializeDraftAdminTabs({
   cloudflareDnsAutoConfigured?: boolean;
   tabOrder?: readonly string[];
 }): AdminTabDoc[] {
-  const groupSentinels: AdminTabDoc[] = orderedGroups.map((groupName, index) => ({
-    schema: toGroupSentinelSchemaId(index),
-    group: groupName,
-  }));
+  const groupSentinels: AdminTabDoc[] = orderedGroups.map(
+    (groupName, index) => ({
+      schema: toGroupSentinelSchemaId(index),
+      group: groupName,
+    }),
+  );
 
   const systemSentinelByKey = new Map<SystemTabKey, AdminTabDoc>(
     (
@@ -542,7 +539,9 @@ function serializeDraftAdminTabs({
   );
 
   const subdomainSentinels: AdminTabDoc[] = subdomains.map((entry) => ({
-    schema: toSubdomainSentinelSchemaId(normalizeSubdomainName(entry.subdomain)),
+    schema: toSubdomainSentinelSchemaId(
+      normalizeSubdomainName(entry.subdomain),
+    ),
     title: normalizeSubdomainBasePath(entry.basePath),
     group: entry.uiProject,
     icon: entry.autoAdminInjected ? 'autoadmin' : 'none',
@@ -643,7 +642,8 @@ function deserializeDraftAdminTabs(
   const systemTabs: SystemTabState = { ...DEFAULT_SYSTEM_TABS };
   const subdomains: SubdomainPipelineState = [];
   const subdomainUiLayers: SubdomainUiLayersState = {};
-  const subdomainAccessRuleBySubdomain: Record<string, SubdomainAccessRule> = {};
+  const subdomainAccessRuleBySubdomain: Record<string, SubdomainAccessRule> =
+    {};
   let cloudflareDnsAutoConfigured = true;
   const tabOrder: string[] = [];
 
@@ -843,18 +843,14 @@ export function PluginStudioSubdomainList({
   });
   const createDraftMutation = api.pluginDraft.useCreate();
   const updateDraftMutation = api.pluginDraft.useUpdate();
-  const {
-    data: draftRevisionRows = [],
-    isLoading: isDraftRevisionLoading,
-  } = api.pluginDraftRevision.useGet({
-    keys: [draftId],
-  });
-  const {
-    data: routesTabsConfigRows = [],
-    refetch: refetchRoutesTabsConfig,
-  } = api.pluginRoutesTabsConfig.useGet({
-    keys: [draftId],
-  });
+  const { data: draftRevisionRows = [], isLoading: isDraftRevisionLoading } =
+    api.pluginDraftRevision.useGet({
+      keys: [draftId],
+    });
+  const { data: routesTabsConfigRows = [], refetch: refetchRoutesTabsConfig } =
+    api.pluginRoutesTabsConfig.useGet({
+      keys: [draftId],
+    });
 
   const createRoutesTabsConfigMutation = api.pluginRoutesTabsConfig.useCreate({
     keys: [draftId],
@@ -873,7 +869,9 @@ export function PluginStudioSubdomainList({
     if ((candidate.projectId ?? projectId) !== projectId) return null;
     const hasAccess =
       actorUserIdSet.has(candidate.ownerUserId) ||
-      (candidate.collaboratorUserIds ?? []).some((id) => actorUserIdSet.has(id));
+      (candidate.collaboratorUserIds ?? []).some((id) =>
+        actorUserIdSet.has(id),
+      );
     return hasAccess ? candidate : null;
   }, [actorUserIdSet, draftId, draftRows, projectId]);
 
@@ -919,7 +917,9 @@ export function PluginStudioSubdomainList({
     );
     if (canonical) return canonical;
 
-    const legacy = candidates.find((row) => row.id === legacyRoutesTabsConfigId);
+    const legacy = candidates.find(
+      (row) => row.id === legacyRoutesTabsConfigId,
+    );
     if (legacy) return legacy;
 
     return candidates.find((row) => row.revisionId === 'live') ?? null;
@@ -1001,11 +1001,17 @@ export function PluginStudioSubdomainList({
   );
 
   const isSidebarTabPersistInFlightRef = useRef(false);
-  const pendingSidebarTabPersistRef = useRef<readonly AdminTabDoc[] | null>(null);
+  const pendingSidebarTabPersistRef = useRef<readonly AdminTabDoc[] | null>(
+    null,
+  );
   const hasAttemptedDraftCreationRef = useRef<Set<string>>(new Set());
 
-  const resolvedPluginId = pluginId || activeDraft?.pluginId || 'example.plugin';
-  const activeDraftTitle = toDisplayPluginTitle(activeDraft?.title, resolvedPluginId);
+  const resolvedPluginId =
+    pluginId || activeDraft?.pluginId || 'example.plugin';
+  const activeDraftTitle = toDisplayPluginTitle(
+    activeDraft?.title,
+    resolvedPluginId,
+  );
   const activeDraftDescription = activeDraft?.description?.trim() || '';
 
   const [editingMetadataField, setEditingMetadataField] = useState<
@@ -1045,9 +1051,15 @@ export function PluginStudioSubdomainList({
       if (!activeDraft) return;
       if (!isActorIdentityReady) return;
 
-      const nextTitle = toDisplayPluginTitle(nextMetadata.title, resolvedPluginId);
+      const nextTitle = toDisplayPluginTitle(
+        nextMetadata.title,
+        resolvedPluginId,
+      );
       const nextDescription = nextMetadata.description.trim();
-      const currentTitle = toDisplayPluginTitle(activeDraft.title, resolvedPluginId);
+      const currentTitle = toDisplayPluginTitle(
+        activeDraft.title,
+        resolvedPluginId,
+      );
       const currentDescription = activeDraft.description?.trim() || '';
 
       if (
@@ -1095,7 +1107,9 @@ export function PluginStudioSubdomainList({
     const nextTitle =
       editingMetadataField === 'title' ? nextValue : activeDraftTitle;
     const nextDescription =
-      editingMetadataField === 'description' ? nextValue : activeDraftDescription;
+      editingMetadataField === 'description'
+        ? nextValue
+        : activeDraftDescription;
     setEditingMetadataField(null);
     setEditingMetadataValue('');
     persistDraftMetadata({
@@ -1336,7 +1350,9 @@ export function PluginStudioSubdomainList({
     let created: string | null = null;
     updateSidebarAdminTabs((state) => {
       const existing = new Set(
-        state.subdomains.map((entry) => normalizeSubdomainName(entry.subdomain)),
+        state.subdomains.map((entry) =>
+          normalizeSubdomainName(entry.subdomain),
+        ),
       );
       let counter = state.subdomains.length + 1;
       let candidate = `subdomain-${counter}`;
@@ -1467,7 +1483,8 @@ export function PluginStudioSubdomainList({
   );
 
   const buildAdminInjectedLayers = useCallback(
-    (subdomain: string): ComponentLayer[] => toAdminInjectedSubdomainUiLayers(subdomain),
+    (subdomain: string): ComponentLayer[] =>
+      toAdminInjectedSubdomainUiLayers(subdomain),
     [],
   );
 
@@ -1475,7 +1492,9 @@ export function PluginStudioSubdomainList({
     entry: SubdomainPipelineState[number],
   ): ComponentLayer[] {
     const normalized = normalizeSubdomainName(entry.subdomain);
-    const parsedLayers = parseStoredSubdomainUiLayers(subdomainUiLayers[normalized]);
+    const parsedLayers = parseStoredSubdomainUiLayers(
+      subdomainUiLayers[normalized],
+    );
     if (parsedLayers && parsedLayers.length > 0) {
       if (entry.autoAdminInjected || normalized === 'admin') {
         return normalizeAdminCanvasLayers(normalized, parsedLayers);
@@ -1619,7 +1638,9 @@ export function PluginStudioSubdomainList({
           >
             <SortableContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {subdomains.map((entry) => {
-                const normalizedSubdomain = normalizeSubdomainName(entry.subdomain);
+                const normalizedSubdomain = normalizeSubdomainName(
+                  entry.subdomain,
+                );
                 const previewLayers = getSubdomainLayers(entry);
                 const previewPage = previewLayers[0];
                 const displayTitle =
@@ -1650,10 +1671,7 @@ export function PluginStudioSubdomainList({
                     asChild
                   >
                     <div className="space-y-2">
-                      <div
-                        className="group block h-72 w-full rounded-2xl border border-border/70 bg-card p-4 text-left transition duration-300 hover:border-primary/40 hover:bg-accent/20 hover:shadow-sm"
-                        onFocus={() => setFocusedSubdomain(normalizedSubdomain)}
-                      >
+                      <div className="group block h-72 w-full rounded-2xl border border-border/70 bg-card p-4 text-left transition duration-300 hover:border-primary/40 hover:bg-accent/20 hover:shadow-sm">
                         <div className="mb-3 flex items-center justify-between">
                           <div className="group/title flex items-center gap-1">
                             {isEditingTitle ? (
@@ -1780,9 +1798,12 @@ export function PluginStudioSubdomainList({
                                         }
                                         className="justify-start"
                                         onClick={() => {
-                                          handleSubdomainChange(entry.subdomain, {
-                                            accessRule: null,
-                                          });
+                                          handleSubdomainChange(
+                                            entry.subdomain,
+                                            {
+                                              accessRule: null,
+                                            },
+                                          );
                                           setOpenRouteGuardSubdomain(null);
                                         }}
                                       >
@@ -1799,9 +1820,12 @@ export function PluginStudioSubdomainList({
                                         }
                                         className="justify-start"
                                         onClick={() => {
-                                          handleSubdomainChange(entry.subdomain, {
-                                            accessRule: 'authenticated-user',
-                                          });
+                                          handleSubdomainChange(
+                                            entry.subdomain,
+                                            {
+                                              accessRule: 'authenticated-user',
+                                            },
+                                          );
                                           setOpenRouteGuardSubdomain(null);
                                         }}
                                       >
@@ -1818,9 +1842,12 @@ export function PluginStudioSubdomainList({
                                         }
                                         className="justify-start"
                                         onClick={() => {
-                                          handleSubdomainChange(entry.subdomain, {
-                                            accessRule: 'organization-member',
-                                          });
+                                          handleSubdomainChange(
+                                            entry.subdomain,
+                                            {
+                                              accessRule: 'organization-member',
+                                            },
+                                          );
                                           setOpenRouteGuardSubdomain(null);
                                         }}
                                       >
@@ -1875,21 +1902,14 @@ export function PluginStudioSubdomainList({
                           </div>
                         </div>
 
-                        <div
-                          role="button"
-                          tabIndex={0}
+                        <button
+                          type="button"
                           className="relative h-[calc(100%-2.25rem)] overflow-hidden rounded-xl border border-border/70 bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
                           onClick={(event) => {
                             event.preventDefault();
                             event.stopPropagation();
+                            setFocusedSubdomain(normalizedSubdomain);
                             openSubdomainBuilder(normalizedSubdomain);
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter' || event.key === ' ') {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              openSubdomainBuilder(normalizedSubdomain);
-                            }
                           }}
                           aria-label={`Open ${displayTitle} builder`}
                         >
@@ -1913,7 +1933,7 @@ export function PluginStudioSubdomainList({
                               No preview available yet.
                             </div>
                           )}
-                        </div>
+                        </button>
                       </div>
                     </div>
                   </SortableItem>

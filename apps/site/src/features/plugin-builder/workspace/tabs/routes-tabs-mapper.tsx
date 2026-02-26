@@ -1,9 +1,9 @@
 import {
   Folder,
   List,
+  type LucideIcon,
   MapIcon,
   Package,
-  type LucideIcon,
   ShoppingCart,
   Users,
 } from 'lucide-react';
@@ -73,7 +73,9 @@ export function mapRoutesTabsToAutoAdminConfig(
     const id = tab.id ?? `tab_${tab.schema}`;
     const title = (tab.title ?? toTitleCase(tab.schema)).trim();
     const group = tab.group?.trim() || undefined;
-    const order = Number.isFinite(tab.order) ? Number(tab.order) : DEFAULT_ORDER;
+    const order = Number.isFinite(tab.order)
+      ? Number(tab.order)
+      : DEFAULT_ORDER;
     const routeSegment = normalizeRouteSegment(tab.route ?? tab.schema);
     const routePath = joinRoutePath(normalizedBasePath, routeSegment);
 

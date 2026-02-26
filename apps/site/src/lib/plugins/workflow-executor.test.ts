@@ -374,9 +374,7 @@ describe('workflow executor', () => {
           { nodeId: 'n1', type: 'action', actionId: 'core.fail' },
           { nodeId: 'n2', type: 'action', actionId: 'core.recover' },
         ],
-        edges: [
-          { from: 'n1', to: 'n2', on: 'failure' },
-        ],
+        edges: [{ from: 'n1', to: 'n2', on: 'failure' }],
       }),
     );
     registry.installRelease(baseInstall(), { explicitOwnerUpdate: true });
@@ -416,7 +414,10 @@ describe('workflow executor', () => {
             idempotencyKeyExpr: {
               kind: 'op',
               op: 'concat',
-              args: ['order:', { kind: 'ref', source: 'context', path: ['event', 'rowId'] }],
+              args: [
+                'order:',
+                { kind: 'ref', source: 'context', path: ['event', 'rowId'] },
+              ],
             },
           },
           {
@@ -426,7 +427,10 @@ describe('workflow executor', () => {
             idempotencyKeyExpr: {
               kind: 'op',
               op: 'concat',
-              args: ['order:', { kind: 'ref', source: 'context', path: ['event', 'rowId'] }],
+              args: [
+                'order:',
+                { kind: 'ref', source: 'context', path: ['event', 'rowId'] },
+              ],
             },
           },
         ],

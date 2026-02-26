@@ -1,6 +1,6 @@
 import { createMiddleware, createServerFn } from '@tanstack/react-start';
+import { type CreateEmailOptions, Resend } from 'resend';
 import { z } from 'zod';
-import { Resend, type CreateEmailOptions } from 'resend';
 
 const emailMiddleware = createMiddleware().server(async ({ next }) => {
   const resend = new Resend(import.meta.env.RESEND_API_KEY);

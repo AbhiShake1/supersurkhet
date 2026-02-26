@@ -1,6 +1,20 @@
 'use client';
 
+import _ from 'lodash';
+import {
+  DollarSign,
+  Edit,
+  Eye,
+  Package,
+  Plus,
+  Search,
+  Star,
+  Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -8,32 +22,18 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Plus,
-  Search,
-  Edit,
-  Trash2,
-  Eye,
-  DollarSign,
-  Package,
-  Star,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import type { AdminComponent } from '.';
 import { api } from '@/lib/api';
-import _ from 'lodash';
+import type { AdminComponent } from '.';
 
 interface MenuManagementProps {
   onAddItem: () => void;
 }
 
 const MenuManagement: AdminComponent = () => {
-  return <_MenuManagement onAddItem={() => { }} />;
+  return <_MenuManagement onAddItem={() => {}} />;
 };
 export default MenuManagement;
 
@@ -156,7 +156,7 @@ function _MenuManagement({ onAddItem }: MenuManagementProps) {
                   Rs.{' '}
                   {(
                     items.reduce((sum, item) => sum + item.price, 0) /
-                    items.length || 0
+                      items.length || 0
                   ).toFixed(2)}
                 </p>
               </div>

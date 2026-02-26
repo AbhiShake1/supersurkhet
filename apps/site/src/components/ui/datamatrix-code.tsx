@@ -1,9 +1,9 @@
-import type { DataMatrixAction } from '@/lib/datamatrix';
-import { cn } from '@/lib/utils';
 import { BakeryColor } from '@barcode-bakery/barcode-react';
 import { BakeryDatamatrix } from '@barcode-bakery/barcode-react/datamatrix';
 import { toDataURL } from 'qrcode';
-import { forwardRef, useState, useEffect } from 'react';
+import { forwardRef, useEffect, useState } from 'react';
+import type { DataMatrixAction } from '@/lib/datamatrix';
+import { cn } from '@/lib/utils';
 
 export interface DataMatrixCodeProps {
   value: DataMatrixAction | string;

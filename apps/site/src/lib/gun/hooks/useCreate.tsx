@@ -1,8 +1,8 @@
-import type { NestedSchemaType, SchemaKeys } from '..';
-import { createGunHook } from './useGunHook';
-import { useMutation, type UseMutationOptions } from '@tanstack/react-query';
+import { type UseMutationOptions, useMutation } from '@tanstack/react-query';
 import type { GunMessagePut } from 'gun/types';
+import type { NestedSchemaType, SchemaKeys } from '..';
 import { create } from '../ssr/create';
+import { createGunHook } from './useGunHook';
 
 export const useCreate = createGunHook(() => {
   return <const T extends SchemaKeys>(opts: UseCreateOptions<T>) => {

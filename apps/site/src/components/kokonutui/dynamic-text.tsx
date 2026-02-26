@@ -10,8 +10,8 @@
  * @github: https://github.com/kokonut-labs/kokonutui
  */
 
+import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
 import z from 'zod';
 
 export const DynamicTextGreetingSchema = z.object({

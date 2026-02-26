@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { useBusinessSafe } from '@/contexts/business-context';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -9,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useBusinessSafe } from '@/contexts/business-context';
 import { cn } from '@/lib/utils';
 import { runFieldOnValueChange } from '../on-value-change';
 import type { AutoFormFieldProps } from '../react';

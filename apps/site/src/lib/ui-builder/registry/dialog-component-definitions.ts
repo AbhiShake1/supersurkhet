@@ -1,16 +1,15 @@
-import type {
-  ComponentLayer,
-  ComponentRegistry,
-} from '@/components/ui/ui-builder/types';
 import z from 'zod';
-import { commonFieldOverrides } from './form-field-overrides';
-
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
 } from '@/components/ui/dialog';
+import type {
+  ComponentLayer,
+  ComponentRegistry,
+} from '@/components/ui/ui-builder/types';
+import { commonFieldOverrides } from './form-field-overrides';
 
 export const dialogComponentDefinitions: ComponentRegistry = {
   Dialog: {

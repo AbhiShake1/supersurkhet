@@ -1,3 +1,4 @@
+import { Languages } from 'lucide-react';
 import type React from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -7,7 +8,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useI18n } from '@/contexts/i18n-context';
-import { Languages } from 'lucide-react';
 
 export const LanguageSelector: React.FC = () => {
   const { language, setLanguage, availableLanguages } = useI18n();

@@ -1,12 +1,12 @@
 'use client';
 
-import * as React from 'react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import { QrCode, X } from 'lucide-react';
-import { DataMatrixScanner } from '@/components/ui/datamatrix-scanner';
+import * as React from 'react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { DataMatrixScanner } from '@/components/ui/datamatrix-scanner';
 import type { DataMatrixAction } from '@/lib/datamatrix';
+import { cn } from '@/lib/utils';
 
 interface QRScannerButtonProps extends React.HTMLAttributes<HTMLDivElement> {
   onActionDetected?: (action: DataMatrixAction) => void;

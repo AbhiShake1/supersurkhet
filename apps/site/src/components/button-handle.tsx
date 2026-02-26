@@ -1,6 +1,6 @@
-import { Position, type HandleProps } from '@xyflow/react';
+import { type HandleProps, Position } from '@xyflow/react';
+import { useRef, useState } from 'react';
 import { BaseHandle } from '@/components/base-handle';
-import { useState, useRef } from 'react';
 
 const wrapperClassNames: Record<Position, string> = {
   [Position.Top]:

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type RefObject } from 'react';
+import { type RefObject, useEffect, useMemo, useState } from 'react';
 import type {
   BusinessUiTemplateInstallDoc,
   UiTemplateReleaseDoc,
@@ -11,8 +11,8 @@ import {
   type TemplateMarketplaceRecencySort,
 } from './template-marketplace-filters';
 import {
-  TemplateVersionSelector,
   type TemplateVersionSelection,
+  TemplateVersionSelector,
 } from './template-version-selector';
 
 export type TemplateMarketplaceSelection = {
@@ -168,7 +168,9 @@ export function deriveMarketplaceFacets(entries: TemplateMarketplaceEntry[]) {
   }
 
   return {
-    categories: [...categories].sort((left, right) => left.localeCompare(right)),
+    categories: [...categories].sort((left, right) =>
+      left.localeCompare(right),
+    ),
     tags: [...tags].sort((left, right) => left.localeCompare(right)),
   };
 }
@@ -270,7 +272,7 @@ export function TemplateMarketplacePanel({
 
   const resolvedVersion = preferLatestVersion
     ? (selectedEntry?.releases[0]?.version ?? '')
-    : (selectedVersion || selectedEntry?.releases[0]?.version || '');
+    : selectedVersion || selectedEntry?.releases[0]?.version || '';
 
   useEffect(() => {
     if (!selectedTemplateIdFromParent) {
@@ -346,7 +348,10 @@ export function TemplateMarketplacePanel({
                   data-template-card="true"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold" data-template-card-title="true">
+                    <p
+                      className="text-sm font-semibold"
+                      data-template-card-title="true"
+                    >
                       {entry.latestRelease.docs.title || entry.templateId}
                     </p>
                     <div className="flex items-center gap-1 text-[11px]">
@@ -367,7 +372,9 @@ export function TemplateMarketplacePanel({
                       )}
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">{entry.templateId}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {entry.templateId}
+                  </p>
                 </button>
               );
             })}
@@ -397,14 +404,19 @@ export function TemplateMarketplacePanel({
                   data-template-card="true"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold" data-template-card-title="true">
+                    <p
+                      className="text-sm font-semibold"
+                      data-template-card-title="true"
+                    >
                       {entry.latestRelease.docs.title || entry.templateId}
                     </p>
                     <span className="rounded-full border px-2 py-0.5 text-[11px]">
                       latest {entry.latestRelease.version}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">{entry.templateId}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {entry.templateId}
+                  </p>
                 </button>
               );
             })}
@@ -412,7 +424,9 @@ export function TemplateMarketplacePanel({
         ) : null}
 
         {!hasVisibleEntries ? (
-          <p className="px-2 py-4 text-sm text-muted-foreground">No templates found.</p>
+          <p className="px-2 py-4 text-sm text-muted-foreground">
+            No templates found.
+          </p>
         ) : null}
       </div>
 
@@ -424,7 +438,9 @@ export function TemplateMarketplacePanel({
             selectedVersion={selectedVersion}
             onPreferLatestVersionChange={setPreferLatestVersion}
             onSelectedVersionChange={setSelectedVersion}
-            onResolvedSelectionChange={(selection: TemplateVersionSelection) => {
+            onResolvedSelectionChange={(
+              selection: TemplateVersionSelection,
+            ) => {
               setPreferLatestVersion(selection.preferLatestVersion);
               setSelectedVersion(selection.selectedVersion);
             }}

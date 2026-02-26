@@ -1,32 +1,31 @@
-import type { ComponentRegistry } from '@/components/ui/ui-builder/types';
 import z from 'zod';
-import { commonFieldOverrides } from '@/lib/ui-builder/registry/form-field-overrides';
-
-import ShapeHero from '@/components/kokonutui/shape-hero';
-import TweetCard, { TweetCardSchema } from '@/components/kokonutui/tweet-card';
-import ScrollText, {
-  ScrollTextSchema,
-} from '@/components/kokonutui/scroll-text';
-import TypewriterTitle, {
-  TypewriterTitleSchema,
-} from '@/components/kokonutui/type-writer';
-import MatrixText, {
-  MatrixTextSchema,
-} from '@/components/kokonutui/matrix-text';
 import DynamicText, {
   DynamicTextSchema,
 } from '@/components/kokonutui/dynamic-text';
+import MatrixText, {
+  MatrixTextSchema,
+} from '@/components/kokonutui/matrix-text';
+import ScrollText, {
+  ScrollTextSchema,
+} from '@/components/kokonutui/scroll-text';
+import ShapeHero from '@/components/kokonutui/shape-hero';
 import ShimmerText, {
   ShimmerTextSchema,
 } from '@/components/kokonutui/shimmer-text';
 import SlicedText, {
   SlicedTextSchema,
 } from '@/components/kokonutui/sliced-text';
+import SocialButton from '@/components/kokonutui/social-button';
 import SwooshText, {
   SwooshTextSchema,
 } from '@/components/kokonutui/swoosh-text';
-import SocialButton from '@/components/kokonutui/social-button';
+import TweetCard, { TweetCardSchema } from '@/components/kokonutui/tweet-card';
+import TypewriterTitle, {
+  TypewriterTitleSchema,
+} from '@/components/kokonutui/type-writer';
 import { ButtonSchema } from '@/components/ui/button';
+import type { ComponentRegistry } from '@/components/ui/ui-builder/types';
+import { commonFieldOverrides } from '@/lib/ui-builder/registry/form-field-overrides';
 
 export const kokonutuiComponentDefinitions: ComponentRegistry = {
   ShapeHero: {

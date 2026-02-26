@@ -112,7 +112,10 @@ export function evaluateExpression(
       return node;
     }
     if (!isExpressionObject(node)) {
-      throw new ExpressionEvaluationError('Invalid expression node', 'INVALID_NODE');
+      throw new ExpressionEvaluationError(
+        'Invalid expression node',
+        'INVALID_NODE',
+      );
     }
 
     if (node.kind === 'ref') {
@@ -172,7 +175,7 @@ export function evaluateExpression(
       case 'or':
         return args.some(Boolean);
       case 'not':
-        return !Boolean(args[0]);
+        return !args[0];
       case 'add':
         return args.reduce<number>((sum, value) => sum + asNumber(value), 0);
       case 'sub':
@@ -204,7 +207,9 @@ export function evaluateExpression(
       }
       case 'was': {
         const path = normalizePathArg(args[0]);
-        return path.length ? getValueAtPath(context.sourceRow, path) : context.sourceRow;
+        return path.length
+          ? getValueAtPath(context.sourceRow, path)
+          : context.sourceRow;
       }
       case 'now': {
         const path = normalizePathArg(args[0]);

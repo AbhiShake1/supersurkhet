@@ -1,20 +1,18 @@
+import { ChevronDown, XIcon } from 'lucide-react';
 import { type ReactNode, useCallback, useMemo } from 'react';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-
-import { Button } from '@/components/ui/button';
-import { ChevronDown, XIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type ToggleGroupProps = {
   label: string;

@@ -1,7 +1,7 @@
 'use client';
 
-import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import type { UiTemplateInstallPreview } from '@/lib/plugins/types';
 import { TemplateConflictReport } from './template-conflict-report';
 import { TemplatePluginDiffList } from './template-plugin-diff-list';
@@ -87,7 +87,9 @@ export function TemplateInstallPreviewPanel({
                 onConfirmPluginUpdatesChange(Boolean(checked))
               }
             />
-            <span>Confirm plugin version updates before applying template.</span>
+            <span>
+              Confirm plugin version updates before applying template.
+            </span>
           </div>
         </div>
       ) : null}

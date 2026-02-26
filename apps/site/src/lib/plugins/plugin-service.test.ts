@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   AuthorizationError,
-  DuplicateReleaseConflictError,
   createInMemoryPluginPlatformStore,
   createPluginPlatformService,
+  DuplicateReleaseConflictError,
   hashCanonicalJsonValue,
   toPluginRecordNamespacePath,
 } from '@/lib/plugins/plugin-service';

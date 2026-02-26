@@ -1,8 +1,5 @@
-import {
-  CONFIG,
-  type ConfigItem,
-  type StateType,
-} from '@/components/ui/ui-builder/internal/form-fields/classname-control/config';
+import { MoreVertical } from 'lucide-react';
+import { useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -10,8 +7,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreVertical } from 'lucide-react';
-import { useMemo, useCallback } from 'react';
+import {
+  CONFIG,
+  type ConfigItem,
+  type StateType,
+} from '@/components/ui/ui-builder/internal/form-fields/classname-control/config';
 
 const EMPTY_OBJECT = {};
 

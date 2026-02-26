@@ -123,16 +123,16 @@ export function mapSchemaDocsToWorkspace(
     schemaId: schemaDoc.schemaId,
     title: schemaDoc.title,
     description: schemaDoc.description,
-    fields: mapSchemaFieldsToWorkspace(
-      schemaDoc.fields,
-      diagnostics,
-      ['workspaceSchemas', schemaDoc.schemaId, 'fields'],
-    ),
-    refinements: mapRefinementsToWorkspace(
-      schemaDoc.refinements,
-      diagnostics,
-      ['workspaceSchemas', schemaDoc.schemaId, 'refinements'],
-    ),
+    fields: mapSchemaFieldsToWorkspace(schemaDoc.fields, diagnostics, [
+      'workspaceSchemas',
+      schemaDoc.schemaId,
+      'fields',
+    ]),
+    refinements: mapRefinementsToWorkspace(schemaDoc.refinements, diagnostics, [
+      'workspaceSchemas',
+      schemaDoc.schemaId,
+      'refinements',
+    ]),
     tokens: schemaDoc.tokens,
   }));
 
@@ -151,11 +151,11 @@ export function mapWorkspaceSchemasToSchemaDocs(
     schemaId: workspaceSchema.schemaId,
     title: workspaceSchema.title,
     description: workspaceSchema.description,
-    fields: mapWorkspaceFieldsToSchema(
-      workspaceSchema.fields,
-      diagnostics,
-      ['schemaDocs', workspaceSchema.schemaId, 'fields'],
-    ),
+    fields: mapWorkspaceFieldsToSchema(workspaceSchema.fields, diagnostics, [
+      'schemaDocs',
+      workspaceSchema.schemaId,
+      'fields',
+    ]),
     refinements: mapRefinementsToSchema(
       workspaceSchema.refinements,
       diagnostics,
@@ -194,10 +194,11 @@ function mapSchemaFieldsToWorkspace(
       diagnostics,
       [...fieldPath, 'itemType'],
     );
-    const nestedFields = mapSchemaFieldsToWorkspace(field.fields ?? [], diagnostics, [
-      ...fieldPath,
-      'fields',
-    ]);
+    const nestedFields = mapSchemaFieldsToWorkspace(
+      field.fields ?? [],
+      diagnostics,
+      [...fieldPath, 'fields'],
+    );
     const behavior = mapBehaviorToWorkspace(field.behavior, diagnostics, [
       ...fieldPath,
       'behavior',
@@ -239,7 +240,10 @@ function mapWorkspaceFieldsToSchema(
         path: fieldPath,
       });
       // Collect nested expression diagnostics even when dropping the field.
-      mapBehaviorToSchema(field.behavior, diagnostics, [...fieldPath, 'behavior']);
+      mapBehaviorToSchema(field.behavior, diagnostics, [
+        ...fieldPath,
+        'behavior',
+      ]);
       continue;
     }
 
@@ -253,10 +257,11 @@ function mapWorkspaceFieldsToSchema(
       diagnostics,
       [...fieldPath, 'itemType'],
     );
-    const nestedFields = mapWorkspaceFieldsToSchema(field.fields ?? [], diagnostics, [
-      ...fieldPath,
-      'fields',
-    ]);
+    const nestedFields = mapWorkspaceFieldsToSchema(
+      field.fields ?? [],
+      diagnostics,
+      [...fieldPath, 'fields'],
+    );
 
     mappedFields.push({
       key: field.key,
@@ -295,10 +300,11 @@ function mapSchemaFieldItemToWorkspace(
     return undefined;
   }
 
-  const nestedFields = mapSchemaFieldsToWorkspace(itemType.fields ?? [], diagnostics, [
-    ...path,
-    'fields',
-  ]);
+  const nestedFields = mapSchemaFieldsToWorkspace(
+    itemType.fields ?? [],
+    diagnostics,
+    [...path, 'fields'],
+  );
   const behavior = mapBehaviorToWorkspace(itemType.behavior, diagnostics, [
     ...path,
     'behavior',
@@ -311,11 +317,10 @@ function mapSchemaFieldItemToWorkspace(
     optional: itemType.optional,
     defaultValue: itemType.defaultValue,
     enumValues: itemType.enumValues,
-    itemType: mapSchemaFieldItemToWorkspace(
-      itemType.itemType,
-      diagnostics,
-      [...path, 'itemType'],
-    ),
+    itemType: mapSchemaFieldItemToWorkspace(itemType.itemType, diagnostics, [
+      ...path,
+      'itemType',
+    ]),
     fields: nestedFields.length > 0 ? nestedFields : undefined,
     tokens: itemType.tokens,
     behavior,
@@ -347,10 +352,11 @@ function mapWorkspaceFieldItemToSchema(
     'behavior',
   ]);
 
-  const nestedFields = mapWorkspaceFieldsToSchema(itemType.fields ?? [], diagnostics, [
-    ...path,
-    'fields',
-  ]);
+  const nestedFields = mapWorkspaceFieldsToSchema(
+    itemType.fields ?? [],
+    diagnostics,
+    [...path, 'fields'],
+  );
 
   return {
     type: itemType.type,
@@ -359,11 +365,10 @@ function mapWorkspaceFieldItemToSchema(
     optional: itemType.optional,
     defaultValue: itemType.defaultValue,
     enumValues: itemType.enumValues,
-    itemType: mapWorkspaceFieldItemToSchema(
-      itemType.itemType,
-      diagnostics,
-      [...path, 'itemType'],
-    ),
+    itemType: mapWorkspaceFieldItemToSchema(itemType.itemType, diagnostics, [
+      ...path,
+      'itemType',
+    ]),
     fields: nestedFields.length > 0 ? nestedFields : undefined,
     tokens: itemType.tokens,
     behavior,
@@ -380,18 +385,21 @@ function mapBehaviorToWorkspace(
     return undefined;
   }
 
-  const fieldConfig = mapFieldConfigToWorkspace(behavior.fieldConfig, diagnostics, [
-    ...path,
-    'fieldConfig',
-  ]);
-  const derivations = mapDerivationsToWorkspace(behavior.derivations, diagnostics, [
-    ...path,
-    'derivations',
-  ]);
-  const refinements = mapRefinementsToWorkspace(behavior.refinements, diagnostics, [
-    ...path,
-    'refinements',
-  ]);
+  const fieldConfig = mapFieldConfigToWorkspace(
+    behavior.fieldConfig,
+    diagnostics,
+    [...path, 'fieldConfig'],
+  );
+  const derivations = mapDerivationsToWorkspace(
+    behavior.derivations,
+    diagnostics,
+    [...path, 'derivations'],
+  );
+  const refinements = mapRefinementsToWorkspace(
+    behavior.refinements,
+    diagnostics,
+    [...path, 'refinements'],
+  );
 
   if (!fieldConfig && !derivations && !refinements) {
     return undefined;
@@ -413,18 +421,21 @@ function mapBehaviorToSchema(
     return undefined;
   }
 
-  const fieldConfig = mapFieldConfigToSchema(behavior.fieldConfig, diagnostics, [
-    ...path,
-    'fieldConfig',
-  ]);
-  const derivations = mapDerivationsToSchema(behavior.derivations, diagnostics, [
-    ...path,
-    'derivations',
-  ]);
-  const refinements = mapRefinementsToSchema(behavior.refinements, diagnostics, [
-    ...path,
-    'refinements',
-  ]);
+  const fieldConfig = mapFieldConfigToSchema(
+    behavior.fieldConfig,
+    diagnostics,
+    [...path, 'fieldConfig'],
+  );
+  const derivations = mapDerivationsToSchema(
+    behavior.derivations,
+    diagnostics,
+    [...path, 'derivations'],
+  );
+  const refinements = mapRefinementsToSchema(
+    behavior.refinements,
+    diagnostics,
+    [...path, 'refinements'],
+  );
 
   if (!fieldConfig && !derivations && !refinements) {
     return undefined;
@@ -810,7 +821,11 @@ function mapExpressionToSchema(
   if (expression.kind === 'op') {
     const args = expression.args
       .map((arg, index) =>
-        mapExpressionToSchema(arg, diagnostics, [...path, 'args', String(index)]),
+        mapExpressionToSchema(arg, diagnostics, [
+          ...path,
+          'args',
+          String(index),
+        ]),
       )
       .filter((arg): arg is ExpressionDoc => arg !== undefined);
 
@@ -824,7 +839,11 @@ function mapExpressionToSchema(
   if (expression.kind === 'array') {
     const items = expression.items
       .map((item, index) =>
-        mapExpressionToSchema(item, diagnostics, [...path, 'items', String(index)]),
+        mapExpressionToSchema(item, diagnostics, [
+          ...path,
+          'items',
+          String(index),
+        ]),
       )
       .filter((item): item is ExpressionDoc => item !== undefined);
 
@@ -863,17 +882,16 @@ function mapExpressionToSchema(
   return undefined;
 }
 
-function isExpressionDocNode(value: unknown): value is Exclude<ExpressionDoc, JsonPrimitive> {
+function isExpressionDocNode(
+  value: unknown,
+): value is Exclude<ExpressionDoc, JsonPrimitive> {
   if (!value || typeof value !== 'object') {
     return false;
   }
 
   const kind = (value as { kind?: unknown }).kind;
   return (
-    kind === 'ref' ||
-    kind === 'op' ||
-    kind === 'array' ||
-    kind === 'object'
+    kind === 'ref' || kind === 'op' || kind === 'array' || kind === 'object'
   );
 }
 

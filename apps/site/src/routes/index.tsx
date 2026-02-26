@@ -1,4 +1,4 @@
-import { Link, createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { lazy } from 'react';
 import { Button } from '@/components/ui/button';
 
@@ -31,9 +31,7 @@ function Home() {
               </p>
             </div>
             <Button asChild size="lg" className="sm:min-w-52">
-              <Link to="/plugin-studio">
-                Open Plugin Builder
-              </Link>
+              <Link to="/plugin-studio">Open Plugin Builder</Link>
             </Button>
           </div>
         </div>

@@ -1,5 +1,6 @@
-import type { PluginRuntimeRegistry } from '@/lib/plugins/runtime-registry';
+import { CORE_DB_ACTION_IDS, flattenSchemaWorkflows } from '@supersurkhet/sdk';
 import { evaluateExpression } from '@/lib/plugins/ir-evaluator';
+import type { PluginRuntimeRegistry } from '@/lib/plugins/runtime-registry';
 import { runSandboxedAction } from '@/lib/plugins/sandbox-runner';
 import type {
   BusinessPluginDraftInstallDoc,
@@ -8,11 +9,10 @@ import type {
   ExecuteLifecycleHookResult,
   PluginDraftRevisionDoc,
   PluginReleaseDoc,
-  WorkflowDoc,
   WorkflowDbAdapter,
+  WorkflowDoc,
   WorkflowNodeDoc,
 } from '@/lib/plugins/types';
-import { CORE_DB_ACTION_IDS, flattenSchemaWorkflows } from '@supersurkhet/sdk';
 
 export class HashVerificationError extends Error {
   constructor(install: BusinessPluginInstallDoc, release: PluginReleaseDoc) {
@@ -67,7 +67,9 @@ type NormalizedEnvelope = {
   patch?: unknown;
 };
 
-function normalizeEnvelope(input: ExecuteLifecycleHookInput): NormalizedEnvelope {
+function normalizeEnvelope(
+  input: ExecuteLifecycleHookInput,
+): NormalizedEnvelope {
   if (input.envelope) {
     return input.envelope;
   }
@@ -128,7 +130,9 @@ function resolveNodeInput(
   return node.input ?? payload;
 }
 
-function toNodeKind(node: WorkflowNodeDoc): NonNullable<WorkflowNodeDoc['kind']> {
+function toNodeKind(
+  node: WorkflowNodeDoc,
+): NonNullable<WorkflowNodeDoc['kind']> {
   return node.kind ?? node.type ?? 'action';
 }
 
@@ -231,7 +235,9 @@ function matchesWorkflowTrigger(args: {
   }
 
   for (const predicate of Object.values(workflow.trigger.fieldChange ?? {})) {
-    const passesPredicate = Boolean(evaluateExpression(predicate, expressionContext));
+    const passesPredicate = Boolean(
+      evaluateExpression(predicate, expressionContext),
+    );
     if (!passesPredicate) {
       return false;
     }
@@ -319,7 +325,9 @@ async function executeWorkflowGraph({
 
     try {
       if (node.runIf) {
-        const shouldRun = Boolean(evaluateExpression(node.runIf, expressionContext));
+        const shouldRun = Boolean(
+          evaluateExpression(node.runIf, expressionContext),
+        );
         if (!shouldRun) {
           continue;
         }
@@ -334,13 +342,20 @@ async function executeWorkflowGraph({
         }
 
         const idempotencyKey = node.idempotencyKeyExpr
-          ? String(evaluateExpression(node.idempotencyKeyExpr, expressionContext) ?? '')
+          ? String(
+              evaluateExpression(node.idempotencyKeyExpr, expressionContext) ??
+                '',
+            )
           : '';
 
         if (idempotencyKey && idempotencyOutputs.has(idempotencyKey)) {
           output = idempotencyOutputs.get(idempotencyKey);
         } else {
-          const resolvedInput = resolveNodeInput(node, expressionContext, payload);
+          const resolvedInput = resolveNodeInput(
+            node,
+            expressionContext,
+            payload,
+          );
           if (isCoreDbActionId(node.actionId)) {
             output = await executeNodeWithPolicy({
               node,
@@ -357,7 +372,9 @@ async function executeWorkflowGraph({
           } else {
             const handler = actionHandlers[node.actionId];
             if (!handler) {
-              throw new Error(`No action handler registered for "${node.actionId}"`);
+              throw new Error(
+                `No action handler registered for "${node.actionId}"`,
+              );
             }
 
             const requiredCapabilities =
@@ -562,7 +579,9 @@ export function createLifecycleEnvelope(input: {
   });
 }
 
-function isCoreDbActionId(actionId: string): actionId is (typeof CORE_DB_ACTION_IDS)[keyof typeof CORE_DB_ACTION_IDS] {
+function isCoreDbActionId(
+  actionId: string,
+): actionId is (typeof CORE_DB_ACTION_IDS)[keyof typeof CORE_DB_ACTION_IDS] {
   return Object.values(CORE_DB_ACTION_IDS).includes(
     actionId as (typeof CORE_DB_ACTION_IDS)[keyof typeof CORE_DB_ACTION_IDS],
   );
@@ -598,15 +617,30 @@ async function executeBuiltinDbAction({
 
   switch (actionId) {
     case CORE_DB_ACTION_IDS.findMany:
-      return db.findMany({ ...common, ...(payload as Parameters<WorkflowDbAdapter['findMany']>[0]) });
+      return db.findMany({
+        ...common,
+        ...(payload as Parameters<WorkflowDbAdapter['findMany']>[0]),
+      });
     case CORE_DB_ACTION_IDS.findOne:
-      return db.findOne({ ...common, ...(payload as Parameters<WorkflowDbAdapter['findOne']>[0]) });
+      return db.findOne({
+        ...common,
+        ...(payload as Parameters<WorkflowDbAdapter['findOne']>[0]),
+      });
     case CORE_DB_ACTION_IDS.create:
-      return db.create({ ...common, ...(payload as Parameters<WorkflowDbAdapter['create']>[0]) });
+      return db.create({
+        ...common,
+        ...(payload as Parameters<WorkflowDbAdapter['create']>[0]),
+      });
     case CORE_DB_ACTION_IDS.update:
-      return db.update({ ...common, ...(payload as Parameters<WorkflowDbAdapter['update']>[0]) });
+      return db.update({
+        ...common,
+        ...(payload as Parameters<WorkflowDbAdapter['update']>[0]),
+      });
     case CORE_DB_ACTION_IDS.delete:
-      return db.delete({ ...common, ...(payload as Parameters<WorkflowDbAdapter['delete']>[0]) });
+      return db.delete({
+        ...common,
+        ...(payload as Parameters<WorkflowDbAdapter['delete']>[0]),
+      });
     default:
       return null;
   }

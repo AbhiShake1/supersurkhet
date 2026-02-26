@@ -11,9 +11,14 @@ function toStableHash(value: string): string {
 }
 
 function toSafeSegment(value: string) {
-  return value
-    .trim()
-    .replace(/[\u0000-\u001f\u007f]+/g, '')
+  const withoutControlChars = Array.from(value.trim())
+    .filter((char) => {
+      const code = char.charCodeAt(0);
+      return code > 31 && code !== 127;
+    })
+    .join('');
+
+  return withoutControlChars
     .replace(/[^a-zA-Z0-9._-]+/g, '_')
     .replace(/^_+|_+$/g, '');
 }
@@ -33,8 +38,8 @@ export function normalizeRowId(rawId: unknown, fallbackPrefix = 'row') {
   if (raw.length <= MAX_ROW_ID_LENGTH) {
     return raw;
   }
-  const head = raw.slice(0, COMPACT_HEAD_LENGTH).replace(/[_-]+$/g, '') || 'row';
+  const head =
+    raw.slice(0, COMPACT_HEAD_LENGTH).replace(/[_-]+$/g, '') || 'row';
   const digest = toStableHash(raw);
   return `${head}.${digest}`;
 }
-

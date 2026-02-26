@@ -1,20 +1,20 @@
-import type React from 'react';
-import type { LayoutElement } from './restaurant-layout-editor';
 import {
+  Bath,
   RockingChairIcon as ChairIcon,
+  Columns,
+  DoorOpenIcon as Door,
+  Flower2,
+  GlassWater,
   Sofa,
   Square,
   StepBackIcon as Stairs,
   TreesIcon as Tree,
-  DoorOpenIcon as Door,
-  Columns,
-  GlassWater,
-  Bath,
   UtensilsCrossed,
-  Flower2,
   AppWindowIcon as Window,
 } from 'lucide-react';
+import type React from 'react';
 import { cn } from '@/lib/utils';
+import type { LayoutElement } from './restaurant-layout-editor';
 
 interface ElementRendererProps {
   element: LayoutElement;

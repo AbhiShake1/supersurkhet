@@ -1,16 +1,16 @@
+import {
+  CardBody,
+  CardBodySchema,
+  CardContainer,
+  CardContainerSchema,
+  CardItem,
+  CardItemSchema,
+} from '@/components/ui/3d-card';
 import type {
   ComponentLayer,
   ComponentRegistry,
 } from '@/components/ui/ui-builder/types';
 import { commonFieldOverrides } from './form-field-overrides';
-import {
-  CardContainer,
-  CardBody,
-  CardItem,
-  CardContainerSchema,
-  CardBodySchema,
-  CardItemSchema,
-} from '@/components/ui/3d-card';
 
 export const threeDCardComponentDefinitions: ComponentRegistry = {
   CardBody3D: {

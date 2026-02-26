@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Check, ClipboardCopy, Loader2 } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
+import { Check, ClipboardCopy, Loader2 } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
 
 interface CopyPromptButtonProps {
   onGeneratePrompt: () => string;

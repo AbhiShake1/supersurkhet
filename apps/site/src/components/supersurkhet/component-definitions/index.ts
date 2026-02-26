@@ -1,3 +1,31 @@
+import {
+  DataDetail,
+  DataDetailSchema,
+  DataList,
+  DataListSchema,
+  DataSchema,
+  SingleData,
+} from '@/components/supersurkhet/data';
+import {
+  ProductActions,
+  ProductActionsSchema,
+  ProductBadge,
+  ProductBadgeSchema,
+  ProductDescription,
+  ProductDescriptionSchema,
+  ProductDetail,
+  ProductDetailSchema,
+  ProductImage,
+  ProductImageSchema,
+  ProductList,
+  ProductListSchema,
+  ProductPrice,
+  ProductPriceSchema,
+  ProductSchema,
+  ProductTitle,
+  ProductTitleSchema,
+  SingleProduct,
+} from '@/components/supersurkhet/products';
 import type {
   ComponentLayer,
   ComponentRegistry,
@@ -8,36 +36,6 @@ import {
   commonFieldOverrides,
   tablePickerFieldOverrides,
 } from '@/lib/ui-builder/registry/form-field-overrides';
-
-import {
-  ProductList,
-  ProductListSchema,
-  SingleProduct,
-  ProductSchema,
-  ProductImage,
-  ProductImageSchema,
-  ProductTitle,
-  ProductTitleSchema,
-  ProductDescription,
-  ProductDescriptionSchema,
-  ProductPrice,
-  ProductPriceSchema,
-  ProductActions,
-  ProductActionsSchema,
-  ProductBadge,
-  ProductBadgeSchema,
-  ProductDetail,
-  ProductDetailSchema,
-} from '@/components/supersurkhet/products';
-
-import {
-  DataList,
-  DataListSchema,
-  SingleData,
-  DataSchema,
-  DataDetail,
-  DataDetailSchema,
-} from '@/components/supersurkhet/data';
 
 export const supersurkhetComponentDefinitions: ComponentRegistry = {
   DataList: {

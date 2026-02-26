@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { applyDerivedValuesToRow } from './derive-row';
 import type { DeriveFn } from '../ui/autoform';
+import { applyDerivedValuesToRow } from './derive-row';
 
 describe('applyDerivedValuesToRow', () => {
   it('applies sync derived value to row data', () => {

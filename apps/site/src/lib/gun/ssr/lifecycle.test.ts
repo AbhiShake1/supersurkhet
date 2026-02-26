@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  resolveAfterNextTick,
-  resolveLifecycleBusinessId,
-} from './lifecycle';
+import { resolveAfterNextTick, resolveLifecycleBusinessId } from './lifecycle';
 
 describe('resolveLifecycleBusinessId', () => {
   it('returns undefined when no scope key exists', () => {

@@ -1,10 +1,10 @@
+import { AnimatePresence, type MotionProps, motion } from 'motion/react';
 import React, {
   type ComponentPropsWithoutRef,
   useEffect,
   useMemo,
   useState,
 } from 'react';
-import { AnimatePresence, motion, type MotionProps } from 'motion/react';
 import { z } from 'zod';
 
 import { cn } from '@/lib/utils';

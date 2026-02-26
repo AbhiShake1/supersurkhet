@@ -10,11 +10,11 @@
  * @github: https://github.com/kokonut-labs/kokonutui
  */
 
+import { Instagram, Link, Linkedin, Twitter } from 'lucide-react';
+import { motion } from 'motion/react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
-import { Twitter, Instagram, Linkedin, Link } from 'lucide-react';
-import { motion } from 'motion/react';
 
 export default function SocialButton({
   className,

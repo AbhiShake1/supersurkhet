@@ -1,3 +1,6 @@
+import { Slot } from '@radix-ui/react-slot';
+import * as React from 'react';
+import { z } from 'zod';
 import { NotFound } from '@/components/ui/not-found';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useBusiness } from '@/contexts/business-context';
@@ -5,9 +8,6 @@ import { api } from '@/lib/api';
 import type { SchemaKeys } from '@/lib/gun/index';
 import type { AppSchemaType } from '@/lib/schema';
 import { cn } from '@/lib/utils';
-import { Slot } from '@radix-ui/react-slot';
-import * as React from 'react';
-import { z } from 'zod';
 
 type AllCompositeSchemas = AppSchemaType['shape'];
 

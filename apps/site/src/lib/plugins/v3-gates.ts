@@ -1,4 +1,8 @@
-import type { ActionManifestDoc, SchemaDoc, WorkflowDoc } from '@/lib/plugins/types';
+import type {
+  ActionManifestDoc,
+  SchemaDoc,
+  WorkflowDoc,
+} from '@/lib/plugins/types';
 
 export type V3GateSeverity = 'error' | 'warning';
 
@@ -19,7 +23,9 @@ type V3GateInput = {
 export function evaluateV3PublishGates(input: V3GateInput): V3GateDiagnostic[] {
   const diagnostics: V3GateDiagnostic[] = [];
   const actionById = new Map<string, ActionManifestDoc>();
-  const schemaIds = new Set(input.schemaDocs.map((schemaDoc) => schemaDoc.schemaId));
+  const schemaIds = new Set(
+    input.schemaDocs.map((schemaDoc) => schemaDoc.schemaId),
+  );
 
   for (const [index, action] of input.actionManifest.entries()) {
     const path = ['actionManifest', String(index)];
@@ -63,9 +69,9 @@ export function evaluateV3PublishGates(input: V3GateInput): V3GateDiagnostic[] {
   }
 
   for (const [workflowIndex, workflow] of input.workflows.entries()) {
-    const workflowPath =
-      input.workflowPathPrefixById?.[workflow.workflowId] ??
-      ['workflows', workflow.workflowId || String(workflowIndex)];
+    const workflowPath = input.workflowPathPrefixById?.[
+      workflow.workflowId
+    ] ?? ['workflows', workflow.workflowId || String(workflowIndex)];
     if (workflow.pluginContractVersion !== '3') {
       diagnostics.push({
         code: 'missing-contract-version-v3',
@@ -129,7 +135,12 @@ export function evaluateV3PublishGates(input: V3GateInput): V3GateDiagnostic[] {
             code: 'missing-idempotency-key',
             severity: 'error',
             message: `Action node "${node.nodeId}" must define idempotencyKeyExpr`,
-            path: [...workflowPath, 'nodes', String(nodeIndex), 'idempotencyKeyExpr'],
+            path: [
+              ...workflowPath,
+              'nodes',
+              String(nodeIndex),
+              'idempotencyKeyExpr',
+            ],
           });
         }
       }
@@ -158,9 +169,11 @@ export function evaluateV3PublishGates(input: V3GateInput): V3GateDiagnostic[] {
   return diagnostics;
 }
 
-export function evaluateV3InstallGates(input: V3GateInput & {
-  requestedCapabilities?: readonly string[];
-}): V3GateDiagnostic[] {
+export function evaluateV3InstallGates(
+  input: V3GateInput & {
+    requestedCapabilities?: readonly string[];
+  },
+): V3GateDiagnostic[] {
   const diagnostics = evaluateV3PublishGates(input);
   const requested = new Set(input.requestedCapabilities ?? []);
 
@@ -185,6 +198,8 @@ export function evaluateV3InstallGates(input: V3GateInput & {
   return diagnostics;
 }
 
-export function hasBlockingV3Gates(diagnostics: readonly V3GateDiagnostic[]): boolean {
+export function hasBlockingV3Gates(
+  diagnostics: readonly V3GateDiagnostic[],
+): boolean {
   return diagnostics.some((diagnostic) => diagnostic.severity === 'error');
 }

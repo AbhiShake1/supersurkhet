@@ -131,19 +131,27 @@ describe('TemplateMarketplacePanel', () => {
     );
     await flush();
 
-    expect(container.querySelectorAll('[data-template-card="true"]').length).toBe(3);
+    expect(
+      container.querySelectorAll('[data-template-card="true"]').length,
+    ).toBe(3);
 
     clickByText('restaurant');
     await flush();
-    expect(container.querySelectorAll('[data-template-card="true"]').length).toBe(2);
+    expect(
+      container.querySelectorAll('[data-template-card="true"]').length,
+    ).toBe(2);
 
     clickByText('#food');
     await flush();
-    expect(container.querySelectorAll('[data-template-card="true"]').length).toBe(2);
+    expect(
+      container.querySelectorAll('[data-template-card="true"]').length,
+    ).toBe(2);
 
     clickByText('Installed');
     await flush();
-    expect(container.querySelectorAll('[data-template-card="true"]').length).toBe(1);
+    expect(
+      container.querySelectorAll('[data-template-card="true"]').length,
+    ).toBe(1);
     expect(container.textContent).toContain('installed 1.0.0');
 
     clickByText('All');
@@ -154,7 +162,9 @@ describe('TemplateMarketplacePanel', () => {
     await flush();
     setInputValue('template-marketplace-query', 'modern');
     await flush();
-    expect(container.querySelectorAll('[data-template-card="true"]').length).toBe(1);
+    expect(
+      container.querySelectorAll('[data-template-card="true"]').length,
+    ).toBe(1);
     expect(container.textContent).toContain('Modern Shop');
   });
 
@@ -208,18 +218,26 @@ describe('TemplateMarketplacePanel', () => {
     );
     await flush();
 
-    const installedGroup = container.querySelector('[data-testid="template-group-installed"]');
-    const availableGroup = container.querySelector('[data-testid="template-group-available"]');
+    const installedGroup = container.querySelector(
+      '[data-testid="template-group-installed"]',
+    );
+    const availableGroup = container.querySelector(
+      '[data-testid="template-group-available"]',
+    );
 
     expect(installedGroup).toBeTruthy();
     expect(availableGroup).toBeTruthy();
 
-    const installedTitles = [...
-      (installedGroup?.querySelectorAll('[data-template-card-title="true"]') ?? [])
+    const installedTitles = [
+      ...(installedGroup?.querySelectorAll(
+        '[data-template-card-title="true"]',
+      ) ?? []),
     ].map((node) => node.textContent?.trim());
 
-    const availableTemplateIds = [...
-      (availableGroup?.querySelectorAll('[data-template-card="true"] p.text-xs') ?? [])
+    const availableTemplateIds = [
+      ...(availableGroup?.querySelectorAll(
+        '[data-template-card="true"] p.text-xs',
+      ) ?? []),
     ].map((node) => node.textContent?.trim());
 
     expect(installedTitles).toEqual(['Installed Template']);

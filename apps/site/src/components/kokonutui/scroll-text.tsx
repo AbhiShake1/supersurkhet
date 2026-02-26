@@ -10,10 +10,10 @@
  * @github: https://github.com/kokonut-labs/kokonutui
  */
 
-import { useRef, useState, useEffect } from 'react';
 import { motion, type Variants } from 'motion/react';
-import { cn } from '@/lib/utils';
+import { useEffect, useRef, useState } from 'react';
 import z from 'zod';
+import { cn } from '@/lib/utils';
 
 export const ScrollTextSchema = z.object({
   texts: z.string().array().optional(),

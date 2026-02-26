@@ -1,19 +1,18 @@
-import {
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from '@/components/ui/accordion';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Plus, Trash } from 'lucide-react';
 import { useWatch } from 'react-hook-form';
 import * as z from 'zod';
-
-import { beautifyObjectName, getBaseType } from '../utils';
-import AutoFormObject from './object';
-import AutoFormInput from './input';
-import type { FieldConfig } from '../types';
+import {
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { FormField } from '../../form';
+import type { FieldConfig } from '../types';
+import { beautifyObjectName, getBaseType } from '../utils';
+import AutoFormInput from './input';
+import AutoFormObject from './object';
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 function getRecordSchema(item: z.ZodRecord<any, any>) {

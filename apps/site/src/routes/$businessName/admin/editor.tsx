@@ -70,6 +70,7 @@ import { useAuth } from '@/components/auth-provider';
 import { useLoginPrompt } from '@/components/login-prompt-provider';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { Button } from '@/components/ui/button';
+import { NotFound } from '@/components/ui/not-found';
 import {
   ResizableHandle,
   ResizablePanel,
@@ -90,7 +91,6 @@ import { useContextData } from '@/lib/ui-builder/context/context-data-store';
 import { complexComponentDefinitions } from '@/lib/ui-builder/registry/complex-component-definitions';
 import { primitiveComponentDefinitions } from '@/lib/ui-builder/registry/primitive-component-definitions';
 import { zodToJsonSchema } from '@/lib/zod/zod-to-json-schema';
-import { NotFound } from '@/components/ui/not-found';
 
 const componentRegistry = {
   ...primitiveComponentDefinitions,

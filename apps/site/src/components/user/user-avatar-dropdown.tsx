@@ -1,3 +1,4 @@
+import { Link, useRouteContext } from '@tanstack/react-router';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -6,9 +7,8 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useProfile } from '@/hooks/use-profile';
-import { useRouteContext, Link } from '@tanstack/react-router';
-import { useAuth } from '../auth-provider';
 import { cn } from '@/lib/utils';
+import { useAuth } from '../auth-provider';
 
 export interface UserAvatarDropdownProps
   extends React.ComponentProps<'button'> {

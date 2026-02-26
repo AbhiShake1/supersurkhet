@@ -50,7 +50,9 @@ describe('mergeUiTemplateLayers', () => {
               id: 'hero',
               type: 'section',
               props: { title: 'Old title', color: 'blue' },
-              children: [node({ id: 'cta', type: 'button', props: { text: 'Buy' } })],
+              children: [
+                node({ id: 'cta', type: 'button', props: { text: 'Buy' } }),
+              ],
             }),
             node({ id: 'target-only', type: 'p', props: { text: 'legacy' } }),
           ],
@@ -65,7 +67,9 @@ describe('mergeUiTemplateLayers', () => {
               id: 'hero',
               type: 'section',
               props: { title: 'New title' },
-              children: [node({ id: 'new-child', type: 'span', props: { text: 'new' } })],
+              children: [
+                node({ id: 'new-child', type: 'span', props: { text: 'new' } }),
+              ],
             }),
           ],
         }),
@@ -79,8 +83,13 @@ describe('mergeUiTemplateLayers', () => {
       throw new Error('Expected merged page children');
     }
     const mergedHero = mergedPage.children.find((child) => child.id === 'hero');
-    expect(mergedHero?.props).toMatchObject({ title: 'New title', color: 'blue' });
-    const preserved = mergedPage.children.find((child) => child.id === 'target-only');
+    expect(mergedHero?.props).toMatchObject({
+      title: 'New title',
+      color: 'blue',
+    });
+    const preserved = mergedPage.children.find(
+      (child) => child.id === 'target-only',
+    );
     expect(preserved).toBeTruthy();
   });
 
@@ -145,8 +154,8 @@ describe('mergeUiTemplateLayers', () => {
     });
 
     expect(result.hardConflicts.length).toBeGreaterThan(0);
-    expect(result.hardConflicts.some((conflict) => conflict.code === 'duplicate-id')).toBe(
-      true,
-    );
+    expect(
+      result.hardConflicts.some((conflict) => conflict.code === 'duplicate-id'),
+    ).toBe(true);
   });
 });

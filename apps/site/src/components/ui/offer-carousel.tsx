@@ -1,8 +1,8 @@
-import * as React from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ArrowRight, Tag } from 'lucide-react';
-import { cn } from '@/lib/utils'; // Your utility for merging Tailwind classes
+import { ArrowRight, ChevronLeft, ChevronRight, Tag } from 'lucide-react';
+import * as React from 'react';
 import z from 'zod';
+import { cn } from '@/lib/utils'; // Your utility for merging Tailwind classes
 
 export const OfferCardSchema = z.object({
   className: z.string().optional(),

@@ -1,14 +1,14 @@
+import {
+  AnimatedList,
+  AnimatedListItem,
+  AnimatedListItemSchema,
+  AnimatedListSchema,
+} from '@/components/ui/animated-list/animated-list';
 import type {
   ComponentLayer,
   ComponentRegistry,
 } from '@/components/ui/ui-builder/types';
 import { commonFieldOverrides } from '@/lib/ui-builder/registry/form-field-overrides';
-import {
-  AnimatedList,
-  AnimatedListItem,
-  AnimatedListSchema,
-  AnimatedListItemSchema,
-} from '@/components/ui/animated-list/animated-list';
 
 export const animatedListComponentDefinitions: ComponentRegistry = {
   AnimatedList: {

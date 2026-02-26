@@ -6,9 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
+  type ShortcutDefinition,
   ShortcutKbd,
   useShortcutAction,
-  type ShortcutDefinition,
 } from '@/components/ui/keyboard-shortcuts';
 import { Textarea } from '@/components/ui/textarea';
 import type { ComponentLayer } from '@/components/ui/ui-builder/types';
@@ -48,8 +48,9 @@ export function TemplatePublishPanel({
   onPublish,
   onOpenPublishedTemplate,
 }: TemplatePublishPanelProps) {
-  const [publishDraft, setPublishDraft] =
-    useState<TemplatePublishDraft>(DEFAULT_TEMPLATE_PUBLISH_DRAFT);
+  const [publishDraft, setPublishDraft] = useState<TemplatePublishDraft>(
+    DEFAULT_TEMPLATE_PUBLISH_DRAFT,
+  );
   const [slugTouched, setSlugTouched] = useState(false);
   const [hasHydratedDraft, setHasHydratedDraft] = useState(false);
   const categoryDatalistId = useId();
@@ -60,7 +61,10 @@ export function TemplatePublishPanel({
     if (typeof window === 'undefined') {
       return;
     }
-    const parsed = readTemplatePublishDraft(window.localStorage, draftStorageKey);
+    const parsed = readTemplatePublishDraft(
+      window.localStorage,
+      draftStorageKey,
+    );
     if (parsed) {
       setPublishDraft((current) => ({
         ...current,
@@ -81,7 +85,11 @@ export function TemplatePublishPanel({
     if (!hasHydratedDraft) {
       return;
     }
-    writeTemplatePublishDraft(window.localStorage, draftStorageKey, publishDraft);
+    writeTemplatePublishDraft(
+      window.localStorage,
+      draftStorageKey,
+      publishDraft,
+    );
   }, [draftStorageKey, publishDraft, hasHydratedDraft]);
 
   const suggestedTags = useMemo(

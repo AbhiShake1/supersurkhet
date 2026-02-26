@@ -50,7 +50,9 @@ function evictOldestCacheEntry() {
   previewCache.delete(oldest[0]);
 }
 
-export function getTemplatePreviewFromCache(input: TemplatePreviewCacheKeyInput) {
+export function getTemplatePreviewFromCache(
+  input: TemplatePreviewCacheKeyInput,
+) {
   const key = toTemplatePreviewCacheKey(input);
   const cached = previewCache.get(key);
   if (!cached) return null;
@@ -82,4 +84,3 @@ export function setTemplatePreviewInCache(
 export function clearTemplatePreviewCache() {
   previewCache.clear();
 }
-

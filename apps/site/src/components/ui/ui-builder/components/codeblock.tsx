@@ -1,10 +1,10 @@
 'use client';
+import { CheckIcon, CopyIcon } from 'lucide-react';
 import { memo, useCallback, useMemo } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { coldarkDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
-import { CopyIcon, CheckIcon } from 'lucide-react';
-import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard';
 import { Button } from '@/components/ui/button';
+import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard';
 
 interface CodeBlockProps {
   language: string;

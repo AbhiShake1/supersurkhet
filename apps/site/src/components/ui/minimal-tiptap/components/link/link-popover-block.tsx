@@ -1,11 +1,11 @@
-import * as React from 'react';
-import { Separator } from '@/components/ui/separator';
-import { ToolbarButton } from '../toolbar-button';
 import {
   CopyIcon,
   ExternalLinkIcon,
   LinkBreak2Icon,
 } from '@radix-ui/react-icons';
+import * as React from 'react';
+import { Separator } from '@/components/ui/separator';
+import { ToolbarButton } from '../toolbar-button';
 
 interface LinkPopoverBlockProps {
   url: string;

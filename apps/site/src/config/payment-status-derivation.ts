@@ -6,7 +6,9 @@ type PaymentStatusItem = {
   totalAmount?: number | null;
 } | null;
 
-export function getItemsTotalForPaymentStatus(items: PaymentStatusItem[] = []): number {
+export function getItemsTotalForPaymentStatus(
+  items: PaymentStatusItem[] = [],
+): number {
   if (!Array.isArray(items) || !items.length) return 0;
 
   return items.reduce((sum, item) => {

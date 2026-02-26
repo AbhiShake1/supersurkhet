@@ -15,7 +15,7 @@ export const AutoFormField: React.FC<{
   path: string[];
 }> = ({ field, path }) => {
   const { formComponents, uiComponents } = useAutoForm();
-  const defaultValues = useAutoFormDefaultValues()
+  const defaultValues = useAutoFormDefaultValues();
   const {
     register,
     formState: { errors },
@@ -29,7 +29,8 @@ export const AutoFormField: React.FC<{
     value: _derivedValue,
     hasDerivedValue,
   } = useDerivedField({ field, path });
-  const derivedValue = _derivedValue ?? field.fieldConfig?.customData?.inputProps?.value;
+  const derivedValue =
+    _derivedValue ?? field.fieldConfig?.customData?.inputProps?.value;
   const error = getPathInObject(errors, path)?.message as string | undefined;
   const value = getValues(fullPath);
   const customData = effectiveField.fieldConfig?.customData as
@@ -41,7 +42,9 @@ export const AutoFormField: React.FC<{
   const inputDisabled = Boolean(
     effectiveField.fieldConfig?.inputProps?.disabled || isLocked,
   );
-  const inputReadOnly = Boolean(effectiveField.fieldConfig?.inputProps?.readOnly);
+  const inputReadOnly = Boolean(
+    effectiveField.fieldConfig?.inputProps?.readOnly,
+  );
   const isEditableDerivedField = !inputDisabled && !inputReadOnly;
 
   const FieldWrapper =
@@ -61,7 +64,9 @@ export const AutoFormField: React.FC<{
       const hasLastSoftDerivedValue = hasSoftDerivedValueRef.current;
       const lastSoftDerivedValue = lastSoftDerivedValueRef.current;
       const isEmptyValue =
-        currentValue === undefined || currentValue === null || currentValue === '';
+        currentValue === undefined ||
+        currentValue === null ||
+        currentValue === '';
       const isCurrentDefault = Object.is(currentValue, effectiveField.default);
 
       if (!hasLastSoftDerivedValue) {
@@ -91,7 +96,15 @@ export const AutoFormField: React.FC<{
     });
     lastSoftDerivedValueRef.current = derivedValue;
     hasSoftDerivedValueRef.current = true;
-  }, [derivedValue, effectiveField.default, fullPath, getValues, hasDerivedValue, isEditableDerivedField, setValue]);
+  }, [
+    derivedValue,
+    effectiveField.default,
+    fullPath,
+    getValues,
+    hasDerivedValue,
+    isEditableDerivedField,
+    setValue,
+  ]);
 
   // biome-ignore lint/correctness/noNestedComponentDefinitions: lint debt cleanup
   let FieldComponent: React.ComponentType<AutoFormFieldProps> = () => (

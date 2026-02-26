@@ -1,14 +1,18 @@
+import type { Edge } from '@xyflow/react';
+import {
+  addEdge,
+  useEdgesState,
+  useNodesState,
+  useReactFlow,
+} from '@xyflow/react';
 import {
   createContext,
-  useContext,
   useCallback,
-  useState,
+  useContext,
   useEffect,
+  useState,
 } from 'react';
-import { useNodesState, useEdgesState, useReactFlow } from '@xyflow/react';
 import type { CustomNode, NodeType } from '@/components/qr/visual-flow-builder';
-import type { Edge } from '@xyflow/react';
-import { addEdge } from '@xyflow/react';
 import { getNodeLabelAndDescription } from '@/components/qr/visual-flow-builder';
 
 // Define node library item type (without icon for serialization)
@@ -373,7 +377,6 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
       setNodes((nds) => [...nds, newNode]);
       setEdges((eds) => [...eds, newEdge]);
     },
-    // biome-ignore lint/correctness/noInvalidUseBeforeDeclaration: lint debt cleanup
     [reactFlowInstance, setNodes, setEdges, onAddNode, onAddNodeToEdge],
   );
 

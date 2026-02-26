@@ -1,3 +1,5 @@
+import { type useForm, useFormContext } from 'react-hook-form';
+import * as z from 'zod';
 import {
   Accordion,
   AccordionContent,
@@ -5,9 +7,8 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { FormField } from '@/components/ui/form';
-import { type useForm, useFormContext } from 'react-hook-form';
-import * as z from 'zod';
 import { DEFAULT_ZOD_HANDLERS, INPUT_COMPONENTS } from '../config';
+import resolveDependencies from '../dependencies';
 import type { Dependency, FieldConfig, FieldConfigItem } from '../types';
 import {
   beautifyObjectName,
@@ -18,7 +19,6 @@ import {
 } from '../utils';
 import AutoFormArray from './array';
 import AutoFormRecord from './record';
-import resolveDependencies from '../dependencies';
 
 function DefaultParent({ children }: { children: React.ReactNode }) {
   return <>{children}</>;

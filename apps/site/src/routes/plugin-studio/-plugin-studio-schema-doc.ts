@@ -1,4 +1,8 @@
-import type { SchemaDoc, SchemaFieldDoc, SchemaWorkflowDoc } from '@/lib/plugins/types';
+import type {
+  SchemaDoc,
+  SchemaFieldDoc,
+  SchemaWorkflowDoc,
+} from '@/lib/plugins/types';
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -22,7 +26,8 @@ function normalizeSchemaDoc(input: unknown): SchemaDoc | undefined {
   if (!isRecord(input)) {
     return undefined;
   }
-  const schemaId = typeof input.schemaId === 'string' ? input.schemaId.trim() : '';
+  const schemaId =
+    typeof input.schemaId === 'string' ? input.schemaId.trim() : '';
   if (!schemaId) {
     return undefined;
   }
@@ -31,15 +36,18 @@ function normalizeSchemaDoc(input: unknown): SchemaDoc | undefined {
     schemaId,
     fields: Array.isArray(input.fields)
       ? input.fields
-        .map(normalizeSchemaFieldDoc)
-        .filter((entry): entry is SchemaFieldDoc => entry !== null)
+          .map(normalizeSchemaFieldDoc)
+          .filter((entry): entry is SchemaFieldDoc => entry !== null)
       : [],
   };
 
   if (typeof input.title === 'string') normalized.title = input.title;
-  if (typeof input.description === 'string') normalized.description = input.description;
+  if (typeof input.description === 'string')
+    normalized.description = input.description;
   if (Array.isArray(input.refinements)) {
-    normalized.refinements = input.refinements.filter(isRecord) as SchemaDoc['refinements'];
+    normalized.refinements = input.refinements.filter(
+      isRecord,
+    ) as SchemaDoc['refinements'];
   }
   if (isRecord(input.tokens)) {
     normalized.tokens = input.tokens as SchemaDoc['tokens'];
@@ -47,7 +55,9 @@ function normalizeSchemaDoc(input: unknown): SchemaDoc | undefined {
   const workflowDiagnostics: string[] = [];
   if (Array.isArray(input.workflows)) {
     const workflows = input.workflows
-      .map((entry, index) => normalizeSchemaWorkflowDoc(entry, index, workflowDiagnostics))
+      .map((entry, index) =>
+        normalizeSchemaWorkflowDoc(entry, index, workflowDiagnostics),
+      )
       .filter((entry): entry is SchemaWorkflowDoc => entry !== null);
     if (workflows.length > 0) {
       normalized.workflows = workflows;
@@ -82,7 +92,8 @@ function normalizeSchemaWorkflowDoc(
     diagnostics.push(`workflows[${index}] is not an object`);
     return null;
   }
-  const workflowId = typeof input.workflowId === 'string' ? input.workflowId.trim() : '';
+  const workflowId =
+    typeof input.workflowId === 'string' ? input.workflowId.trim() : '';
   const hook = typeof input.hook === 'string' ? input.hook.trim() : '';
   if (!workflowId || !hook) {
     diagnostics.push(`workflows[${index}] missing workflowId/hook`);

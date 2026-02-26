@@ -1,18 +1,16 @@
 'use client';
 
-import { forwardRef } from 'react';
-import { Minus, Plus } from 'lucide-react';
-
 import {
   Panel,
-  useViewport,
-  useStore,
-  useReactFlow,
   type PanelProps,
+  useReactFlow,
+  useStore,
+  useViewport,
 } from '@xyflow/react';
-
-import { Slider } from '@/components/ui/slider';
+import { Minus, Plus } from 'lucide-react';
+import { forwardRef } from 'react';
 import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 
 export const ZoomSlider = forwardRef<

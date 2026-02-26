@@ -1,8 +1,8 @@
-import { useAuth } from '@/components/auth-provider';
-import { googleLogin } from '@/lib/auth';
 import { GoogleOAuthProvider, useGoogleOneTapLogin } from '@react-oauth/google';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useAuth } from '@/components/auth-provider';
+import { googleLogin } from '@/lib/auth';
 
 export function GoogleLoginProvider({ children }: React.PropsWithChildren) {
   return (

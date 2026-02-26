@@ -1,6 +1,7 @@
+import { Check, ChevronDown, Moon, Palette, Sun } from 'lucide-react';
 import { useState } from 'react';
-import { useTheme } from '@/contexts/theme-context';
 import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
 import {
   Command,
   CommandEmpty,
@@ -14,10 +15,9 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Moon, Sun, Check, ChevronDown, Palette } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useTheme } from '@/contexts/theme-context';
 import { defaultPresets } from '@/lib/theme';
-import { ButtonGroup } from '@/components/ui/button-group';
+import { cn } from '@/lib/utils';
 
 interface ThemeToggleProps extends React.ComponentProps<typeof Button> {}
 

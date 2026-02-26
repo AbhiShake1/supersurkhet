@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createAiPermissionPolicyStore } from './permission-policy-store';
 import { preflightAiMutationGate } from './mutation-gate';
+import { createAiPermissionPolicyStore } from './permission-policy-store';
 
 describe('ai mutation gate preflight', () => {
   it('blocks mutation when no policy exists', () => {

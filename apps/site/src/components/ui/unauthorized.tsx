@@ -1,6 +1,6 @@
-import { Button } from '@/components/ui/button';
 import { Link, useRouter } from '@tanstack/react-router';
 import { ArrowLeft, Home, Lock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface UnauthorizedProps {
   title?: string;

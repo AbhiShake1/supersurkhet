@@ -48,8 +48,8 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
   const business = businesses?.[0];
   const invitationCount = business?.invitations
     ? Object.values(business.invitations).filter(
-      (inv) => typeof inv === 'object' && !!inv?.email,
-    ).length
+        (inv) => typeof inv === 'object' && !!inv?.email,
+      ).length
     : 0;
   const updateBusinessMutation = api.business.useUpdate();
 

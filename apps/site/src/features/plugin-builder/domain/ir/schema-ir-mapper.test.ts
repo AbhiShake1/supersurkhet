@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { SchemaDoc } from '@supersurkhet/sdk';
+import { describe, expect, it } from 'vitest';
 import {
   mapSchemaDocsToWorkspace,
   mapWorkspaceSchemasToSchemaDocs,
@@ -39,7 +39,11 @@ describe('schema ir mapper', () => {
                         kind: 'op',
                         op: 'concat',
                         args: [
-                          { kind: 'ref', source: 'payload', path: ['profile', 'name'] },
+                          {
+                            kind: 'ref',
+                            source: 'payload',
+                            path: ['profile', 'name'],
+                          },
                           { kind: 'literal', value: '-vip' },
                         ],
                       },

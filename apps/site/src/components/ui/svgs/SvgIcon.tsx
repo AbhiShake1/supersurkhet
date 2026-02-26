@@ -2,9 +2,12 @@ import type { SVGProps } from 'react';
 import { z } from 'zod';
 import {
   Angular,
+  ClaudeAI,
+  DeepSeek,
   Docker,
   Firebase,
   FirebaseWordmark,
+  Gemini,
   GithubDark,
   GithubLight,
   GithubWordmarkDark,
@@ -16,6 +19,7 @@ import {
   Kubernetes,
   Netlify,
   Nodejs,
+  OpenAI,
   Paypal,
   PaypalWordmark,
   ReactDark,
@@ -29,10 +33,6 @@ import {
   VercelWordmark,
   VercelWordmarkDark,
   Vue,
-  DeepSeek,
-  OpenAI,
-  ClaudeAI,
-  Gemini,
 } from '.';
 
 const icons = {

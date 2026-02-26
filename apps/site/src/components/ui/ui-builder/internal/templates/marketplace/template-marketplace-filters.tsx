@@ -85,7 +85,9 @@ export function TemplateMarketplaceFilters({
         <button
           type="button"
           onClick={() => setFilter({ installState: 'not-installed' })}
-          className={filterChipClassName(filters.installState === 'not-installed')}
+          className={filterChipClassName(
+            filters.installState === 'not-installed',
+          )}
         >
           Not installed
         </button>
@@ -114,7 +116,9 @@ export function TemplateMarketplaceFilters({
         <button
           type="button"
           onClick={() => setFilter({ category: TEMPLATE_FILTER_ALL })}
-          className={filterChipClassName(filters.category === TEMPLATE_FILTER_ALL)}
+          className={filterChipClassName(
+            filters.category === TEMPLATE_FILTER_ALL,
+          )}
         >
           All categories
         </button>

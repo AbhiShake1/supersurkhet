@@ -146,7 +146,7 @@ export const useLoginPrompt = (): LoginPromptContextType => {
   if (!context) {
     console.error('useLoginPrompt must be used within a LoginPromptProvider');
     return {
-      closeLoginPrompt: () => { },
+      closeLoginPrompt: () => {},
       promptLogin: async () => {
         return undefined;
       },

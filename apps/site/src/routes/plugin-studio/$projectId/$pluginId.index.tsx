@@ -8,5 +8,7 @@ export const Route = createFileRoute('/plugin-studio/$projectId/$pluginId/')({
 function PluginStudioPluginRoute() {
   const { projectId, pluginId } = Route.useParams();
 
-  return <PluginStudioSubdomainList projectId={projectId} pluginId={pluginId} />;
+  return (
+    <PluginStudioSubdomainList projectId={projectId} pluginId={pluginId} />
+  );
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 // prevents nextjs hydration error if using nextjs
 export const useStore = <T, F>(

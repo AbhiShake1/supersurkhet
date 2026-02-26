@@ -16,7 +16,10 @@ export type PluginBuildDiagnostic = {
   fixHint?: string;
 };
 
-export type PluginBuildDiagnosticInput = Omit<PluginBuildDiagnostic, 'severity'>;
+export type PluginBuildDiagnosticInput = Omit<
+  PluginBuildDiagnostic,
+  'severity'
+>;
 
 const ERROR_DIAGNOSTIC_CODES = new Set<PluginBuildDiagnosticCode>([
   'missing-node-id',
@@ -87,7 +90,10 @@ function compareDiagnostics(
   return (left.fixHint ?? '').localeCompare(right.fixHint ?? '');
 }
 
-function comparePathSegments(left: readonly string[], right: readonly string[]): number {
+function comparePathSegments(
+  left: readonly string[],
+  right: readonly string[],
+): number {
   const sharedLength = Math.min(left.length, right.length);
   for (let index = 0; index < sharedLength; index += 1) {
     const segmentDiff = left[index].localeCompare(right[index]);

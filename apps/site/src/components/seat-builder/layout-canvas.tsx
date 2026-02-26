@@ -1,7 +1,3 @@
-import type React from 'react';
-
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import {
   Copy,
   Lock,
@@ -13,8 +9,11 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import type React from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { ElementRenderer } from './element-renderer';
 import { useHistory } from './history-provider';
 import { ResizeHandles } from './resize-handles';
@@ -43,13 +42,16 @@ export function LayoutCanvas({
     externalSelectedElementId !== undefined
       ? externalSelectedElementId
       : internalSelectedElementId;
-  const setSelectedElementId = (id: string | null) => {
-    if (onSelectElement) {
-      onSelectElement(id);
-    } else {
-      setInternalSelectedElementId(id);
-    }
-  };
+  const setSelectedElementId = useCallback(
+    (id: string | null) => {
+      if (onSelectElement) {
+        onSelectElement(id);
+      } else {
+        setInternalSelectedElementId(id);
+      }
+    },
+    [onSelectElement],
+  );
   const [draggedElementId, setDraggedElementId] = useState<string | null>(null);
   const [_dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
@@ -619,78 +621,90 @@ export function LayoutCanvas({
     }
   };
 
-  const deleteElement = (elementId: string) => {
-    // Save initial state for history
-    setInitialElements([...floor.elements]);
+  const deleteElement = useCallback(
+    (elementId: string) => {
+      // Save initial state for history
+      setInitialElements([...floor.elements]);
 
-    const updatedElements = floor.elements.filter(
-      (element) => element.id !== elementId,
-    );
-    onUpdateElements(updatedElements);
-    setSelectedElementId(null);
-    setLastEvent(`Element deleted: ${elementId}`);
+      const updatedElements = floor.elements.filter(
+        (element) => element.id !== elementId,
+      );
+      onUpdateElements(updatedElements);
+      setSelectedElementId(null);
+      setLastEvent(`Element deleted: ${elementId}`);
 
-    // Add to history
-    push(updatedElements);
-  };
+      // Add to history
+      push(updatedElements);
+    },
+    [floor.elements, onUpdateElements, push, setSelectedElementId],
+  );
 
-  const rotateElement = (elementId: string) => {
-    // Save initial state for history
-    setInitialElements([...floor.elements]);
+  const rotateElement = useCallback(
+    (elementId: string) => {
+      // Save initial state for history
+      setInitialElements([...floor.elements]);
 
-    const updatedElements = floor.elements.map((element) =>
-      element.id === elementId
-        ? { ...element, rotation: (element.rotation + 90) % 360 }
-        : element,
-    );
-    onUpdateElements(updatedElements);
-    setLastEvent(`Element rotated: ${elementId}`);
+      const updatedElements = floor.elements.map((element) =>
+        element.id === elementId
+          ? { ...element, rotation: (element.rotation + 90) % 360 }
+          : element,
+      );
+      onUpdateElements(updatedElements);
+      setLastEvent(`Element rotated: ${elementId}`);
 
-    // Add to history
-    push(updatedElements);
-  };
+      // Add to history
+      push(updatedElements);
+    },
+    [floor.elements, onUpdateElements, push],
+  );
 
-  const duplicateElement = (elementId: string) => {
-    const elementToDuplicate = floor.elements.find(
-      (element) => element.id === elementId,
-    );
-    if (!elementToDuplicate) return;
+  const duplicateElement = useCallback(
+    (elementId: string) => {
+      const elementToDuplicate = floor.elements.find(
+        (element) => element.id === elementId,
+      );
+      if (!elementToDuplicate) return;
 
-    // Save initial state for history
-    setInitialElements([...floor.elements]);
+      // Save initial state for history
+      setInitialElements([...floor.elements]);
 
-    const newElement = {
-      ...elementToDuplicate,
-      id: `element-${Date.now()}`,
-      x: elementToDuplicate.x + 20,
-      y: elementToDuplicate.y + 20,
-    };
+      const newElement = {
+        ...elementToDuplicate,
+        id: `element-${Date.now()}`,
+        x: elementToDuplicate.x + 20,
+        y: elementToDuplicate.y + 20,
+      };
 
-    const updatedElements = [...floor.elements, newElement];
-    onUpdateElements(updatedElements);
-    setLastEvent(`Element duplicated: ${elementId} → ${newElement.id}`);
+      const updatedElements = [...floor.elements, newElement];
+      onUpdateElements(updatedElements);
+      setLastEvent(`Element duplicated: ${elementId} → ${newElement.id}`);
 
-    // Add to history
-    push(updatedElements);
+      // Add to history
+      push(updatedElements);
 
-    toast.success('Element duplicated');
-  };
+      toast.success('Element duplicated');
+    },
+    [floor.elements, onUpdateElements, push],
+  );
 
-  const toggleLockElement = (elementId: string) => {
-    const newLockedElements = new Set(lockedElements);
+  const toggleLockElement = useCallback(
+    (elementId: string) => {
+      const newLockedElements = new Set(lockedElements);
 
-    if (newLockedElements.has(elementId)) {
-      newLockedElements.delete(elementId);
-      setLastEvent(`Element unlocked: ${elementId}`);
-      toast.success('Element unlocked');
-    } else {
-      newLockedElements.add(elementId);
-      setLastEvent(`Element locked: ${elementId}`);
-      toast.success('Element locked');
-    }
+      if (newLockedElements.has(elementId)) {
+        newLockedElements.delete(elementId);
+        setLastEvent(`Element unlocked: ${elementId}`);
+        toast.success('Element unlocked');
+      } else {
+        newLockedElements.add(elementId);
+        setLastEvent(`Element locked: ${elementId}`);
+        toast.success('Element locked');
+      }
 
-    setLockedElements(newLockedElements);
-  };
+      setLockedElements(newLockedElements);
+    },
+    [lockedElements],
+  );
 
   const zoomIn = () => {
     setScale((prev) => {
@@ -768,7 +782,6 @@ export function LayoutCanvas({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   }, [
     selectedElementId,
     deleteElement,

@@ -102,7 +102,9 @@ describe('plugin admin catalog utilities', () => {
     });
 
     expect(catalog).toHaveLength(2);
-    const inventory = catalog.find((entry) => entry.pluginId === 'acme.inventory');
+    const inventory = catalog.find(
+      (entry) => entry.pluginId === 'acme.inventory',
+    );
     const billing = catalog.find((entry) => entry.pluginId === 'acme.billing');
 
     expect(inventory?.latestRelease.version).toBe('1.2.0');
@@ -131,7 +133,10 @@ describe('plugin admin catalog utilities', () => {
           docs: { title: 'Billing Pro', description: 'Invoicing and payments' },
           actionManifest: [
             { actionId: 'invoice.send', capabilities: ['invoice:write'] },
-            { actionId: 'invoice.refund', capabilities: ['invoice:write', 'refund:write'] },
+            {
+              actionId: 'invoice.refund',
+              capabilities: ['invoice:write', 'refund:write'],
+            },
           ],
         }),
       ],
@@ -178,7 +183,9 @@ describe('plugin admin catalog utilities', () => {
         draft({ draftId: 'draft-1', pluginId: 'acme.inventory' }),
         draft({ draftId: 'draft-2', pluginId: 'acme.billing' }),
       ],
-      draftInstalls: [draftInstall({ draftId: 'draft-1', pluginId: 'acme.inventory' })],
+      draftInstalls: [
+        draftInstall({ draftId: 'draft-1', pluginId: 'acme.inventory' }),
+      ],
     });
 
     expect(stats.totalPlugins).toBe(2);

@@ -1,8 +1,8 @@
 import { useCallback, useRef } from 'react';
 import { getIframeElements } from '@/lib/ui-builder/context/dnd-utils';
 import {
-  type AutoScrollState,
   AUTO_SCROLL_THRESHOLD,
+  type AutoScrollState,
   calculateScrollSpeed,
 } from '../context/auto-scroll-constants';
 

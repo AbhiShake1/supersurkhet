@@ -1,15 +1,15 @@
 import type React from 'react';
 import { useCallback, useMemo } from 'react';
 import {
-  FormItem,
-  FormLabel,
   FormControl,
   FormDescription,
+  FormItem,
+  FormLabel,
 } from '@/components/ui/form';
+import { iconNames } from '@/components/ui/ui-builder/components/icon';
 import MultipleSelector, {
   type Option,
 } from '@/components/ui/ui-builder/internal/components/multi-select';
-import { iconNames } from '@/components/ui/ui-builder/components/icon';
 
 const EMPTY_OPTIONS: Option[] = [];
 

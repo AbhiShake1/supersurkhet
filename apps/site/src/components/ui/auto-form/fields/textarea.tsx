@@ -1,9 +1,9 @@
 import { FormControl, FormItem, FormMessage } from '@/components/ui/form';
 import { MentionInputTextarea } from '@/components/ui/mention-input-textarea';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
 import AutoFormLabel from '../common/label';
 import AutoFormTooltip from '../common/tooltip';
 import type { AutoFormInputComponentProps } from '../types';
-import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
 
 export default function AutoFormTextarea({
   label,

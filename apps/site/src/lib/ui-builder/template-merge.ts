@@ -119,10 +119,7 @@ function mergeNode({
   const targetChildren = target.children;
   const templateChildren = template.children;
 
-  if (
-    sameId &&
-    childShape(targetChildren) !== childShape(templateChildren)
-  ) {
+  if (sameId && childShape(targetChildren) !== childShape(templateChildren)) {
     return {
       merged: cloneLayer(target),
       conflicts: [
@@ -243,7 +240,8 @@ export function mergeUiTemplateLayers({
   }
 
   return {
-    layers: hardConflicts.length > 0 ? targetLayers.map(cloneLayer) : mergedLayers,
+    layers:
+      hardConflicts.length > 0 ? targetLayers.map(cloneLayer) : mergedLayers,
     summary: {
       pagesAdded,
       pagesMerged,

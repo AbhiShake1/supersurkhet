@@ -1,3 +1,6 @@
+import type { ReactNode } from '@tanstack/react-router';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion, type Transition, useMotionValue } from 'motion/react';
 import {
   Children,
   createContext,
@@ -6,11 +9,8 @@ import {
   useRef,
   useState,
 } from 'react';
-import { motion, useMotionValue, type Transition } from 'motion/react';
-import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import z from 'zod';
-import type { ReactNode } from '@tanstack/react-router';
+import { cn } from '@/lib/utils';
 
 export const CarouzelContextSchema = z.object({
   index: z.number(),

@@ -1,16 +1,15 @@
-import type {
-  ComponentLayer,
-  ComponentRegistry,
-} from '@/components/ui/ui-builder/types';
 import z from 'zod';
-import { commonFieldOverrides } from './form-field-overrides';
-
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import type {
+  ComponentLayer,
+  ComponentRegistry,
+} from '@/components/ui/ui-builder/types';
+import { commonFieldOverrides } from './form-field-overrides';
 
 export const accordionComponentDefinitions: ComponentRegistry = {
   Accordion: {

@@ -43,16 +43,28 @@ vi.mock('@/server-functions/plugins', () => ({
 
 vi.mock('@/components/ui/sheet', () => ({
   Sheet: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  SheetTrigger: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  SheetContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  SheetHeader: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  SheetTitle: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  SheetDescription: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  SheetTrigger: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
+  SheetContent: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  SheetHeader: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  SheetTitle: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  SheetDescription: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
 }));
 
 vi.mock('@/components/ui/tabs', () => ({
   Tabs: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  TabsList: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  TabsList: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
   TabsTrigger: ({
     children,
     value,
@@ -66,23 +78,25 @@ vi.mock('@/components/ui/tabs', () => ({
       {children}
     </button>
   ),
-  TabsContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  TabsContent: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
 }));
 
 vi.mock('@/components/ui/tooltip', () => ({
   Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  TooltipTrigger: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  TooltipTrigger: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
   TooltipContent: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
 }));
 
 vi.mock('@/components/ui/keyboard-shortcuts', () => ({
-  KeyboardShortcutsBoundary: ({
-    children,
-  }: {
-    children: React.ReactNode;
-  }) => <>{children}</>,
+  KeyboardShortcutsBoundary: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
   ShortcutKbd: ({ actionId }: { actionId: string }) => (
     <span data-shortcut-action-id={actionId}>kbd</span>
   ),
@@ -148,12 +162,10 @@ vi.mock(
       preview,
       onApplyTemplate,
     }: {
-      preview:
-        | null
-        | {
-            hardConflicts: unknown[];
-            requiresPluginUpdateConfirmation: boolean;
-          };
+      preview: null | {
+        hardConflicts: unknown[];
+        requiresPluginUpdateConfirmation: boolean;
+      };
       onApplyTemplate: () => void;
     }) => (
       <button
@@ -274,14 +286,14 @@ describe('TemplateMarketplaceSheet', () => {
     );
     await flush();
 
-    const templateButton = [...container.querySelectorAll('button')].find((button) =>
-      button.textContent?.includes('Starter'),
+    const templateButton = [...container.querySelectorAll('button')].find(
+      (button) => button.textContent?.includes('Starter'),
     );
     templateButton?.click();
     await flush();
 
-    const previewButton = [...container.querySelectorAll('button')].find((button) =>
-      button.textContent?.includes('Preview Install'),
+    const previewButton = [...container.querySelectorAll('button')].find(
+      (button) => button.textContent?.includes('Preview Install'),
     );
     if (!previewButton) {
       throw new Error('Preview button not found');
@@ -289,8 +301,8 @@ describe('TemplateMarketplaceSheet', () => {
     previewButton.click();
     await flush();
 
-    const applyButton = [...container.querySelectorAll('button')].find((button) =>
-      button.textContent?.includes('Apply Template'),
+    const applyButton = [...container.querySelectorAll('button')].find(
+      (button) => button.textContent?.includes('Apply Template'),
     );
     expect(applyButton).toBeTruthy();
     expect(applyButton?.getAttribute('disabled')).not.toBeNull();
@@ -318,16 +330,26 @@ describe('TemplateMarketplaceSheet', () => {
     );
 
     expect(actionDefinitions).toContain(TEMPLATE_SHORTCUTS.openSheet);
-    expect(actionDefinitions).toContain(TEMPLATE_SHORTCUTS.switchMarketplaceTab);
+    expect(actionDefinitions).toContain(
+      TEMPLATE_SHORTCUTS.switchMarketplaceTab,
+    );
     expect(actionDefinitions).toContain(TEMPLATE_SHORTCUTS.switchPublishTab);
-    expect(actionDefinitions).toContain(TEMPLATE_SHORTCUTS.focusMarketplaceSearch);
+    expect(actionDefinitions).toContain(
+      TEMPLATE_SHORTCUTS.focusMarketplaceSearch,
+    );
     expect(actionDefinitions).toContain(TEMPLATE_SHORTCUTS.previewInstall);
     expect(actionDefinitions).toContain(TEMPLATE_SHORTCUTS.applyTemplate);
 
-    const registeredActionIds = actionDefinitions.map((definition) => definition.id);
+    const registeredActionIds = actionDefinitions.map(
+      (definition) => definition.id,
+    );
     expect(registeredActionIds).toContain(TEMPLATE_SHORTCUTS.openSheet.id);
-    expect(registeredActionIds).toContain(TEMPLATE_SHORTCUTS.switchMarketplaceTab.id);
-    expect(registeredActionIds).toContain(TEMPLATE_SHORTCUTS.switchPublishTab.id);
+    expect(registeredActionIds).toContain(
+      TEMPLATE_SHORTCUTS.switchMarketplaceTab.id,
+    );
+    expect(registeredActionIds).toContain(
+      TEMPLATE_SHORTCUTS.switchPublishTab.id,
+    );
     expect(registeredActionIds).toContain(
       TEMPLATE_SHORTCUTS.focusMarketplaceSearch.id,
     );
@@ -341,8 +363,12 @@ describe('TemplateMarketplaceSheet', () => {
     ].map((element) => element.getAttribute('data-shortcut-action-id'));
 
     expect(shortcutKbdIds).toContain(TEMPLATE_SHORTCUTS.openSheet.id);
-    expect(shortcutKbdIds).toContain(TEMPLATE_SHORTCUTS.switchMarketplaceTab.id);
+    expect(shortcutKbdIds).toContain(
+      TEMPLATE_SHORTCUTS.switchMarketplaceTab.id,
+    );
     expect(shortcutKbdIds).toContain(TEMPLATE_SHORTCUTS.switchPublishTab.id);
-    expect(shortcutKbdIds).toContain(TEMPLATE_SHORTCUTS.focusMarketplaceSearch.id);
+    expect(shortcutKbdIds).toContain(
+      TEMPLATE_SHORTCUTS.focusMarketplaceSearch.id,
+    );
   });
 });

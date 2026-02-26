@@ -1,16 +1,16 @@
 import React, { useCallback, useMemo } from 'react';
 import { z } from 'zod';
-import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
-import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
-import type {
-  ComponentRegistry,
-  ComponentLayer,
-} from '@/components/ui/ui-builder/types';
-import { Button } from '@/components/ui/button';
 import AutoForm from '@/components/ui/auto-form';
-import { generateFieldOverrides } from '@/lib/ui-builder/store/editor-utils';
-import { addDefaultValues } from '@/lib/ui-builder/store/schema-utils';
 import { getBaseType } from '@/components/ui/auto-form/utils';
+import { Button } from '@/components/ui/button';
+import type {
+  ComponentLayer,
+  ComponentRegistry,
+} from '@/components/ui/ui-builder/types';
+import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
+import { generateFieldOverrides } from '@/lib/ui-builder/store/editor-utils';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
+import { addDefaultValues } from '@/lib/ui-builder/store/schema-utils';
 
 interface PropsPanelProps {
   className?: string;

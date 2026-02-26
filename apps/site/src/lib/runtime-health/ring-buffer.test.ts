@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { createRuntimeHealthRingBuffer, RuntimeHealthRingBuffer } from './ring-buffer';
+import {
+  createRuntimeHealthRingBuffer,
+  RuntimeHealthRingBuffer,
+} from './ring-buffer';
 
 describe('runtime-health ring buffer', () => {
   it('retains only the newest entries up to capacity', () => {

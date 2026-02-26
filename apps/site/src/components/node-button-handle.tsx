@@ -1,14 +1,11 @@
-import { useState, useMemo } from 'react';
-import { Position, type HandleProps } from '@xyflow/react';
-import { ButtonHandle } from '@/components/button-handle';
-import { BaseHandle } from '@/components/base-handle';
-import { Button } from '@/components/ui/button';
+import { type HandleProps, Position } from '@xyflow/react';
 import { Plus } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { useMemo, useState } from 'react';
+import { BaseHandle } from '@/components/base-handle';
+import { ButtonHandle } from '@/components/button-handle';
+import { useFlow } from '@/components/flow-context';
+import type { NodeType } from '@/components/qr/visual-flow-builder';
+import { Button } from '@/components/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -17,8 +14,11 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
-import type { NodeType } from '@/components/qr/visual-flow-builder';
-import { useFlow } from '@/components/flow-context';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
 export const NodeButtonHandle = ({

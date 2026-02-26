@@ -1,6 +1,6 @@
-import type { AutoFormFieldProps } from '../react';
 import type React from 'react';
 import { PasswordInput } from '../../password-input';
+import type { AutoFormFieldProps } from '../react';
 
 export const PasswordField: React.FC<AutoFormFieldProps> = ({
   inputProps,

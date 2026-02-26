@@ -1,5 +1,8 @@
 'use client';
 
+import { Camera, Database, RotateCcw, Scan, Smartphone } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -11,9 +14,6 @@ import {
 import { DataMatrixScanner } from '@/components/ui/datamatrix-scanner';
 import { ActionExecutor } from '@/lib/datamatrix/action-executor';
 import type { DataMatrixAction } from '@/lib/schema';
-import { Camera, Database, RotateCcw, Scan, Smartphone } from 'lucide-react';
-import { useState } from 'react';
-import { toast } from 'sonner';
 
 export function DataMatrixClientPage() {
   const [_isScannerActive, _setIsScannerActive] = useState(true);

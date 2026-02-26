@@ -2477,7 +2477,9 @@ const TitleSection: React.FC<{
                   <span>Manage plugins</span>
                   <ShortcutKbd
                     actionId={SIDEBAR_SHORTCUTS.managePlugins.id}
-                    defaultBinding={SIDEBAR_SHORTCUTS.managePlugins.defaultBinding}
+                    defaultBinding={
+                      SIDEBAR_SHORTCUTS.managePlugins.defaultBinding
+                    }
                     interactive={false}
                   />
                 </TooltipContent>

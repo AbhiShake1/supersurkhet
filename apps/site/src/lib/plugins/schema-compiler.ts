@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { fieldConfig } from '@/components/ui/autoform';
-import { evaluateExpression, isLikelyExpressionDoc } from '@/lib/plugins/ir-evaluator';
+import {
+  evaluateExpression,
+  isLikelyExpressionDoc,
+} from '@/lib/plugins/ir-evaluator';
 import type {
   DeriveIR,
   ExpressionDoc,
@@ -17,9 +20,7 @@ export type SchemaRuleTokenHandler = (
   field: SchemaFieldDoc,
 ) => z.ZodTypeAny;
 
-export type CompiledSchema =
-  | z.ZodObject<any>
-  | z.ZodEffects<z.ZodObject<any>>;
+export type CompiledSchema = z.AnyZodObject | z.ZodEffects<z.AnyZodObject>;
 
 export type SchemaTokenHandler = (schemaDoc: SchemaDoc) => CompiledSchema;
 
@@ -148,7 +149,10 @@ function compileDeriveFunction(derivations: DeriveIR[]) {
 
     const derived: Record<string, unknown> = {};
     for (const derivation of derivations) {
-      const evaluated = evaluateExpression(derivation.expression, expressionContext);
+      const evaluated = evaluateExpression(
+        derivation.expression,
+        expressionContext,
+      );
       if (derivation.target === 'value') {
         derived.value = evaluated;
         continue;

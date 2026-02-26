@@ -1,24 +1,32 @@
+import { pixelArt } from '@dicebear/collection';
+import { createAvatar } from '@dicebear/core';
+import { render } from '@react-email/render';
+import { useGoogleLogin } from '@react-oauth/google';
+import { useMutation } from '@tanstack/react-query';
+import { Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { z } from 'zod';
 import { Logo } from '@/components/logo';
 import { AutoForm, fieldConfig } from '@/components/ui/autoform';
 import { SubmitButton } from '@/components/ui/autoform/components/SubmitButton';
 import { Button } from '@/components/ui/button';
+import AccountVerifyEmail from '@/emails/account-verify';
+import { sendMail } from '@/emails/send-mail';
+import {
+  checkRateLimit,
+  clearRateLimit,
+  updateRateLimit,
+} from '@/hooks/use-rate-limit';
 import { googleLogin } from '@/lib/auth';
 import { gun } from '@/lib/gun';
-import { pixelArt } from '@dicebear/collection';
-import { createAvatar } from '@dicebear/core';
-import { useGoogleLogin } from '@react-oauth/google';
-import { useMutation } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
-import { z } from 'zod';
-import { useAuth, type AuthUser } from './auth-provider';
-import { cn } from '@/lib/utils';
-import { sendMail } from '@/emails/send-mail';
-import AccountVerifyEmail from '@/emails/account-verify';
-import { render } from '@react-email/render';
 import { getGunRef, mergeKeys } from '@/lib/gun/utils';
-import type { OTP } from '@/lib/schema';
 import { generateId } from '@/lib/id';
+import type { OTP } from '@/lib/schema';
+import { cn } from '@/lib/utils';
+import { setUser } from '@/server-functions/user';
+import { type AuthUser, useAuth } from './auth-provider';
+import { ResendCountdown } from './resend-countdown';
 import {
   Credenza,
   CredenzaBody,
@@ -27,14 +35,6 @@ import {
   CredenzaTitle,
 } from './ui/credenza';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from './ui/input-otp';
-import { Loader2 } from 'lucide-react';
-import { ResendCountdown } from './resend-countdown';
-import {
-  checkRateLimit,
-  clearRateLimit,
-  updateRateLimit,
-} from '@/hooks/use-rate-limit';
-import { setUser } from '@/server-functions/user';
 
 const loginSchema = z.object({
   email: z.string().email(),

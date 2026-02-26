@@ -1,17 +1,17 @@
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Toggle } from '@/components/ui/toggle';
 import {
   Bold,
   Italic,
-  Underline,
   List,
   ListOrdered,
   Quote,
+  Underline,
 } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Toggle } from '@/components/ui/toggle';
 import { cn } from '@/lib/utils';
 import type { FieldWrapperProps } from './FieldWrapper';
-import { useState, useRef } from 'react';
 
 export interface EditorFieldProps extends FieldWrapperProps {
   placeholder?: string;

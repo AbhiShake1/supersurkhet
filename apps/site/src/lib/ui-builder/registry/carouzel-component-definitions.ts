@@ -1,3 +1,13 @@
+import {
+  Carouzel,
+  CarouzelContent,
+  CarouzelContentSchema,
+  CarouzelItem,
+  CarouzelItemShema,
+  CarouzelNavigation,
+  CarouzelNavigationSchema,
+  CarouzelSchema,
+} from '@/components/ui/carouzel';
 import type {
   ComponentLayer,
   ComponentRegistry,
@@ -6,17 +16,6 @@ import {
   classNameFieldOverrides,
   commonFieldOverrides,
 } from './form-field-overrides';
-
-import {
-  Carouzel,
-  CarouzelContent,
-  CarouzelSchema,
-  CarouzelContentSchema,
-  CarouzelNavigationSchema,
-  CarouzelNavigation,
-  CarouzelItem,
-  CarouzelItemShema,
-} from '@/components/ui/carouzel';
 
 export const carouzelComponentDefinitions: ComponentRegistry = {
   Carouzel: {

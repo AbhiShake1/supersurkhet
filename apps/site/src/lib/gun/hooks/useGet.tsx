@@ -1,14 +1,14 @@
 import {
-  useQuery,
-  useQueryClient,
   type UseQueryOptions,
   type UseQueryResult,
+  useQuery,
+  useQueryClient,
 } from '@tanstack/react-query';
 import type { NestedSchemaType, SchemaKeys } from '..';
+import { attachSouls, type GetBuilder as UseGetBuilder } from '../ssr/get';
 import { getGunRef, getNestedZodShape, mergeKeys } from '../utils';
 import { decrypt } from '../utils/sea';
 import { createGunHook } from './useGunHook';
-import { attachSouls, type GetBuilder as UseGetBuilder } from '../ssr/get';
 
 export type { UseGetBuilder };
 
@@ -17,8 +17,8 @@ export const useGet = createGunHook((messenger) => {
     key:
       | T
       | (UseGetBuilder<T> & {
-        key: T;
-      }),
+          key: T;
+        }),
     ...restKeys: string[]
   ): UseQueryResult<NestedSchemaType<T>[] | undefined, Error> => {
     const queryClient = useQueryClient();

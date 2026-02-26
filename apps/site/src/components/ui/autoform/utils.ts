@@ -76,7 +76,7 @@ type FieldConfigCustomDataBase = {
   displayKey?: string;
 } & {
   onValueChange?:
-    | ((value: string, path: string[], form: UseFormReturn) => any)
+    | ((value: string, path: string[], form: UseFormReturn) => unknown)
     | {
         actions: Array<
           | {

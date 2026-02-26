@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   classifyPluginBuildDiagnosticSeverity,
   normalizePluginBuildDiagnostics,
-  sortPluginBuildDiagnostics,
   type PluginBuildDiagnosticInput,
+  sortPluginBuildDiagnostics,
 } from './diagnostics-contract';
 
 describe('diagnostics contract', () => {

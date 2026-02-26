@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  REDACTED_VALUE,
   computeStackFingerprint,
   hasGraphMirrorRedactionParity,
   normalizeStack,
+  REDACTED_VALUE,
   sanitizeRuntimeHealthEvent,
 } from './sanitization';
 
@@ -37,8 +37,12 @@ describe('runtime-health sanitization', () => {
     });
 
     expect(sanitized.metadata?.apiKey).toBe(REDACTED_VALUE);
-    expect((sanitized.metadata?.nested as Record<string, unknown>).Authorization).toBe(REDACTED_VALUE);
-    expect((sanitized.metadata?.nested as Record<string, unknown>).safe).toBe('retained');
+    expect(
+      (sanitized.metadata?.nested as Record<string, unknown>).Authorization,
+    ).toBe(REDACTED_VALUE);
+    expect((sanitized.metadata?.nested as Record<string, unknown>).safe).toBe(
+      'retained',
+    );
   });
 
   it('normalizes stack traces before generating fingerprints', () => {

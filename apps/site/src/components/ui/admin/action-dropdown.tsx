@@ -1,7 +1,7 @@
 'use client';
 
+import { ChevronDown, Plus } from 'lucide-react';
 import * as React from 'react';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -16,7 +16,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { ChevronDown, Plus } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ActionType {
   value: string;

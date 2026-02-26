@@ -1,9 +1,11 @@
 'use client';
 
+import { useMotionValueEvent, useSpring } from 'framer-motion';
 import { TrendingUp } from 'lucide-react';
-import { Bar, BarChart, Cell, XAxis, ReferenceLine } from 'recharts';
-import React from 'react';
 import { AnimatePresence } from 'motion/react';
+import React from 'react';
+import { Bar, BarChart, Cell, ReferenceLine, XAxis } from 'recharts';
+import { Badge } from '@/components/ui/badge';
 import {
   Card,
   CardContent,
@@ -12,9 +14,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { type ChartConfig, ChartContainer } from '@/components/ui/chart';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { useMotionValueEvent, useSpring } from 'framer-motion';
 
 const CHART_MARGIN = 35;
 

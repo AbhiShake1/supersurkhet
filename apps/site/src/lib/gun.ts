@@ -17,7 +17,7 @@ import 'gun/lib/then';
 import 'gun/lib/unset';
 import './gun/rindexed';
 import type { IGunInstance } from 'gun/types';
-import type z from 'zod';
+
 // import createBullet from "./bullet";
 
 const GUN = Gun; //.scope(GUN_PREFIX)
@@ -33,7 +33,6 @@ GUN.chain.then = function <F extends (...args: any[]) => any>(cb?: F) {
   return cb ? p.then(cb) : p;
 };
 
-// biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
 // type ExtratedSchema = {
 //   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 //   [K in keyof BaseAppSchemaType as BaseAppSchemaType[K] extends { schema: any }

@@ -45,8 +45,8 @@ function getSoftDerivedUnitValue({
   const explicitUnitRaw = row?.unit;
   const explicitUnit =
     explicitUnitRaw === null ||
-      explicitUnitRaw === undefined ||
-      explicitUnitRaw === ''
+    explicitUnitRaw === undefined ||
+    explicitUnitRaw === ''
       ? null
       : String(explicitUnitRaw);
 
@@ -255,11 +255,11 @@ export const salesItemSchema = z
               const row = getValueAtPath(formValues, rowPath);
               const quantity = Number(
                 (row as { quantity?: number | null } | undefined)?.quantity ??
-                0,
+                  0,
               );
               const unitPrice = Number(
                 (row as { unitPrice?: number | null } | undefined)?.unitPrice ??
-                0,
+                  0,
               );
               return {
                 value: quantity * unitPrice,
@@ -561,7 +561,11 @@ export const stockImportSchema = z
             derive: () => {
               return {
                 inputProps: {
-                  value: formValues.items?.reduce((sum, item) => sum + (item?.quantity ?? 0) * (item?.unitPrice ?? 0), 0)
+                  value: formValues.items?.reduce(
+                    (sum, item) =>
+                      sum + (item?.quantity ?? 0) * (item?.unitPrice ?? 0),
+                    0,
+                  ),
                 },
               };
             },
@@ -616,21 +620,39 @@ export const customerSchema = partySchema.extend({});
 export const invoiceSchema = z
   .object({
     type: z.enum(['purchase', 'sale']),
-    partyId: z.string().describe('Party').optional().superRefine(fieldConfig({
-      customData: {
-        displayKey: 'name'
-      }
-    })),
-    vehicleId: z.string().describe('Vehicle').optional().superRefine(fieldConfig({
-      customData: {
-        displayKey: 'name'
-      }
-    })),
-    tripId: z.string().describe('Trip').optional().superRefine(fieldConfig({
-      customData: {
-        displayKey: 'name'
-      }
-    })),
+    partyId: z
+      .string()
+      .describe('Party')
+      .optional()
+      .superRefine(
+        fieldConfig({
+          customData: {
+            displayKey: 'name',
+          },
+        }),
+      ),
+    vehicleId: z
+      .string()
+      .describe('Vehicle')
+      .optional()
+      .superRefine(
+        fieldConfig({
+          customData: {
+            displayKey: 'name',
+          },
+        }),
+      ),
+    tripId: z
+      .string()
+      .describe('Trip')
+      .optional()
+      .superRefine(
+        fieldConfig({
+          customData: {
+            displayKey: 'name',
+          },
+        }),
+      ),
     description: z
       .string()
       .optional()

@@ -1,6 +1,21 @@
 'use client';
 
+import { format } from 'date-fns';
+import _ from 'lodash';
+import {
+  AlertCircle,
+  CheckCircle2,
+  DollarSign,
+  FileText,
+  HandCoins,
+  Loader2,
+  Package,
+  Search,
+  ShoppingCart,
+  Users,
+} from 'lucide-react';
 import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
 import {
   Card,
   CardContent,
@@ -9,27 +24,9 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import {
-  Search,
-  FileText,
-  DollarSign,
-  Loader2,
-  AlertCircle,
-  Users,
-  ShoppingCart,
-  Package,
-  CheckCircle2,
-  HandCoins,
-} from 'lucide-react';
-import type { AdminComponent } from '.';
-import { api } from '@/lib/api';
-import _ from 'lodash';
-import { format } from 'date-fns';
-import type { Invoice } from '@/lib/schema';
-import { formatCurrency } from '@/lib/intl';
 import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
+import { api } from '@/lib/api';
+import { formatCurrency } from '@/lib/intl';
 import {
   getInvoiceOutstandingAmount,
   getInvoicePaidAmount,
@@ -37,6 +34,9 @@ import {
   getInvoicePayments,
   getInvoiceTotalAmount,
 } from '@/lib/invoice-payments';
+import type { Invoice } from '@/lib/schema';
+import { cn } from '@/lib/utils';
+import type { AdminComponent } from '.';
 
 interface InvoiceManagementProps {
   slug: string;
@@ -168,11 +168,7 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
     }
   };
 
-  const InvoiceCard = ({
-    invoice,
-  }: {
-    invoice: Invoice;
-  }) => {
+  const InvoiceCard = ({ invoice }: { invoice: Invoice }) => {
     // Determine if this is a party or customer invoice
     const party = parties.find((p) => p._?.soul === invoice.partyId);
     const customer = customers.find((c) => c._?.soul === invoice.partyId);
@@ -217,7 +213,6 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
                 <div className="tabular-nums text-lg font-bold text-primary">
                   {formatCurrency(totalAmount)}
                 </div>
-
               </div>
             </div>
 
@@ -228,8 +223,9 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
                   className={cn(
                     'text-[10px] uppercase tracking-wide',
                     invoice.type === 'purchase' &&
-                    'bg-indigo-100 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/40 dark:text-indigo-300'
-                  )}  >
+                      'bg-indigo-100 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/40 dark:text-indigo-300',
+                  )}
+                >
                   {invoice.type}
                 </Badge>
 
@@ -331,7 +327,6 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
                 <div className="space-y-1">
                   {payments.slice(0, 2).map((payment, index) => (
                     <div
-                      // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                       key={`${payment.paidAt}-${index}`}
                       className="flex items-center justify-between text-xs"
                     >
@@ -426,7 +421,10 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
             </p>
             <p className="text-2xl font-bold text-purple-600 z-10">
               {formatCurrency(
-                invoices.reduce((sum, inv) => sum + getInvoiceTotalAmount(inv), 0),
+                invoices.reduce(
+                  (sum, inv) => sum + getInvoiceTotalAmount(inv),
+                  0,
+                ),
               )}
             </p>
           </CardContent>

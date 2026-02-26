@@ -1,11 +1,11 @@
-import type { FC } from 'react';
 import type { Edge, EdgeProps, Position } from '@xyflow/react';
 import {
   BaseEdge,
   getBezierPath,
-  getStraightPath,
   getSmoothStepPath,
+  getStraightPath,
 } from '@xyflow/react';
+import type { FC } from 'react';
 
 export type AnimatedSvgEdge = Edge<{
   /**

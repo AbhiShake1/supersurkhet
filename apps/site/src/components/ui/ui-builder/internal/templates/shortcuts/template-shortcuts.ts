@@ -107,8 +107,9 @@ export const TEMPLATE_SHORTCUTS = {
   },
 } as const satisfies Record<TemplateShortcutAction, ShortcutDefinition>;
 
-export const TEMPLATE_SHORTCUT_DEFINITIONS =
-  Object.values(TEMPLATE_SHORTCUTS) as ShortcutDefinition[];
+export const TEMPLATE_SHORTCUT_DEFINITIONS = Object.values(
+  TEMPLATE_SHORTCUTS,
+) as ShortcutDefinition[];
 
 export const TEMPLATE_SHORTCUT_IDS = Object.fromEntries(
   Object.entries(TEMPLATE_SHORTCUTS).map(([action, definition]) => [

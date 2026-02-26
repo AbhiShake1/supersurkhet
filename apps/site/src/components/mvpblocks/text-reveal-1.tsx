@@ -1,6 +1,6 @@
+import { Geist } from 'next/font/google';
 import { TextReveal } from '@/components/ui/text-reveal';
 import { cn } from '@/lib/utils';
-import { Geist } from 'next/font/google';
 
 const geist = Geist({
   subsets: ['latin'],

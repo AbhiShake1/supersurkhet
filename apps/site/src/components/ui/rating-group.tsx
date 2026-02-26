@@ -1,9 +1,9 @@
 'use client';
 
 import { RatingGroup } from '@ark-ui/react/rating-group';
-import { Star, ThumbsUp, Heart, Zap, Sparkles } from 'lucide-react';
-import { useState, useId } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Heart, Sparkles, Star, ThumbsUp, Zap } from 'lucide-react';
+import { useId, useState } from 'react';
 import { z } from 'zod';
 
 // Safe number helper

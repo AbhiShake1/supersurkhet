@@ -1,7 +1,7 @@
-import { useMutation, type UseMutationOptions } from '@tanstack/react-query';
+import { type UseMutationOptions, useMutation } from '@tanstack/react-query';
 import type { SchemaKeys } from '..';
-import { createGunHook } from './useGunHook';
 import { remove } from '../ssr/delete';
+import { createGunHook } from './useGunHook';
 
 export const useDelete = createGunHook(() => {
   return <const T extends SchemaKeys>(opts: UseDeleteOptions<T>) => {

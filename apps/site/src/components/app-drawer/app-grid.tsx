@@ -1,25 +1,17 @@
-import type { Business } from '@/lib/schema';
-import { getAppIcon } from '@/lib/utils';
-import { Link } from '@tanstack/react-router';
-import { AppWindow, Folder as FolderIcon } from 'lucide-react';
-import { memo, useState } from 'react';
-import { useRecentlyUsedApps } from './recently-used-apps-context';
-import { useFolders } from './folders-context';
-import { Editable, EditableInput, EditablePreview } from '../ui/editable';
 import {
+  type CollisionDetection,
   DndContext,
-  DragOverlay,
+  type DragEndEvent,
   type DragOverEvent,
+  DragOverlay,
+  type DragStartEvent,
   KeyboardSensor,
   PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragStartEvent,
-  type UniqueIdentifier,
   pointerWithin,
   rectIntersection,
-  type CollisionDetection,
+  type UniqueIdentifier,
+  useSensor,
+  useSensors,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -27,12 +19,20 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { Folder } from '@/lib/schemas/folder-schema';
+import { Link } from '@tanstack/react-router';
+import { AppWindow, Folder as FolderIcon } from 'lucide-react';
+import { memo, useState } from 'react';
 import {
   AndroidFolder,
-  AndroidFolderTrigger,
   AndroidFolderContent,
+  AndroidFolderTrigger,
 } from '@/components/ui/android-folder';
+import type { Business } from '@/lib/schema';
+import type { Folder } from '@/lib/schemas/folder-schema';
+import { getAppIcon } from '@/lib/utils';
+import { Editable, EditableInput, EditablePreview } from '../ui/editable';
+import { useFolders } from './folders-context';
+import { useRecentlyUsedApps } from './recently-used-apps-context';
 
 interface AppGridProps {
   businesses: Business[];

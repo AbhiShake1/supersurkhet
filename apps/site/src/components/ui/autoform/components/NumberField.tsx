@@ -1,9 +1,9 @@
+import type React from 'react';
+import { useFormContext } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { useBusinessSafe } from '@/contexts/business-context';
 import { runFieldOnValueChange } from '../on-value-change';
 import type { AutoFormFieldProps } from '../react';
-import type React from 'react';
-import { useFormContext } from 'react-hook-form';
 
 export const NumberField: React.FC<AutoFormFieldProps> = ({
   inputProps,

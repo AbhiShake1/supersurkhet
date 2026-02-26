@@ -1,17 +1,17 @@
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  useImageUpload,
-  type UseImageUploadProps,
-} from '@/hooks/use-image-upload';
-import { cn } from '@/lib/utils';
-import type { AutoFormFieldProps } from '../react';
 import { TooltipTrigger } from '@radix-ui/react-tooltip';
 import { Trash2, Upload, X } from 'lucide-react';
 import type React from 'react';
-import { useCallback, useState, type ComponentProps } from 'react';
-import { Tooltip, TooltipContent } from '../../tooltip';
+import { type ComponentProps, useCallback, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  type UseImageUploadProps,
+  useImageUpload,
+} from '@/hooks/use-image-upload';
+import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent } from '../../tooltip';
+import type { AutoFormFieldProps } from '../react';
 
 export const ImageUploadField: React.FC<AutoFormFieldProps> = ({
   inputProps,

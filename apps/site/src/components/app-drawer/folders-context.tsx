@@ -1,7 +1,7 @@
-import { useAuth } from '@/components/auth-provider';
-import { api } from '@/lib/api';
 import type { NestedSchemaType } from '@gta/react-hooks';
 import { createContext, useContext, useMemo } from 'react';
+import { useAuth } from '@/components/auth-provider';
+import { api } from '@/lib/api';
 
 export type Folder = NestedSchemaType<'folder'>;
 

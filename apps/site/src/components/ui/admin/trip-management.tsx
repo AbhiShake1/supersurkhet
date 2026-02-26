@@ -1,9 +1,11 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { api } from '@/lib/api';
-import { useState } from 'react';
 import { format } from 'date-fns';
+import { useState } from 'react';
+import { z } from 'zod';
+import { useAuth } from '@/components/auth-provider';
+import { AutoForm } from '@/components/ui/autoform';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -11,9 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { AutoForm } from '@/components/ui/autoform';
-import { z } from 'zod';
-import { useAuth } from '@/components/auth-provider';
+import { api } from '@/lib/api';
 
 // Define the schema for returned products
 const ReturnedProductsSchema = z.object({
@@ -133,15 +133,11 @@ export default function TripManagement({ slug }: { slug: string }) {
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         Dispatched:{' '}
-                        {
-                          trip.dispatchTime &&
-                          <>
-                            {format(
-                              new Date(trip.dispatchTime),
-                              'MMM dd, yyyy HH:mm',
-                            )}
-                          </>
-                        }
+                        {trip.dispatchTime &&
+                          format(
+                            new Date(trip.dispatchTime),
+                            'MMM dd, yyyy HH:mm',
+                          )}
                         {trip.returnTime &&
                           ` | Returned: ${format(new Date(trip.returnTime), 'MMM dd, yyyy HH:mm')}`}
                       </p>

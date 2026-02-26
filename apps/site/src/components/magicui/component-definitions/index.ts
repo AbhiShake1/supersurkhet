@@ -1,11 +1,10 @@
-import type { ComponentRegistry } from '@/components/ui/ui-builder/types';
-import { commonFieldOverrides } from '@/lib/ui-builder/registry/form-field-overrides';
-
+import z from 'zod';
 import { Confetti } from '@/components/magicui/confetti';
 import { PixelImage, PixelImageSchema } from '@/components/magicui/pixel-image';
 import { RainbowButton } from '@/components/magicui/rainbow-button';
-import z from 'zod';
 import { ButtonSchema } from '@/components/ui/button';
+import type { ComponentRegistry } from '@/components/ui/ui-builder/types';
+import { commonFieldOverrides } from '@/lib/ui-builder/registry/form-field-overrides';
 
 export const magicuiComponentDefinitions: ComponentRegistry = {
   PixelImage: {

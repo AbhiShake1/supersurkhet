@@ -2,10 +2,7 @@ import type { GunMessagePut } from 'gun';
 import { runLifecycleHookPipeline } from '@/lib/plugins/runtime-pipeline';
 import type { SchemaKeys } from '..';
 import { getGunRef, mergeKeys } from '../utils';
-import {
-  resolveAfterNextTick,
-  resolveLifecycleBusinessId,
-} from './lifecycle';
+import { resolveAfterNextTick, resolveLifecycleBusinessId } from './lifecycle';
 
 export function remove<const T extends SchemaKeys>(
   key: T,

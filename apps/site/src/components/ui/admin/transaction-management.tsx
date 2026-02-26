@@ -1,6 +1,21 @@
 'use client';
 
+import { format } from 'date-fns';
+import {
+  AlertCircle,
+  ArrowDown,
+  ArrowUp,
+  Calendar,
+  Currency,
+  Loader2,
+  Plus,
+  Search,
+  Wallet,
+} from 'lucide-react';
 import { useState } from 'react';
+import { AutoTable } from '@/components/auto-table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -8,26 +23,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Search,
-  Currency,
-  Calendar,
-  ArrowDown,
-  ArrowUp,
-  Plus,
-  Wallet,
-  Loader2,
-  AlertCircle,
-} from 'lucide-react';
-import type { AdminComponent } from '.';
 import { api } from '@/lib/api';
-import { format } from 'date-fns';
-import { AutoTable } from '@/components/auto-table';
 import type { Transaction } from '@/lib/schema';
+import type { AdminComponent } from '.';
 
 interface TransactionManagementProps {
   slug: string;

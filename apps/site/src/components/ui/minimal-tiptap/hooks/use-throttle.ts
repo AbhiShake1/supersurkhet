@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export function useThrottle<T extends (...args: any[]) => void>(

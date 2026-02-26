@@ -119,17 +119,28 @@ async function executePlan(
 
       const tableApi = (db as Record<string, unknown>)[action.table] as
         | {
-            get?: (opts?: Record<string, unknown>) => Promise<unknown> | unknown;
-            create?: (...keys: string[]) => (data: unknown) => Promise<unknown> | unknown;
-            update?: (...keys: string[]) => (data: unknown) => Promise<unknown> | unknown;
-            remove?: (...keys: string[]) => (id: string) => Promise<unknown> | unknown;
+            get?: (
+              opts?: Record<string, unknown>,
+            ) => Promise<unknown> | unknown;
+            create?: (
+              ...keys: string[]
+            ) => (data: unknown) => Promise<unknown> | unknown;
+            update?: (
+              ...keys: string[]
+            ) => (data: unknown) => Promise<unknown> | unknown;
+            remove?: (
+              ...keys: string[]
+            ) => (id: string) => Promise<unknown> | unknown;
           }
         | undefined;
       if (!tableApi) continue;
 
       const keys = [
         ...(params.businessBasePath ? [params.businessBasePath] : []),
-        ...evaluateKeys('keys' in action ? action.keys : undefined, evalContext),
+        ...evaluateKeys(
+          'keys' in action ? action.keys : undefined,
+          evalContext,
+        ),
       ];
       const withKeys = keys.filter((entry) => entry.trim().length > 0);
 
@@ -174,15 +185,13 @@ async function executePlan(
   }
 }
 
-export function runFieldOnValueChange(
-  params: {
-    customData: FieldConfigCustomData | undefined;
-    value: unknown;
-    path: string[];
-    form: UseFormReturn;
-    businessBasePath?: string;
-  },
-) {
+export function runFieldOnValueChange(params: {
+  customData: FieldConfigCustomData | undefined;
+  value: unknown;
+  path: string[];
+  form: UseFormReturn;
+  businessBasePath?: string;
+}) {
   const handler = params.customData?.onValueChange;
   if (!handler) return;
 
@@ -196,4 +205,3 @@ export function runFieldOnValueChange(
     // Silent by design to avoid blocking form interaction.
   });
 }
-

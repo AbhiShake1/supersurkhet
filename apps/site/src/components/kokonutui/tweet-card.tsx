@@ -1,7 +1,7 @@
-import { VerifiedIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import z from 'zod';
 import { Link } from '@tanstack/react-router';
+import { VerifiedIcon } from 'lucide-react';
+import z from 'zod';
+import { cn } from '@/lib/utils';
 
 /**
  * @author: @dorian_baffier

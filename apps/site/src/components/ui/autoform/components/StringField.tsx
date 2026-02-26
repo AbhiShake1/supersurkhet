@@ -1,6 +1,6 @@
+import type React from 'react';
 import { Input } from '@/components/ui/input';
 import type { AutoFormFieldProps } from '../react';
-import type React from 'react';
 
 export const StringField: React.FC<AutoFormFieldProps> = ({
   inputProps,
