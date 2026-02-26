@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useEffect } from 'react';
 import { useAuth } from '@/components/auth-provider';
-import { useLoginPrompt } from '@/components/login-prompt-provider';
+import { useLoginPromptGuard } from '@/components/login-prompt-provider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { CustomUiRendererPage } from '@/components/ui-builder';
@@ -17,7 +16,6 @@ function BusinessSubdomainRoute() {
   const { businessName, subdomain } = Route.useParams();
   const resolvedSubdomain = subdomain?.trim() ? subdomain : 'index';
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
-  const { promptLogin, closeLoginPrompt } = useLoginPrompt();
   const { layers, guardRule, isLoading } = useBusinessSubdomainLayersState({
     slug: businessName,
     subdomain: resolvedSubdomain,
@@ -37,26 +35,13 @@ function BusinessSubdomainRoute() {
       isAuthenticated &&
       hasBusinessAccess(business, user));
 
-  useEffect(() => {
-    if (!requiresAuthentication) {
-      closeLoginPrompt();
-      return;
-    }
-    if (!isAuthLoading && !isAuthenticated) {
-      void promptLogin({
-        dismissible: false,
-        showBackgroundContent: false,
-      });
-      return;
-    }
-    closeLoginPrompt();
-  }, [
-    closeLoginPrompt,
-    isAuthLoading,
+  useLoginPromptGuard({
+    enabled: requiresAuthentication,
     isAuthenticated,
-    promptLogin,
-    requiresAuthentication,
-  ]);
+    isLoading: isAuthLoading,
+    dismissible: false,
+    showBackgroundContent: false,
+  });
 
   if (
     isLoading ||

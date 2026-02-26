@@ -1,9 +1,8 @@
 import type { SchemaKeys } from '@gta/react-hooks';
 import { createFileRoute } from '@tanstack/react-router';
-import { useEffect } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { AutoAdmin, type AutoAdminTabInput } from '@/components/auto-admin';
-import { useLoginPrompt } from '@/components/login-prompt-provider';
+import { useLoginPromptGuard } from '@/components/login-prompt-provider';
 import { Unauthorized } from '@/components/ui/unauthorized';
 import { api } from '@/lib/api';
 import { appSchema } from '@/lib/schema';
@@ -49,15 +48,15 @@ function normalizeAdminRows<TRow extends UnknownRow>(rows: TRow[]): TRow[] {
 }
 
 function RouteComponent() {
-  const { promptLogin, closeLoginPrompt } = useLoginPrompt();
   const { isAuthenticated, user } = useAuth();
   const { isLoading } = api.business.useGet();
-
-  useEffect(() => {
-    if (!isAuthenticated && !isLoading)
-      promptLogin({ dismissible: false, showBackgroundContent: false });
-    else closeLoginPrompt();
-  }, [isAuthenticated, isLoading, promptLogin, closeLoginPrompt]);
+  useLoginPromptGuard({
+    enabled: true,
+    isAuthenticated,
+    isLoading,
+    dismissible: false,
+    showBackgroundContent: false,
+  });
 
   if (!isLoading && isAuthenticated && user && user?.role !== 'admin') {
     return <Unauthorized />;
