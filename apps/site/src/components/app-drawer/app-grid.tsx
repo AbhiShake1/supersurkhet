@@ -415,8 +415,8 @@ function SortableBusinessIcon({
       {...attributes}
     >
       <Link
-        to="/$businessName"
-        params={{ businessName: business.basePath ?? '' }}
+        to="/$businessName/$subdomain"
+        params={{ businessName: business.basePath ?? '', subdomain: 'index' }}
         className="flex flex-col items-center"
         onClick={() => {
           if (business._?.soul) {
@@ -717,8 +717,8 @@ function FolderAppIcon({
     <Link
       ref={setNodeRef}
       style={style}
-      to="/$businessName"
-      params={{ businessName: app.basePath ?? '' }}
+      to="/$businessName/$subdomain"
+      params={{ businessName: app.basePath ?? '', subdomain: 'index' }}
       className="flex flex-col items-center"
       onClick={(e) => {
         if (isDragging) {

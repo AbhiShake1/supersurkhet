@@ -90,8 +90,11 @@ export function BusinessList(props: BusinessListProps) {
                     <CardContent className="flex-grow flex flex-col gap-2 justify-end pt-0">
                       <Button asChild className="w-full">
                         <Link
-                          to="/$businessName"
-                          params={{ businessName: business.basePath ?? '' }}
+                          to="/$businessName/$subdomain"
+                          params={{
+                            businessName: business.basePath ?? '',
+                            subdomain: 'index',
+                          }}
                         >
                           Visit
                         </Link>
@@ -129,9 +132,10 @@ export function BusinessList(props: BusinessListProps) {
                                 asChild
                               >
                                 <Link
-                                  to="/$businessName"
+                                  to="/$businessName/$subdomain"
                                   params={{
                                     businessName: business.basePath ?? '',
+                                    subdomain: 'index',
                                   }}
                                 >
                                   Root

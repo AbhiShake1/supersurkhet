@@ -212,7 +212,7 @@ export function PluginPreviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!m-0 !h-screen !w-screen !max-h-none !max-w-none !translate-x-0 !translate-y-0 !rounded-none !left-0 !top-0 flex flex-col gap-0 p-0">
+      <DialogContent className="!m-0 !h-screen !w-screen !max-h-none !max-w-none !translate-x-0 !translate-y-0 !rounded-none !left-0 !top-0 !p-0 flex flex-col gap-0">
         <DialogHeader className="border-b bg-linear-to-r from-primary/10 via-primary/5 to-transparent px-4 py-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-sm text-foreground/90">

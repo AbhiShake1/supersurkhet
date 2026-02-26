@@ -369,8 +369,11 @@ export function BusinessCreationForm({
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild>
                 <Link
-                  to="/$businessName"
-                  params={{ businessName: createdBusiness.basePath ?? '' }}
+                  to="/$businessName/$subdomain"
+                  params={{
+                    businessName: createdBusiness.basePath ?? '',
+                    subdomain: 'index',
+                  }}
                 >
                   Go to Public Site
                 </Link>
