@@ -1,8 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import {
   CalendarDays,
-  ChevronLeft,
-  ChevronRight,
   Download,
   ExternalLink,
   MessageCircle,
@@ -12,7 +10,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { useAuth } from '@/components/auth-provider';
@@ -74,6 +72,7 @@ const baseComponentRegistry = {
   ...primitiveComponentDefinitions,
   ...complexComponentDefinitions,
 };
+const HERO_PREVIEW_SCALE = 0.22;
 
 function toSubdomainPreviewPage(
   subdomain: string,
@@ -120,14 +119,9 @@ function PluginDetailsPage() {
     (typeof user?.alias === 'string' ? user.alias.trim() : '') ||
     'Anonymous user';
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [previewSubdomain, setPreviewSubdomain] = useState<string | undefined>(
-    undefined,
-  );
-  const [activePreviewIndex, setActivePreviewIndex] = useState(0);
   const [installing, setInstalling] = useState(false);
   const [uninstalling, setUninstalling] = useState(false);
   const [savingReview, setSavingReview] = useState(false);
-  const reviewRatingInputId = useId();
 
   const { data: businesses = [], isLoading: isBusinessLoading } =
     api.business.useGet({
@@ -283,20 +277,22 @@ function PluginDetailsPage() {
       includeAdminFallbackLayers: true,
     });
   }, [decoratedPlugin]);
-  const previewSubdomains = previewSurface.subdomains;
-  const clampedPreviewIndex =
-    previewSubdomains.length === 0
-      ? 0
-      : Math.min(activePreviewIndex, previewSubdomains.length - 1);
-  const activeSubdomain = previewSubdomains[clampedPreviewIndex] ?? 'admin';
-  const activeSubdomainPage = useMemo(
-    () =>
-      toSubdomainPreviewPage(
-        activeSubdomain,
-        previewSurface.uiLayersBySubdomain[activeSubdomain] ?? null,
-      ),
-    [activeSubdomain, previewSurface.uiLayersBySubdomain],
-  );
+  const previewSubdomains = previewSurface.subdomains.filter((subdomain) => {
+    const layers = previewSurface.uiLayersBySubdomain[subdomain];
+    return Array.isArray(layers) && layers.length > 0;
+  });
+  const activeSubdomain = previewSubdomains[0] ?? '';
+  const heroPreviewSubdomain =
+    activeSubdomain || selectedPreviewTab?.subdomain?.trim() || '';
+  const activeSubdomainPage = useMemo(() => {
+    if (!activeSubdomain) {
+      return null;
+    }
+    return toSubdomainPreviewPage(
+      activeSubdomain,
+      previewSurface.uiLayersBySubdomain[activeSubdomain] ?? null,
+    );
+  }, [activeSubdomain, previewSurface.uiLayersBySubdomain]);
   const previewComponentRegistry = useMemo(() => {
     const autoAdminEntry = baseComponentRegistry.AutoAdmin;
     return {
@@ -316,6 +312,13 @@ function PluginDetailsPage() {
     ? Math.max(1, Math.min(5, Math.round(details.userReview.rating)))
     : 0;
   const persistedReviewComment = details?.userReview?.comment ?? '';
+  const [draftReviewRating, setDraftReviewRating] = useState(
+    persistedReviewRating,
+  );
+
+  useEffect(() => {
+    setDraftReviewRating(persistedReviewRating);
+  }, [persistedReviewRating]);
 
   if (isUserLoading || isBusinessLoading) return null;
 
@@ -580,13 +583,41 @@ function PluginDetailsPage() {
             ) : null}
           </div>
         </div>
-        <div className="flex items-start justify-start">
+        <div className="flex flex-col items-start gap-2">
           {pluginData.iconUrl ? (
             <img
               src={pluginData.iconUrl}
               alt={`${pluginData.title} icon`}
               className="size-44 rounded-3xl object-cover shadow-sm"
             />
+          ) : activeSubdomainPage ? (
+            <div className="size-44 overflow-hidden rounded-3xl border border-border/70 bg-muted/10 shadow-sm">
+              <div
+                className="origin-top-left pointer-events-none"
+                style={{
+                  transform: `scale(${HERO_PREVIEW_SCALE.toString()})`,
+                  width: `${(100 / HERO_PREVIEW_SCALE).toFixed(2)}%`,
+                  height: `${(100 / HERO_PREVIEW_SCALE).toFixed(2)}%`,
+                }}
+              >
+                <ContextDataStore
+                  contextData={{
+                    business: { basePath: businessName },
+                    search: {},
+                    date: {
+                      currentTime: new Date().toISOString(),
+                      locale: 'en-US',
+                      timezone: 'UTC',
+                    },
+                  }}
+                >
+                  <LayerRenderer
+                    componentRegistry={previewComponentRegistry}
+                    page={activeSubdomainPage}
+                  />
+                </ContextDataStore>
+              </div>
+            </div>
           ) : iconPreviewImage ? (
             <img
               src={iconPreviewImage}
@@ -598,115 +629,16 @@ function PluginDetailsPage() {
               No UI
             </div>
           )}
+          {heroPreviewSubdomain ? (
+            <Badge variant="outline" className="rounded-full text-[10px]">
+              {heroPreviewSubdomain}
+            </Badge>
+          ) : null}
         </div>
       </section>
 
       <section className="grid gap-6">
         <div className="space-y-8">
-          <Card className="py-4">
-            <CardHeader className="px-5">
-              <CardTitle>Preview</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 px-5">
-              <div className="group relative overflow-hidden rounded-2xl border border-border/70 bg-background">
-                <div className="absolute left-3 top-3 z-10 rounded-full bg-background/90 px-3 py-1 text-xs font-medium shadow">
-                  {activeSubdomain}
-                </div>
-                {previewSubdomains.length > 1 ? (
-                  <>
-                    <button
-                      type="button"
-                      aria-label="Previous subdomain preview"
-                      className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full border border-border/70 bg-background/90 p-2 text-foreground opacity-0 shadow transition-opacity group-hover:opacity-100"
-                      onClick={() =>
-                        setActivePreviewIndex((current) =>
-                          current === 0
-                            ? previewSubdomains.length - 1
-                            : current - 1,
-                        )
-                      }
-                    >
-                      <ChevronLeft className="size-4" />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Next subdomain preview"
-                      className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full border border-border/70 bg-background/90 p-2 text-foreground opacity-0 shadow transition-opacity group-hover:opacity-100"
-                      onClick={() =>
-                        setActivePreviewIndex(
-                          (current) => (current + 1) % previewSubdomains.length,
-                        )
-                      }
-                    >
-                      <ChevronRight className="size-4" />
-                    </button>
-                  </>
-                ) : null}
-                <div className="h-[500px] overflow-auto bg-muted/10 p-3">
-                  <ContextDataStore
-                    contextData={{
-                      business: { basePath: businessName },
-                      search: {},
-                      date: {
-                        currentTime: new Date().toISOString(),
-                        locale: 'en-US',
-                        timezone: 'UTC',
-                      },
-                    }}
-                  >
-                    <LayerRenderer
-                      componentRegistry={previewComponentRegistry}
-                      page={activeSubdomainPage}
-                    />
-                  </ContextDataStore>
-                </div>
-              </div>
-
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {previewSubdomains.map((subdomain, index) => (
-                  <Button
-                    key={`subdomain-carousel-${subdomain}`}
-                    size="sm"
-                    variant={
-                      index === clampedPreviewIndex ? 'default' : 'outline'
-                    }
-                    onClick={() => setActivePreviewIndex(index)}
-                  >
-                    {subdomain}
-                  </Button>
-                ))}
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {details.previewTabs.map((tab) => (
-                  <Button
-                    key={tab.schema}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setPreviewSubdomain(tab.subdomain);
-                      setIsPreviewOpen(true);
-                    }}
-                  >
-                    Try {tab.title ?? tab.schema}
-                  </Button>
-                ))}
-                {details.previewTabs.length === 0 ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setPreviewSubdomain(undefined);
-                      setIsPreviewOpen(true);
-                    }}
-                  >
-                    Try dashboard preview
-                  </Button>
-                ) : null}
-              </div>
-            </CardContent>
-          </Card>
-
           <Card className="py-4">
             <CardHeader className="px-5">
               <CardTitle>About this plugin</CardTitle>
@@ -800,37 +732,52 @@ function PluginDetailsPage() {
                   onSubmit={async (event) => {
                     event.preventDefault();
                     const formData = new FormData(event.currentTarget);
-                    const reviewRatingValue = Number(
-                      formData.get('reviewRating') ?? Number.NaN,
-                    );
                     const reviewCommentValue = String(
                       formData.get('reviewComment') ?? '',
                     );
-                    await saveReview(reviewRatingValue, reviewCommentValue);
+                    await saveReview(draftReviewRating, reviewCommentValue);
                   }}
                 >
-                  <div className="mt-2 flex items-center gap-2">
-                    <label
-                      htmlFor={reviewRatingInputId}
-                      className="text-xs text-muted-foreground"
+                  <div className="mt-2 space-y-1.5">
+                    <p className="text-xs text-muted-foreground">Rating</p>
+                    <div
+                      className="flex items-center gap-1"
+                      role="radiogroup"
+                      aria-label="Choose your rating"
                     >
-                      Rating
-                    </label>
+                      {Array.from({ length: 5 }).map((_, index) => {
+                        const value = index + 1;
+                        const isActive = value <= draftReviewRating;
+                        return (
+                          <button
+                            key={`review-star-${value.toString()}`}
+                            type="button"
+                            aria-label={`Rate ${value} out of 5`}
+                            className="rounded-sm p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+                            onClick={() => setDraftReviewRating(value)}
+                          >
+                            <Star
+                              className={cn(
+                                'size-5 transition-colors',
+                                isActive
+                                  ? 'fill-amber-400 text-amber-500'
+                                  : 'text-muted-foreground/35',
+                              )}
+                            />
+                          </button>
+                        );
+                      })}
+                    </div>
                     <input
-                      id={reviewRatingInputId}
+                      type="hidden"
                       name="reviewRating"
-                      type="number"
-                      min={1}
-                      max={5}
-                      step={1}
-                      defaultValue={
-                        persistedReviewRating > 0
-                          ? persistedReviewRating.toString()
-                          : ''
-                      }
-                      className="h-8 w-16 rounded-md border border-input bg-background px-2 text-sm"
+                      value={draftReviewRating}
                     />
-                    <span className="text-xs text-muted-foreground">/5</span>
+                    <p className="text-xs text-muted-foreground">
+                      {draftReviewRating > 0
+                        ? `${draftReviewRating.toString()}/5 selected`
+                        : 'Select a rating'}
+                    </p>
                   </div>
                   <Textarea
                     name="reviewComment"
@@ -950,7 +897,7 @@ function PluginDetailsPage() {
         businessSlug={businessName}
         businessId={businessNamespace}
         isInstalled={pluginData.isInstalled}
-        initialSubdomain={previewSubdomain}
+        initialSubdomain={selectedPreviewTab?.subdomain}
         onInstall={installCurrent}
       />
     </div>

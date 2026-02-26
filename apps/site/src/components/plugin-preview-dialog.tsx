@@ -1,4 +1,4 @@
-import { Eye } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { z } from 'zod';
 import { AutoAdmin, type AutoAdminTabInput } from '@/components/auto-admin';
@@ -138,7 +138,12 @@ export function PluginPreviewDialog({
     [entry.latestRelease],
   );
 
-  const availableSubdomains = subdomainSurface.subdomains;
+  const availableSubdomains = subdomainSurface.subdomains.filter(
+    (subdomain) => {
+      const layers = subdomainSurface.uiLayersBySubdomain[subdomain];
+      return Array.isArray(layers) && layers.length > 0;
+    },
+  );
 
   const selectedSubdomain = useMemo(() => {
     const normalizedRequested = initialSubdomain
@@ -155,16 +160,18 @@ export function PluginPreviewDialog({
         : null;
 
     return (
-      overrideSubdomain ??
-      requestedSubdomain ??
-      availableSubdomains[0] ??
-      'admin'
+      overrideSubdomain ?? requestedSubdomain ?? availableSubdomains[0] ?? ''
     );
   }, [availableSubdomains, initialSubdomain, selectedSubdomainOverride]);
+  const selectedSubdomainIndex = availableSubdomains.indexOf(selectedSubdomain);
 
-  const selectedLayers =
-    subdomainSurface.uiLayersBySubdomain[selectedSubdomain] ?? null;
-  const selectedPage = toPreviewPage(selectedSubdomain, selectedLayers);
+  const selectedLayers = selectedSubdomain
+    ? (subdomainSurface.uiLayersBySubdomain[selectedSubdomain] ?? null)
+    : null;
+  const selectedPage =
+    selectedSubdomain && selectedLayers
+      ? toPreviewPage(selectedSubdomain, selectedLayers)
+      : null;
 
   const previewComponentRegistry = useMemo(() => {
     const autoAdminEntry = baseComponentRegistry.AutoAdmin;
@@ -180,6 +187,28 @@ export function PluginPreviewDialog({
 
   const selectedPreviewImages =
     subdomainSurface.imageUrlsBySubdomain[selectedSubdomain] ?? [];
+  const canNavigateSubdomains = availableSubdomains.length > 1;
+
+  function goToPreviousSubdomain() {
+    if (!canNavigateSubdomains) return;
+    const fallbackIndex =
+      selectedSubdomainIndex >= 0 ? selectedSubdomainIndex : 0;
+    const nextIndex =
+      fallbackIndex === 0 ? availableSubdomains.length - 1 : fallbackIndex - 1;
+    const nextSubdomain = availableSubdomains[nextIndex];
+    if (!nextSubdomain) return;
+    setSelectedSubdomainOverride(nextSubdomain);
+  }
+
+  function goToNextSubdomain() {
+    if (!canNavigateSubdomains) return;
+    const fallbackIndex =
+      selectedSubdomainIndex >= 0 ? selectedSubdomainIndex : 0;
+    const nextIndex = (fallbackIndex + 1) % availableSubdomains.length;
+    const nextSubdomain = availableSubdomains[nextIndex];
+    if (!nextSubdomain) return;
+    setSelectedSubdomainOverride(nextSubdomain);
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -190,7 +219,9 @@ export function PluginPreviewDialog({
               <DialogTitle className="text-base font-semibold text-foreground">
                 {entry.title}
               </DialogTitle>
-              <Badge variant="secondary">{selectedSubdomain}</Badge>
+              <Badge variant="secondary">
+                {selectedSubdomain || 'No preview'}
+              </Badge>
             </div>
             <div className="flex items-center gap-2 text-sm text-foreground/90">
               <span className="inline-flex size-2 animate-pulse rounded-full bg-primary" />
@@ -222,23 +253,6 @@ export function PluginPreviewDialog({
           </div>
         </DialogHeader>
 
-        <div className="border-b px-4 py-2">
-          <div className="flex flex-wrap items-center gap-2">
-            {availableSubdomains.map((subdomain) => (
-              <Button
-                key={subdomain}
-                size="sm"
-                variant={
-                  selectedSubdomain === subdomain ? 'default' : 'outline'
-                }
-                onClick={() => setSelectedSubdomainOverride(subdomain)}
-              >
-                {subdomain}
-              </Button>
-            ))}
-          </div>
-        </div>
-
         {selectedPreviewImages.length > 0 ? (
           <div className="border-b px-4 py-2">
             <div className="flex gap-2 overflow-x-auto pb-1">
@@ -254,7 +268,27 @@ export function PluginPreviewDialog({
           </div>
         ) : null}
 
-        <div className="flex-1 overflow-auto p-0">
+        <div className="group relative flex-1 overflow-auto p-0">
+          {canNavigateSubdomains ? (
+            <>
+              <button
+                type="button"
+                aria-label="Previous subdomain preview"
+                className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full border border-border/70 bg-background/90 p-2 text-foreground opacity-0 shadow transition-opacity group-hover:opacity-100"
+                onClick={goToPreviousSubdomain}
+              >
+                <ChevronLeft className="size-4" />
+              </button>
+              <button
+                type="button"
+                aria-label="Next subdomain preview"
+                className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full border border-border/70 bg-background/90 p-2 text-foreground opacity-0 shadow transition-opacity group-hover:opacity-100"
+                onClick={goToNextSubdomain}
+              >
+                <ChevronRight className="size-4" />
+              </button>
+            </>
+          ) : null}
           {selectedPage ? (
             <ContextDataStore
               contextData={{

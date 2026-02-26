@@ -272,7 +272,7 @@ describe('admin plugin market helpers', () => {
     expect(details.reviewStats.averageRating).toBe(0);
   });
 
-  it('builds details preview tabs from plugin subdomain sentinels', () => {
+  it('builds details preview tabs only for subdomains with UI layer snapshots', () => {
     const catalog = [
       entry({
         pluginId: 'acme.subdomain-plugin',
@@ -289,6 +289,20 @@ describe('admin plugin market helpers', () => {
             { schema: '__plugin_studio_subdomain__/index' },
             { schema: '__plugin_studio_subdomain__/admin' },
             { schema: '__plugin_studio_subdomain__/orders-dashboard' },
+            {
+              schema: '__plugin_studio_subdomain_ui__/orders-dashboard',
+              title: JSON.stringify([
+                {
+                  id: 'orders-root',
+                  type: 'div',
+                  name: 'Orders',
+                  props: {
+                    className: 'min-h-screen',
+                  },
+                  children: [],
+                },
+              ]),
+            },
           ],
           manifestHash: 'm',
           artifactHash: 'a',
@@ -308,12 +322,10 @@ describe('admin plugin market helpers', () => {
     const details = buildPluginDetailView(plugin);
 
     expect(details.previewTabs.map((tab) => tab.title)).toEqual([
-      'Index',
       'Admin',
       'Orders Dashboard',
     ]);
     expect(details.previewTabs.map((tab) => tab.subdomain)).toEqual([
-      'index',
       'admin',
       'orders-dashboard',
     ]);

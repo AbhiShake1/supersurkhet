@@ -14,9 +14,7 @@ export type PluginSubdomainSurface = {
   imageUrls: string[];
 };
 
-export type SubdomainAccessRule =
-  | 'authenticated-user'
-  | 'organization-member';
+export type SubdomainAccessRule = 'authenticated-user' | 'organization-member';
 
 function normalizeSubdomainName(value: string): string {
   const normalized = value
@@ -189,7 +187,6 @@ export function resolveReleaseSubdomainSurface(
         orderedSubdomains.push(normalized);
         subdomainSet.add(normalized);
       }
-      continue;
     }
   }
 
@@ -243,6 +240,29 @@ export function resolveReleaseSubdomainSurface(
     imageUrlsBySubdomain,
     accessRuleBySubdomain: accessRuleRecord,
   };
+}
+
+export function resolveSubdomainsWithAttachedUiLayers(
+  release: Pick<PluginReleaseDoc, 'adminTabs'>,
+): string[] {
+  const adminTabs = release.adminTabs ?? [];
+  const attached: string[] = [];
+  const seen = new Set<string>();
+
+  for (const tab of adminTabs) {
+    const schema = tab.schema?.trim();
+    if (!schema || !schema.startsWith(SUBDOMAIN_UI_SENTINEL_PREFIX)) continue;
+    const candidate = schema.slice(SUBDOMAIN_UI_SENTINEL_PREFIX.length).trim();
+    if (!candidate) continue;
+    const normalized = normalizeSubdomainName(candidate);
+    const parsedLayers = parseJsonArrayOrNull(tab.title);
+    if (!parsedLayers || parsedLayers.length === 0) continue;
+    if (seen.has(normalized)) continue;
+    seen.add(normalized);
+    attached.push(normalized);
+  }
+
+  return attached;
 }
 
 export function isPluginSystemSentinelSchema(schema: string): boolean {

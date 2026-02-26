@@ -264,8 +264,12 @@ export function buildPluginDetailView(
     ensureDefaultSubdomains: true,
     includeAdminFallbackLayers: true,
   });
+  const previewableSurfaces = surface.surfaces.filter((entry) => {
+    const layers = surface.uiLayersBySubdomain[entry.subdomain];
+    return Array.isArray(layers) && layers.length > 0;
+  });
 
-  const subdomainPreviewTabs = surface.surfaces.map((entry) => ({
+  const subdomainPreviewTabs = previewableSurfaces.map((entry) => ({
     schema: `__plugin_studio_subdomain__/${entry.subdomain}`,
     title: entry.label,
     group: 'Subdomain',
@@ -284,7 +288,7 @@ export function buildPluginDetailView(
           screenshotUrls: [],
         })) ?? []);
   const previewScreenshots = Array.from(
-    new Set(surface.surfaces.flatMap((entry) => entry.imageUrls)),
+    new Set(previewableSurfaces.flatMap((entry) => entry.imageUrls)),
   );
 
   return {

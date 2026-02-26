@@ -315,16 +315,21 @@ function MarketplacePluginCard({
       }),
     [plugin.latestRelease],
   );
-  const previewSubdomains = previewSurface.subdomains;
+  const previewSubdomains = previewSurface.subdomains.filter((subdomain) => {
+    const layers = previewSurface.uiLayersBySubdomain[subdomain];
+    return Array.isArray(layers) && layers.length > 0;
+  });
   const clampedIndex =
     previewSubdomains.length === 0
       ? 0
       : Math.min(activeIndex, previewSubdomains.length - 1);
-  const activeSubdomain = previewSubdomains[clampedIndex] ?? 'admin';
-  const activePage = toSubdomainPreviewPage(
-    activeSubdomain,
-    previewSurface.uiLayersBySubdomain[activeSubdomain] ?? null,
-  );
+  const activeSubdomain = previewSubdomains[clampedIndex] ?? '';
+  const activePage = activeSubdomain
+    ? toSubdomainPreviewPage(
+        activeSubdomain,
+        previewSurface.uiLayersBySubdomain[activeSubdomain] ?? null,
+      )
+    : null;
   const previewComponentRegistry = useMemo(() => {
     const autoAdminEntry = baseComponentRegistry.AutoAdmin;
     return {
@@ -370,7 +375,7 @@ function MarketplacePluginCard({
         className="relative h-40 overflow-hidden border-y border-border/70 bg-muted/10"
       >
         <div className="absolute right-2 top-2 z-10 rounded-full bg-background/90 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.08em] shadow">
-          {activeSubdomain}
+          {activeSubdomain || 'No preview'}
         </div>
         {previewSubdomains.length > 1 ? (
           <>
@@ -404,24 +409,33 @@ function MarketplacePluginCard({
             </button>
           </>
         ) : null}
-        <div className="origin-top-left pointer-events-none" style={scaleStyle}>
-          <ContextDataStore
-            contextData={{
-              business: { basePath: businessName },
-              search: {},
-              date: {
-                currentTime: new Date().toISOString(),
-                locale: 'en-US',
-                timezone: 'UTC',
-              },
-            }}
+        {activePage ? (
+          <div
+            className="origin-top-left pointer-events-none"
+            style={scaleStyle}
           >
-            <LayerRenderer
-              componentRegistry={previewComponentRegistry}
-              page={activePage}
-            />
-          </ContextDataStore>
-        </div>
+            <ContextDataStore
+              contextData={{
+                business: { basePath: businessName },
+                search: {},
+                date: {
+                  currentTime: new Date().toISOString(),
+                  locale: 'en-US',
+                  timezone: 'UTC',
+                },
+              }}
+            >
+              <LayerRenderer
+                componentRegistry={previewComponentRegistry}
+                page={activePage}
+              />
+            </ContextDataStore>
+          </div>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center px-4 text-center text-xs text-muted-foreground">
+            No UI builder preview data
+          </div>
+        )}
       </div>
       <div className="space-y-2 p-3 pt-2">
         {description ? (
