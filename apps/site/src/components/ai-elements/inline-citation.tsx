@@ -2,7 +2,15 @@
 
 import { ArrowLeftIcon, ArrowRightIcon } from 'lucide-react';
 import type { ComponentProps, MouseEvent } from 'react';
-import { useCallback } from 'react';
+import {
+  Children,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { Badge } from '@/components/ui/badge';
 import {
   HoverCard,
@@ -77,6 +85,20 @@ export const InlineCitationCardBody = ({
   <HoverCardContent className={cn('relative w-80 p-0', className)} {...props} />
 );
 
+interface InlineCitationCarouselContextValue {
+  currentIndex: number;
+  totalItems: number;
+  goToPrevious: () => void;
+  goToNext: () => void;
+  setTotalItems: (totalItems: number) => void;
+}
+
+const InlineCitationCarouselContext =
+  createContext<InlineCitationCarouselContextValue | null>(null);
+
+const useInlineCitationCarousel = () =>
+  useContext(InlineCitationCarouselContext);
+
 export type InlineCitationCarouselProps = ComponentProps<'div'>;
 
 export const InlineCitationCarousel = ({
@@ -84,10 +106,63 @@ export const InlineCitationCarousel = ({
   children,
   ...props
 }: InlineCitationCarouselProps) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [totalItems, setTotalItemsState] = useState(0);
+
+  useEffect(() => {
+    if (totalItems === 0 && currentIndex !== 0) {
+      setCurrentIndex(0);
+      return;
+    }
+
+    if (totalItems > 0 && currentIndex >= totalItems) {
+      setCurrentIndex(totalItems - 1);
+    }
+  }, [currentIndex, totalItems]);
+
+  const setTotalItems = useCallback((nextTotalItems: number) => {
+    setTotalItemsState((prevTotalItems) =>
+      prevTotalItems === nextTotalItems ? prevTotalItems : nextTotalItems,
+    );
+  }, []);
+
+  const goToPrevious = useCallback(() => {
+    setCurrentIndex((prevIndex) => {
+      if (totalItems <= 0) {
+        return 0;
+      }
+
+      return prevIndex > 0 ? prevIndex - 1 : totalItems - 1;
+    });
+  }, [totalItems]);
+
+  const goToNext = useCallback(() => {
+    setCurrentIndex((prevIndex) => {
+      if (totalItems <= 0) {
+        return 0;
+      }
+
+      return prevIndex < totalItems - 1 ? prevIndex + 1 : 0;
+    });
+  }, [totalItems]);
+
+  const contextValue = useMemo<InlineCitationCarouselContextValue>(
+    () => ({
+      currentIndex,
+      goToNext,
+      goToPrevious,
+      setTotalItems,
+      totalItems,
+    }),
+    [currentIndex, goToNext, goToPrevious, setTotalItems, totalItems],
+  );
+
   return (
-    <div className={cn('w-full', className)} {...props}>
-      {children}
-    </div>
+    <InlineCitationCarouselContext.Provider value={contextValue}>
+      <div className={cn('w-full', className)} {...props}>
+        {children}
+      </div>
+    </InlineCitationCarouselContext.Provider>
   );
 };
 
@@ -95,7 +170,23 @@ export type InlineCitationCarouselContentProps = ComponentProps<'div'>;
 
 export const InlineCitationCarouselContent = (
   props: InlineCitationCarouselContentProps,
-) => <div {...props} />;
+) => {
+  const { children, ...restProps } = props;
+  const carousel = useInlineCitationCarousel();
+  const items = Children.toArray(children);
+
+  useEffect(() => {
+    carousel?.setTotalItems(items.length);
+  }, [carousel, items.length]);
+
+  if (!carousel) {
+    return <div {...restProps}>{children}</div>;
+  }
+
+  const activeItem = items[carousel.currentIndex] ?? null;
+
+  return <div {...restProps}>{activeItem}</div>;
+};
 
 export type InlineCitationCarouselItemProps = ComponentProps<'div'>;
 
@@ -128,6 +219,14 @@ export const InlineCitationCarouselIndex = ({
   className,
   ...props
 }: InlineCitationCarouselIndexProps) => {
+  const carousel = useInlineCitationCarousel();
+  const totalItems = carousel?.totalItems ?? 1;
+  const currentItem = carousel
+    ? totalItems > 0
+      ? carousel.currentIndex + 1
+      : 0
+    : 1;
+
   return (
     <div
       className={cn(
@@ -136,7 +235,7 @@ export const InlineCitationCarouselIndex = ({
       )}
       {...props}
     >
-      {children ?? '1/1'}
+      {children ?? `${currentItem}/${totalItems}`}
     </div>
   );
 };
@@ -148,11 +247,19 @@ export const InlineCitationCarouselPrev = ({
   onClick,
   ...props
 }: InlineCitationCarouselPrevProps) => {
+  const carousel = useInlineCitationCarousel();
+
   const handleClick = useCallback(
     (event: MouseEvent<HTMLButtonElement>) => {
       onClick?.(event);
+
+      if (event.defaultPrevented) {
+        return;
+      }
+
+      carousel?.goToPrevious();
     },
-    [onClick],
+    [carousel, onClick],
   );
 
   return (
@@ -175,11 +282,19 @@ export const InlineCitationCarouselNext = ({
   onClick,
   ...props
 }: InlineCitationCarouselNextProps) => {
+  const carousel = useInlineCitationCarousel();
+
   const handleClick = useCallback(
     (event: MouseEvent<HTMLButtonElement>) => {
       onClick?.(event);
+
+      if (event.defaultPrevented) {
+        return;
+      }
+
+      carousel?.goToNext();
     },
-    [onClick],
+    [carousel, onClick],
   );
 
   return (
