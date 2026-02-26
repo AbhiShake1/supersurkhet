@@ -613,13 +613,7 @@ function createGunPluginSchemaRecordStore(): PluginSchemaRecordStore {
       return record;
     },
     async update(record) {
-      await ssrUpdate(
-        'pluginRecord',
-        record.businessId,
-      )({
-        id: record.id,
-        ...record,
-      } as never);
+      await ssrUpdate('pluginRecord', record.businessId)(record as never);
       return record;
     },
     async removeByScope(scope) {
@@ -726,13 +720,31 @@ export async function runPluginsV2SchemaCrud(input: PluginsV2SchemaCrudInput) {
 
   switch (input.operation) {
     case 'create':
-      return service.create(input);
+      return service.create({
+        businessId: input.businessId,
+        pluginId: input.pluginId,
+        schemaId: input.schemaId,
+        rowId: input.rowId,
+        payload: input.payload,
+        source: input.source,
+        teamId: input.teamId,
+        hashPin: input.hashPin,
+      });
     case 'read':
       return service.read(input);
     case 'list':
       return service.list(input);
     case 'update':
-      return service.update(input);
+      return service.update({
+        businessId: input.businessId,
+        pluginId: input.pluginId,
+        schemaId: input.schemaId,
+        rowId: input.rowId,
+        payload: input.payload,
+        source: input.source,
+        teamId: input.teamId,
+        hashPin: input.hashPin,
+      });
     case 'delete':
       return service.remove(input);
     default:

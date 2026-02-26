@@ -3,8 +3,11 @@ import { coreSchema } from '@/lib/schema';
 
 function readShapeKeys(schema: unknown): string[] {
   const shape =
-    (schema as { shape?: Record<string, unknown> | (() => Record<string, unknown>) })
-      .shape ?? {};
+    (
+      schema as {
+        shape?: Record<string, unknown> | (() => Record<string, unknown>);
+      }
+    ).shape ?? {};
   const resolvedShape = typeof shape === 'function' ? shape() : shape;
   return Object.keys(resolvedShape ?? {});
 }

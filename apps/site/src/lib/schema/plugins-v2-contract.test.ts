@@ -39,7 +39,10 @@ describe('plugin v2 schema contracts', () => {
                   runIf: {
                     kind: 'op',
                     op: 'gt',
-                    args: [{ kind: 'ref', source: 'payload', path: ['qty'] }, 0],
+                    args: [
+                      { kind: 'ref', source: 'payload', path: ['qty'] },
+                      0,
+                    ],
                   },
                 },
               ],
@@ -50,7 +53,10 @@ describe('plugin v2 schema contracts', () => {
                   condition: {
                     kind: 'op',
                     op: 'eq',
-                    args: [{ kind: 'ref', source: 'context', path: ['env'] }, 'prod'],
+                    args: [
+                      { kind: 'ref', source: 'context', path: ['env'] },
+                      'prod',
+                    ],
                   },
                   conditionToken: 'isProd',
                 },
@@ -94,7 +100,10 @@ describe('plugin v2 schema contracts', () => {
                     when: {
                       kind: 'op',
                       op: 'lte',
-                      args: [{ kind: 'ref', source: 'row', path: ['price'] }, 0],
+                      args: [
+                        { kind: 'ref', source: 'row', path: ['price'] },
+                        0,
+                      ],
                     },
                   },
                 ],
@@ -129,10 +138,16 @@ describe('plugin v2 schema contracts', () => {
       ],
     });
 
-    expect(parsed.schemaDocs?.[0]?.fields[0]?.behavior?.derivations?.[0]?.target).toBe('value');
+    expect(
+      parsed.schemaDocs?.[0]?.fields[0]?.behavior?.derivations?.[0]?.target,
+    ).toBe('value');
     expect(parsed.schemaDocs?.[0]?.refinements?.[0]?.message).toContain('SKU');
-    expect(parsed.schemaDocs?.[0]?.workflows?.[0]?.nodes[0]?.runIf).toBeTruthy();
-    expect(parsed.schemaDocs?.[0]?.workflows?.[0]?.edges[0]?.condition).toBeTruthy();
+    expect(
+      parsed.schemaDocs?.[0]?.workflows?.[0]?.nodes[0]?.runIf,
+    ).toBeTruthy();
+    expect(
+      parsed.schemaDocs?.[0]?.workflows?.[0]?.edges[0]?.condition,
+    ).toBeTruthy();
   });
 
   it('rejects invalid derivation targets and invalid expression operators', () => {

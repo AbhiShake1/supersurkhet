@@ -2456,34 +2456,32 @@ const TitleSection: React.FC<{
           )}
           {slug && (
             <>
-              <DropdownMenuItem asChild>
-                <Tooltip>
-                  <TooltipTrigger asChild>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuItem asChild className="gap-2">
                     <Link
                       to="/$businessName/admin/plugins"
                       params={{ businessName: slug }}
-                      className="gap-1"
+                      className="w-full"
                       data-sidebar-manage-plugins-link="true"
                     >
                       <PlugZapIcon className="size-4" />
                       Manage Plugins
                     </Link>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="right"
-                    className="flex items-center gap-2"
-                  >
-                    <span>Manage plugins</span>
-                    <ShortcutKbd
-                      actionId={SIDEBAR_SHORTCUTS.managePlugins.id}
-                      defaultBinding={
-                        SIDEBAR_SHORTCUTS.managePlugins.defaultBinding
-                      }
-                      interactive={false}
-                    />
-                  </TooltipContent>
-                </Tooltip>
-              </DropdownMenuItem>
+                  </DropdownMenuItem>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="right"
+                  className="flex items-center gap-2"
+                >
+                  <span>Manage plugins</span>
+                  <ShortcutKbd
+                    actionId={SIDEBAR_SHORTCUTS.managePlugins.id}
+                    defaultBinding={SIDEBAR_SHORTCUTS.managePlugins.defaultBinding}
+                    interactive={false}
+                  />
+                </TooltipContent>
+              </Tooltip>
               <DropdownMenuSeparator />
             </>
           )}

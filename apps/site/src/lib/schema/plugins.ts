@@ -538,8 +538,9 @@ export const pluginDraftRevisionSchema = z
     pluginId: z.string(),
     manifestHash: z.string(),
     artifactHash: z.string(),
-    schemaDocs: z.array(pluginSchemaDocSchema).optional(),
-    adminTabs: z.array(pluginTabDocSchema).optional(),
+    actionManifest: z.array(actionManifestDocSchema).default([]),
+    schemaDocs: z.array(pluginSchemaDocSchema).default([]),
+    adminTabs: z.array(pluginTabDocSchema).default([]),
     createdAt: z.string().datetime({ offset: true }),
     createdByUserId: z.string(),
   })

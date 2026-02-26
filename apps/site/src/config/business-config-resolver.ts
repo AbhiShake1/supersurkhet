@@ -3,7 +3,10 @@ import {
   dedupeAdminTabs,
   resolveAdminTabInput,
 } from '@/lib/auto-runtime/tab-runtime';
-import { resolveReleaseSubdomainSurface } from '@/lib/plugins/subdomain-surface';
+import {
+  resolveReleaseSubdomainSurface,
+  type SubdomainAccessRule,
+} from '@/lib/plugins/subdomain-surface';
 import type {
   BusinessPluginInstallDoc,
   PluginReleaseDoc,
@@ -177,4 +180,70 @@ export function resolveInstallDrivenSubdomains({
   }
 
   return [...subdomains];
+}
+
+const SUBDOMAIN_GUARD_RULE_PRIORITY: Record<SubdomainAccessRule, number> = {
+  'authenticated-user': 1,
+  'organization-member': 2,
+};
+
+export function resolveInstallDrivenSubdomainGuardRule({
+  businessId,
+  subdomain,
+  installs,
+  releases,
+}: {
+  businessId: string;
+  subdomain: string;
+  installs: BusinessPluginInstallDoc[];
+  releases: PluginReleaseDoc[];
+}): SubdomainAccessRule | null {
+  const normalizedSubdomain =
+    subdomain
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9-]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'index';
+  const releaseByKey = new Map<string, PluginReleaseDoc>(
+    releases.map((release) => [
+      toReleaseKey(release.pluginId, release.version),
+      release,
+    ]),
+  );
+
+  let resolved: SubdomainAccessRule | null = null;
+  for (const install of installs) {
+    if (install.businessId !== businessId || install.status !== 'active') {
+      continue;
+    }
+    const release = releaseByKey.get(
+      toReleaseKey(install.pluginId, install.version),
+    );
+    if (!release) continue;
+    if (
+      release.artifactHash !== install.artifactHash ||
+      release.manifestHash !== install.manifestHash
+    ) {
+      continue;
+    }
+    const surface = resolveReleaseSubdomainSurface(release, {
+      ensureDefaultSubdomains: true,
+      includeAdminFallbackLayers: false,
+    });
+    const nextRule = surface.accessRuleBySubdomain[normalizedSubdomain];
+    if (!nextRule) continue;
+    if (
+      !resolved ||
+      SUBDOMAIN_GUARD_RULE_PRIORITY[nextRule] >
+        SUBDOMAIN_GUARD_RULE_PRIORITY[resolved]
+    ) {
+      resolved = nextRule;
+    }
+    if (resolved === 'organization-member') {
+      return resolved;
+    }
+  }
+
+  return resolved;
 }

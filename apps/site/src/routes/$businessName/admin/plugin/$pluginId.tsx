@@ -204,7 +204,9 @@ function PluginDetailsPage() {
     [decoratedPlugin, market],
   );
   const activePreviewTabKey =
-    typeof search.tab === 'string' ? search.tab.trim().toLowerCase() : '';
+    'tab' in search && typeof search.tab === 'string'
+      ? search.tab.trim().toLowerCase()
+      : '';
   const selectedPreviewTab = useMemo(() => {
     const validTabs = (details?.previewTabs ?? []).filter(
       (tab) => typeof tab.schema === 'string' && tab.schema.trim().length > 0,
@@ -287,14 +289,16 @@ function PluginDetailsPage() {
           pluginId: pluginData.pluginId,
           version: pluginData.latestRelease.version,
           requestedCapabilities: [...pluginData.capabilities],
-          explicitOwnerAction: true,
+          explicitOwnerAction: actorRole === 'owner',
         },
       });
       toast.success(`Installed ${pluginData.title}`);
       fire();
+      return true;
     } catch (error) {
       console.error(error);
       toast.error('Failed to install plugin');
+      return false;
     } finally {
       setInstalling(false);
     }
@@ -366,11 +370,13 @@ function PluginDetailsPage() {
         userLabel: actorUserLabel,
         rating,
         comment: normalizedComment,
-        createdAt: details.userReview?.createdAt ?? now,
+        createdAt: details?.userReview?.createdAt ?? now,
         updatedAt: now,
       });
       await refetchReviews();
-      toast.success(details.userReview ? 'Review updated' : 'Review submitted');
+      toast.success(
+        details?.userReview ? 'Review updated' : 'Review submitted',
+      );
     } catch (error) {
       console.error(error);
       if (error instanceof Error && error.name === 'HashVerificationError') {
@@ -405,8 +411,8 @@ function PluginDetailsPage() {
             <Stat
               label="Rating"
               value={
-                pluginData.averageRating > 0
-                  ? `${pluginData.averageRating}★`
+                (pluginData.averageRating ?? 0) > 0
+                  ? `${pluginData.averageRating ?? 0}★`
                   : 'N/A'
               }
               icon={<Star className="size-4 text-amber-500" />}

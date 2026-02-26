@@ -19,7 +19,10 @@ describe('plugins v2 compile verify pipeline', () => {
                   expression: {
                     kind: 'op',
                     op: 'concat',
-                    args: ['State: ', { kind: 'ref', source: 'payload', path: ['status'] }],
+                    args: [
+                      'State: ',
+                      { kind: 'ref', source: 'payload', path: ['status'] },
+                    ],
                   },
                 },
               ],
@@ -30,7 +33,10 @@ describe('plugins v2 compile verify pipeline', () => {
                   when: {
                     kind: 'op',
                     op: 'neq',
-                    args: [{ kind: 'ref', source: 'payload', path: [] }, 'approved'],
+                    args: [
+                      { kind: 'ref', source: 'payload', path: [] },
+                      'approved',
+                    ],
                   },
                 },
               ],
@@ -41,7 +47,9 @@ describe('plugins v2 compile verify pipeline', () => {
           {
             workflowId: 'wf-product-before-create',
             hook: 'beforeCreate',
-            nodes: [{ nodeId: 'start', type: 'action', actionId: 'inventory.sync' }],
+            nodes: [
+              { nodeId: 'start', type: 'action', actionId: 'inventory.sync' },
+            ],
             edges: [],
           },
         ],
@@ -126,7 +134,9 @@ describe('plugins v2 compile verify pipeline', () => {
           {
             workflowId: 'wf-bad',
             hook: 'beforeCreate',
-            nodes: [{ nodeId: 'n1', type: 'action', actionId: 'unknown.action' }],
+            nodes: [
+              { nodeId: 'n1', type: 'action', actionId: 'unknown.action' },
+            ],
             edges: [{ from: 'n1', to: 'n2' }],
           },
         ],

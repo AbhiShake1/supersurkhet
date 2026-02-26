@@ -2400,7 +2400,23 @@ declare global {
      pluginId: import("zod").ZodString;
      manifestHash: import("zod").ZodString;
      artifactHash: import("zod").ZodString;
-     schemaDocs: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+     actionManifest: import("zod").ZodDefault<import("zod").ZodArray<import("zod").ZodObject<{
+     actionId: import("zod").ZodString;
+     description: import("zod").ZodOptional<import("zod").ZodString>;
+     capabilities: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodString, "many">>;
+     runtime: import("zod").ZodOptional<import("zod").ZodEnum<["sandbox-worker", "core"]>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     actionId: string;
+     description?: string | undefined;
+     capabilities?: string[] | undefined;
+     runtime?: "sandbox-worker" | "core" | undefined;
+    }, {
+     actionId: string;
+     description?: string | undefined;
+     capabilities?: string[] | undefined;
+     runtime?: "sandbox-worker" | "core" | undefined;
+    }>, "many">>;
+     schemaDocs: import("zod").ZodDefault<import("zod").ZodArray<import("zod").ZodObject<{
      schemaId: import("zod").ZodString;
      title: import("zod").ZodOptional<import("zod").ZodString>;
      description: import("zod").ZodOptional<import("zod").ZodString>;
@@ -2689,7 +2705,7 @@ declare global {
     } | undefined;
     }[] | undefined;
     }>, "many">>;
-     adminTabs: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+     adminTabs: import("zod").ZodDefault<import("zod").ZodArray<import("zod").ZodObject<{
      schema: import("zod").ZodString;
      title: import("zod").ZodOptional<import("zod").ZodString>;
      group: import("zod").ZodOptional<import("zod").ZodString>;
@@ -2725,17 +2741,13 @@ declare global {
      pluginId: string;
      manifestHash: string;
      artifactHash: string;
-     createdAt: string;
-     draftId: string;
-     revisionId: string;
-     createdByUserId: string;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     schemaDocs?: {
+     actionManifest: {
+     actionId: string;
+     description?: string | undefined;
+     capabilities?: string[] | undefined;
+     runtime?: "sandbox-worker" | "core" | undefined;
+    }[];
+     schemaDocs: {
      schemaId: string;
      fields: unknown[];
      description?: string | undefined;
@@ -2780,13 +2792,23 @@ declare global {
      fieldChange?: Record<string, unknown> | undefined;
     } | undefined;
     }[] | undefined;
-    }[] | undefined;
-     adminTabs?: {
+    }[];
+     adminTabs: {
      schema: string;
      icon?: string | undefined;
      title?: string | undefined;
      group?: string | undefined;
-    }[] | undefined;
+    }[];
+     createdAt: string;
+     draftId: string;
+     revisionId: string;
+     createdByUserId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
     }, {
      id: string;
      pluginId: string;
@@ -2802,6 +2824,12 @@ declare global {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
+     actionManifest?: {
+     actionId: string;
+     description?: string | undefined;
+     capabilities?: string[] | undefined;
+     runtime?: "sandbox-worker" | "core" | undefined;
+    }[] | undefined;
      schemaDocs?: {
      schemaId: string;
      fields: unknown[];

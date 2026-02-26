@@ -1,3 +1,4 @@
+import { flattenSchemaWorkflows } from '@supersurkhet/sdk';
 import {
   compileVisualDerivationsToDeriveIr,
   type VisualDerivation,
@@ -16,7 +17,6 @@ import type {
   SchemaDoc,
   SchemaFieldDoc,
 } from '@/lib/plugins/types';
-import { flattenSchemaWorkflows } from '@supersurkhet/sdk';
 
 export type CompileVerifySeverity = 'error' | 'warning' | 'info';
 

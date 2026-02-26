@@ -7,6 +7,7 @@ import type {
   PluginReleaseDoc,
 } from '@/lib/plugins/types';
 import {
+  resolveInstallDrivenSubdomainGuardRule,
   resolveInstallDrivenSubdomains,
   resolveInstallDrivenSubdomainUiLayers,
   resolveInstallDrivenTabs,
@@ -169,6 +170,7 @@ type UseBusinessSubdomainLayersInput = {
 
 type UseBusinessSubdomainLayersState = {
   layers: unknown[] | null;
+  guardRule: 'authenticated-user' | 'organization-member' | null;
   isLoading: boolean;
 };
 
@@ -247,11 +249,18 @@ export function useBusinessSubdomainLayersState({
     installs,
     releases,
   });
+  const guardRule = resolveInstallDrivenSubdomainGuardRule({
+    businessId: scopedBusinessId,
+    subdomain,
+    installs,
+    releases,
+  });
   const isInitialLoadPending =
     !installRowsQuery.isFetched || !releaseRowsQuery.isFetched;
 
   return {
     layers,
+    guardRule,
     isLoading: isInitialLoadPending,
   };
 }

@@ -714,8 +714,7 @@ function toAdminInjectedSubdomainUiLayers(subdomain: string): ComponentLayer[] {
       name: `${subdomain} page`,
       type: 'div',
       props: {
-        className:
-          'min-h-screen w-full bg-background px-8 py-10 text-foreground',
+        className: 'min-h-svh w-full bg-background text-foreground',
       },
       children: [
         {

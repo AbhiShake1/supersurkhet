@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { AutoAdminRootFocusedConfigPatch } from '@/config/business-config';
 import {
+  resolveInstallDrivenSubdomainGuardRule,
   resolveInstallDrivenSubdomains,
   resolveInstallDrivenSubdomainUiLayers,
   resolveInstallDrivenTabs,
@@ -165,6 +166,62 @@ describe('business config install-driven tab resolver', () => {
       JSON.stringify(layers).includes('AutoAdmin') ||
         JSON.stringify(layers).includes('auto-admin'),
     ).toBe(true);
+  });
+
+  it('resolves guardrail rule for a subdomain from installed releases', () => {
+    const guardRule = resolveInstallDrivenSubdomainGuardRule({
+      businessId: 'business-1',
+      subdomain: 'orders',
+      installs: [install()],
+      releases: [
+        release({
+          adminTabs: [
+            { schema: '__plugin_studio_subdomain__/orders' },
+            {
+              schema: '__plugin_studio_subdomain_guard__/orders',
+              title: 'authenticated-user',
+            },
+          ],
+        }),
+      ],
+    });
+
+    expect(guardRule).toBe('authenticated-user');
+  });
+
+  it('chooses stricter rule when multiple installs target same subdomain', () => {
+    const guardRule = resolveInstallDrivenSubdomainGuardRule({
+      businessId: 'business-1',
+      subdomain: 'orders',
+      installs: [
+        install({ id: 'business-1::acme.one', pluginId: 'acme.one' }),
+        install({ id: 'business-1::acme.two', pluginId: 'acme.two' }),
+      ],
+      releases: [
+        release({
+          pluginId: 'acme.one',
+          adminTabs: [
+            { schema: '__plugin_studio_subdomain__/orders' },
+            {
+              schema: '__plugin_studio_subdomain_guard__/orders',
+              title: 'authenticated-user',
+            },
+          ],
+        }),
+        release({
+          pluginId: 'acme.two',
+          adminTabs: [
+            { schema: '__plugin_studio_subdomain__/orders' },
+            {
+              schema: '__plugin_studio_subdomain_guard__/orders',
+              title: 'organization-member',
+            },
+          ],
+        }),
+      ],
+    });
+
+    expect(guardRule).toBe('organization-member');
   });
 });
 

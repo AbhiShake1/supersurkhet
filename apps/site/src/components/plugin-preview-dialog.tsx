@@ -1,5 +1,5 @@
 import { Eye } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { z } from 'zod';
 import { AutoAdmin, type AutoAdminTabInput } from '@/components/auto-admin';
 import { Badge } from '@/components/ui/badge';
@@ -98,7 +98,9 @@ export function PluginPreviewDialog({
   onInstall,
 }: PluginPreviewDialogProps) {
   const [isInstalling, setIsInstalling] = useState(false);
-  const [selectedSubdomain, setSelectedSubdomain] = useState('admin');
+  const [selectedSubdomainOverride, setSelectedSubdomainOverride] = useState<
+    string | null
+  >(null);
   const currentConfig = useBusinessConfig({
     slug: businessSlug,
     businessId,
@@ -138,20 +140,27 @@ export function PluginPreviewDialog({
 
   const availableSubdomains = subdomainSurface.subdomains;
 
-  useEffect(() => {
-    if (!open) return;
+  const selectedSubdomain = useMemo(() => {
     const normalizedRequested = initialSubdomain
       ? normalizeSubdomainName(initialSubdomain)
       : '';
-    if (
-      normalizedRequested &&
-      availableSubdomains.includes(normalizedRequested)
-    ) {
-      setSelectedSubdomain(normalizedRequested);
-      return;
-    }
-    setSelectedSubdomain(availableSubdomains[0] ?? 'admin');
-  }, [open, initialSubdomain, availableSubdomains]);
+    const requestedSubdomain =
+      normalizedRequested && availableSubdomains.includes(normalizedRequested)
+        ? normalizedRequested
+        : null;
+    const overrideSubdomain =
+      selectedSubdomainOverride &&
+      availableSubdomains.includes(selectedSubdomainOverride)
+        ? selectedSubdomainOverride
+        : null;
+
+    return (
+      overrideSubdomain ??
+      requestedSubdomain ??
+      availableSubdomains[0] ??
+      'admin'
+    );
+  }, [availableSubdomains, initialSubdomain, selectedSubdomainOverride]);
 
   const selectedLayers =
     subdomainSurface.uiLayersBySubdomain[selectedSubdomain] ?? null;
@@ -222,7 +231,7 @@ export function PluginPreviewDialog({
                 variant={
                   selectedSubdomain === subdomain ? 'default' : 'outline'
                 }
-                onClick={() => setSelectedSubdomain(subdomain)}
+                onClick={() => setSelectedSubdomainOverride(subdomain)}
               >
                 {subdomain}
               </Button>

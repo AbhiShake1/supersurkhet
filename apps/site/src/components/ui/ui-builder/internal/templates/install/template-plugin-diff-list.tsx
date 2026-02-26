@@ -7,7 +7,11 @@ type TemplatePluginDiffListProps = {
   pluginPlan: UiTemplateInstallPreview['pluginPlan'];
 };
 
-function HydrationBadge({ releaseMissingInTarget }: { releaseMissingInTarget: boolean }) {
+function HydrationBadge({
+  releaseMissingInTarget,
+}: {
+  releaseMissingInTarget: boolean;
+}) {
   if (!releaseMissingInTarget) return null;
   return <Badge variant="outline">Hydrates release</Badge>;
 }
@@ -16,7 +20,9 @@ export function TemplatePluginDiffList({
   pluginPlan,
 }: TemplatePluginDiffListProps) {
   const totalChanges =
-    pluginPlan.install.length + pluginPlan.update.length + pluginPlan.noOp.length;
+    pluginPlan.install.length +
+    pluginPlan.update.length +
+    pluginPlan.noOp.length;
 
   if (totalChanges === 0) {
     return (

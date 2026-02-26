@@ -251,24 +251,6 @@ export function CustomUiRendererPage({
   });
 
   const business = _business?.[0];
-  const { isAuthenticated } = useAuth();
-  const { hasCredential, isLoading: isCredentialLoading } =
-    useHasByoAiCredential();
-
-  const handleOpenGlobalAssistant = useCallback(() => {
-    const decision = evaluateAiSurfaceGate({
-      actionId: 'global-assistant.open',
-      surface: 'global_assistant',
-      isAuthenticated,
-      hasByoAiCredential: hasCredential,
-      at: Date.now(),
-    });
-    if (!decision.allowed) {
-      toast.error(decision.message);
-      return;
-    }
-    window.open('/_business/chat', '_blank', 'noopener,noreferrer');
-  }, [hasCredential, isAuthenticated]);
 
   function getPage() {
     const layers =
@@ -296,21 +278,7 @@ export function CustomUiRendererPage({
 
   return (
     <ContextDataStore contextData={contextData}>
-      <div className="relative">
-        <div className="absolute right-3 top-3 z-10">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={isCredentialLoading}
-            onClick={handleOpenGlobalAssistant}
-          >
-            <BotMessageSquare className="size-4" />
-            Assistant
-          </Button>
-        </div>
-        <LayerRenderer componentRegistry={componentRegistry} page={getPage()} />
-      </div>
+      <LayerRenderer componentRegistry={componentRegistry} page={getPage()} />
     </ContextDataStore>
   );
 }

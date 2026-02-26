@@ -1,4 +1,5 @@
 import { flattenSchemaWorkflows } from '@supersurkhet/sdk';
+import { getCookie } from '@tanstack/react-start/server';
 import { z } from 'zod';
 import {
   collectDesiredBusinessSubdomainHosts,
@@ -22,9 +23,9 @@ import {
 import type {
   ActionManifestDoc,
   AdminTabDoc,
-  BusinessUiTemplateInstallDoc,
   BusinessPluginDraftInstallDoc,
   BusinessPluginInstallDoc,
+  BusinessUiTemplateInstallDoc,
   ExpressionDoc,
   JsonValue,
   PluginDraftDoc,
@@ -407,6 +408,17 @@ const releaseInstallBatchInputSchema = z
   })
   .strict();
 
+function deriveRequestedCapabilities(
+  actionManifest: readonly ActionManifestDoc[] | undefined,
+): string[] {
+  if (!actionManifest) {
+    return [];
+  }
+  return [
+    ...new Set(actionManifest.flatMap((action) => action.capabilities ?? [])),
+  ];
+}
+
 const draftCreateInputSchema = z.object({
   actorUserId: z.string(),
   pluginId: z.string(),
@@ -544,7 +556,10 @@ export class PluginInputValidationError extends Error {
 export class PluginV3GateError extends Error {
   readonly diagnostics: ReturnType<typeof evaluateV3PublishGates>;
 
-  constructor(message: string, diagnostics: ReturnType<typeof evaluateV3PublishGates>) {
+  constructor(
+    message: string,
+    diagnostics: ReturnType<typeof evaluateV3PublishGates>,
+  ) {
     super(message);
     this.name = 'PluginV3GateError';
     this.diagnostics = diagnostics;
@@ -734,20 +749,7 @@ function resolveUiTemplateRelease({
 }
 
 async function getBusinessUiBuilderLayers(businessId: string) {
-  const businessRows = await readRowsWithTimeoutFallback(() =>
-    ssrGet({ key: 'business', single: true }, businessId),
-  );
-  let business = businessRows[0] as
-    | { id?: string; basePath?: string; uiBuilder?: { layers?: string } }
-    | undefined;
-  if (!business) {
-    const allBusinesses = (await readRowsWithTimeoutFallback(() =>
-      ssrGet('business'),
-    )) as Array<{ id?: string; basePath?: string; uiBuilder?: { layers?: string } }>;
-    business = allBusinesses.find(
-      (entry) => entry.id === businessId || entry.basePath === businessId,
-    );
-  }
+  const business = await resolveBusinessRecord(businessId);
   if (!business) {
     throw new Error(`Business "${businessId}" was not found`);
   }
@@ -757,15 +759,185 @@ async function getBusinessUiBuilderLayers(businessId: string) {
   };
 }
 
+type BusinessAccessRecord = {
+  id?: string;
+  basePath?: string;
+  created_by?: string;
+  members?: Record<string, { role?: string; userId?: string }>;
+  uiBuilder?: { layers?: string };
+};
+
+type ResolvedSessionActor = {
+  actorUserId: string;
+  aliases: Set<string>;
+  systemRole: 'user' | 'internal-staff' | 'admin';
+};
+
+async function resolveBusinessRecord(
+  businessId: string,
+): Promise<BusinessAccessRecord | undefined> {
+  const businessRows = await readRowsWithTimeoutFallback(() =>
+    ssrGet({ key: 'business', single: true }, businessId),
+  );
+  const exactMatch = businessRows[0] as BusinessAccessRecord | undefined;
+  if (exactMatch) {
+    return exactMatch;
+  }
+  const allBusinesses = (await readRowsWithTimeoutFallback(() =>
+    ssrGet('business'),
+  )) as BusinessAccessRecord[];
+  return allBusinesses.find(
+    (entry) => entry.id === businessId || entry.basePath === businessId,
+  );
+}
+
+function parseSessionActorAliases(): Set<string> {
+  const aliases = new Set<string>();
+  const rawSessionUser = getCookie('gun-user');
+  if (!rawSessionUser) return aliases;
+  try {
+    const parsed = JSON.parse(rawSessionUser) as {
+      pub?: unknown;
+      _?: { soul?: unknown };
+      id?: unknown;
+      userId?: unknown;
+    };
+    appendUserIdAliases(
+      aliases,
+      typeof parsed._?.soul === 'string' ? parsed._.soul : undefined,
+    );
+    appendUserIdAliases(
+      aliases,
+      typeof parsed.pub === 'string' ? parsed.pub : undefined,
+    );
+    appendUserIdAliases(
+      aliases,
+      typeof parsed.id === 'string' ? parsed.id : undefined,
+    );
+    appendUserIdAliases(
+      aliases,
+      typeof parsed.userId === 'string' ? parsed.userId : undefined,
+    );
+  } catch {
+    return aliases;
+  }
+  return aliases;
+}
+
+function pickSessionActorUserId(aliases: Set<string>): string | undefined {
+  return [...aliases][0];
+}
+
+async function resolveSystemRoleForAliases(
+  aliases: Set<string>,
+): Promise<'user' | 'internal-staff' | 'admin'> {
+  for (const alias of aliases) {
+    const rows = await readRowsWithTimeoutFallback(() =>
+      ssrGet({ key: 'user', single: true }, alias),
+    );
+    const row = rows[0] as { role?: unknown } | undefined;
+    if (row?.role === 'admin') return 'admin';
+    if (row?.role === 'internal-staff') return 'internal-staff';
+  }
+  return 'user';
+}
+
+async function resolveAuthenticatedSessionActor({
+  claimedActorUserId,
+}: {
+  claimedActorUserId?: string;
+}): Promise<ResolvedSessionActor> {
+  const aliases = parseSessionActorAliases();
+  const actorUserId = pickSessionActorUserId(aliases);
+  if (!actorUserId) {
+    throw new Error('Unauthorized: missing authenticated app session.');
+  }
+  if (
+    claimedActorUserId &&
+    !matchesUserIdAlias({
+      aliases,
+      candidate: claimedActorUserId,
+    })
+  ) {
+    throw new Error(
+      'Forbidden: claimed actor identity does not match authenticated session.',
+    );
+  }
+  const systemRole = await resolveSystemRoleForAliases(aliases);
+  return {
+    actorUserId,
+    aliases,
+    systemRole,
+  };
+}
+
+async function resolveBusinessInstallActor({
+  businessId,
+  claimedActorUserId,
+}: {
+  businessId: string;
+  claimedActorUserId?: string;
+}): Promise<{ actorUserId: string; actorRole: 'owner' | 'admin' | 'staff' }> {
+  const sessionActor = await resolveAuthenticatedSessionActor({
+    claimedActorUserId,
+  });
+  if (sessionActor.systemRole === 'admin') {
+    return {
+      actorUserId: sessionActor.actorUserId,
+      actorRole: 'admin',
+    };
+  }
+  const business = await resolveBusinessRecord(businessId);
+  if (!business) {
+    throw new Error(`Business "${businessId}" was not found`);
+  }
+  if (
+    matchesUserIdAlias({
+      aliases: sessionActor.aliases,
+      candidate: business.created_by,
+    })
+  ) {
+    return {
+      actorUserId: sessionActor.actorUserId,
+      actorRole: 'owner',
+    };
+  }
+  const memberEntries = Object.entries(business.members ?? {});
+  const matchedMember = memberEntries.find(([memberKey, member]) => {
+    if (
+      matchesUserIdAlias({
+        aliases: sessionActor.aliases,
+        candidate: memberKey,
+      })
+    ) {
+      return true;
+    }
+    return matchesUserIdAlias({
+      aliases: sessionActor.aliases,
+      candidate: member.userId,
+    });
+  });
+  if (!matchedMember) {
+    throw new Error(
+      `Forbidden: authenticated user is not a member of business "${businessId}".`,
+    );
+  }
+  const memberRole = matchedMember[1].role;
+  return {
+    actorUserId: sessionActor.actorUserId,
+    actorRole: memberRole === 'owner' ? 'owner' : 'staff',
+  };
+}
+
 async function syncBusinessSubdomainDns(businessId: string): Promise<void> {
   try {
     const [installRows, releaseRows, { business }] = await Promise.all([
       readRowsWithTimeoutFallback(() =>
         ssrGet('businessPluginInstall', businessId),
       ) as Promise<BusinessPluginInstallDoc[]>,
-      readRowsWithTimeoutFallback(() =>
-        ssrGet('pluginRelease'),
-      ) as Promise<PluginReleaseDoc[]>,
+      readRowsWithTimeoutFallback(() => ssrGet('pluginRelease')) as Promise<
+        PluginReleaseDoc[]
+      >,
       getBusinessUiBuilderLayers(businessId),
     ]);
     const businessSlug =
@@ -813,7 +985,9 @@ function buildUiTemplatePluginPlan({
   const install: UiTemplateInstallPreview['pluginPlan']['install'] = [];
   const update: UiTemplateInstallPreview['pluginPlan']['update'] = [];
   const noOp: UiTemplateInstallPreview['pluginPlan']['noOp'] = [];
-  const installsByPluginId = new Map(installs.map((entry) => [entry.pluginId, entry]));
+  const installsByPluginId = new Map(
+    installs.map((entry) => [entry.pluginId, entry]),
+  );
 
   for (const bundle of bundles) {
     const releaseId = toReleaseId(bundle.pluginId, bundle.version);
@@ -857,8 +1031,15 @@ export async function publishPluginRelease({ data }: { data: unknown }) {
     data,
     entrypoint: 'publishPluginRelease',
   });
-  const flattenedWorkflows = flattenSchemaWorkflows(parsedInput.schemaDocs ?? []);
-  const workflowPathPrefixById = toWorkflowPathPrefixById(parsedInput.schemaDocs ?? []);
+  const actor = await resolveAuthenticatedSessionActor({
+    claimedActorUserId: parsedInput.actorUserId,
+  });
+  const flattenedWorkflows = flattenSchemaWorkflows(
+    parsedInput.schemaDocs ?? [],
+  );
+  const workflowPathPrefixById = toWorkflowPathPrefixById(
+    parsedInput.schemaDocs ?? [],
+  );
 
   const gateDiagnostics = evaluateV3PublishGates({
     actionManifest: parsedInput.actionManifest ?? [],
@@ -884,7 +1065,10 @@ export async function publishPluginRelease({ data }: { data: unknown }) {
     runtimeTarget: 'sandbox-worker',
   });
 
-  if (hasBlockingV3Gates(gateDiagnostics) || compileVerify.parity.diagnostics.blocking) {
+  if (
+    hasBlockingV3Gates(gateDiagnostics) ||
+    compileVerify.parity.diagnostics.blocking
+  ) {
     const blockingCompileDiagnostics = compileVerify.diagnostics.all
       .filter((diagnostic) => diagnostic.severity === 'error')
       .map((diagnostic) => ({
@@ -893,16 +1077,16 @@ export async function publishPluginRelease({ data }: { data: unknown }) {
         message: diagnostic.message,
         path: diagnostic.path,
       }));
-    throw new PluginV3GateError(
-      'Publish blocked by V3 gate diagnostics',
-      [...gateDiagnostics, ...blockingCompileDiagnostics],
-    );
+    throw new PluginV3GateError('Publish blocked by V3 gate diagnostics', [
+      ...gateDiagnostics,
+      ...blockingCompileDiagnostics,
+    ]);
   }
 
   const store = await loadPublishedStore();
   const service = createPluginPlatformService({ store });
   const release = await service.publishRelease({
-    actorUserId: parsedInput.actorUserId,
+    actorUserId: actor.actorUserId,
     release: {
       pluginId: parsedInput.pluginId,
       version: parsedInput.version,
@@ -940,8 +1124,7 @@ export async function publishUiTemplateRelease({ data }: { data: unknown }) {
     .filter((entry) => entry.templateId === parsedInput.templateId)
     .sort((left, right) => compareSemver(right.version, left.version));
   const version =
-    parsedInput.version ??
-    toNextPatchVersion(existingVersions[0]?.version);
+    parsedInput.version ?? toNextPatchVersion(existingVersions[0]?.version);
   const releaseId = `${parsedInput.templateId}@${version}`;
 
   if (templateRows.some((entry) => entry.id === releaseId)) {
@@ -956,22 +1139,30 @@ export async function publishUiTemplateRelease({ data }: { data: unknown }) {
   ]);
 
   const releasesById = new Map(
-    (publishedReleases as PluginReleaseDoc[]).map((release) => [release.id, release]),
+    (publishedReleases as PluginReleaseDoc[]).map((release) => [
+      release.id,
+      release,
+    ]),
   );
 
-  const pluginBundles = (installedPlugins as BusinessPluginInstallDoc[]).map((install) => {
-    const releaseIdForInstall = toReleaseId(install.pluginId, install.version);
-    const release = releasesById.get(releaseIdForInstall);
-    if (!release) {
-      throw new MissingReleaseError(releaseIdForInstall);
-    }
-    return {
-      pluginId: install.pluginId,
-      version: install.version,
-      requestedCapabilities: install.requestedCapabilities,
-      release,
-    };
-  });
+  const pluginBundles = (installedPlugins as BusinessPluginInstallDoc[]).map(
+    (install) => {
+      const releaseIdForInstall = toReleaseId(
+        install.pluginId,
+        install.version,
+      );
+      const release = releasesById.get(releaseIdForInstall);
+      if (!release) {
+        throw new MissingReleaseError(releaseIdForInstall);
+      }
+      return {
+        pluginId: install.pluginId,
+        version: install.version,
+        requestedCapabilities: install.requestedCapabilities,
+        release,
+      };
+    },
+  );
 
   const release: UiTemplateReleaseDoc = {
     id: releaseId,
@@ -1039,7 +1230,9 @@ export async function previewUiTemplateInstall({
     );
   }
 
-  const { parsedLayers } = await getBusinessUiBuilderLayers(parsedInput.businessId);
+  const { parsedLayers } = await getBusinessUiBuilderLayers(
+    parsedInput.businessId,
+  );
   if (!parsedLayers.ok) {
     return {
       templateId: release.templateId,
@@ -1121,11 +1314,7 @@ export async function previewUiTemplateInstall({
   };
 }
 
-export async function installUiTemplateRelease({
-  data,
-}: {
-  data: unknown;
-}) {
+export async function installUiTemplateRelease({ data }: { data: unknown }) {
   const parsedInput = requireParsedInput({
     schema: uiTemplateInstallInputSchema,
     data,
@@ -1164,7 +1353,9 @@ export async function installUiTemplateRelease({
     );
   }
 
-  const { business, parsedLayers } = await getBusinessUiBuilderLayers(parsedInput.businessId);
+  const { business, parsedLayers } = await getBusinessUiBuilderLayers(
+    parsedInput.businessId,
+  );
   if (!parsedLayers.ok) {
     throw new Error('Target business uiBuilder.layers JSON is invalid');
   }
@@ -1455,6 +1646,10 @@ export async function installPluginRelease({ data }: { data: unknown }) {
     data,
     entrypoint: 'installPluginRelease',
   });
+  const actor = await resolveBusinessInstallActor({
+    businessId: parsedInput.businessId,
+    claimedActorUserId: parsedInput.actorUserId,
+  });
   const store = await loadPublishedStore(parsedInput.businessId);
   const service = createPluginPlatformService({ store });
 
@@ -1489,12 +1684,15 @@ export async function installPluginRelease({ data }: { data: unknown }) {
     );
   }
 
+  const requestedCapabilities =
+    parsedInput.requestedCapabilities ??
+    deriveRequestedCapabilities(release.actionManifest);
   const installGateDiagnostics = evaluateV3InstallGates({
     actionManifest: release.actionManifest ?? [],
     schemaDocs: release.schemaDocs ?? [],
     workflows: flattenSchemaWorkflows(release.schemaDocs ?? []),
     workflowPathPrefixById: toWorkflowPathPrefixById(release.schemaDocs ?? []),
-    requestedCapabilities: parsedInput.requestedCapabilities ?? [],
+    requestedCapabilities,
   });
   if (hasBlockingV3Gates(installGateDiagnostics)) {
     throw new PluginV3GateError(
@@ -1504,14 +1702,15 @@ export async function installPluginRelease({ data }: { data: unknown }) {
   }
 
   const install = service.installPublishedRelease({
-    actorUserId: parsedInput.actorUserId,
-    actorRole: parsedInput.actorRole,
-    explicitOwnerAction: parsedInput.explicitOwnerAction,
+    actorUserId: actor.actorUserId,
+    actorRole: actor.actorRole,
+    explicitOwnerAction:
+      actor.actorRole === 'owner' ? parsedInput.explicitOwnerAction : undefined,
     install: {
       businessId: parsedInput.businessId,
       pluginId: parsedInput.pluginId,
       version: parsedInput.version,
-      requestedCapabilities: parsedInput.requestedCapabilities,
+      requestedCapabilities,
     },
   });
 
@@ -1532,6 +1731,10 @@ export async function syncBusinessPluginInstalls({ data }: { data: unknown }) {
     schema: releaseInstallBatchInputSchema,
     data,
     entrypoint: 'installPluginRelease',
+  });
+  const actor = await resolveBusinessInstallActor({
+    businessId: parsedInput.businessId,
+    claimedActorUserId: parsedInput.actorUserId,
   });
 
   const store = await loadPublishedStore(parsedInput.businessId);
@@ -1573,16 +1776,25 @@ export async function syncBusinessPluginInstalls({ data }: { data: unknown }) {
 
   const installsToPersist: BusinessPluginInstallDoc[] = [];
   for (const install of desiredInstalls.values()) {
-    const release = store.getRelease(toReleaseId(install.pluginId, install.version));
+    const release = store.getRelease(
+      toReleaseId(install.pluginId, install.version),
+    );
     if (!release) {
-      throw new MissingReleaseError(toReleaseId(install.pluginId, install.version));
+      throw new MissingReleaseError(
+        toReleaseId(install.pluginId, install.version),
+      );
     }
+    const requestedCapabilities =
+      install.requestedCapabilities ??
+      deriveRequestedCapabilities(release.actionManifest);
     const installGateDiagnostics = evaluateV3InstallGates({
       actionManifest: release.actionManifest ?? [],
       schemaDocs: release.schemaDocs ?? [],
       workflows: flattenSchemaWorkflows(release.schemaDocs ?? []),
-      workflowPathPrefixById: toWorkflowPathPrefixById(release.schemaDocs ?? []),
-      requestedCapabilities: install.requestedCapabilities ?? [],
+      workflowPathPrefixById: toWorkflowPathPrefixById(
+        release.schemaDocs ?? [],
+      ),
+      requestedCapabilities,
     });
     if (hasBlockingV3Gates(installGateDiagnostics)) {
       throw new PluginV3GateError(
@@ -1591,14 +1803,17 @@ export async function syncBusinessPluginInstalls({ data }: { data: unknown }) {
       );
     }
     const nextInstall = service.installPublishedRelease({
-      actorUserId: parsedInput.actorUserId,
-      actorRole: parsedInput.actorRole,
-      explicitOwnerAction: parsedInput.explicitOwnerAction ?? true,
+      actorUserId: actor.actorUserId,
+      actorRole: actor.actorRole,
+      explicitOwnerAction:
+        actor.actorRole === 'owner'
+          ? (parsedInput.explicitOwnerAction ?? true)
+          : undefined,
       install: {
         businessId: parsedInput.businessId,
         pluginId: install.pluginId,
         version: install.version,
-        requestedCapabilities: install.requestedCapabilities,
+        requestedCapabilities,
       },
     });
     installsToPersist.push(nextInstall);
@@ -1742,6 +1957,7 @@ export async function createPluginDraft({
         actorUserId: data.actorUserId,
         draftId: migratedDraft.draftId,
         revision: {
+          actionManifest: latestLegacyRevision.actionManifest,
           schemaDocs: latestLegacyRevision.schemaDocs,
           adminTabs: latestLegacyRevision.adminTabs,
         },
@@ -1840,7 +2056,9 @@ export async function ensureMarketplaceSeedReleases({
   };
 }
 
-function toWorkflowPathPrefixById(schemaDocs: readonly SchemaDoc[]): Record<string, string[]> {
+function toWorkflowPathPrefixById(
+  schemaDocs: readonly SchemaDoc[],
+): Record<string, string[]> {
   const pathByWorkflowId: Record<string, string[]> = {};
   for (const schemaDoc of schemaDocs) {
     for (const workflow of schemaDoc.workflows ?? []) {
@@ -1892,12 +2110,16 @@ export async function uninstallPluginRelease({
 }: {
   data: z.infer<typeof releaseUninstallInputSchema>;
 }) {
+  const actor = await resolveBusinessInstallActor({
+    businessId: data.businessId,
+    claimedActorUserId: data.actorUserId,
+  });
   const store = await loadPublishedStore(data.businessId);
   const service = createPluginPlatformService({ store });
 
   const install = await service.uninstallPublishedRelease({
-    actorUserId: data.actorUserId,
-    actorRole: data.actorRole,
+    actorUserId: actor.actorUserId,
+    actorRole: actor.actorRole,
     businessId: data.businessId,
     pluginId: data.pluginId,
   });

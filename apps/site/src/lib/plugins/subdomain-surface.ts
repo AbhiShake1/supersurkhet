@@ -2,6 +2,7 @@ import type { PluginReleaseDoc } from '@/lib/plugins/types';
 
 const SUBDOMAIN_SENTINEL_PREFIX = '__plugin_studio_subdomain__/';
 const SUBDOMAIN_UI_SENTINEL_PREFIX = '__plugin_studio_subdomain_ui__/';
+const SUBDOMAIN_GUARD_SENTINEL_PREFIX = '__plugin_studio_subdomain_guard__/';
 const SYSTEM_SENTINEL_PREFIX = '__plugin_studio_';
 
 type JsonRecord = Record<string, unknown>;
@@ -12,6 +13,10 @@ export type PluginSubdomainSurface = {
   uiLayers: unknown[] | null;
   imageUrls: string[];
 };
+
+export type SubdomainAccessRule =
+  | 'authenticated-user'
+  | 'organization-member';
 
 function normalizeSubdomainName(value: string): string {
   const normalized = value
@@ -40,6 +45,20 @@ function parseJsonArrayOrNull(value: unknown): unknown[] | null {
   } catch {
     return null;
   }
+}
+
+function normalizeSubdomainAccessRule(
+  value: unknown,
+): SubdomainAccessRule | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim();
+  if (
+    normalized === 'authenticated-user' ||
+    normalized === 'organization-member'
+  ) {
+    return normalized;
+  }
+  return null;
 }
 
 function isLikelyImageValue(
@@ -90,8 +109,7 @@ export function toAdminFallbackUiLayers(subdomain = 'admin'): unknown[] {
       name: `${subdomain} page`,
       type: 'div',
       props: {
-        className:
-          'min-h-screen w-full bg-background px-8 py-10 text-foreground',
+        className: 'min-h-svh w-full bg-background text-foreground',
       },
       children: [
         {
@@ -117,6 +135,7 @@ export function resolveReleaseSubdomainSurface(
   surfaces: PluginSubdomainSurface[];
   uiLayersBySubdomain: Record<string, unknown[]>;
   imageUrlsBySubdomain: Record<string, string[]>;
+  accessRuleBySubdomain: Record<string, SubdomainAccessRule>;
 } {
   const ensureDefaultSubdomains = options?.ensureDefaultSubdomains ?? true;
   const includeAdminFallbackLayers =
@@ -126,6 +145,7 @@ export function resolveReleaseSubdomainSurface(
   const orderedSubdomains: string[] = [];
   const subdomainSet = new Set<string>();
   const uiLayersBySubdomain = new Map<string, unknown[]>();
+  const accessRuleBySubdomain = new Map<string, SubdomainAccessRule>();
 
   for (const tab of adminTabs) {
     const schema = tab.schema?.trim();
@@ -154,6 +174,22 @@ export function resolveReleaseSubdomainSurface(
           subdomainSet.add(normalized);
         }
       }
+    }
+
+    if (schema.startsWith(SUBDOMAIN_GUARD_SENTINEL_PREFIX)) {
+      const candidate = schema
+        .slice(SUBDOMAIN_GUARD_SENTINEL_PREFIX.length)
+        .trim();
+      const normalized = normalizeSubdomainName(candidate);
+      const accessRule = normalizeSubdomainAccessRule(tab.title);
+      if (accessRule) {
+        accessRuleBySubdomain.set(normalized, accessRule);
+      }
+      if (!subdomainSet.has(normalized)) {
+        orderedSubdomains.push(normalized);
+        subdomainSet.add(normalized);
+      }
+      continue;
     }
   }
 
@@ -195,12 +231,17 @@ export function resolveReleaseSubdomainSurface(
   for (const [subdomain, layers] of uiLayersBySubdomain.entries()) {
     uiLayersRecord[subdomain] = layers;
   }
+  const accessRuleRecord: Record<string, SubdomainAccessRule> = {};
+  for (const [subdomain, accessRule] of accessRuleBySubdomain.entries()) {
+    accessRuleRecord[subdomain] = accessRule;
+  }
 
   return {
     subdomains: orderedSubdomains,
     surfaces,
     uiLayersBySubdomain: uiLayersRecord,
     imageUrlsBySubdomain,
+    accessRuleBySubdomain: accessRuleRecord,
   };
 }
 

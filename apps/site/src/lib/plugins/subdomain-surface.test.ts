@@ -41,5 +41,15 @@ describe('resolveReleaseSubdomainSurface', () => {
         'AutoAdmin',
       ),
     ).toBe(true);
+    expect(
+      JSON.stringify(result.uiLayersBySubdomain.admin ?? []).includes(
+        'min-h-svh w-full bg-background text-foreground',
+      ),
+    ).toBe(true);
+    expect(
+      JSON.stringify(result.uiLayersBySubdomain.admin ?? []).includes(
+        'px-8 py-10',
+      ),
+    ).toBe(false);
   });
 });
