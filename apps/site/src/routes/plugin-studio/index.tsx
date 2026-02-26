@@ -9,7 +9,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { MouseEvent } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
 import { Logo } from '@/components/logo';
@@ -231,6 +231,35 @@ function PluginStudioProjectsRoute() {
       return [];
     }
   });
+  const setLayoutAndPersist = useCallback((next: ProjectLayout) => {
+    setLayout((current) => {
+      if (current === next) {
+        return current;
+      }
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(PROJECT_LAYOUT_STORAGE_KEY, next);
+      }
+      return next;
+    });
+  }, []);
+  const setProjectOrderAndPersist = useCallback(
+    (update: string[] | ((current: string[]) => string[])) => {
+      setProjectOrder((current) => {
+        const next = typeof update === 'function' ? update(current) : update;
+        if (areStringArraysEqual(current, next)) {
+          return current;
+        }
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(
+            PROJECT_ORDER_STORAGE_KEY,
+            JSON.stringify(next),
+          );
+        }
+        return next;
+      });
+    },
+    [],
+  );
 
   const actorUserIdAliases = useMemo(
     () => buildActorUserIdAliases(user),
@@ -279,26 +308,6 @@ function PluginStudioProjectsRoute() {
         memberProjectIdSet.has(project.id),
     );
   }, [actorUserIdSet, members, projects]);
-
-  useEffect(() => {
-    const accessibleProjectIds = accessibleProjects.map(
-      (project) => project.id,
-    );
-    const accessibleProjectIdSet = new Set(accessibleProjectIds);
-    setProjectOrder((current) => {
-      const retained = current.filter((projectId) =>
-        accessibleProjectIdSet.has(projectId),
-      );
-      const retainedSet = new Set(retained);
-      const merged = [
-        ...retained,
-        ...accessibleProjectIds.filter(
-          (projectId) => !retainedSet.has(projectId),
-        ),
-      ];
-      return areStringArraysEqual(current, merged) ? current : merged;
-    });
-  }, [accessibleProjects]);
 
   const orderedAccessibleProjects = useMemo(() => {
     const projectById = new Map(
@@ -360,17 +369,6 @@ function PluginStudioProjectsRoute() {
       .sort((left, right) => left.title.localeCompare(right.title));
   }, [accessibleProjectIdSet, drafts]);
 
-  useEffect(() => {
-    window.localStorage.setItem(PROJECT_LAYOUT_STORAGE_KEY, layout);
-  }, [layout]);
-
-  useEffect(() => {
-    window.localStorage.setItem(
-      PROJECT_ORDER_STORAGE_KEY,
-      JSON.stringify(projectOrder),
-    );
-  }, [projectOrder]);
-
   const handleProjectOrderChange = (
     nextVisibleProjects: PluginProjectDoc[],
   ) => {
@@ -379,7 +377,7 @@ function PluginStudioProjectsRoute() {
     );
     const reorderedVisibleIdSet = new Set(reorderedVisibleIds);
 
-    setProjectOrder((current) => {
+    setProjectOrderAndPersist((current) => {
       const nextOrder: string[] = [];
       let reorderedIndex = 0;
 
@@ -506,7 +504,7 @@ function PluginStudioProjectsRoute() {
       await deleteProjectMutation.mutateAsync(
         pendingProjectDelete.projectId as never,
       );
-      setProjectOrder((current) =>
+      setProjectOrderAndPersist((current) =>
         current.filter(
           (projectId) => projectId !== pendingProjectDelete.projectId,
         ),
@@ -609,7 +607,7 @@ function PluginStudioProjectsRoute() {
               type="button"
               variant={layout === 'list' ? 'default' : 'outline'}
               className="h-11 px-3"
-              onClick={() => setLayout('list')}
+              onClick={() => setLayoutAndPersist('list')}
               aria-pressed={layout === 'list'}
             >
               <List className="size-4" />
@@ -618,7 +616,7 @@ function PluginStudioProjectsRoute() {
               type="button"
               variant={layout === 'grid' ? 'default' : 'outline'}
               className="h-11 px-3"
-              onClick={() => setLayout('grid')}
+              onClick={() => setLayoutAndPersist('grid')}
               aria-pressed={layout === 'grid'}
             >
               <LayoutGrid className="size-4" />
