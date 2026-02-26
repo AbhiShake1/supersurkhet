@@ -40,6 +40,10 @@ const ARRAY_SEPARATOR = ',';
 const DEBOUNCE_MS = 300;
 const THROTTLE_MS = 50;
 
+export type DataTableInitialState<TData> = Omit<Partial<TableState>, 'sorting'> & {
+  sorting?: ExtendedColumnSort<TData>[];
+};
+
 function parseSortingFromUrl() {
   if (typeof window === 'undefined') return [];
   const rawSorting = new URL(window.location.href).searchParams.get('sort');
@@ -66,9 +70,7 @@ interface UseDataTableProps<TData>
       | 'manualSorting'
     >,
     Required<Pick<TableOptions<TData>, 'pageCount'>> {
-  initialState?: Omit<Partial<TableState>, 'sorting'> & {
-    sorting?: ExtendedColumnSort<TData>[];
-  };
+  initialState?: DataTableInitialState<TData>;
   history?: 'push' | 'replace';
   debounceMs?: number;
   throttleMs?: number;

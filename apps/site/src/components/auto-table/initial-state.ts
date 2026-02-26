@@ -1,4 +1,4 @@
-import type { InitialTableState } from '@tanstack/react-table';
+import type { DataTableInitialState } from '@/hooks/use-data-table';
 
 interface GetAutoTableInitialStateOptions {
   defaultPageSize: number;
@@ -10,8 +10,8 @@ export function getAutoTableInitialState({
   defaultPageSize,
   enableColumnPinning,
   pageIndex,
-}: GetAutoTableInitialStateOptions): InitialTableState {
-  const baseState: InitialTableState = {
+}: GetAutoTableInitialStateOptions): DataTableInitialState<unknown> {
+  const baseState: DataTableInitialState<unknown> = {
     pagination: {
       pageIndex,
       pageSize: defaultPageSize,

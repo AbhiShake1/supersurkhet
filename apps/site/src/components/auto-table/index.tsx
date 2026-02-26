@@ -3,16 +3,16 @@ import {
   type NestedSchema,
   type NestedSchemaType,
   type SchemaKeys,
-  type UpdaterParams,
+  type UseCreateOptions,
+  type UseDeleteOptions,
+  type UseUpdateOptions,
   useCreate,
   useDelete,
   useGet,
   useUpdate,
 } from '@gta/react-hooks';
-import { type MutationFunctionContext, useQuery } from '@tanstack/react-query';
-import { useSearch } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
 import type { CellContext, ColumnDef } from '@tanstack/react-table';
-import type { GunMessagePut } from 'gun';
 import {
   ArrowUpDown,
   CalendarIcon,
@@ -58,9 +58,8 @@ import {
   isDerivedFieldKey,
   resolveRuntimeSchema,
 } from '@/lib/auto-runtime/schema-runtime';
-import { applyFilters } from '@/lib/filter';
 import { appSchema } from '@/lib/schema';
-import { applySorting } from '@/lib/sort';
+import { getSoulFromUnknown } from '@/lib/utils';
 import type { DataTableRowAction, FilterVariant } from '@/types/data-table';
 import { AutoPreview } from '../auto-preview';
 import { DataTableAdvancedToolbar } from '../data-table/data-table-advanced-toolbar';
@@ -245,8 +244,7 @@ type AggregationType =
   | 'group';
 
 type PreviewOverrides<T extends SchemaKeys> = Partial<
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  Record<keyof NestedSchema<T>['shape'], (v: any) => any>
+  Record<keyof NestedSchema<T>['shape'], (value: unknown) => unknown>
 >;
 
 type EnhancedColumnDef<TData> = ColumnDef<TData> & {
@@ -273,24 +271,9 @@ export type AutoTableProps<T extends SchemaKeys> = {
   defaultPageSize?: number;
   extender?: (schema: NestedSchema<T>) => ZodObjectOrWrapped;
   previewOverrides?: PreviewOverrides<T>;
-  onCreate?: (
-    data: GunMessagePut,
-    variables: Omit<NestedSchemaType<T>, '_'>,
-    onMutateResult: unknown,
-    context: MutationFunctionContext,
-  ) => unknown;
-  onDelete?: (
-    data: GunMessagePut,
-    variables: string,
-    onMutateResult: unknown,
-    context: MutationFunctionContext,
-  ) => unknown;
-  onUpdate?: (
-    data: GunMessagePut,
-    variables: UpdaterParams<T>,
-    onMutateResult: unknown,
-    context: MutationFunctionContext,
-  ) => unknown;
+  onCreate?: UseCreateOptions<T>['onSuccess'];
+  onDelete?: UseDeleteOptions<T>['onSuccess'];
+  onUpdate?: UseUpdateOptions<T>['onSuccess'];
   readOnly?: boolean;
   treatSlugAsAbsolute?: boolean;
   actions?: (
@@ -306,8 +289,7 @@ export type AutoTableProps<T extends SchemaKeys> = {
       schema: T;
     }
   | {
-      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-      parsedSchema: z.ZodObject<any>;
+      parsedSchema: ZodObjectOrWrapped;
     }
 ) &
   (
@@ -387,22 +369,7 @@ export function AutoTable<T extends SchemaKeys>({
       );
     });
   }, [_data, deriveFns]);
-  const search = useSearch({ from: '__root__' });
-  const filters = search.filters;
-  const sorting = search.sort;
-  function getFiltered() {
-    if (filters) {
-      return applyFilters(dataWithDerived, filters);
-    }
-    return dataWithDerived;
-  }
-  function getSorted(data: typeof _data) {
-    if (sorting) {
-      return applySorting(data, sorting);
-    }
-    return data;
-  }
-  const data = getSorted(getFiltered());
+  const data = dataWithDerived;
 
   const updateMutation = useUpdate({
     keys: [schemaName, slug ?? ''],
@@ -468,7 +435,22 @@ export function AutoTable<T extends SchemaKeys>({
     [parsedSchema.fields],
   );
 
-  const perPage = search.perPage ?? 10;
+  const perPage = React.useMemo(() => {
+    if (typeof window === 'undefined') return defaultPageSize;
+    const rawValue = new URL(window.location.href).searchParams.get('perPage');
+    if (!rawValue) return defaultPageSize;
+    const parsedValue = Number.parseInt(rawValue, 10);
+    return Number.isFinite(parsedValue) && parsedValue > 0
+      ? parsedValue
+      : defaultPageSize;
+  }, [defaultPageSize]);
+  const pageIndex = React.useMemo(() => {
+    if (typeof window === 'undefined') return 0;
+    const rawValue = new URL(window.location.href).searchParams.get('page');
+    if (!rawValue) return 0;
+    const parsedValue = Number.parseInt(rawValue, 10);
+    return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue - 1 : 0;
+  }, []);
 
   const { table, shallow, debounceMs, throttleMs } = useDataTable<
     NestedSchemaType<T>
@@ -481,7 +463,7 @@ export function AutoTable<T extends SchemaKeys>({
     enableRowSelection: enableRowSelection,
     enableColumnPinning: enableColumnPinning,
     initialState: getAutoTableInitialState({
-      pageIndex: search?.pageIndex ?? 0,
+      pageIndex,
       defaultPageSize,
       enableColumnPinning,
     }),
@@ -495,9 +477,7 @@ export function AutoTable<T extends SchemaKeys>({
       },
     },
     getRowId: (originalRow) =>
-      originalRow?._?.soul ??
-      originalRow?.['#']?.split('/').slice(2).join('/') ??
-      '',
+      getRowIdFromUnknown(originalRow),
     shallow: false,
     clearOnDefault: true,
   });
@@ -730,7 +710,7 @@ export function AutoTable<T extends SchemaKeys>({
       >
         {!props.readOnly && (
           <AddRowDialog<T>
-            schema={hasSchemaKey ? schemaName : undefined}
+            schema={hasSchemaKey ? props.schema : undefined}
             runtimeSchema={
               'parsedSchema' in props ? props.parsedSchema : undefined
             }
@@ -840,7 +820,7 @@ export function AutoTable<T extends SchemaKeys>({
           <EditRowDialog
             open={rowAction?.variant === 'update'}
             onOpenChange={() => setRowAction(null)}
-            data={rowAction?.row.original}
+            data={rowAction?.row.original ?? null}
             schema={schema}
             onSubmit={(data) => {
               if (data) {
@@ -884,8 +864,7 @@ interface GetAutoTableColumnsProps<T extends SchemaKeys, S> {
   onReorderColumns?: (sourceColumnKey: string, targetColumnKey: string) => void;
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
+function getAutoTableColumns<T extends SchemaKeys, S extends z.AnyZodObject>({
   setRowAction,
   schema,
   parsedSchema,
@@ -1137,17 +1116,58 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
   return columns;
 }
 
+type GenericRecord = Record<string, unknown>;
+type SuggestionItem = GenericRecord & { business?: string };
+
+const SUGGESTION_TITLE_KEYS = [
+  'title',
+  'name',
+  'label',
+  'text',
+  'displayName',
+  'heading',
+] as const;
+
+function toRecord(value: unknown): GenericRecord | null {
+  if (!value || typeof value !== 'object') return null;
+  return value as GenericRecord;
+}
+
+function getRowIdFromUnknown(value: unknown): string {
+  const soul = getSoulFromUnknown(value);
+  if (soul) return soul;
+
+  const record = toRecord(value);
+  const rowHash = record?.['#'];
+  return typeof rowHash === 'string'
+    ? rowHash.split('/').slice(2).join('/')
+    : '';
+}
+
+function getSuggestionTitle(item: SuggestionItem): string {
+  for (const key of SUGGESTION_TITLE_KEYS) {
+    const value = item[key];
+    if (typeof value === 'string' && value.length > 0) {
+      return value;
+    }
+  }
+  return '';
+}
+
 function useAllData(tableName: SchemaKeys) {
   const { data: allItems, ...rest } = api[tableName].useGet();
 
-  const data = allItems
-    ?.flatMap((d) => {
-      const business = d._?.soul;
-      return Object.values(d).map((d) =>
-        !d || typeof d !== 'object' ? null : { ...d, business },
-      );
-    })
-    .filter((d) => !!d && typeof d === 'object' && !('soul' in d));
+  const data = allItems?.flatMap((item) => {
+    const record = toRecord(item);
+    if (!record) return [];
+
+    const business = getSoulFromUnknown(record);
+    return Object.values(record).flatMap((entry) => {
+      const value = toRecord(entry);
+      if (!value || 'soul' in value) return [];
+      return [{ ...value, business } satisfies SuggestionItem];
+    });
+  });
 
   return { data, ...rest };
 }
@@ -1155,8 +1175,7 @@ function useAllData(tableName: SchemaKeys) {
 export interface AddDataSuggestionsProps {
   slug: string;
   schemaName: SchemaKeys;
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  onSelected: (item: any) => void;
+  onSelected: (item: SuggestionItem) => void;
 }
 
 export function AddDataSuggestions({
@@ -1168,28 +1187,19 @@ export function AddDataSuggestions({
 
   if (isLoading) return 'loading suggestions...';
 
-  function getTeansformedData() {
+  function getTransformedData() {
     if (!data?.length) return [];
-    const othersData = data.filter((d) => d?.business !== slug);
+    const othersData = data.filter((item) => item.business !== slug);
 
     const uniqueData = Object.values(
       Object.fromEntries(
-        othersData.map((d) => [
-          d?.title ||
-            d?.name ||
-            d?.label ||
-            d?.text ||
-            d?.displayName ||
-            d?.heading ||
-            '',
-          d,
-        ]),
+        othersData.map((item) => [getSuggestionTitle(item), item]),
       ),
     );
     return uniqueData;
   }
 
-  const transformedData = getTeansformedData();
+  const transformedData = getTransformedData();
 
   if (!transformedData?.length) return null;
 

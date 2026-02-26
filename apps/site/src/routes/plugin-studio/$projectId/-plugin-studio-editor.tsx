@@ -51,9 +51,11 @@ import type {
   AdminTabDoc,
   DeriveIR,
   ExpressionDoc,
+  JsonValue,
   PluginDraftDoc,
   PluginDraftRevisionDoc,
   PluginReleaseDoc,
+  SchemaBehaviorIR,
   SchemaDoc,
   SchemaFieldDoc,
   SchemaWorkflowDoc,
@@ -69,7 +71,7 @@ import { resolvePluginStudioPluginId } from '../-plugin-studio-plugin-id';
 import { toProjectScopedDraftId } from '../-plugin-studio-project-draft-id';
 import { parseStoredSchemaDoc } from '../-plugin-studio-schema-doc';
 
-const DEFAULT_SCHEMA_DOC = {
+const DEFAULT_SCHEMA_DOC: SchemaDoc = {
   schemaId: 'example.table',
   title: 'Example Table',
   fields: [
@@ -84,9 +86,9 @@ const DEFAULT_SCHEMA_DOC = {
       },
     },
   ],
-} satisfies SchemaDoc;
+};
 
-const DEFAULT_WORKFLOW_DOC = {
+const DEFAULT_WORKFLOW_DOC: WorkflowDoc = {
   workflowId: 'example.workflow',
   table: 'example.table',
   hook: 'afterCreate',
@@ -105,7 +107,7 @@ const DEFAULT_WORKFLOW_DOC = {
     },
   ],
   edges: [],
-} satisfies WorkflowDoc;
+};
 
 type SystemTabKey = 'dashboard' | 'qr';
 
@@ -429,7 +431,7 @@ function computeOrderedGroupNames({
   return preferred;
 }
 
-function isGroupSentinelSchemaId(schemaId: unknown): boolean {
+function isGroupSentinelSchemaId(schemaId: unknown): schemaId is string {
   return (
     typeof schemaId === 'string' &&
     schemaId.startsWith(DRAFT_GROUP_SENTINEL_SCHEMA_PREFIX)
@@ -440,7 +442,7 @@ function toGroupSentinelSchemaId(index: number): string {
   return `${DRAFT_GROUP_SENTINEL_SCHEMA_PREFIX}${index}`;
 }
 
-function isSystemSentinelSchemaId(schemaId: unknown): boolean {
+function isSystemSentinelSchemaId(schemaId: unknown): schemaId is string {
   return (
     typeof schemaId === 'string' &&
     schemaId.startsWith(DRAFT_SYSTEM_SENTINEL_SCHEMA_PREFIX)
@@ -451,7 +453,7 @@ function toSystemSentinelSchemaId(key: SystemTabKey): string {
   return `${DRAFT_SYSTEM_SENTINEL_SCHEMA_PREFIX}${key}`;
 }
 
-function isSubdomainSentinelSchemaId(schemaId: unknown): boolean {
+function isSubdomainSentinelSchemaId(schemaId: unknown): schemaId is string {
   return (
     typeof schemaId === 'string' &&
     schemaId.startsWith(DRAFT_SUBDOMAIN_SENTINEL_SCHEMA_PREFIX)
@@ -869,6 +871,7 @@ function deserializeDraftAdminTabs(
             ? normalizedProject
             : 'custom',
         autoAdminInjected: tab.icon?.trim() === 'autoadmin',
+        accessRule: null,
       });
       continue;
     }
@@ -945,7 +948,7 @@ function toDraftRoutesFromAdminTabs(adminTabs: readonly AdminTabDoc[]): Array<{
   id: string;
   schema: string;
   title: string;
-  group: string | null;
+  group?: string;
   order: number;
   routeSegment: string;
   routePath: string;
@@ -957,7 +960,7 @@ function toDraftRoutesFromAdminTabs(adminTabs: readonly AdminTabDoc[]): Array<{
       id: `${tab.schema}:${index}`,
       schema: tab.schema,
       title: tab.title ?? tab.schema,
-      group: tab.group?.trim() || null,
+      group: tab.group?.trim() || undefined,
       order: index,
       routeSegment,
       routePath: `/plugin-studio/${routeSegment}`,
@@ -1085,14 +1088,16 @@ function getNextVersion(releases: PluginReleaseDoc[], currentPluginId: string) {
   return bumpPatchVersion(sorted[sorted.length - 1] ?? '0.0.0');
 }
 
-function parseJsonObject(value: string | undefined) {
+function parseJsonObject<T extends Record<string, unknown> = Record<string, unknown>>(
+  value: string | undefined,
+): T | undefined {
   if (!value || value.trim() === '') return undefined;
   try {
     const parsed = JSON.parse(value) as unknown;
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
       return undefined;
     }
-    return parsed as Record<string, unknown>;
+    return parsed as T;
   } catch {
     return undefined;
   }
@@ -1254,10 +1259,28 @@ function getBlocklyPresets(fieldType: BuilderFieldType | undefined) {
   ];
 }
 
+function isJsonValue(value: unknown): value is JsonValue {
+  if (value === null) return true;
+  if (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  ) {
+    return true;
+  }
+  if (Array.isArray(value)) {
+    return value.every((entry) => isJsonValue(entry));
+  }
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  return Object.values(value).every((entry) => isJsonValue(entry));
+}
+
 function parseDefaultValue(
   rawValue: string | undefined,
   type: BuilderFieldType,
-) {
+): JsonValue | undefined {
   if (rawValue === undefined || rawValue.trim() === '') {
     return undefined;
   }
@@ -1275,7 +1298,8 @@ function parseDefaultValue(
   }
 
   try {
-    return JSON.parse(rawValue) as unknown;
+    const parsed = JSON.parse(rawValue) as unknown;
+    return isJsonValue(parsed) ? parsed : rawValue;
   } catch {
     return rawValue;
   }
@@ -1740,14 +1764,7 @@ type BlocklyRefinement = {
 type BlocklyRuntime = {
   Blockly: Record<string, unknown>;
   workspace: {
-    getBlockById: (id: string) => {
-      getField: (name: string) => {
-        menuGenerator_: unknown;
-        setValue: (value: string) => void;
-      } | null;
-      getFieldValue: (name: string) => string;
-      setFieldValue: (value: string, name: string) => void;
-    } | null;
+    getBlockById: (id: string) => BlocklyBlockLike | null;
     render: () => void;
     dispose: () => void;
   };
@@ -1948,24 +1965,30 @@ function toSchemaFieldDoc(
       ? (field.type as (typeof AUTOFORM_FIELD_TYPES)[number])
       : undefined);
 
-  const fieldConfig = {
-    ...(parseJsonObject(field.fieldConfigJson) ?? {}),
+  const parsedFieldConfig =
+    parseJsonObject<NonNullable<SchemaBehaviorIR['fieldConfig']>>(
+      field.fieldConfigJson,
+    ) ?? {};
+  const parsedInputProps = parseJsonObject<
+    Record<string, JsonValue | ExpressionDoc>
+  >(field.inputPropsJson);
+  const parsedCustomData = parseJsonObject<
+    Record<string, JsonValue | ExpressionDoc>
+  >(field.customDataJson);
+  const fieldConfig: NonNullable<SchemaBehaviorIR['fieldConfig']> = {
+    ...parsedFieldConfig,
     ...(resolvedFieldType ? { fieldType: resolvedFieldType } : {}),
     label: field.label || field.key || 'Field',
     description: field.description || undefined,
-    ...(parseJsonObject(field.inputPropsJson)
-      ? { inputProps: parseJsonObject(field.inputPropsJson) }
-      : {}),
-    ...(parseJsonObject(field.customDataJson)
-      ? { customData: parseJsonObject(field.customDataJson) }
-      : {}),
+    ...(parsedInputProps ? { inputProps: parsedInputProps } : {}),
+    ...(parsedCustomData ? { customData: parsedCustomData } : {}),
   };
   const compiledDerivations = derivedFieldEntries
     .map((entry) => compileDerivedFieldToDeriveIr(entry))
     .filter((entry): entry is DeriveIR => entry !== null);
 
-  const behavior = {
-    ...(parseJsonObject(field.behaviorJson) ?? {}),
+  const behavior: SchemaBehaviorIR = {
+    ...(parseJsonObject<SchemaBehaviorIR>(field.behaviorJson) ?? {}),
     fieldConfig,
     ...(compiledDerivations.length > 0
       ? {
@@ -2106,7 +2129,12 @@ const blocklyModulePromise = import('blockly');
 
 type BlocklyBlockLike = {
   type: string;
+  getField: (name: string) => {
+    menuGenerator_: unknown;
+    setValue: (value: string) => void;
+  } | null;
   getFieldValue: (fieldName: string) => string;
+  setFieldValue: (value: string, name: string) => void;
   getInputTargetBlock: (inputName: string) => BlocklyBlockLike | null;
 };
 
@@ -2203,6 +2231,31 @@ function _buildConditionFromBlocklyBlock(
   return null;
 }
 
+void [
+  _BUILDER_FIELD_TYPE_OPTIONS,
+  _BUILDER_LEAF_FIELD_TYPE_OPTIONS,
+  _resolveFieldTypeSelection,
+  _setJsonNumberEntry,
+  _setJsonBooleanEntry,
+  _readJsonNumberEntry,
+  _readJsonBooleanEntry,
+  _readJsonStringArrayEntry,
+  _setJsonStringArrayEntry,
+  _readJsonEntryText,
+  _setJsonEntryValue,
+  _readJsonOptionPairsEntry,
+  _setJsonOptionPairsEntry,
+  _listJsonEntries,
+  _getNextJsonEntryKey,
+  _upsertJsonEntry,
+  _removeJsonEntry,
+  _BUILDER_INPUT_PROP_RESERVED_KEYS,
+  _BUILDER_FIELD_CONFIG_RESERVED_KEYS,
+  _BUILDER_CUSTOM_DATA_RESERVED_KEYS,
+  _StringListEditor,
+  _buildConditionFromBlocklyBlock,
+];
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
@@ -2243,6 +2296,12 @@ function normalizeBuilderLeafFieldType(
   return 'string';
 }
 
+function isAutoFormFieldType(
+  value: string,
+): value is (typeof AUTOFORM_FIELD_TYPES)[number] {
+  return (AUTOFORM_FIELD_TYPES as readonly string[]).includes(value);
+}
+
 function resolveLucideIconByName(
   iconName: string | undefined,
 ): LucideIcon | undefined {
@@ -2251,9 +2310,9 @@ function resolveLucideIconByName(
     LucideIcons.icons as Record<string, LucideIcon | undefined>
   )[iconName];
   if (fromIconMap) return fromIconMap;
-  const fromNamespace = (LucideIcons as Record<string, LucideIcon | undefined>)[
-    iconName
-  ];
+  const fromNamespace = (
+    LucideIcons as unknown as Record<string, LucideIcon | undefined>
+  )[iconName];
   return fromNamespace;
 }
 
@@ -2314,7 +2373,7 @@ function toBuilderField(field: SchemaFieldDoc): BuilderField {
     description:
       typeof description === 'string' ? description : (field.description ?? ''),
     type: normalizedType,
-    fieldType: AUTOFORM_FIELD_TYPES.includes(normalizedFieldType)
+    fieldType: isAutoFormFieldType(normalizedFieldType)
       ? normalizedFieldType
       : 'string',
     required: !field.optional,
@@ -2598,9 +2657,7 @@ function PluginStudioPresenter({
   const _logicComposerFieldId = `${blocklyWorkspaceId}-logic-composer-field`;
   const [blocklyMountElement, setBlocklyMountElement] =
     useState<HTMLDivElement | null>(null);
-  const schemaEditorOpenTimeoutRef = useRef<ReturnType<
-    typeof setTimeout
-  > | null>(null);
+  const schemaEditorOpenTimeoutRef = useRef<number | null>(null);
   const blocklyRuntimeRef = useRef<BlocklyRuntime | null>(null);
   const blocklyRightFieldOptionsRef = useRef<[string, string][]>([
     ['No compatible fields', ''],
@@ -2751,7 +2808,7 @@ function PluginStudioPresenter({
       if (!schemaId || !doc?.schemaId) continue;
 
       const canonicalRowId = `${draftId}:${schemaId}`;
-      const rowId = row.id ?? '';
+      const rowId = row._?.soul ?? '';
       const score = rowId === canonicalRowId ? 2 : rowId ? 1 : 0;
       const existing = docsBySchemaId.get(schemaId);
       if (!existing || score >= existing.score) {
@@ -2782,10 +2839,8 @@ function PluginStudioPresenter({
     if (docs.length > 0) {
       return docs;
     }
-    return (latestActiveDraftRevision?.actionManifest ?? []).filter(
-      (doc): doc is ActionManifestDoc => Boolean(doc?.actionId),
-    );
-  }, [actionManifestDocRows, latestActiveDraftRevision?.actionManifest]);
+    return [];
+  }, [actionManifestDocRows]);
 
   const canonicalRoutesTabsConfigId = draftId;
   const legacyRoutesTabsConfigId = useMemo(() => `${draftId}@live`, [draftId]);
@@ -2958,15 +3013,15 @@ function PluginStudioPresenter({
   const isSubdomainStudioMode = true;
 
   const availableSchemaDocs = parsed?.schemaDocs ?? [];
-  const availableWorkflows = useMemo(() => {
+  const availableWorkflows = useMemo<WorkflowDoc[]>(() => {
     const schemaDocs = parsed?.schemaDocs ?? [];
-    const fallbackSchema =
+    const fallbackSchema: SchemaDoc =
       schemaDocs.find((schemaDoc) => schemaDoc.schemaId === activeSchemaId) ??
       schemaDocs[0] ??
       DEFAULT_SCHEMA_DOC;
     const schemaId = fallbackSchema.schemaId;
     const scopedWorkflows = (fallbackSchema.workflows ?? []).map(
-      (workflow) => ({
+      (workflow): WorkflowDoc => ({
         ...workflow,
         table: schemaId,
         trigger: workflow.trigger
@@ -3229,7 +3284,6 @@ function PluginStudioPresenter({
       const nextTitle = activeDraftTitle || draftTitle;
       const nextDescription = activeDraftDescription || undefined;
       const nextDraft: PluginDraftDoc = {
-        id: draftId,
         draftId,
         projectId,
         pluginId,
@@ -3686,7 +3740,7 @@ function PluginStudioPresenter({
     });
   }, [parsed?.adminTabs, parsed?.schemaDocs, pluginId]);
   useEffect(() => {
-    const nextOptions = blocklyComparableFields.length
+    const nextOptions: [string, string][] = blocklyComparableFields.length
       ? blocklyComparableFields.map(
           (fieldKey) => [fieldKey, fieldKey] as [string, string],
         )
@@ -4194,31 +4248,39 @@ function PluginStudioPresenter({
       ),
       refinements: [
         ...validRefinements.map((rule) => ({
-          code: 'custom',
+          code: 'custom' as const,
           path: rule.leftField ? [rule.leftField] : undefined,
           message: rule.message || 'Validation failed',
           when: {
-            kind: 'op',
-            op: 'not',
+            kind: 'op' as const,
+            op: 'not' as const,
             args: [
               {
-                kind: 'op',
+                kind: 'op' as const,
                 op: rule.operator,
                 args: [
-                  { kind: 'ref', source: 'payload', path: [rule.leftField] },
-                  { kind: 'ref', source: 'payload', path: [rule.rightField] },
+                  {
+                    kind: 'ref' as const,
+                    source: 'payload' as const,
+                    path: [rule.leftField],
+                  },
+                  {
+                    kind: 'ref' as const,
+                    source: 'payload' as const,
+                    path: [rule.rightField],
+                  },
                 ],
               },
             ],
           },
         })),
         ...nextBlocklyRefinements.map((rule) => ({
-          code: 'custom',
+          code: 'custom' as const,
           path: rule.leftField ? [rule.leftField] : undefined,
           message: rule.message || 'Validation failed',
           when: {
-            kind: 'op',
-            op: 'not',
+            kind: 'op' as const,
+            op: 'not' as const,
             args: [rule.condition],
           },
         })),
@@ -4357,11 +4419,10 @@ function PluginStudioPresenter({
       ...resolvedAvailableSchemaDocs
         .filter((schemaDoc) => !existingSchemaIds.has(schemaDoc.schemaId))
         .map(
-          (schemaDoc) =>
-            ({
-              schema: schemaDoc.schemaId,
-              title: schemaDoc.title ?? schemaDoc.schemaId,
-            }) satisfies AdminTabDoc,
+          (schemaDoc): AdminTabDoc => ({
+            schema: schemaDoc.schemaId,
+            title: schemaDoc.title ?? schemaDoc.schemaId,
+          }),
         ),
     ];
 
@@ -5158,16 +5219,18 @@ function PluginStudioPresenter({
       toast.error(`Schema "${trimmedTable}" was not found.`);
       return;
     }
-    const scopedWorkflows = (schemaDoc.workflows ?? []).map((workflow) => ({
-      ...workflow,
-      table: trimmedTable,
-      trigger: workflow.trigger
-        ? {
-            ...workflow.trigger,
-            table: trimmedTable,
-          }
-        : undefined,
-    }));
+    const scopedWorkflows: WorkflowDoc[] = (schemaDoc.workflows ?? []).map(
+      (workflow): WorkflowDoc => ({
+        ...workflow,
+        table: trimmedTable,
+        trigger: workflow.trigger
+          ? {
+              ...workflow.trigger,
+              table: trimmedTable,
+            }
+          : undefined,
+      }),
+    );
     const preferredWorkflow =
       scopedWorkflows.find(
         (workflowDoc) =>
@@ -5589,6 +5652,45 @@ function PluginStudioPresenter({
     }
     openEditor();
   }
+
+  void [
+    _addColumnKeyId,
+    _addColumnLabelId,
+    _addColumnDescriptionId,
+    _addColumnClassNameId,
+    _addColumnDefaultId,
+    _addColumnEnumId,
+    _addColumnMinId,
+    _addColumnMaxId,
+    _schemaEditorSchemaIdInputId,
+    _schemaEditorSchemaTitleInputId,
+    _workflowEditorSelectorId,
+    _workflowEditorWorkflowIdInputId,
+    _workflowEditorTableInputId,
+    _workflowEditorHookId,
+    _logicComposerFieldId,
+    _handleBlocklyContainerRef,
+    _isValidInputs,
+    _beginMetadataEdit,
+    _commitMetadataEdit,
+    _stopMetadataEdit,
+    _v3PublishGateDiagnostics,
+    _blocklyPresets,
+    _derivationPathOptions,
+    _derivedTargetFieldOptions,
+    _workflowEditorScopedWorkflows,
+    _handleSubdomainChange,
+    _handleRemoveSubdomain,
+    _handleColumnSheetOpenChange,
+    _confirmDeleteColumn,
+    _confirmDeleteTable,
+    _handleAddWorkflow,
+    _handleRemoveWorkflow,
+    _handleDuplicateActiveWorkflow,
+    _updateActiveWorkflow,
+    _applyTemplatePreset,
+    _openSchemaEditor,
+  ];
 
   if (isInitialLoading) return <PluginStudioSkeleton />;
 

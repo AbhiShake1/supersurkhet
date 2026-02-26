@@ -1,8 +1,9 @@
 import { Save } from 'lucide-react';
 import * as React from 'react';
-import type { ZodObject } from 'zod';
+import { z } from 'zod';
 import { AutoForm } from '@/components/ui/autoform';
 import { SubmitButton } from '@/components/ui/autoform/components/SubmitButton';
+import type { ZodObjectOrWrapped } from '@/components/ui/autoform/zod';
 import { Button } from '@/components/ui/button';
 import {
   Credenza,
@@ -40,24 +41,23 @@ const EDIT_ROW_DIALOG_SHORTCUTS = {
   },
 } as const;
 
-interface EditRowDialogProps<T, S> {
+interface EditRowDialogProps<F extends ZodObjectOrWrapped> {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  data: T | null;
-  schema: S;
-  onSubmit: (data: T) => void;
+  data: z.infer<F> | null;
+  schema: F;
+  onSubmit: (data: z.infer<F>) => void;
   showTrigger?: boolean;
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export function EditRowDialog<T, S extends ZodObject<any>>({
+export function EditRowDialog<F extends ZodObjectOrWrapped>({
   open,
   onOpenChange,
   data,
   schema,
   onSubmit,
   showTrigger: _showTrigger = false,
-}: EditRowDialogProps<T, S>) {
+}: EditRowDialogProps<F>) {
   const isShortcutInScope = React.useCallback((event: KeyboardEvent) => {
     const target = event.target as Node | null;
     const active = document.activeElement as Node | null;
@@ -95,7 +95,7 @@ export function EditRowDialog<T, S extends ZodObject<any>>({
               schema={schema}
               defaultValues={data || {}}
               onSubmit={(values, _form) => {
-                onSubmit(values as T);
+                onSubmit(values);
                 onOpenChange(false);
               }}
             />

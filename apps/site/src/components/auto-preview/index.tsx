@@ -24,7 +24,7 @@ import { Drawer, DrawerContent, DrawerTrigger } from '../ui/drawer';
 
 type FieldType = NonNullable<Parameters<typeof fieldConfig>[0]['fieldType']>;
 
-export type AutoPreviewComponent<T, S extends ParsedField = ParsedField> = FC<{
+export type AutoPreviewComponent<T, S = z.ZodTypeAny> = FC<{
   value: T;
   schema: S;
 }>;
@@ -36,7 +36,7 @@ export function AutoPreview<T>({
 }: {
   field: ParsedField;
   value: T;
-  baseSchema: ZodObjectOrWrapped;
+  baseSchema: z.ZodTypeAny;
 }): ReactNode {
   const enabled =
     !!value && typeof value === 'string' && !!value?.startsWith(GUN_PREFIX);
@@ -57,9 +57,18 @@ export function AutoPreview<T>({
 
   if (enabled) {
     function getDisplayValue() {
-      const displayKey = field.fieldConfig?.customData?.displayKey ?? '_.#';
+      const customDisplayKey = field.fieldConfig?.customData?.displayKey;
+      const displayKey =
+        typeof customDisplayKey === 'string' && customDisplayKey.length > 0
+          ? customDisplayKey
+          : '_.#';
       const displayKeys = displayKey.split('.');
-      return displayKeys.reduce((acc, key) => acc?.[key], data);
+      return displayKeys.reduce<unknown>((accumulator, key) => {
+        if (!accumulator || typeof accumulator !== 'object') {
+          return undefined;
+        }
+        return (accumulator as Record<string, unknown>)[key];
+      }, data);
     }
     return (
       <Comp
@@ -167,7 +176,7 @@ const ArrayPreview: AutoPreviewComponent<any[]> = ({ value, schema }) => {
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   const arraySchema: z.ZodArray<any> =
     schema instanceof z.ZodEffects ? schema.innerType() : schema;
-  const itemSchema = arraySchema._def.type || arraySchema._def.innerType;
+  const itemSchema = arraySchema.element;
   if (
     !(itemSchema instanceof z.ZodObject) &&
     !(itemSchema instanceof z.ZodEffects)
