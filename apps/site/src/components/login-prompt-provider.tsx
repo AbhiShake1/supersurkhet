@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useRef,
   useState,
 } from 'react';
@@ -26,6 +27,76 @@ interface LoginPromptContextType {
     showBackgroundContent?: boolean;
   }) => Promise<AuthUser | undefined>;
   closeLoginPrompt: () => void;
+}
+
+interface LoginPromptGuardState {
+  enabled: boolean;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+}
+
+export function resolveLoginPromptGuardAction({
+  enabled,
+  isAuthenticated,
+  isLoading,
+}: LoginPromptGuardState): 'prompt' | 'close' | 'noop' {
+  if (!enabled) return 'close';
+  if (isLoading) return 'noop';
+  if (!isAuthenticated) return 'prompt';
+  return 'close';
+}
+
+export function useLoginPromptGuard({
+  enabled,
+  isAuthenticated,
+  isLoading,
+  dismissible = false,
+  showBackgroundContent = false,
+}: LoginPromptGuardState & {
+  dismissible?: boolean;
+  showBackgroundContent?: boolean;
+}) {
+  const { promptLogin, closeLoginPrompt } = useLoginPrompt();
+  const promptInFlightRef = useRef(false);
+
+  useEffect(() => {
+    const action = resolveLoginPromptGuardAction({
+      enabled,
+      isAuthenticated,
+      isLoading,
+    });
+
+    if (action === 'close') {
+      promptInFlightRef.current = false;
+      closeLoginPrompt();
+      return;
+    }
+
+    if (action === 'noop' || promptInFlightRef.current) {
+      return;
+    }
+
+    promptInFlightRef.current = true;
+    void promptLogin({
+      dismissible,
+      showBackgroundContent,
+    }).finally(() => {
+      promptInFlightRef.current = false;
+    });
+
+    return () => {
+      promptInFlightRef.current = false;
+      closeLoginPrompt();
+    };
+  }, [
+    closeLoginPrompt,
+    dismissible,
+    enabled,
+    isAuthenticated,
+    isLoading,
+    promptLogin,
+    showBackgroundContent,
+  ]);
 }
 
 const LoginPromptContext = createContext<LoginPromptContextType | undefined>(
