@@ -6,6 +6,14 @@ import type {
   FieldConfigCustomData,
 } from '../ui/autoform';
 
+function isThenable(value: unknown): value is PromiseLike<unknown> {
+  if (!value) return false;
+  if (typeof value !== 'object' && typeof value !== 'function') {
+    return false;
+  }
+  return typeof (value as { then?: unknown }).then === 'function';
+}
+
 export function getDeriveFn(
   customData: FieldConfigCustomData | undefined,
 ): DeriveFn | undefined {
@@ -29,7 +37,7 @@ export function applyDerivedValuesToRow(
         sourceRow: null as never,
       }),
     );
-    if (result instanceof Promise) {
+    if (isThenable(result)) {
       continue;
     }
     if (!result) {
