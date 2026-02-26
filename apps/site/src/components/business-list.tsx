@@ -90,7 +90,7 @@ export function BusinessList(props: BusinessListProps) {
                     <CardContent className="flex-grow flex flex-col gap-2 justify-end pt-0">
                       <Button asChild className="w-full">
                         <Link
-                          to="/$businessName/$subdomain"
+                          to="/$businessName/{-$subdomain}"
                           params={{
                             businessName: business.basePath ?? '',
                             subdomain: 'index',
@@ -132,7 +132,7 @@ export function BusinessList(props: BusinessListProps) {
                                 asChild
                               >
                                 <Link
-                                  to="/$businessName/$subdomain"
+                                  to="/$businessName/{-$subdomain}"
                                   params={{
                                     businessName: business.basePath ?? '',
                                     subdomain: 'index',
@@ -164,7 +164,7 @@ export function BusinessList(props: BusinessListProps) {
                                 asChild
                               >
                                 <Link
-                                  to="/$businessName/$subdomain"
+                                  to="/$businessName/{-$subdomain}"
                                   params={{
                                     businessName: business.basePath ?? '',
                                     subdomain,

@@ -415,7 +415,7 @@ function SortableBusinessIcon({
       {...attributes}
     >
       <Link
-        to="/$businessName/$subdomain"
+        to="/$businessName/{-$subdomain}"
         params={{ businessName: business.basePath ?? '', subdomain: 'index' }}
         className="flex flex-col items-center"
         onClick={() => {
@@ -717,7 +717,7 @@ function FolderAppIcon({
     <Link
       ref={setNodeRef}
       style={style}
-      to="/$businessName/$subdomain"
+      to="/$businessName/{-$subdomain}"
       params={{ businessName: app.basePath ?? '', subdomain: 'index' }}
       className="flex flex-col items-center"
       onClick={(e) => {

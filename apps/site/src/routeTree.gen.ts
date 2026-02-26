@@ -18,12 +18,11 @@ import { Route as BusinessNameRouteImport } from './routes/$businessName'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PluginStudioIndexRouteImport } from './routes/plugin-studio/index'
 import { Route as AppsIndexRouteImport } from './routes/apps/index'
-import { Route as BusinessNameIndexRouteImport } from './routes/$businessName/index'
 import { Route as V1ModelsRouteImport } from './routes/v1/models'
 import { Route as ChatCompletionsRouteImport } from './routes/chat/completions'
 import { Route as BusinessChatRouteImport } from './routes/_business/chat'
 import { Route as AuthAuthRouteImport } from './routes/_auth/auth'
-import { Route as BusinessNameSubdomainRouteImport } from './routes/$businessName/$subdomain'
+import { Route as BusinessNameChar123SubdomainChar125RouteImport } from './routes/$businessName/{-$subdomain}'
 import { Route as PluginStudioProjectIdIndexRouteImport } from './routes/plugin-studio/$projectId/index'
 import { Route as V1ChatCompletionsRouteImport } from './routes/v1/chat/completions'
 import { Route as V1AuthSessionsRouteImport } from './routes/v1/auth/sessions'
@@ -90,11 +89,6 @@ const AppsIndexRoute = AppsIndexRouteImport.update({
   path: '/apps/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BusinessNameIndexRoute = BusinessNameIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => BusinessNameRoute,
-} as any)
 const V1ModelsRoute = V1ModelsRouteImport.update({
   id: '/v1/models',
   path: '/v1/models',
@@ -115,11 +109,12 @@ const AuthAuthRoute = AuthAuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => AuthRoute,
 } as any)
-const BusinessNameSubdomainRoute = BusinessNameSubdomainRouteImport.update({
-  id: '/$subdomain',
-  path: '/$subdomain',
-  getParentRoute: () => BusinessNameRoute,
-} as any)
+const BusinessNameChar123SubdomainChar125Route =
+  BusinessNameChar123SubdomainChar125RouteImport.update({
+    id: '/{-$subdomain}',
+    path: '/{-$subdomain}',
+    getParentRoute: () => BusinessNameRoute,
+  } as any)
 const PluginStudioProjectIdIndexRoute =
   PluginStudioProjectIdIndexRouteImport.update({
     id: '/plugin-studio/$projectId/',
@@ -248,12 +243,11 @@ export interface FileRoutesByFullPath {
   '/create-business': typeof CreateBusinessRoute
   '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
-  '/$businessName/$subdomain': typeof BusinessNameSubdomainRoute
+  '/$businessName/{-$subdomain}': typeof BusinessNameChar123SubdomainChar125Route
   '/auth': typeof AuthAuthRoute
   '/chat': typeof BusinessChatRoute
   '/chat/completions': typeof ChatCompletionsRoute
   '/v1/models': typeof V1ModelsRoute
-  '/$businessName/': typeof BusinessNameIndexRoute
   '/apps/': typeof AppsIndexRoute
   '/plugin-studio/': typeof PluginStudioIndexRoute
   '/$businessName/admin/editor': typeof BusinessNameAdminEditorRoute
@@ -280,16 +274,16 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/$businessName': typeof BusinessNameRouteWithChildren
   '/admin': typeof AdminRoute
   '/create-business': typeof CreateBusinessRoute
   '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
-  '/$businessName/$subdomain': typeof BusinessNameSubdomainRoute
+  '/$businessName/{-$subdomain}': typeof BusinessNameChar123SubdomainChar125Route
   '/auth': typeof AuthAuthRoute
   '/chat': typeof BusinessChatRoute
   '/chat/completions': typeof ChatCompletionsRoute
   '/v1/models': typeof V1ModelsRoute
-  '/$businessName': typeof BusinessNameIndexRoute
   '/apps': typeof AppsIndexRoute
   '/plugin-studio': typeof PluginStudioIndexRoute
   '/$businessName/admin/editor': typeof BusinessNameAdminEditorRoute
@@ -323,12 +317,11 @@ export interface FileRoutesById {
   '/create-business': typeof CreateBusinessRoute
   '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
-  '/$businessName/$subdomain': typeof BusinessNameSubdomainRoute
+  '/$businessName/{-$subdomain}': typeof BusinessNameChar123SubdomainChar125Route
   '/_auth/auth': typeof AuthAuthRoute
   '/_business/chat': typeof BusinessChatRoute
   '/chat/completions': typeof ChatCompletionsRoute
   '/v1/models': typeof V1ModelsRoute
-  '/$businessName/': typeof BusinessNameIndexRoute
   '/apps/': typeof AppsIndexRoute
   '/plugin-studio/': typeof PluginStudioIndexRoute
   '/$businessName/admin/editor': typeof BusinessNameAdminEditorRoute
@@ -362,12 +355,11 @@ export interface FileRouteTypes {
     | '/create-business'
     | '/mcp'
     | '/privacy'
-    | '/$businessName/$subdomain'
+    | '/$businessName/{-$subdomain}'
     | '/auth'
     | '/chat'
     | '/chat/completions'
     | '/v1/models'
-    | '/$businessName/'
     | '/apps/'
     | '/plugin-studio/'
     | '/$businessName/admin/editor'
@@ -394,16 +386,16 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/$businessName'
     | '/admin'
     | '/create-business'
     | '/mcp'
     | '/privacy'
-    | '/$businessName/$subdomain'
+    | '/$businessName/{-$subdomain}'
     | '/auth'
     | '/chat'
     | '/chat/completions'
     | '/v1/models'
-    | '/$businessName'
     | '/apps'
     | '/plugin-studio'
     | '/$businessName/admin/editor'
@@ -436,12 +428,11 @@ export interface FileRouteTypes {
     | '/create-business'
     | '/mcp'
     | '/privacy'
-    | '/$businessName/$subdomain'
+    | '/$businessName/{-$subdomain}'
     | '/_auth/auth'
     | '/_business/chat'
     | '/chat/completions'
     | '/v1/models'
-    | '/$businessName/'
     | '/apps/'
     | '/plugin-studio/'
     | '/$businessName/admin/editor'
@@ -556,13 +547,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/$businessName/': {
-      id: '/$businessName/'
-      path: '/'
-      fullPath: '/$businessName/'
-      preLoaderRoute: typeof BusinessNameIndexRouteImport
-      parentRoute: typeof BusinessNameRoute
-    }
     '/v1/models': {
       id: '/v1/models'
       path: '/v1/models'
@@ -591,11 +575,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAuthRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/$businessName/$subdomain': {
-      id: '/$businessName/$subdomain'
-      path: '/$subdomain'
-      fullPath: '/$businessName/$subdomain'
-      preLoaderRoute: typeof BusinessNameSubdomainRouteImport
+    '/$businessName/{-$subdomain}': {
+      id: '/$businessName/{-$subdomain}'
+      path: '/{-$subdomain}'
+      fullPath: '/$businessName/{-$subdomain}'
+      preLoaderRoute: typeof BusinessNameChar123SubdomainChar125RouteImport
       parentRoute: typeof BusinessNameRoute
     }
     '/plugin-studio/$projectId/': {
@@ -764,8 +748,7 @@ const BusinessNameAdminPluginPluginIdRouteWithChildren =
   )
 
 interface BusinessNameRouteChildren {
-  BusinessNameSubdomainRoute: typeof BusinessNameSubdomainRoute
-  BusinessNameIndexRoute: typeof BusinessNameIndexRoute
+  BusinessNameChar123SubdomainChar125Route: typeof BusinessNameChar123SubdomainChar125Route
   BusinessNameAdminEditorRoute: typeof BusinessNameAdminEditorRoute
   BusinessNameAdminInvitationRoute: typeof BusinessNameAdminInvitationRoute
   BusinessNameAdminPluginsRoute: typeof BusinessNameAdminPluginsRoute
@@ -773,8 +756,8 @@ interface BusinessNameRouteChildren {
 }
 
 const BusinessNameRouteChildren: BusinessNameRouteChildren = {
-  BusinessNameSubdomainRoute: BusinessNameSubdomainRoute,
-  BusinessNameIndexRoute: BusinessNameIndexRoute,
+  BusinessNameChar123SubdomainChar125Route:
+    BusinessNameChar123SubdomainChar125Route,
   BusinessNameAdminEditorRoute: BusinessNameAdminEditorRoute,
   BusinessNameAdminInvitationRoute: BusinessNameAdminInvitationRoute,
   BusinessNameAdminPluginsRoute: BusinessNameAdminPluginsRoute,

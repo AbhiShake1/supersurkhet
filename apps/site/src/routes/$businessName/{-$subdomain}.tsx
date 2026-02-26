@@ -9,17 +9,18 @@ import { useBusinessSubdomainLayersState } from '@/config/business-config';
 import { api } from '@/lib/api';
 import { hasBusinessAccess } from '@/lib/business-access';
 
-export const Route = createFileRoute('/$businessName/$subdomain')({
+export const Route = createFileRoute('/$businessName/{-$subdomain}')({
   component: BusinessSubdomainRoute,
 });
 
 function BusinessSubdomainRoute() {
   const { businessName, subdomain } = Route.useParams();
+  const resolvedSubdomain = subdomain?.trim() ? subdomain : 'index';
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const { promptLogin, closeLoginPrompt } = useLoginPrompt();
   const { layers, guardRule, isLoading } = useBusinessSubdomainLayersState({
     slug: businessName,
-    subdomain,
+    subdomain: resolvedSubdomain,
   });
   const businessQuery = api.business.useGet({
     keys: [businessName],
@@ -87,7 +88,7 @@ function BusinessSubdomainRoute() {
   return (
     <CustomUiRendererPage
       slug={businessName}
-      pageName={subdomain}
+      pageName={resolvedSubdomain}
       layersOverride={layers ?? undefined}
     />
   );
