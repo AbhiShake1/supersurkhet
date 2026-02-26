@@ -8,26 +8,108 @@ import {
   RotateCcw,
   Zap,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import type { DataMatrixAction } from '@/lib/datamatrix';
 import {
-  type DataMatrixAction,
-  dataMatrixActionSchema,
-} from '@/lib/datamatrix';
+  evaluateLocationDwell,
+  type LocationDwellPolicyInput,
+  type LocationSampleLike,
+} from '@/lib/datamatrix/location-dwell';
+import {
+  createScanRouter,
+  type ScanRouteFallbackResult,
+  type ScanRouterOptions,
+} from '@/lib/datamatrix/scan-router';
+import {
+  createVisionFallbackState,
+  type VisionFallbackResponse,
+} from '@/lib/datamatrix/vision-fallback';
+import { runDataMatrixVisionFallback } from '@/server-functions/datamatrix-vision';
 
 interface ScannerProps {
   onActionDetected?: (action: DataMatrixAction) => void;
+  onFallbackRouted?: (result: ScanRouteFallbackResult) => void;
+  verifySignedToken?: ScanRouterOptions['verifySignedToken'];
   showControls?: boolean;
   showManualInput?: boolean;
   showScanResults?: boolean;
 }
 
+const MAX_LOCATION_SAMPLES = 24;
+const GEOLOCATION_TIMEOUT_MS = 2_500;
+const GEOLOCATION_MAX_AGE_MS = 5_000;
+
+function asLocationDwellPolicyInput(
+  value: unknown,
+): LocationDwellPolicyInput | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return undefined;
+  }
+  return value as LocationDwellPolicyInput;
+}
+
+async function captureLocationSample(): Promise<LocationSampleLike | null> {
+  if (
+    typeof navigator === 'undefined' ||
+    !('geolocation' in navigator) ||
+    !navigator.geolocation
+  ) {
+    return null;
+  }
+
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracyMeters:
+            typeof position.coords.accuracy === 'number' &&
+            Number.isFinite(position.coords.accuracy)
+              ? position.coords.accuracy
+              : null,
+          timestampMs:
+            typeof position.timestamp === 'number' &&
+            Number.isFinite(position.timestamp)
+              ? position.timestamp
+              : Date.now(),
+          source: 'web_geolocation',
+        });
+      },
+      () => resolve(null),
+      {
+        enableHighAccuracy: true,
+        timeout: GEOLOCATION_TIMEOUT_MS,
+        maximumAge: GEOLOCATION_MAX_AGE_MS,
+      },
+    );
+  });
+}
+
+function isVisionFallbackResponse(
+  value: unknown,
+): value is VisionFallbackResponse {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
+
+  const candidate = value as Record<string, unknown>;
+  return (
+    candidate.route === 'vision_fallback' &&
+    typeof candidate.status === 'string' &&
+    typeof candidate.summary === 'string'
+  );
+}
+
 export function DataMatrixScanner({
   onActionDetected,
+  onFallbackRouted,
+  verifySignedToken,
   showControls = true,
   showManualInput = true,
   showScanResults = true,
@@ -38,44 +120,179 @@ export function DataMatrixScanner({
     null,
   );
   const [error, setError] = useState<string | null>(null);
+  const [agentMessage, setAgentMessage] = useState<string | null>(null);
   const [manualInput, setManualInput] = useState('');
+  const onActionDetectedRef = useRef(onActionDetected);
+  const onFallbackRoutedRef = useRef(onFallbackRouted);
+  const scanSessionIdRef = useRef(
+    `web-scan-session-${Math.random().toString(36).slice(2, 10)}`,
+  );
+  const locationSamplesRef = useRef<LocationSampleLike[]>([]);
+  const visionFallbackStateRef = useRef(createVisionFallbackState());
+  onActionDetectedRef.current = onActionDetected;
+  onFallbackRoutedRef.current = onFallbackRouted;
+
+  const evaluateLocation: ScanRouterOptions['evaluateLocation'] = async (
+    payload,
+  ) => {
+    const sample = await captureLocationSample();
+    if (sample) {
+      locationSamplesRef.current = [
+        ...locationSamplesRef.current.slice(-(MAX_LOCATION_SAMPLES - 1)),
+        sample,
+      ];
+    }
+
+    const decision = evaluateLocationDwell({
+      samples: locationSamplesRef.current,
+      engineDefinition: {
+        engineId: payload.engineId,
+        locationPolicy: asLocationDwellPolicyInput(payload.locationPolicy),
+      },
+    });
+
+    return {
+      status: decision.status,
+      reason:
+        decision.reasons.length > 0
+          ? decision.reasons.join(',')
+          : `location-${decision.status}`,
+      shouldProceed: decision.shouldProceed,
+      executionMode: decision.executionMode,
+      confidence: decision.confidence,
+      reasons: decision.reasons,
+    };
+  };
+
+  const scanRouterRef = useRef(
+    createScanRouter({
+      verifySignedToken:
+        verifySignedToken ??
+        (({ signature }) => {
+          return signature.trim().length > 0;
+        }),
+      evaluateLocation,
+      appendAgentMessage: (message) => {
+        setAgentMessage(message);
+      },
+      invokeFallbackAi: async (input) => {
+        try {
+          const visionOutcome = await runDataMatrixVisionFallback({
+            data: {
+              sessionId: scanSessionIdRef.current,
+              scanAttemptId: input.routeId,
+              scanPayload: input.rawScan,
+              occurredAt: Date.now(),
+              providerPreference: 'auto',
+              state: visionFallbackStateRef.current,
+            },
+          });
+          visionFallbackStateRef.current = visionOutcome.state;
+          return visionOutcome.response;
+        } catch (error) {
+          console.error('Vision fallback invocation failed:', error);
+          return {
+            route: 'vision_fallback',
+            sessionId: scanSessionIdRef.current,
+            scanAttemptId: input.routeId,
+            scanHash: input.dedupeKey,
+            status: 'failed',
+            providerTag: null,
+            providerId: null,
+            reason: 'provider_error',
+            summary: 'Vision fallback invocation failed at runtime.',
+            payload: null,
+            upload: {
+              performed: false,
+              reused: false,
+              uploadId: null,
+            },
+            attempts: [],
+            occurredAt: Date.now(),
+          } satisfies VisionFallbackResponse;
+        }
+      },
+      maxFallbackAiCalls: 3,
+      dedupeWindowMs: 45_000,
+    }),
+  );
 
   // Handle scan result
-  const handleScan = (result: string) => {
+  const handleScan = async (result: string) => {
     if (!result) return;
 
     setScannedData(result);
-    parseActionData(result);
-  };
-
-  // Parse action data from scanned string
-  const parseActionData = (data: string) => {
     try {
-      // Try to parse as JSON
-      const parsed = JSON.parse(data);
+      const route = await scanRouterRef.current.routeScan(result, {
+        source: 'web_scanner',
+        sessionId: scanSessionIdRef.current,
+      });
 
-      // Validate against schema
-      const validatedAction = dataMatrixActionSchema.parse(parsed);
+      if (route.lane === 'deterministic') {
+        setError(null);
+        setParsedAction(route.action ?? null);
+        if (route.action) {
+          onActionDetectedRef.current?.(route.action);
+        }
+        if (route.outcome === 'blocked_location') {
+          toast.error('Deterministic scan waiting for stable location.');
+        } else if (route.location.status !== 'stable') {
+          toast.success('Deterministic scan routed in partial location mode.');
+        } else {
+          toast.success('Deterministic scan routed.');
+        }
+        return;
+      }
 
-      setParsedAction(validatedAction);
-      setError(null);
-
-      // Notify parent component
-      onActionDetected?.(validatedAction);
-
-      toast.success('Action detected successfully!');
-    } catch (err) {
-      console.error('Failed to parse action data:', err);
-      setError('Failed to parse scanned data. Please try again.');
       setParsedAction(null);
-      toast.error('Invalid action data');
+      setAgentMessage(null);
+      setError(
+        `Fallback lane (${route.outcome}): ${route.parserErrorCode.replaceAll('_', ' ')}`,
+      );
+      const visionResponse = isVisionFallbackResponse(route.fallbackResponse)
+        ? route.fallbackResponse
+        : null;
+      if (visionResponse?.summary) {
+        setAgentMessage(visionResponse.summary);
+      }
+      onFallbackRoutedRef.current?.(route);
+      if (route.outcome === 'ai_invoked') {
+        if (visionResponse?.status === 'resolved') {
+          toast.success('Fallback AI resolved scan content.');
+        } else if (visionResponse?.status === 'blocked') {
+          setError(
+            `Fallback lane blocked by policy (${visionResponse.reason ?? 'unknown_reason'}).`,
+          );
+          toast.error('Fallback AI blocked by budget policy.');
+        } else if (visionResponse?.status === 'failed') {
+          setError(
+            `Fallback lane failed (${visionResponse.reason ?? 'provider_error'}).`,
+          );
+          toast.error('Fallback AI provider failed to resolve this scan.');
+        } else {
+          toast.success('Fallback AI routing triggered.');
+        }
+      } else if (route.outcome === 'suppressed_deduped') {
+        toast.error('Duplicate scan suppressed to avoid repeated AI calls.');
+      } else if (route.outcome === 'suppressed_budget') {
+        toast.error('Fallback AI budget reached for this scan session.');
+      } else {
+        toast.error(
+          'Fallback routing available but AI path is not configured.',
+        );
+      }
+    } catch (error) {
+      console.error('Scan routing failed:', error);
+      setParsedAction(null);
+      setError('Failed to route scanned data. Please try again.');
+      toast.error('Scan routing failed');
     }
   };
 
   // Handle manual input submission
   const handleSubmitManualInput = () => {
     if (manualInput.trim()) {
-      parseActionData(manualInput);
+      void handleScan(manualInput);
     }
   };
 
@@ -84,7 +301,11 @@ export function DataMatrixScanner({
     setScannedData(null);
     setParsedAction(null);
     setError(null);
+    setAgentMessage(null);
     setManualInput('');
+    locationSamplesRef.current = [];
+    visionFallbackStateRef.current = createVisionFallbackState();
+    scanRouterRef.current.resetBudgets();
   };
 
   return (
@@ -102,7 +323,9 @@ export function DataMatrixScanner({
             {isScanning ? (
               <div className="relative rounded-lg overflow-hidden border">
                 <QrScanner
-                  onScan={(result) => handleScan(result[0]?.rawValue || '')}
+                  onScan={(result) => {
+                    void handleScan(result[0]?.rawValue || '');
+                  }}
                   onError={(err) => {
                     console.error('Scanner error:', err);
                     setError(
@@ -200,6 +423,11 @@ export function DataMatrixScanner({
               {error && (
                 <div className="p-3 bg-red-100 text-red-800 rounded-md">
                   {error}
+                </div>
+              )}
+              {agentMessage && (
+                <div className="p-3 bg-blue-100 text-blue-900 rounded-md">
+                  {agentMessage}
                 </div>
               )}
 
