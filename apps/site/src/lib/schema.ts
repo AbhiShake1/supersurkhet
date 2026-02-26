@@ -25,9 +25,13 @@ import {
   businessUiTemplateInstallSchema,
   cliApiTokenSchema,
   cliSchemaSnapshotSchema,
+  dataMatrixV2CallbackReceiptSchema,
   dataMatrixV2EventLogSchema,
   dataMatrixV2QueueJobSchema,
+  dataMatrixV2RetryHandoffSchema,
   dataMatrixV2RunSchema,
+  dataMatrixV2RunStateSchema,
+  dataMatrixV2RunStepSchema,
   dataMatrixV2SchedulerSchema,
   dataMatrixV2StepAttemptSchema,
   pluginActionCapabilityEnvelopeSchema,
@@ -94,25 +98,22 @@ const PartyManagement = React.lazy(
 const InvoiceManagement = React.lazy(
   () => import('@/components/ui/admin/invoice-management'),
 );
-const InventoryLedgerManagement = React.lazy(
-  () =>
-    import('@/components/ui/admin/inventory-ledger-management').then(
-      (module) => ({
-        default: module.InventoryLedgerManagement,
-      }),
-    ),
+const InventoryLedgerManagement = React.lazy(() =>
+  import('@/components/ui/admin/inventory-ledger-management').then(
+    (module) => ({
+      default: module.InventoryLedgerManagement,
+    }),
+  ),
 );
-const PaymentManagement = React.lazy(
-  () =>
-    import('@/components/ui/admin/payment-management').then((module) => ({
-      default: module.PaymentManagement,
-    })),
+const PaymentManagement = React.lazy(() =>
+  import('@/components/ui/admin/payment-management').then((module) => ({
+    default: module.PaymentManagement,
+  })),
 );
-const TransactionManagement = React.lazy(
-  () =>
-    import('@/components/ui/admin/transaction-management').then((module) => ({
-      default: module.TransactionManagement,
-    })),
+const TransactionManagement = React.lazy(() =>
+  import('@/components/ui/admin/transaction-management').then((module) => ({
+    default: module.TransactionManagement,
+  })),
 );
 const DataMatrixFlowBuilder = React.lazy(
   () => import('@/components/ui/admin/datamatrix-flow-builder'),
@@ -494,6 +495,30 @@ export const coreSchema = createSchema({
     icon: List,
     group: 'Plugin Platform',
   },
+  dataMatrixV2CallbackReceipt: {
+    schema: dataMatrixV2CallbackReceiptSchema,
+    title: 'DataMatrix V2 Callback Receipts',
+    icon: List,
+    group: 'Plugin Platform',
+  },
+  dataMatrixV2RunState: {
+    schema: dataMatrixV2RunStateSchema,
+    title: 'DataMatrix V2 Run States',
+    icon: List,
+    group: 'Plugin Platform',
+  },
+  dataMatrixV2RunStep: {
+    schema: dataMatrixV2RunStepSchema,
+    title: 'DataMatrix V2 Run Steps',
+    icon: List,
+    group: 'Plugin Platform',
+  },
+  dataMatrixV2RetryHandoff: {
+    schema: dataMatrixV2RetryHandoffSchema,
+    title: 'DataMatrix V2 Retry Handoffs',
+    icon: List,
+    group: 'Plugin Platform',
+  },
   cliApiToken: {
     schema: cliApiTokenSchema,
     title: 'CLI API Tokens',
@@ -564,6 +589,18 @@ export const featureSchema = createSchema({
         {
           name: 'Invoices By Parties',
           component: InvoiceManagement,
+        },
+        {
+          name: 'Payments',
+          component: PaymentManagement,
+        },
+        {
+          name: 'Transactions',
+          component: TransactionManagement,
+        },
+        {
+          name: 'Inventory Ledger',
+          component: InventoryLedgerManagement,
         },
       ];
     },
@@ -726,6 +763,12 @@ export type DataMatrixV2QueueJob = InferredTable<'dataMatrixV2QueueJob'>;
 export type DataMatrixV2Run = InferredTable<'dataMatrixV2Run'>;
 export type DataMatrixV2StepAttempt = InferredTable<'dataMatrixV2StepAttempt'>;
 export type DataMatrixV2EventLog = InferredTable<'dataMatrixV2EventLog'>;
+export type DataMatrixV2CallbackReceipt =
+  InferredTable<'dataMatrixV2CallbackReceipt'>;
+export type DataMatrixV2RunState = InferredTable<'dataMatrixV2RunState'>;
+export type DataMatrixV2RunStep = InferredTable<'dataMatrixV2RunStep'>;
+export type DataMatrixV2RetryHandoff =
+  InferredTable<'dataMatrixV2RetryHandoff'>;
 export type CliApiToken = InferredTable<'cliApiToken'>;
 export type CliSchemaSnapshot = InferredTable<'cliSchemaSnapshot'>;
 // #endregion
@@ -737,9 +780,13 @@ export {
   cliApiTokenSchema,
   cliSchemaSnapshotSchema,
   compilePluginSchemasFromDocs,
+  dataMatrixV2CallbackReceiptSchema,
   dataMatrixV2EventLogSchema,
   dataMatrixV2QueueJobSchema,
+  dataMatrixV2RetryHandoffSchema,
   dataMatrixV2RunSchema,
+  dataMatrixV2RunStateSchema,
+  dataMatrixV2RunStepSchema,
   dataMatrixV2SchedulerSchema,
   dataMatrixV2StepAttemptSchema,
   pluginActionCapabilityEnvelopeSchema,

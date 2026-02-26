@@ -452,6 +452,7 @@ declare global {
      expression?: unknown;
     }>]>>;
      runIf: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     retryClass: import("zod").ZodOptional<import("zod").ZodEnum<["interactive_fast_fail", "device_bridge", "commit_background", "scheduled_batch"]>>;
      retryPolicy: import("zod").ZodOptional<import("zod").ZodObject<{
      maxAttempts: import("zod").ZodNumber;
      backoffMs: import("zod").ZodOptional<import("zod").ZodNumber>;
@@ -472,6 +473,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -486,6 +488,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -537,6 +540,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -569,6 +573,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -614,6 +619,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -659,6 +665,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -762,6 +769,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -842,6 +850,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -1089,6 +1098,7 @@ declare global {
      expression?: unknown;
     }>]>>;
      runIf: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     retryClass: import("zod").ZodOptional<import("zod").ZodEnum<["interactive_fast_fail", "device_bridge", "commit_background", "scheduled_batch"]>>;
      retryPolicy: import("zod").ZodOptional<import("zod").ZodObject<{
      maxAttempts: import("zod").ZodNumber;
      backoffMs: import("zod").ZodOptional<import("zod").ZodNumber>;
@@ -1109,6 +1119,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -1123,6 +1134,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -1174,6 +1186,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -1206,6 +1219,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -1251,6 +1265,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -1296,6 +1311,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -1399,6 +1415,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -1479,6 +1496,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -1563,6 +1581,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -1648,6 +1667,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -1770,6 +1790,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -1883,6 +1904,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -2474,6 +2496,7 @@ declare global {
      expression?: unknown;
     }>]>>;
      runIf: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     retryClass: import("zod").ZodOptional<import("zod").ZodEnum<["interactive_fast_fail", "device_bridge", "commit_background", "scheduled_batch"]>>;
      retryPolicy: import("zod").ZodOptional<import("zod").ZodObject<{
      maxAttempts: import("zod").ZodNumber;
      backoffMs: import("zod").ZodOptional<import("zod").ZodNumber>;
@@ -2494,6 +2517,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -2508,6 +2532,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -2559,6 +2584,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -2591,6 +2617,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -2636,6 +2663,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -2681,6 +2709,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -2769,6 +2798,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -2852,6 +2882,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -4021,6 +4052,669 @@ declare global {
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Plugin Platform";
     };
+     readonly dataMatrixV2Scheduler: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     businessId: import("zod").ZodString;
+     workflowId: import("zod").ZodString;
+     status: import("zod").ZodDefault<import("zod").ZodEnum<["active", "paused"]>>;
+     intervalMinutes: import("zod").ZodNumber;
+     timezone: import("zod").ZodDefault<import("zod").ZodString>;
+     payloadTemplate: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     retryClass: import("zod").ZodOptional<import("zod").ZodEnum<["interactive_fast_fail", "device_bridge", "commit_background", "scheduled_batch"]>>;
+     retryPolicy: import("zod").ZodOptional<import("zod").ZodObject<{
+     maxAttempts: import("zod").ZodNumber;
+     backoffMs: import("zod").ZodNumber;
+    }, "strip", import("zod").ZodTypeAny, {
+     maxAttempts: number;
+     backoffMs: number;
+    }, {
+     maxAttempts: number;
+     backoffMs: number;
+    }>>;
+     nextRunAt: import("zod").ZodString;
+     lastRunAt: import("zod").ZodOptional<import("zod").ZodString>;
+     createdAt: import("zod").ZodString;
+     updatedAt: import("zod").ZodString;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     status: "active" | "paused";
+     id: string;
+     businessId: string;
+     workflowId: string;
+     createdAt: string;
+     updatedAt: string;
+     nextRunAt: string;
+     intervalMinutes: number;
+     timezone: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    } | undefined;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs: number;
+    } | undefined;
+     payloadTemplate?: unknown;
+     lastRunAt?: string | undefined;
+    }, {
+     id: string;
+     businessId: string;
+     workflowId: string;
+     createdAt: string;
+     updatedAt: string;
+     nextRunAt: string;
+     intervalMinutes: number;
+     status?: "active" | "paused" | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    } | undefined;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs: number;
+    } | undefined;
+     timezone?: string | undefined;
+     payloadTemplate?: unknown;
+     lastRunAt?: string | undefined;
+    }>;
+     readonly title: "DataMatrix V2 Schedulers";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
+     readonly dataMatrixV2QueueJob: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     businessId: import("zod").ZodString;
+     schedulerId: import("zod").ZodOptional<import("zod").ZodString>;
+     workflowId: import("zod").ZodString;
+     status: import("zod").ZodEnum<["queued", "leased", "running", "completed", "failed", "cancelled"]>;
+     payload: import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>;
+     retryClass: import("zod").ZodOptional<import("zod").ZodEnum<["interactive_fast_fail", "device_bridge", "commit_background", "scheduled_batch"]>>;
+     retryPolicy: import("zod").ZodOptional<import("zod").ZodObject<{
+     maxAttempts: import("zod").ZodNumber;
+     backoffMs: import("zod").ZodNumber;
+    }, "strip", import("zod").ZodTypeAny, {
+     maxAttempts: number;
+     backoffMs: number;
+    }, {
+     maxAttempts: number;
+     backoffMs: number;
+    }>>;
+     attempts: import("zod").ZodNumber;
+     nextRunAt: import("zod").ZodString;
+     leaseOwner: import("zod").ZodOptional<import("zod").ZodString>;
+     leasedAt: import("zod").ZodOptional<import("zod").ZodString>;
+     leaseExpiresAt: import("zod").ZodOptional<import("zod").ZodString>;
+     startedAt: import("zod").ZodOptional<import("zod").ZodString>;
+     completedAt: import("zod").ZodOptional<import("zod").ZodString>;
+     failedAt: import("zod").ZodOptional<import("zod").ZodString>;
+     lastErrorCode: import("zod").ZodOptional<import("zod").ZodString>;
+     lastErrorMessage: import("zod").ZodOptional<import("zod").ZodString>;
+     clientTimezone: import("zod").ZodDefault<import("zod").ZodString>;
+     createdAt: import("zod").ZodString;
+     updatedAt: import("zod").ZodString;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     status: "queued" | "leased" | "running" | "completed" | "failed" | "cancelled";
+     id: string;
+     businessId: string;
+     workflowId: string;
+     createdAt: string;
+     updatedAt: string;
+     attempts: number;
+     nextRunAt: string;
+     clientTimezone: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    } | undefined;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs: number;
+    } | undefined;
+     payload?: unknown;
+     leasedAt?: string | undefined;
+     failedAt?: string | undefined;
+     schedulerId?: string | undefined;
+     leaseOwner?: string | undefined;
+     leaseExpiresAt?: string | undefined;
+     startedAt?: string | undefined;
+     completedAt?: string | undefined;
+     lastErrorCode?: string | undefined;
+     lastErrorMessage?: string | undefined;
+    }, {
+     status: "queued" | "leased" | "running" | "completed" | "failed" | "cancelled";
+     id: string;
+     businessId: string;
+     workflowId: string;
+     createdAt: string;
+     updatedAt: string;
+     attempts: number;
+     nextRunAt: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    } | undefined;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs: number;
+    } | undefined;
+     payload?: unknown;
+     leasedAt?: string | undefined;
+     failedAt?: string | undefined;
+     schedulerId?: string | undefined;
+     leaseOwner?: string | undefined;
+     leaseExpiresAt?: string | undefined;
+     startedAt?: string | undefined;
+     completedAt?: string | undefined;
+     lastErrorCode?: string | undefined;
+     lastErrorMessage?: string | undefined;
+     clientTimezone?: string | undefined;
+    }>;
+     readonly title: "DataMatrix V2 Queue Jobs";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
+     readonly dataMatrixV2Run: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     jobId: import("zod").ZodString;
+     schedulerId: import("zod").ZodOptional<import("zod").ZodString>;
+     businessId: import("zod").ZodString;
+     workflowId: import("zod").ZodString;
+     attempt: import("zod").ZodNumber;
+     status: import("zod").ZodEnum<["running", "completed", "failed", "cancelled"]>;
+     retryClass: import("zod").ZodOptional<import("zod").ZodEnum<["interactive_fast_fail", "device_bridge", "commit_background", "scheduled_batch"]>>;
+     startedAt: import("zod").ZodString;
+     finishedAt: import("zod").ZodOptional<import("zod").ZodString>;
+     errorCode: import("zod").ZodOptional<import("zod").ZodString>;
+     errorMessage: import("zod").ZodOptional<import("zod").ZodString>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     status: "running" | "completed" | "failed" | "cancelled";
+     id: string;
+     businessId: string;
+     workflowId: string;
+     jobId: string;
+     attempt: number;
+     startedAt: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    } | undefined;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
+     finishedAt?: string | undefined;
+     errorCode?: string | undefined;
+     errorMessage?: string | undefined;
+     schedulerId?: string | undefined;
+    }, {
+     status: "running" | "completed" | "failed" | "cancelled";
+     id: string;
+     businessId: string;
+     workflowId: string;
+     jobId: string;
+     attempt: number;
+     startedAt: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    } | undefined;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
+     finishedAt?: string | undefined;
+     errorCode?: string | undefined;
+     errorMessage?: string | undefined;
+     schedulerId?: string | undefined;
+    }>;
+     readonly title: "DataMatrix V2 Runs";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
+     readonly dataMatrixV2StepAttempt: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     runId: import("zod").ZodString;
+     jobId: import("zod").ZodString;
+     stepId: import("zod").ZodString;
+     attempt: import("zod").ZodNumber;
+     status: import("zod").ZodEnum<["running", "completed", "failed", "skipped", "cancelled"]>;
+     startedAt: import("zod").ZodString;
+     finishedAt: import("zod").ZodOptional<import("zod").ZodString>;
+     output: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     errorCode: import("zod").ZodOptional<import("zod").ZodString>;
+     errorMessage: import("zod").ZodOptional<import("zod").ZodString>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     status: "running" | "completed" | "failed" | "cancelled" | "skipped";
+     id: string;
+     jobId: string;
+     attempt: number;
+     startedAt: string;
+     runId: string;
+     stepId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    } | undefined;
+     finishedAt?: string | undefined;
+     errorCode?: string | undefined;
+     errorMessage?: string | undefined;
+     output?: unknown;
+    }, {
+     status: "running" | "completed" | "failed" | "cancelled" | "skipped";
+     id: string;
+     jobId: string;
+     attempt: number;
+     startedAt: string;
+     runId: string;
+     stepId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    } | undefined;
+     finishedAt?: string | undefined;
+     errorCode?: string | undefined;
+     errorMessage?: string | undefined;
+     output?: unknown;
+    }>;
+     readonly title: "DataMatrix V2 Step Attempts";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
+     readonly dataMatrixV2EventLog: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     businessId: import("zod").ZodString;
+     schedulerId: import("zod").ZodOptional<import("zod").ZodString>;
+     jobId: import("zod").ZodOptional<import("zod").ZodString>;
+     runId: import("zod").ZodOptional<import("zod").ZodString>;
+     stepAttemptId: import("zod").ZodOptional<import("zod").ZodString>;
+     level: import("zod").ZodEnum<["info", "warn", "error"]>;
+     eventType: import("zod").ZodString;
+     message: import("zod").ZodString;
+     data: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     createdAt: import("zod").ZodString;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     message: string;
+     id: string;
+     businessId: string;
+     createdAt: string;
+     level: "error" | "info" | "warn";
+     eventType: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    } | undefined;
+     jobId?: string | undefined;
+     data?: unknown;
+     schedulerId?: string | undefined;
+     runId?: string | undefined;
+     stepAttemptId?: string | undefined;
+    }, {
+     message: string;
+     id: string;
+     businessId: string;
+     createdAt: string;
+     level: "error" | "info" | "warn";
+     eventType: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    } | undefined;
+     jobId?: string | undefined;
+     data?: unknown;
+     schedulerId?: string | undefined;
+     runId?: string | undefined;
+     stepAttemptId?: string | undefined;
+    }>;
+     readonly title: "DataMatrix V2 Event Logs";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
+     readonly dataMatrixV2CallbackReceipt: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     idempotencyKey: import("zod").ZodString;
+     fingerprint: import("zod").ZodString;
+     runId: import("zod").ZodString;
+     stepId: import("zod").ZodString;
+     attempt: import("zod").ZodNumber;
+     callbackAt: import("zod").ZodString;
+     callbackStatus: import("zod").ZodEnum<["completed", "failed"]>;
+     result: import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>;
+     createdAt: import("zod").ZodString;
+     updatedAt: import("zod").ZodString;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     id: string;
+     createdAt: string;
+     updatedAt: string;
+     idempotencyKey: string;
+     fingerprint: string;
+     attempt: number;
+     runId: string;
+     stepId: string;
+     callbackAt: string;
+     callbackStatus: "completed" | "failed";
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    } | undefined;
+     result?: unknown;
+    }, {
+     id: string;
+     createdAt: string;
+     updatedAt: string;
+     idempotencyKey: string;
+     fingerprint: string;
+     attempt: number;
+     runId: string;
+     stepId: string;
+     callbackAt: string;
+     callbackStatus: "completed" | "failed";
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    } | undefined;
+     result?: unknown;
+    }>;
+     readonly title: "DataMatrix V2 Callback Receipts";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
+     readonly dataMatrixV2RunState: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     runId: import("zod").ZodString;
+     status: import("zod").ZodEnum<["running", "queued", "completed", "failed"]>;
+     attempts: import("zod").ZodNumber;
+     lastStepId: import("zod").ZodString;
+     updatedAt: import("zod").ZodString;
+     nextRunAt: import("zod").ZodOptional<import("zod").ZodString>;
+     lastErrorCode: import("zod").ZodOptional<import("zod").ZodString>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     status: "queued" | "running" | "completed" | "failed";
+     id: string;
+     updatedAt: string;
+     attempts: number;
+     runId: string;
+     lastStepId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    } | undefined;
+     nextRunAt?: string | undefined;
+     lastErrorCode?: string | undefined;
+    }, {
+     status: "queued" | "running" | "completed" | "failed";
+     id: string;
+     updatedAt: string;
+     attempts: number;
+     runId: string;
+     lastStepId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    } | undefined;
+     nextRunAt?: string | undefined;
+     lastErrorCode?: string | undefined;
+    }>;
+     readonly title: "DataMatrix V2 Run States";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
+     readonly dataMatrixV2RunStep: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     runId: import("zod").ZodString;
+     stepId: import("zod").ZodString;
+     attempt: import("zod").ZodNumber;
+     status: import("zod").ZodEnum<["running", "retry_scheduled", "completed", "failed"]>;
+     updatedAt: import("zod").ZodString;
+     callbackAt: import("zod").ZodString;
+     lastCallbackId: import("zod").ZodString;
+     idempotencyKey: import("zod").ZodString;
+     result: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     errorCode: import("zod").ZodOptional<import("zod").ZodString>;
+     errorMessage: import("zod").ZodOptional<import("zod").ZodString>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     status: "running" | "completed" | "failed" | "retry_scheduled";
+     id: string;
+     updatedAt: string;
+     idempotencyKey: string;
+     attempt: number;
+     runId: string;
+     stepId: string;
+     callbackAt: string;
+     lastCallbackId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    } | undefined;
+     result?: unknown;
+     errorCode?: string | undefined;
+     errorMessage?: string | undefined;
+    }, {
+     status: "running" | "completed" | "failed" | "retry_scheduled";
+     id: string;
+     updatedAt: string;
+     idempotencyKey: string;
+     attempt: number;
+     runId: string;
+     stepId: string;
+     callbackAt: string;
+     lastCallbackId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    } | undefined;
+     result?: unknown;
+     errorCode?: string | undefined;
+     errorMessage?: string | undefined;
+    }>;
+     readonly title: "DataMatrix V2 Run Steps";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
+     readonly dataMatrixV2RetryHandoff: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     runId: import("zod").ZodString;
+     stepId: import("zod").ZodString;
+     attempt: import("zod").ZodNumber;
+     idempotencyKey: import("zod").ZodString;
+     nextRunAt: import("zod").ZodString;
+     reason: import("zod").ZodEnum<["device_bridge_retryable_failure"]>;
+     createdAt: import("zod").ZodString;
+     updatedAt: import("zod").ZodString;
+     enqueuedAt: import("zod").ZodOptional<import("zod").ZodString>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     id: string;
+     createdAt: string;
+     updatedAt: string;
+     idempotencyKey: string;
+     nextRunAt: string;
+     attempt: number;
+     runId: string;
+     stepId: string;
+     reason: "device_bridge_retryable_failure";
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    } | undefined;
+     enqueuedAt?: string | undefined;
+    }, {
+     id: string;
+     createdAt: string;
+     updatedAt: string;
+     idempotencyKey: string;
+     nextRunAt: string;
+     attempt: number;
+     runId: string;
+     stepId: string;
+     reason: "device_bridge_retryable_failure";
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     '>'?: Record<string, string | number> | undefined;
+    } | undefined;
+     enqueuedAt?: string | undefined;
+    }>;
+     readonly title: "DataMatrix V2 Retry Handoffs";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
      readonly cliApiToken: {
      readonly schema: import("zod").ZodObject<{
      id: import("zod").ZodString;
@@ -4152,6 +4846,7 @@ declare global {
      expression?: unknown;
     }>]>>;
      runIf: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     retryClass: import("zod").ZodOptional<import("zod").ZodEnum<["interactive_fast_fail", "device_bridge", "commit_background", "scheduled_batch"]>>;
      retryPolicy: import("zod").ZodOptional<import("zod").ZodObject<{
      maxAttempts: import("zod").ZodNumber;
      backoffMs: import("zod").ZodOptional<import("zod").ZodNumber>;
@@ -4172,6 +4867,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -4186,6 +4882,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -4237,6 +4934,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -4269,6 +4967,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -4314,6 +5013,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -4359,6 +5059,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -4423,6 +5124,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
@@ -4482,6 +5184,7 @@ declare global {
      kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
      maxAttempts: number;
      backoffMs?: number | undefined;
