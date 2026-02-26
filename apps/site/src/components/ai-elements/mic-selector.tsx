@@ -79,28 +79,32 @@ export const MicSelector = ({
   const [width, setWidth] = useState(200);
   const { devices, loading, hasPermission, loadDevices } = useAudioDevices();
 
-  useEffect(() => {
-    if (open && !hasPermission && !loading) {
-      loadDevices();
-    }
-  }, [open, hasPermission, loading, loadDevices]);
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      onOpenChange(nextOpen);
+      if (nextOpen && !hasPermission && !loading) {
+        void loadDevices();
+      }
+    },
+    [hasPermission, loadDevices, loading, onOpenChange],
+  );
 
   const contextValue = useMemo(
     () => ({
       data: devices,
-      onOpenChange,
+      onOpenChange: handleOpenChange,
       onValueChange,
       open,
       setWidth,
       value,
       width,
     }),
-    [devices, onOpenChange, onValueChange, open, value, width],
+    [devices, handleOpenChange, onValueChange, open, value, width],
   );
 
   return (
     <MicSelectorContext.Provider value={contextValue}>
-      <Popover {...props} onOpenChange={onOpenChange} open={open} />
+      <Popover {...props} onOpenChange={handleOpenChange} open={open} />
     </MicSelectorContext.Provider>
   );
 };
@@ -113,31 +117,33 @@ export const MicSelectorTrigger = ({
 }: MicSelectorTriggerProps) => {
   const { setWidth } = useContext(MicSelectorContext);
   const ref = useRef<HTMLButtonElement>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const setTriggerRef = useCallback(
+    (node: HTMLButtonElement | null) => {
+      resizeObserverRef.current?.disconnect();
+      resizeObserverRef.current = null;
+      ref.current = node;
 
-  useEffect(() => {
-    // Create a ResizeObserver to detect width changes
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const newWidth = (entry.target as HTMLElement).offsetWidth;
-        if (newWidth) {
-          setWidth?.(newWidth);
+      if (!node) return;
+
+      const resizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const newWidth = (entry.target as HTMLElement).offsetWidth;
+          if (newWidth) {
+            setWidth?.(newWidth);
+          }
         }
-      }
-    });
+      });
 
-    if (ref.current) {
-      resizeObserver.observe(ref.current);
-    }
-
-    // Clean up the observer when component unmounts
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [setWidth]);
+      resizeObserver.observe(node);
+      resizeObserverRef.current = resizeObserver;
+    },
+    [setWidth],
+  );
 
   return (
     <PopoverTrigger asChild>
-      <Button variant="outline" {...props} ref={ref}>
+      <Button variant="outline" {...props} ref={setTriggerRef}>
         {children}
         <ChevronsUpDownIcon
           className="shrink-0 text-muted-foreground"
@@ -277,7 +283,7 @@ export const MicSelectorValue = ({
 
 export const useAudioDevices = () => {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasPermission, setHasPermission] = useState(false);
 
@@ -337,10 +343,6 @@ export const useAudioDevices = () => {
       setLoading(false);
     }
   }, [loading]);
-
-  useEffect(() => {
-    loadDevicesWithoutPermission();
-  }, [loadDevicesWithoutPermission]);
 
   useEffect(() => {
     const handleDeviceChange = () => {

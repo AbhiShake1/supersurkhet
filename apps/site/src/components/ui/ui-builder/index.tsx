@@ -1,12 +1,6 @@
 import isDeepEqual from 'fast-deep-equal';
 import { ThemeProvider } from 'next-themes';
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { KeyboardShortcutsBoundary } from '@/components/ui/keyboard-shortcuts';
 import {
@@ -94,6 +88,7 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
   const editorInitializedRef = useRef(false);
   const layerInitializedRef = useRef(false);
   const lastEmittedPagesRef = useRef<ComponentLayer[] | null>(null);
+  const pendingOnChangePagesRef = useRef<ComponentLayer[] | null>(null);
 
   const memoizedDefaultTabsContent = useMemo(
     () => defaultConfigTabsContent(),
@@ -118,12 +113,7 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
     };
   }, [userPanelConfig, memoizedDefaultTabsContent, enableFocusMode]);
 
-  // Initialize editor/layer stores once per mounted builder instance.
-  useEffect(() => {
-    if (!layerStore || !editorStore) {
-      return;
-    }
-
+  if (layerStore && editorStore) {
     if (!editorInitializedRef.current) {
       editorStore.initialize(
         componentRegistry,
@@ -139,41 +129,39 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
         layerStore.initialize(initialLayers, undefined, undefined);
         const { clear } = useLayerStore.temporal.getState();
         clear();
-      } else if (!createNew) {
-        return;
+        layerInitializedRef.current = true;
+      } else if (createNew) {
+        layerInitializedRef.current = true;
       }
-
-      layerInitializedRef.current = true;
     }
 
-    if (!storesInitialized) {
+    if (
+      !storesInitialized &&
+      editorInitializedRef.current &&
+      layerInitializedRef.current
+    ) {
       setStoresInitialized(true);
     }
-  }, [
-    allowPagesCreation,
-    allowPagesDeletion,
-    componentRegistry,
-    createNew,
-    editorStore,
-    initialLayers,
-    layerStore,
-    persistLayerStore,
-    storesInitialized,
-  ]);
+  }
 
-  // Effect 3: Handle onChange callback when pages change
-  useEffect(() => {
-    if (onChange && layerStore?.pages && storesInitialized) {
-      if (
-        lastEmittedPagesRef.current &&
-        isDeepEqual(lastEmittedPagesRef.current, layerStore.pages)
-      ) {
-        return;
+  if (onChange && layerStore?.pages && storesInitialized) {
+    if (
+      !lastEmittedPagesRef.current ||
+      !isDeepEqual(lastEmittedPagesRef.current, layerStore.pages)
+    ) {
+      const nextPages = layerStore.pages;
+      lastEmittedPagesRef.current = nextPages;
+
+      if (pendingOnChangePagesRef.current !== nextPages) {
+        pendingOnChangePagesRef.current = nextPages;
+        queueMicrotask(() => {
+          if (pendingOnChangePagesRef.current !== nextPages) return;
+          pendingOnChangePagesRef.current = null;
+          onChange(nextPages);
+        });
       }
-      lastEmittedPagesRef.current = layerStore.pages;
-      onChange(layerStore.pages);
     }
-  }, [layerStore?.pages, onChange, storesInitialized]);
+  }
 
   const isLoading = !storesInitialized;
   const layout = isLoading ? (

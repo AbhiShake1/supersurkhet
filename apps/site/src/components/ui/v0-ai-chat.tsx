@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowUpIcon, Bot, User } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 
@@ -62,6 +62,11 @@ function useAutoResizeTextarea({
   maxHeight,
 }: UseAutoResizeTextareaProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const disconnectResizeObserver = useCallback(() => {
+    resizeObserverRef.current?.disconnect();
+    resizeObserverRef.current = null;
+  }, []);
 
   const adjustHeight = useCallback(
     (reset?: boolean) => {
@@ -85,20 +90,27 @@ function useAutoResizeTextarea({
     [minHeight, maxHeight],
   );
 
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = `${minHeight}px`;
-    }
-  }, [minHeight]);
+  const setTextareaRef = useCallback(
+    (node: HTMLTextAreaElement | null) => {
+      disconnectResizeObserver();
+      textareaRef.current = node;
+      if (!node) return;
 
-  useEffect(() => {
-    const handleResize = () => adjustHeight();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [adjustHeight]);
+      node.style.height = `${minHeight}px`;
+      adjustHeight();
 
-  return { textareaRef, adjustHeight };
+      if (typeof ResizeObserver !== 'undefined') {
+        const observer = new ResizeObserver(() => {
+          adjustHeight();
+        });
+        observer.observe(node);
+        resizeObserverRef.current = observer;
+      }
+    },
+    [adjustHeight, disconnectResizeObserver, minHeight],
+  );
+
+  return { textareaRef: setTextareaRef, adjustHeight };
 }
 
 export function VercelV0Chat({
@@ -133,10 +145,13 @@ export function VercelV0Chat({
     });
   }, []);
 
-  useEffect(() => {
-    if (messages.length === 0) return;
-    scrollToBottom();
-  }, [messages, scrollToBottom]);
+  const appendMessage = useCallback(
+    (message: Message) => {
+      setMessages((prev) => [...prev, message]);
+      window.requestAnimationFrame(scrollToBottom);
+    },
+    [scrollToBottom],
+  );
 
   const handleSendMessage = () => {
     if (!value.trim()) return;
@@ -148,7 +163,7 @@ export function VercelV0Chat({
       timestamp: Date.now(),
     };
 
-    setMessages((prev) => [...prev, newUserMessage]);
+    appendMessage(newUserMessage);
     setValue('');
     adjustHeight(true);
 
@@ -161,7 +176,7 @@ export function VercelV0Chat({
           "That sounds interesting! Based on what you've shared, I'd recommend looking into our Inventory and Analytics plugins. Would you like to see how they can help?",
         timestamp: Date.now(),
       };
-      setMessages((prev) => [...prev, assistantResponse]);
+      appendMessage(assistantResponse);
     }, 1000);
   };
 

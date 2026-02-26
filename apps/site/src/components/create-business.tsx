@@ -97,6 +97,7 @@ export function CreateBusinessPageFlow() {
   const { fire: fireConfetti } = useConfetti();
   const { promptLogin } = useLoginPrompt();
   const didPromptLogin = useRef(false);
+  const previousStepRef = useRef(step);
   const releases = useMemo(
     () => mergeMarketplaceReleasesWithSeed(releaseRows as PluginReleaseDoc[]),
     [releaseRows],
@@ -135,6 +136,7 @@ export function CreateBusinessPageFlow() {
   const hasSelectedPlugins = selectedPluginReleaseIds.length > 0;
   const completionPercent = Math.round((step / 4) * 100);
   const pluginSyncDebounceRef = useRef<number | null>(null);
+  const pluginSyncSignatureRef = useRef<string | null>(null);
 
   const handleNextStep1 = async () => {
     if (isLoading) {
@@ -275,45 +277,55 @@ export function CreateBusinessPageFlow() {
 
   const currentContent = stepContent[step as keyof typeof stepContent];
 
-  useEffect(() => {
-    if (step === 4) {
-      fireConfetti();
-      fireConfetti();
-    }
-  }, [step, fireConfetti]);
+  if (step === 4 && previousStepRef.current !== 4) {
+    fireConfetti();
+    fireConfetti();
+  }
+  previousStepRef.current = step;
 
-  useEffect(() => {
-    if (didPromptLogin.current || user) return;
+  if (!didPromptLogin.current && !user) {
     didPromptLogin.current = true;
     void promptLogin();
-  }, [promptLogin, user]);
+  }
+  if (typeof window !== 'undefined') {
+    const pluginSyncSignature = [
+      step,
+      user?._?.soul ?? 'anon',
+      businessSlug,
+      ...selectedPluginReleaseIds,
+    ].join('|');
 
-  useEffect(() => {
-    if (step !== 3 || !user || businessSlug.length === 0) return;
-    if (pluginSyncDebounceRef.current) {
-      window.clearTimeout(pluginSyncDebounceRef.current);
-    }
-    pluginSyncDebounceRef.current = window.setTimeout(() => {
-      void syncSelectedPluginInstalls({
-        selectedReleaseIds: selectedPluginReleaseIds,
-        slug: businessSlug,
-        showErrorToast: false,
-      });
-    }, 350);
-
-    return () => {
+    if (pluginSyncSignatureRef.current !== pluginSyncSignature) {
+      pluginSyncSignatureRef.current = pluginSyncSignature;
       if (pluginSyncDebounceRef.current) {
         window.clearTimeout(pluginSyncDebounceRef.current);
         pluginSyncDebounceRef.current = null;
       }
-    };
-  }, [
-    step,
-    user,
-    businessSlug,
-    selectedPluginReleaseIds,
-    syncSelectedPluginInstalls,
-  ]);
+
+      if (step === 3 && user && businessSlug.length > 0) {
+        const selectedReleaseIds = [...selectedPluginReleaseIds];
+        const slug = businessSlug;
+        pluginSyncDebounceRef.current = window.setTimeout(() => {
+          pluginSyncDebounceRef.current = null;
+          void syncSelectedPluginInstalls({
+            selectedReleaseIds,
+            slug,
+            showErrorToast: false,
+          });
+        }, 350);
+      }
+    }
+  }
+
+  useEffect(
+    () => () => {
+      if (pluginSyncDebounceRef.current) {
+        window.clearTimeout(pluginSyncDebounceRef.current);
+        pluginSyncDebounceRef.current = null;
+      }
+    },
+    [],
+  );
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_10%_10%,hsl(22_95%_58%/.12),transparent_40%),radial-gradient(circle_at_90%_0%,hsl(192_95%_56%/.12),transparent_35%),linear-gradient(145deg,hsl(224_21%_12%),hsl(236_24%_9%))] px-4 py-8 sm:px-8 sm:py-10">

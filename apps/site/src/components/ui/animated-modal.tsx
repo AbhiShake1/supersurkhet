@@ -106,14 +106,28 @@ export const ModalBody = ({
   className?: string;
 }) => {
   const { open } = useModal();
+  const previousOpenRef = useRef(open);
+  const previousOverflowRef = useRef<string | null>(null);
 
-  useEffect(() => {
+  if (typeof document !== 'undefined' && previousOpenRef.current !== open) {
     if (open) {
+      previousOverflowRef.current = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = previousOverflowRef.current ?? 'auto';
+      previousOverflowRef.current = null;
     }
-  }, [open]);
+    previousOpenRef.current = open;
+  }
+
+  useEffect(
+    () => () => {
+      if (typeof document === 'undefined') return;
+      document.body.style.overflow = previousOverflowRef.current ?? 'auto';
+      previousOverflowRef.current = null;
+    },
+    [],
+  );
 
   const modalRef = useRef<HTMLDivElement>(null);
   const { setOpen } = useModal();

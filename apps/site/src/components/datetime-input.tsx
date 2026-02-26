@@ -10,7 +10,6 @@ import {
   useState,
 } from 'react';
 import { TZDate } from 'react-day-picker';
-import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -94,27 +93,35 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>(
       () => (_value ? new TZDate(_value, timezone) : undefined),
       [_value, timezone],
     );
-    const form = useFormContext();
     const formatStr = React.useMemo(
       () => formatProp || 'dd/MM/yyyy-hh:mm aa',
       [formatProp],
     );
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const [segments, setSegments] = useState<Segment[]>([]);
+    const [segments, setSegments] = useState<Segment[]>(() =>
+      parseFormat(formatStr, value),
+    );
     const [selectedSegmentAt, setSelectedSegmentAt] = useState<
       number | undefined
     >(undefined);
+    const segmentsSourceKeyRef = useRef(
+      `${formatStr}|${timezone ?? ''}|${_value?.getTime() ?? ''}`,
+    );
+    const nextSegmentsSourceKey = `${formatStr}|${timezone ?? ''}|${_value?.getTime() ?? ''}`;
+    const lastNotifiedInputValueMsRef = useRef<number | null>(null);
 
-    useEffect(() => {
-      if (form?.formState.isSubmitted) {
-        setSegments(parseFormat(formatStr, value));
+    if (segmentsSourceKeyRef.current !== nextSegmentsSourceKey) {
+      segmentsSourceKeyRef.current = nextSegmentsSourceKey;
+      const nextSegments = parseFormat(formatStr, value);
+      setSegments(nextSegments);
+      if (
+        selectedSegmentAt !== undefined &&
+        selectedSegmentAt >= nextSegments.length
+      ) {
+        setSelectedSegmentAt(undefined);
       }
-    }, [form?.formState.isSubmitted, formatStr, value]);
-    useEffect(() => {
-      // console.error('valueChanged', {formatStr, inputStr, value});
-      setSegments(parseFormat(formatStr, value));
-    }, [formatStr, value]);
+    }
 
     const curSegment = useMemo(() => {
       if (
@@ -163,17 +170,21 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>(
         return date;
       }
     }, [validSegments, inputStr, formatStr, timezone, value]);
-    useEffect(() => {
-      if (!inputValue) return;
-      if (value?.getTime() !== inputValue.getTime()) {
-        // console.log('inputValueChanged', {formatStr, inputStr, value, inputValue, });
-        options.onChange?.(inputValue);
+    const inputValueMs = inputValue?.getTime();
+    const currentValueMs = value?.getTime();
+    if (inputValueMs !== undefined && inputValueMs !== currentValueMs) {
+      if (lastNotifiedInputValueMsRef.current !== inputValueMs) {
+        lastNotifiedInputValueMsRef.current = inputValueMs;
+        const nextValue = inputValue;
+        queueMicrotask(() => {
+          options.onChange?.(nextValue);
+        });
       }
-    }, [
-      inputValue, // console.log('inputValueChanged', {formatStr, inputStr, value, inputValue, });
-      options.onChange,
-      value?.getTime,
-    ]);
+    } else if (inputValueMs === undefined) {
+      lastNotifiedInputValueMsRef.current = null;
+    } else {
+      lastNotifiedInputValueMsRef.current = inputValueMs;
+    }
 
     const onClick = useEventCallback(
       (event: React.MouseEvent<HTMLInputElement>) => {

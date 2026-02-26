@@ -154,16 +154,7 @@ export const ImageViewBlock: React.FC<NodeViewProps> = ({
       },
     [initiateResize],
   );
-
-  const handleResizeEnd = React.useCallback(() => {
-    setActiveResizeHandle(null);
-  }, []);
-
-  React.useEffect(() => {
-    if (!isResizing) {
-      handleResizeEnd();
-    }
-  }, [isResizing, handleResizeEnd]);
+  const effectiveActiveResizeHandle = isResizing ? activeResizeHandle : null;
 
   React.useEffect(() => {
     const handleImage = async () => {
@@ -297,16 +288,22 @@ export const ImageViewBlock: React.FC<NodeViewProps> = ({
                   <ResizeHandle
                     onPointerDown={handleResizeStart('left')}
                     className={cn('left-1', {
-                      hidden: isResizing && activeResizeHandle === 'right',
+                      hidden:
+                        isResizing && effectiveActiveResizeHandle === 'right',
                     })}
-                    isResizing={isResizing && activeResizeHandle === 'left'}
+                    isResizing={
+                      isResizing && effectiveActiveResizeHandle === 'left'
+                    }
                   />
                   <ResizeHandle
                     onPointerDown={handleResizeStart('right')}
                     className={cn('right-1', {
-                      hidden: isResizing && activeResizeHandle === 'left',
+                      hidden:
+                        isResizing && effectiveActiveResizeHandle === 'left',
                     })}
-                    isResizing={isResizing && activeResizeHandle === 'right'}
+                    isResizing={
+                      isResizing && effectiveActiveResizeHandle === 'right'
+                    }
                   />
                 </>
               )}

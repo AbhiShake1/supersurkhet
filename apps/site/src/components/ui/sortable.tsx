@@ -243,19 +243,18 @@ function Sortable<T>(props: SortableProps<T>) {
     setActiveId(null);
   };
 
-  React.useEffect(() => {
-    if (!optimisticItems) return;
+  if (optimisticItems) {
     if (optimisticItems.length !== items.length) {
       clearOptimisticItems();
-      return;
+    } else {
+      const hasSameOrder = optimisticItems.every(
+        (item, index) => item === items[index],
+      );
+      if (hasSameOrder) {
+        clearOptimisticItems();
+      }
     }
-    const hasSameOrder = optimisticItems.every(
-      (item, index) => item === items[index],
-    );
-    if (hasSameOrder) {
-      clearOptimisticItems();
-    }
-  }, [optimisticItems, items, clearOptimisticItems]);
+  }
 
   React.useEffect(() => {
     return () => {
