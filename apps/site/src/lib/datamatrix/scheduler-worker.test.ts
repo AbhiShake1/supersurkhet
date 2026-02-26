@@ -71,7 +71,9 @@ describe('datamatrix scheduler worker', () => {
     expect(runs).toHaveLength(1);
     expect(runs[0]?.status).toBe('completed');
 
-    const stepAttempts = store.listStepAttempts({ jobId: result.seededJobs[0] });
+    const stepAttempts = store.listStepAttempts({
+      jobId: result.seededJobs[0],
+    });
     expect(stepAttempts).toHaveLength(1);
     expect(stepAttempts[0]?.status).toBe('completed');
 
@@ -230,6 +232,61 @@ describe('datamatrix scheduler worker', () => {
     expect(store.getJob('job-explicit')?.attempts).toBe(2);
   });
 
+  it('emits lease/start/finish transitions in order and awaits write-through hooks', async () => {
+    const clock = createClock('2026-03-01T14:30:00.000Z');
+    const store = new InMemoryDataMatrixSchedulerStore();
+    const checkpoints: string[] = [];
+    const worker = new DataMatrixSchedulerWorker({
+      store,
+      now: clock.now,
+      createId: createIdFactory(),
+      onTransition: async (transition) => {
+        checkpoints.push(`${transition.phase}:before`);
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        checkpoints.push(
+          transition.phase === 'finish'
+            ? `finish:${transition.outcome}:after`
+            : `${transition.phase}:after`,
+        );
+      },
+      executeRun: async () => {
+        checkpoints.push('execute');
+        return {
+          output: { ok: true },
+        };
+      },
+    });
+
+    store.upsertJob({
+      id: 'job-transition',
+      businessId: 'biz-transition',
+      workflowId: 'wf-transition',
+      status: 'queued',
+      payload: {},
+      attempts: 0,
+      nextRunAt: clock.now(),
+      clientTimezone: 'UTC',
+      createdAt: clock.now(),
+      updatedAt: clock.now(),
+    });
+
+    const result = await worker.tick({
+      workerId: 'worker-transition',
+      limit: 1,
+    });
+    expect(result.completedJobs).toEqual(['job-transition']);
+
+    expect(checkpoints).toEqual([
+      'lease:before',
+      'lease:after',
+      'start:before',
+      'start:after',
+      'execute',
+      'finish:before',
+      'finish:completed:after',
+    ]);
+  });
+
   it('normalizes client schedule timestamps and timezone fallback deterministically', () => {
     expect(
       normalizeSchedulerClientSchedule({
@@ -256,6 +313,8 @@ describe('datamatrix scheduler worker', () => {
         scheduledFor: '2026-03-01T10:00:00',
         timezone: 'Asia/Kathmandu',
       }),
-    ).toThrowError('scheduledFor must be an ISO timestamp with explicit offset');
+    ).toThrowError(
+      'scheduledFor must be an ISO timestamp with explicit offset',
+    );
   });
 });

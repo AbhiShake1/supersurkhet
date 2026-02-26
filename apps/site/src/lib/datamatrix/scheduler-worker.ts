@@ -158,12 +158,12 @@ const DEFAULT_RETRY_POLICY: DataMatrixResolvedRetryPolicy = {
 
 export function normalizeSchedulerClientTimezone(timezone?: string): string {
   if (timezone && timezone.trim().length > 0) {
+    const requestedTimezone = timezone.trim();
     try {
-      return (
-        new Intl.DateTimeFormat('en-US', {
-          timeZone: timezone,
-        }).resolvedOptions().timeZone || 'UTC'
-      );
+      new Intl.DateTimeFormat('en-US', {
+        timeZone: requestedTimezone,
+      });
+      return requestedTimezone;
     } catch (_error) {
       return 'UTC';
     }
@@ -545,6 +545,31 @@ export type DataMatrixSchedulerTickResult = {
   failedJobs: string[];
 };
 
+export type DataMatrixWorkerLeaseTransition = {
+  phase: 'lease';
+  job: DataMatrixQueueJobRecord;
+};
+
+export type DataMatrixWorkerStartTransition = {
+  phase: 'start';
+  job: DataMatrixQueueJobRecord;
+  run: DataMatrixRunRecord;
+  stepAttempt: DataMatrixStepAttemptRecord;
+};
+
+export type DataMatrixWorkerFinishTransition = {
+  phase: 'finish';
+  outcome: 'completed' | 'requeued' | 'failed';
+  job: DataMatrixQueueJobRecord;
+  run: DataMatrixRunRecord;
+  stepAttempt: DataMatrixStepAttemptRecord;
+};
+
+export type DataMatrixWorkerTransition =
+  | DataMatrixWorkerLeaseTransition
+  | DataMatrixWorkerStartTransition
+  | DataMatrixWorkerFinishTransition;
+
 export class DataMatrixSchedulerWorker {
   private readonly store: InMemoryDataMatrixSchedulerStore;
   private readonly now: () => string;
@@ -552,6 +577,9 @@ export class DataMatrixSchedulerWorker {
   private readonly leaseMs: number;
   private readonly executeRun: DataMatrixSchedulerWorkerExecuteRun;
   private readonly onEvent?: (event: DataMatrixEventLogRecord) => void;
+  private readonly onTransition?: (
+    transition: DataMatrixWorkerTransition,
+  ) => void | Promise<void>;
   private readonly schedulerFanoutPerTick: number;
 
   constructor(options: {
@@ -562,6 +590,9 @@ export class DataMatrixSchedulerWorker {
     schedulerFanoutPerTick?: number;
     executeRun?: DataMatrixSchedulerWorkerExecuteRun;
     onEvent?: (event: DataMatrixEventLogRecord) => void;
+    onTransition?: (
+      transition: DataMatrixWorkerTransition,
+    ) => void | Promise<void>;
   }) {
     this.store = options.store;
     this.now = options.now ?? (() => new Date().toISOString());
@@ -573,6 +604,7 @@ export class DataMatrixSchedulerWorker {
     );
     this.executeRun = options.executeRun ?? (async () => ({}));
     this.onEvent = options.onEvent;
+    this.onTransition = options.onTransition;
   }
 
   async tick(input?: {
@@ -615,6 +647,10 @@ export class DataMatrixSchedulerWorker {
           workerId,
           leaseExpiresAt: leased.leaseExpiresAt,
         },
+      });
+      await this.onTransition?.({
+        phase: 'lease',
+        job: { ...leased },
       });
 
       const outcome = await this.executeLeasedJob(leased);
@@ -755,6 +791,12 @@ export class DataMatrixSchedulerWorker {
       startedAt,
     };
     this.store.upsertStepAttempt(stepAttempt);
+    await this.onTransition?.({
+      phase: 'start',
+      job: { ...runningJob },
+      run: { ...run },
+      stepAttempt: { ...stepAttempt },
+    });
 
     try {
       const result = await this.executeRun({
@@ -769,7 +811,7 @@ export class DataMatrixSchedulerWorker {
           ? (result as DataMatrixSchedulerWorkerExecutionResult)
           : ({ output: result } as DataMatrixSchedulerWorkerExecutionResult);
 
-      this.store.upsertStepAttempt({
+      const completedStepAttempt = this.store.upsertStepAttempt({
         ...stepAttempt,
         stepId: resolved.stepId ?? stepAttempt.stepId,
         status: 'completed',
@@ -783,7 +825,7 @@ export class DataMatrixSchedulerWorker {
         finishedAt,
       });
 
-      this.store.upsertJob({
+      const completedJob = this.store.upsertJob({
         ...runningJob,
         status: 'completed',
         attempts: attempt,
@@ -795,6 +837,13 @@ export class DataMatrixSchedulerWorker {
         lastErrorCode: undefined,
         lastErrorMessage: undefined,
         updatedAt: finishedAt,
+      });
+      await this.onTransition?.({
+        phase: 'finish',
+        outcome: 'completed',
+        job: { ...completedJob },
+        run: { ...completedRun },
+        stepAttempt: { ...completedStepAttempt },
       });
 
       this.emitEvent({
@@ -834,7 +883,7 @@ export class DataMatrixSchedulerWorker {
     } catch (error) {
       const failure = parseExecutionError(error);
       const failedAt = this.now();
-      this.store.upsertStepAttempt({
+      const failedStepAttempt = this.store.upsertStepAttempt({
         ...stepAttempt,
         status: 'failed',
         finishedAt: failedAt,
@@ -867,7 +916,7 @@ export class DataMatrixSchedulerWorker {
       if (attempt < retryPolicy.maxAttempts) {
         const delayMs = computeRetryDelayMs(retryPolicy, attempt);
         const nextRunAt = addMs(failedAt, delayMs);
-        this.store.upsertJob({
+        const requeuedJob = this.store.upsertJob({
           ...runningJob,
           status: 'queued',
           attempts: attempt,
@@ -879,6 +928,13 @@ export class DataMatrixSchedulerWorker {
           lastErrorCode: failure.code,
           lastErrorMessage: failure.message,
           updatedAt: failedAt,
+        });
+        await this.onTransition?.({
+          phase: 'finish',
+          outcome: 'requeued',
+          job: { ...requeuedJob },
+          run: { ...failedRun },
+          stepAttempt: { ...failedStepAttempt },
         });
 
         this.emitEvent({
@@ -900,7 +956,7 @@ export class DataMatrixSchedulerWorker {
         return 'requeued';
       }
 
-      this.store.upsertJob({
+      const failedJob = this.store.upsertJob({
         ...runningJob,
         status: 'failed',
         attempts: attempt,
@@ -911,6 +967,13 @@ export class DataMatrixSchedulerWorker {
         lastErrorCode: failure.code,
         lastErrorMessage: failure.message,
         updatedAt: failedAt,
+      });
+      await this.onTransition?.({
+        phase: 'finish',
+        outcome: 'failed',
+        job: { ...failedJob },
+        run: { ...failedRun },
+        stepAttempt: { ...failedStepAttempt },
       });
 
       this.emitEvent({

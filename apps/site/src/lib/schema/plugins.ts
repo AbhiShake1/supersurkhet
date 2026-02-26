@@ -930,6 +930,93 @@ export const dataMatrixV2EventLogSchema = z
   })
   .extend(table);
 
+const dataMatrixV2CallbackStatusSchema = z.enum(['completed', 'failed']);
+
+const dataMatrixV2RunStateStatusSchema = z.enum([
+  'running',
+  'queued',
+  'completed',
+  'failed',
+]);
+
+const dataMatrixV2RunStepStatusSchema = z.enum([
+  'running',
+  'retry_scheduled',
+  'completed',
+  'failed',
+]);
+
+const dataMatrixV2RetryHandoffReasonSchema = z.enum([
+  'device_bridge_retryable_failure',
+]);
+
+export const dataMatrixV2CallbackReceiptSchema = z
+  .object({
+    id: z
+      .string()
+      .describe('Deterministic callback receipt id (idempotency key)'),
+    idempotencyKey: z.string(),
+    fingerprint: z.string(),
+    runId: z.string(),
+    stepId: z.string(),
+    attempt: z.number().int().positive(),
+    callbackAt: z.string().datetime({ offset: true }),
+    callbackStatus: dataMatrixV2CallbackStatusSchema,
+    result: jsonValueSchema,
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .extend(table);
+
+export const dataMatrixV2RunStateSchema = z
+  .object({
+    id: z.string().describe('Deterministic run state id (runId)'),
+    runId: z.string(),
+    status: dataMatrixV2RunStateStatusSchema,
+    attempts: z.number().int().min(0),
+    lastStepId: z.string(),
+    updatedAt: z.string().datetime({ offset: true }),
+    nextRunAt: z.string().datetime({ offset: true }).optional(),
+    lastErrorCode: z.string().optional(),
+  })
+  .extend(table);
+
+export const dataMatrixV2RunStepSchema = z
+  .object({
+    id: z.string().describe('Deterministic run step id (runId::stepId)'),
+    runId: z.string(),
+    stepId: z.string(),
+    attempt: z.number().int().positive(),
+    status: dataMatrixV2RunStepStatusSchema,
+    updatedAt: z.string().datetime({ offset: true }),
+    callbackAt: z.string().datetime({ offset: true }),
+    lastCallbackId: z.string(),
+    idempotencyKey: z.string(),
+    result: jsonValueSchema.optional(),
+    errorCode: z.string().optional(),
+    errorMessage: z.string().optional(),
+  })
+  .extend(table);
+
+export const dataMatrixV2RetryHandoffSchema = z
+  .object({
+    id: z
+      .string()
+      .describe(
+        'Deterministic retry handoff id (idempotency key). Reused to guarantee exactly-once enqueue on restarts.',
+      ),
+    runId: z.string(),
+    stepId: z.string(),
+    attempt: z.number().int().positive(),
+    idempotencyKey: z.string(),
+    nextRunAt: z.string().datetime({ offset: true }),
+    reason: dataMatrixV2RetryHandoffReasonSchema,
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+    enqueuedAt: z.string().datetime({ offset: true }).optional(),
+  })
+  .extend(table);
+
 export const cliApiTokenSchema = z
   .object({
     id: z
