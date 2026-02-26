@@ -1,12 +1,16 @@
-import { NotFound } from '@/components/ui/not-found';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
+import { BusinessPickerFallback } from '@/components/business-picker-fallback';
 
 export const Route = createFileRoute('/$businessName')({
   component: RouteComponent,
-  // TODO: replace with business picker
-  notFoundComponent: () => <NotFound />,
+  notFoundComponent: BusinessRouteNotFound,
 });
 
 function RouteComponent() {
   return <Outlet />;
+}
+
+function BusinessRouteNotFound() {
+  const { businessName } = Route.useParams();
+  return <BusinessPickerFallback requestedBusinessName={businessName} />;
 }
