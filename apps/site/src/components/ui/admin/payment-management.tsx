@@ -35,6 +35,113 @@ interface PaymentManagementProps {
   slug: string;
 }
 
+type PaymentSource = 'invoice' | 'sale' | 'stockImport';
+type PaymentType = 'purchase' | 'sale';
+
+type PaymentRecord = {
+  id: string;
+  source: PaymentSource;
+  type: PaymentType;
+  paymentStatus?: string;
+  paidAmount: number;
+  totalAmount: number;
+  issuedAt?: string;
+  referenceSoul?: string;
+  referenceLabel: string;
+  payments: Array<{
+    paidAt?: string;
+    paidAmount: number;
+  }>;
+};
+
+function toFiniteNumber(value: unknown): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function getIsoDateFromTimestamp(value: unknown): string | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
+  return new Date(value).toISOString();
+}
+
+function getDateTimestamp(value?: string) {
+  if (!value) return 0;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatDateLabel(value?: string) {
+  const timestamp = getDateTimestamp(value);
+  if (!timestamp) return 'N/A';
+  return format(new Date(timestamp), 'MMM dd, yyyy');
+}
+
+function getLegacyItemsTotal(items: unknown): number {
+  if (!Array.isArray(items)) return 0;
+  return items.reduce((sum, rawItem) => {
+    if (!rawItem || typeof rawItem !== 'object') return sum;
+    const item = rawItem as Record<string, unknown>;
+    const quantity = Number(item.quantity);
+    const unitPrice = Number(item.unitPrice);
+    if (Number.isFinite(quantity) && Number.isFinite(unitPrice)) {
+      return sum + quantity * unitPrice;
+    }
+    const explicitTotal = Number(item.totalAmount);
+    if (Number.isFinite(explicitTotal)) {
+      return sum + explicitTotal;
+    }
+    return sum;
+  }, 0);
+}
+
+function getLegacyPayments(
+  payments: unknown,
+  fallbackPaidAmount: unknown,
+  fallbackPaidAt?: string,
+) {
+  if (Array.isArray(payments) && payments.length > 0) {
+    const parsedPayments = payments.flatMap((rawPayment) => {
+      if (!rawPayment || typeof rawPayment !== 'object') return [];
+      const payment = rawPayment as Record<string, unknown>;
+      const paidAmount = toFiniteNumber(payment.paidAmount);
+      if (paidAmount <= 0) return [];
+      return [
+        {
+          paidAt:
+            typeof payment.paidAt === 'string'
+              ? payment.paidAt
+              : fallbackPaidAt,
+          paidAmount,
+        },
+      ];
+    });
+    if (parsedPayments.length > 0) {
+      return parsedPayments;
+    }
+  }
+
+  const fallbackAmount = toFiniteNumber(fallbackPaidAmount);
+  if (fallbackAmount <= 0) return [];
+  return [{ paidAt: fallbackPaidAt, paidAmount: fallbackAmount }];
+}
+
+function normalizePaymentStatus({
+  rawStatus,
+  paidAmount,
+  totalAmount,
+}: {
+  rawStatus: unknown;
+  paidAmount: number;
+  totalAmount: number;
+}) {
+  if (typeof rawStatus === 'string' && rawStatus.trim().length > 0) {
+    return rawStatus;
+  }
+  if (paidAmount <= 0) return 'pending';
+  if (totalAmount <= 0 || paidAmount >= totalAmount) return 'paid';
+  return 'partial';
+}
+
 export const PaymentManagement: AdminComponent = ({ slug }) => {
   return <_PaymentManagement slug={slug} />;
 };
@@ -44,27 +151,139 @@ function _PaymentManagement({ slug }: PaymentManagementProps) {
   const { data: invoices = [] } = api.invoice.useGet({
     keys: [slug],
   });
+  const { data: sales = [] } = api.sale.useGet({
+    keys: [slug],
+  });
+  const { data: stockImports = [] } = api.stockImport.useGet({
+    keys: [slug],
+  });
 
-  const paymentEntries = invoices.flatMap((invoice) =>
-    getInvoicePayments(invoice).map((payment, index) => ({
-      id: `${invoice._?.soul ?? 'invoice'}:${index}`,
-      invoice,
-      payment,
-    })),
+  const invoicePaymentRecords: PaymentRecord[] = invoices.map(
+    (invoice, index) => {
+      const payments = getInvoicePayments(invoice)
+        .map((payment) => ({
+          paidAt: payment.paidAt,
+          paidAmount: toFiniteNumber(payment.paidAmount),
+        }))
+        .filter((payment) => payment.paidAmount > 0);
+
+      return {
+        id: invoice._?.soul ?? `invoice:${index}`,
+        source: 'invoice',
+        type: invoice.type === 'purchase' ? 'purchase' : 'sale',
+        paymentStatus: normalizePaymentStatus({
+          rawStatus: invoice.paymentStatus,
+          paidAmount: getInvoicePaidAmount(invoice),
+          totalAmount: getInvoiceTotalAmount(invoice),
+        }),
+        paidAmount: getInvoicePaidAmount(invoice),
+        totalAmount: getInvoiceTotalAmount(invoice),
+        issuedAt:
+          invoice.issuedAt ?? getIsoDateFromTimestamp(invoice.timestamp),
+        referenceSoul: invoice._?.soul,
+        referenceLabel: 'Invoice',
+        payments,
+      };
+    },
   );
+
+  const legacySalePaymentRecords: PaymentRecord[] = sales.map((sale, index) => {
+    const issuedAt = sale.saleDate ?? getIsoDateFromTimestamp(sale.timestamp);
+    const payments = getLegacyPayments(
+      sale.payments,
+      sale.paidAmount,
+      issuedAt,
+    );
+    const paidAmount = payments.reduce(
+      (sum, payment) => sum + payment.paidAmount,
+      0,
+    );
+    const totalAmount = getLegacyItemsTotal(sale.items);
+
+    return {
+      id: sale._?.soul ?? `sale:${index}`,
+      source: 'sale',
+      type: 'sale',
+      paymentStatus: normalizePaymentStatus({
+        rawStatus: sale.paymentStatus,
+        paidAmount,
+        totalAmount,
+      }),
+      paidAmount,
+      totalAmount,
+      issuedAt,
+      referenceSoul: sale._?.soul,
+      referenceLabel: 'Sale',
+      payments,
+    };
+  });
+
+  const legacyStockImportPaymentRecords: PaymentRecord[] = stockImports.map(
+    (stockImport, index) => {
+      const issuedAt =
+        stockImport.importDate ??
+        getIsoDateFromTimestamp(stockImport.timestamp);
+      const payments = getLegacyPayments(
+        stockImport.payments,
+        stockImport.paidAmount,
+        issuedAt,
+      );
+      const paidAmount = payments.reduce(
+        (sum, payment) => sum + payment.paidAmount,
+        0,
+      );
+      const totalAmount = getLegacyItemsTotal(stockImport.items);
+
+      return {
+        id: stockImport._?.soul ?? `stock-import:${index}`,
+        source: 'stockImport',
+        type: 'purchase',
+        paymentStatus: normalizePaymentStatus({
+          rawStatus: stockImport.paymentStatus,
+          paidAmount,
+          totalAmount,
+        }),
+        paidAmount,
+        totalAmount,
+        issuedAt,
+        referenceSoul: stockImport._?.soul,
+        referenceLabel: 'Stock Import',
+        payments,
+      };
+    },
+  );
+
+  const paymentRecords = [
+    ...invoicePaymentRecords,
+    ...legacySalePaymentRecords,
+    ...legacyStockImportPaymentRecords,
+  ];
+
+  const paymentEntries = paymentRecords
+    .flatMap((record) =>
+      record.payments.map((payment, index) => ({
+        id: `${record.id}:payment:${index}`,
+        record,
+        payment,
+      })),
+    )
+    .sort((a, b) => {
+      const aTimestamp = getDateTimestamp(a.payment.paidAt);
+      const bTimestamp = getDateTimestamp(b.payment.paidAt);
+      return bTimestamp - aTimestamp;
+    });
 
   const normalizedSearch = searchQuery.trim().toLowerCase();
   const filteredPaymentEntries = paymentEntries.filter((entry) => {
     if (!normalizedSearch) return true;
-    const invoiceId = entry.invoice._?.soul?.split('/').at(-1);
-    const paidAt = entry.payment.paidAt
-      ? format(new Date(entry.payment.paidAt), 'MMM dd, yyyy')
-      : '';
+    const referenceId = entry.record.referenceSoul?.split('/').at(-1);
+    const paidAt = formatDateLabel(entry.payment.paidAt);
     return (
-      invoiceId?.toLowerCase().includes(normalizedSearch) ||
+      referenceId?.toLowerCase().includes(normalizedSearch) ||
       paidAt.toLowerCase().includes(normalizedSearch) ||
-      entry.invoice.paymentStatus?.toLowerCase().includes(normalizedSearch) ||
-      entry.invoice.type?.toLowerCase().includes(normalizedSearch)
+      entry.record.paymentStatus?.toLowerCase().includes(normalizedSearch) ||
+      entry.record.type?.toLowerCase().includes(normalizedSearch) ||
+      entry.record.referenceLabel.toLowerCase().includes(normalizedSearch)
     );
   });
 
@@ -89,20 +308,25 @@ function _PaymentManagement({ slug }: PaymentManagementProps) {
     return <Clock className="w-4 h-4" />;
   };
 
-  const completedCount = invoices.filter(
-    (invoice) => invoice.paymentStatus === 'paid',
+  const completedCount = paymentRecords.filter(
+    (record) => record.paymentStatus === 'paid',
   ).length;
-  const pendingCount = invoices.filter(
-    (invoice) => invoice.paymentStatus === 'pending',
+  const pendingCount = paymentRecords.filter(
+    (record) => record.paymentStatus === 'pending',
   ).length;
-  const partialCount = invoices.filter((invoice) =>
-    invoice.paymentStatus?.startsWith('partial'),
+  const partialCount = paymentRecords.filter((record) =>
+    record.paymentStatus?.startsWith('partial'),
   ).length;
 
-  const totalPaidAmount = invoices.reduce(
-    (sum, invoice) => sum + getInvoicePaidAmount(invoice),
+  const totalPaidAmount = paymentRecords.reduce(
+    (sum, record) => sum + record.paidAmount,
     0,
   );
+  const totalOutstandingAmount = paymentRecords.reduce(
+    (sum, record) => sum + Math.max(0, record.totalAmount - record.paidAmount),
+    0,
+  );
+  const legacyRecordCount = paymentRecords.length - invoices.length;
 
   const renderPaymentCard = (invoice: (typeof invoices)[number]) => {
     const invoiceId = invoice._?.soul?.split('/').at(-1) ?? 'N/A';
@@ -127,9 +351,7 @@ function _PaymentManagement({ slug }: PaymentManagementProps) {
             {formatCurrency(paidAmount)}
           </span>
           <span className="text-xs text-gray-500">
-            {invoice.issuedAt
-              ? format(new Date(invoice.issuedAt), 'MMM dd, yyyy')
-              : 'N/A'}
+            {formatDateLabel(invoice.issuedAt)}
           </span>
         </div>
         <div className="text-xs text-gray-500 truncate">
@@ -236,10 +458,22 @@ function _PaymentManagement({ slug }: PaymentManagementProps) {
         </TabsList>
 
         <TabsContent value="table" className="space-y-4">
+          {invoices.length === 0 && legacyRecordCount > 0 && (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Table View lists invoices only. Legacy sale and stock import
+              payment records are shown in Summary.
+            </p>
+          )}
           <AutoTable schema="invoice" slug={slug} />
         </TabsContent>
 
         <TabsContent value="kanban" className="space-y-4">
+          {invoices.length === 0 && legacyRecordCount > 0 && (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Kanban View groups invoice records. Use Summary to review legacy
+              payment data.
+            </p>
+          )}
           <AutoKanban
             slug={slug}
             cardBuilder={(invoice) => renderPaymentCard(invoice)}
@@ -262,16 +496,16 @@ function _PaymentManagement({ slug }: PaymentManagementProps) {
                   <h3 className="font-semibold mb-3">Recent Payments</h3>
                   <div className="space-y-2">
                     {filteredPaymentEntries.slice(0, 8).map((entry) => {
-                      const paidAt = entry.payment.paidAt
-                        ? format(new Date(entry.payment.paidAt), 'MMM dd, yyyy')
-                        : 'N/A';
+                      const referenceId =
+                        entry.record.referenceSoul?.split('/').at(-1) ?? 'N/A';
+                      const paidAt = formatDateLabel(entry.payment.paidAt);
                       return (
                         <div
                           key={entry.id}
                           className="flex justify-between text-sm"
                         >
                           <span>
-                            #{entry.invoice._?.soul?.split('/').at(-1)} •{' '}
+                            {entry.record.referenceLabel} #{referenceId} •{' '}
                             {paidAt}
                           </span>
                           <span className="font-medium">
@@ -280,6 +514,11 @@ function _PaymentManagement({ slug }: PaymentManagementProps) {
                         </div>
                       );
                     })}
+                    {filteredPaymentEntries.length === 0 && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        No payment entries matched your filters.
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -291,6 +530,10 @@ function _PaymentManagement({ slug }: PaymentManagementProps) {
                       <span>{invoices.length}</span>
                     </div>
                     <div className="flex justify-between">
+                      <span>Legacy Records</span>
+                      <span>{Math.max(0, legacyRecordCount)}</span>
+                    </div>
+                    <div className="flex justify-between">
                       <span>Total Paid</span>
                       <span className="font-medium">
                         {formatCurrency(totalPaidAmount)}
@@ -299,18 +542,7 @@ function _PaymentManagement({ slug }: PaymentManagementProps) {
                     <div className="flex justify-between">
                       <span>Total Outstanding</span>
                       <span className="font-medium">
-                        {formatCurrency(
-                          invoices.reduce(
-                            (sum, invoice) =>
-                              sum +
-                              Math.max(
-                                0,
-                                getInvoiceTotalAmount(invoice) -
-                                  getInvoicePaidAmount(invoice),
-                              ),
-                            0,
-                          ),
-                        )}
+                        {formatCurrency(totalOutstandingAmount)}
                       </span>
                     </div>
                   </div>

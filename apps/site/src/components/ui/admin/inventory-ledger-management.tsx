@@ -25,26 +25,63 @@ import {
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { api } from '@/lib/api';
-import type { SalesItem } from '@/lib/schemas/retail';
 import type { AdminComponent } from '.';
 
 interface InventoryLedgerManagementProps {
   slug: string;
 }
 
-function isSalesItem(value: unknown): value is SalesItem {
-  if (!value || typeof value !== 'object') return false;
-  const item = value as Record<string, unknown>;
-  return (
-    typeof item.product === 'string' &&
-    typeof item.quantity === 'number' &&
-    Number.isFinite(item.quantity)
-  );
+type MovementType = 'in' | 'out';
+type MovementSource = 'invoice' | 'stockImport' | 'sale';
+
+type MovementItem = {
+  product: string;
+  quantity: number;
+};
+
+function toFiniteNumber(value: unknown): number | null {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
-function getSalesItems(items: unknown): SalesItem[] {
+function getMovementItems(items: unknown): MovementItem[] {
   if (!Array.isArray(items)) return [];
-  return items.filter(isSalesItem);
+  return items.flatMap((rawItem) => {
+    if (!rawItem || typeof rawItem !== 'object') return [];
+    const item = rawItem as Record<string, unknown>;
+    if (typeof item.product !== 'string' || !item.product.trim()) return [];
+    const quantity = toFiniteNumber(item.quantity);
+    if (quantity === null) return [];
+    return [{ product: item.product, quantity }];
+  });
+}
+
+function getIsoDateFromTimestamp(value: unknown): string | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
+  return new Date(value).toISOString();
+}
+
+function getDateTimestamp(value?: string) {
+  if (!value) return 0;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatDateLabel(value?: string) {
+  const timestamp = getDateTimestamp(value);
+  if (!timestamp) return 'N/A';
+  return format(new Date(timestamp), 'MMM dd, yyyy');
+}
+
+function getMovementSourceLabel(source: MovementSource) {
+  switch (source) {
+    case 'invoice':
+      return 'Invoice';
+    case 'stockImport':
+      return 'Stock Import';
+    default:
+      return 'Sale';
+  }
 }
 
 export const InventoryLedgerManagement: AdminComponent = ({ slug }) => {
@@ -64,6 +101,9 @@ function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
     keys: [slug],
   });
   const { data: invoices = [] } = api.invoice.useGet({
+    keys: [slug],
+  });
+  const { data: sales = [] } = api.sale.useGet({
     keys: [slug],
   });
 
@@ -87,42 +127,82 @@ function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
     );
   }
 
-  const inboundMovements = stockImports.flatMap((stockImport) =>
-    getSalesItems(stockImport.items).map((item, index) => ({
-      id: `${stockImport._?.soul ?? 'stock-import'}:in:${index}`,
-      productId: item.product,
-      quantity: item.quantity,
-      date: stockImport.importDate,
-      type: 'in' as const,
-      referenceSoul: stockImport._?.soul,
-    })),
+  const productsBySoul = new Map(
+    products.flatMap((product) =>
+      product._?.soul ? ([[product._.soul, product]] as const) : [],
+    ),
   );
-  const outboundMovements = invoices
-    .filter((invoice) => invoice.type === 'sale')
+
+  const invoiceInboundMovements = invoices
+    .filter((invoice) => invoice.type === 'purchase')
     .flatMap((invoice) =>
-      getSalesItems(invoice.items).map((item, index) => ({
-        id: `${invoice._?.soul ?? 'invoice'}:out:${index}`,
+      getMovementItems(invoice.items).map((item, index) => ({
+        id: `${invoice._?.soul ?? 'invoice'}:in:${index}`,
         productId: item.product,
         quantity: item.quantity,
-        date: invoice.issuedAt,
-        type: 'out' as const,
+        date: invoice.issuedAt ?? getIsoDateFromTimestamp(invoice.timestamp),
+        type: 'in' as MovementType,
+        source: 'invoice' as MovementSource,
         referenceSoul: invoice._?.soul,
       })),
     );
-  const movements = [...inboundMovements, ...outboundMovements].sort((a, b) => {
-    const aTimestamp = a.date ? new Date(a.date).getTime() : 0;
-    const bTimestamp = b.date ? new Date(b.date).getTime() : 0;
+  const invoiceOutboundMovements = invoices
+    .filter((invoice) => invoice.type === 'sale')
+    .flatMap((invoice) =>
+      getMovementItems(invoice.items).map((item, index) => ({
+        id: `${invoice._?.soul ?? 'invoice'}:out:${index}`,
+        productId: item.product,
+        quantity: item.quantity,
+        date: invoice.issuedAt ?? getIsoDateFromTimestamp(invoice.timestamp),
+        type: 'out' as MovementType,
+        source: 'invoice' as MovementSource,
+        referenceSoul: invoice._?.soul,
+      })),
+    );
+  const legacyInboundMovements = stockImports.flatMap((stockImport) =>
+    getMovementItems(stockImport.items).map((item, index) => ({
+      id: `${stockImport._?.soul ?? 'stock-import'}:in:${index}`,
+      productId: item.product,
+      quantity: item.quantity,
+      date:
+        stockImport.importDate ??
+        getIsoDateFromTimestamp(stockImport.timestamp),
+      type: 'in' as MovementType,
+      source: 'stockImport' as MovementSource,
+      referenceSoul: stockImport._?.soul,
+    })),
+  );
+  const legacyOutboundMovements = sales.flatMap((sale) =>
+    getMovementItems(sale.items).map((item, index) => ({
+      id: `${sale._?.soul ?? 'sale'}:out:${index}`,
+      productId: item.product,
+      quantity: item.quantity,
+      date: sale.saleDate ?? getIsoDateFromTimestamp(sale.timestamp),
+      type: 'out' as MovementType,
+      source: 'sale' as MovementSource,
+      referenceSoul: sale._?.soul,
+    })),
+  );
+  const movements = [
+    ...invoiceInboundMovements,
+    ...invoiceOutboundMovements,
+    ...legacyInboundMovements,
+    ...legacyOutboundMovements,
+  ].sort((a, b) => {
+    const aTimestamp = getDateTimestamp(a.date);
+    const bTimestamp = getDateTimestamp(b.date);
     return bTimestamp - aTimestamp;
   });
 
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
   const filteredMovements = movements.filter((movement) => {
     if (!normalizedSearchQuery) return true;
-    const product = products.find((row) => row._?.soul === movement.productId);
+    const product = productsBySoul.get(movement.productId);
     const referenceId = movement.referenceSoul?.split('/').at(-1);
     const matchesSearch =
       product?.title?.toLowerCase().includes(normalizedSearchQuery) ||
       movement.type?.toLowerCase().includes(normalizedSearchQuery) ||
+      movement.source?.toLowerCase().includes(normalizedSearchQuery) ||
       referenceId?.toLowerCase().includes(normalizedSearchQuery) ||
       movement.quantity.toString().includes(normalizedSearchQuery);
     return matchesSearch;
@@ -160,12 +240,16 @@ function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
   const totalQuantityOut = movements
     .filter((movement) => movement.type === 'out')
     .reduce((sum, movement) => sum + movement.quantity, 0);
+  const inboundCount = movements.filter(
+    (movement) => movement.type === 'in',
+  ).length;
+  const outboundCount = movements.filter(
+    (movement) => movement.type === 'out',
+  ).length;
 
   const renderMovementCard = (movement: (typeof filteredMovements)[number]) => {
-    const product = products.find((row) => row._?.soul === movement.productId);
-    const occurredAt = movement.date
-      ? format(new Date(movement.date), 'MMM dd, yyyy')
-      : 'N/A';
+    const product = productsBySoul.get(movement.productId);
+    const occurredAt = formatDateLabel(movement.date);
     const referenceId = movement.referenceSoul?.split('/').at(-1) ?? 'N/A';
 
     return (
@@ -203,6 +287,10 @@ function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
           <div className="flex items-center gap-2">
             <span className="text-gray-500">Reference:</span>
             <span>#{referenceId}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-gray-500">Source:</span>
+            <span>{getMovementSourceLabel(movement.source)}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-gray-500">
@@ -268,10 +356,7 @@ function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
                   Inbound
                 </p>
                 <p className="text-2xl font-bold text-green-600">
-                  {
-                    movements.filter((movement) => movement.type === 'in')
-                      .length
-                  }
+                  {inboundCount}
                 </p>
               </div>
               <ArrowUp className="w-8 h-8 text-green-500" />
@@ -287,10 +372,7 @@ function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
                   Outbound
                 </p>
                 <p className="text-2xl font-bold text-red-600">
-                  {
-                    movements.filter((movement) => movement.type === 'out')
-                      .length
-                  }
+                  {outboundCount}
                 </p>
               </div>
               <ArrowDown className="w-8 h-8 text-red-500" />
@@ -335,6 +417,12 @@ function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
         </TabsList>
 
         <TabsContent value="table" className="space-y-4">
+          {stockImports.length === 0 && movements.length > 0 && (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Table View lists stock imports only. Invoice and legacy sale
+              movements are shown in Cards and Summary.
+            </p>
+          )}
           <AutoTable schema="stockImport" slug={slug} />
         </TabsContent>
 
@@ -349,7 +437,8 @@ function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
                 No inventory entries found
               </h3>
               <p className="text-gray-500 dark:text-gray-400 mb-4">
-                Try adjusting your search or add a new entry
+                No invoice, stock import, or legacy sale movements matched your
+                filters
               </p>
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
@@ -374,22 +463,11 @@ function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span>Inbound</span>
-                      <span className="font-medium">
-                        {
-                          movements.filter((movement) => movement.type === 'in')
-                            .length
-                        }
-                      </span>
+                      <span className="font-medium">{inboundCount}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Outbound</span>
-                      <span className="font-medium">
-                        {
-                          movements.filter(
-                            (movement) => movement.type === 'out',
-                          ).length
-                        }
-                      </span>
+                      <span className="font-medium">{outboundCount}</span>
                     </div>
                   </div>
                 </div>

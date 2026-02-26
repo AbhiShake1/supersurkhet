@@ -36,6 +36,91 @@ interface TransactionManagementProps {
   slug: string;
 }
 
+type TransactionType = 'purchase' | 'sale';
+type TransactionSource = 'invoice' | 'sale' | 'stockImport';
+
+type TransactionRecord = {
+  id: string;
+  type: TransactionType;
+  source: TransactionSource;
+  referenceSoul?: string;
+  issuedAt?: string;
+  partyName: string;
+  totalAmount: number;
+  paidAmount: number;
+};
+
+function toFiniteNumber(value: unknown): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function getIsoDateFromTimestamp(value: unknown): string | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
+  return new Date(value).toISOString();
+}
+
+function getDateTimestamp(value?: string) {
+  if (!value) return 0;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatDateLabel(value?: string) {
+  const timestamp = getDateTimestamp(value);
+  if (!timestamp) return 'N/A';
+  return format(new Date(timestamp), 'MMM dd, yyyy');
+}
+
+function getLegacyItemsTotal(items: unknown): number {
+  if (!Array.isArray(items)) return 0;
+  return items.reduce((sum, rawItem) => {
+    if (!rawItem || typeof rawItem !== 'object') return sum;
+    const item = rawItem as Record<string, unknown>;
+
+    const quantity = Number(item.quantity);
+    const unitPrice = Number(item.unitPrice);
+    if (Number.isFinite(quantity) && Number.isFinite(unitPrice)) {
+      return sum + quantity * unitPrice;
+    }
+
+    const explicitTotal = Number(item.totalAmount);
+    if (Number.isFinite(explicitTotal)) {
+      return sum + explicitTotal;
+    }
+
+    return sum;
+  }, 0);
+}
+
+function getLegacyPaidAmount(payments: unknown, fallbackPaidAmount: unknown) {
+  if (Array.isArray(payments) && payments.length > 0) {
+    const paidFromPayments = payments.reduce((sum, rawPayment) => {
+      if (!rawPayment || typeof rawPayment !== 'object') return sum;
+      const payment = rawPayment as Record<string, unknown>;
+      const paidAmount = toFiniteNumber(payment.paidAmount);
+      return paidAmount > 0 ? sum + paidAmount : sum;
+    }, 0);
+
+    if (paidFromPayments > 0) {
+      return paidFromPayments;
+    }
+  }
+
+  return toFiniteNumber(fallbackPaidAmount);
+}
+
+function getSourceLabel(source: TransactionSource) {
+  switch (source) {
+    case 'invoice':
+      return 'Invoice';
+    case 'stockImport':
+      return 'Stock Import';
+    default:
+      return 'Sale';
+  }
+}
+
 export const TransactionManagement: AdminComponent = ({ slug }) => {
   return <_TransactionManagement slug={slug} />;
 };
@@ -53,6 +138,12 @@ function _TransactionManagement({ slug }: TransactionManagementProps) {
     keys: [slug],
   });
   const { data: customers = [] } = api.customer.useGet({
+    keys: [slug],
+  });
+  const { data: sales = [] } = api.sale.useGet({
+    keys: [slug],
+  });
+  const { data: stockImports = [] } = api.stockImport.useGet({
     keys: [slug],
   });
 
@@ -76,34 +167,109 @@ function _TransactionManagement({ slug }: TransactionManagementProps) {
     );
   }
 
-  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
-  const filteredInvoices = invoices.filter((invoice) => {
-    if (!normalizedSearchQuery) return true;
-    const party = parties.find((row) => row._?.soul === invoice.partyId);
-    const customer = customers.find((row) => row._?.soul === invoice.partyId);
-    const invoiceId = invoice._?.soul?.split('/').at(-1);
-    const matchesSearch =
-      party?.name?.toLowerCase().includes(normalizedSearchQuery) ||
-      customer?.name?.toLowerCase().includes(normalizedSearchQuery) ||
-      invoice.type?.toLowerCase().includes(normalizedSearchQuery) ||
-      invoiceId?.toLowerCase().includes(normalizedSearchQuery);
-    return matchesSearch;
+  const partiesBySoul = new Map(
+    parties.flatMap((party) =>
+      party._?.soul ? ([[party._.soul, party]] as const) : [],
+    ),
+  );
+  const customersBySoul = new Map(
+    customers.flatMap((customer) =>
+      customer._?.soul ? ([[customer._.soul, customer]] as const) : [],
+    ),
+  );
+
+  const invoiceRecords: TransactionRecord[] = invoices.map(
+    (invoice, index) => ({
+      id: invoice._?.soul ?? `invoice:${index}`,
+      type: invoice.type === 'purchase' ? 'purchase' : 'sale',
+      source: 'invoice',
+      referenceSoul: invoice._?.soul,
+      issuedAt: invoice.issuedAt ?? getIsoDateFromTimestamp(invoice.timestamp),
+      partyName:
+        partiesBySoul.get(invoice.partyId ?? '')?.name ||
+        customersBySoul.get(invoice.partyId ?? '')?.name ||
+        'Unknown party',
+      totalAmount: getInvoiceTotalAmount(invoice),
+      paidAmount: getInvoicePaidAmount(invoice),
+    }),
+  );
+
+  const legacySaleRecords: TransactionRecord[] = sales.map((sale, index) => ({
+    id: sale._?.soul ?? `sale:${index}`,
+    type: 'sale',
+    source: 'sale',
+    referenceSoul: sale._?.soul,
+    issuedAt: sale.saleDate ?? getIsoDateFromTimestamp(sale.timestamp),
+    partyName:
+      customersBySoul.get(sale.customerId ?? '')?.name ||
+      sale.customerName ||
+      'Unknown customer',
+    totalAmount: getLegacyItemsTotal(sale.items),
+    paidAmount: getLegacyPaidAmount(sale.payments, sale.paidAmount),
+  }));
+
+  const legacyStockImportRecords: TransactionRecord[] = stockImports.map(
+    (stockImport, index) => ({
+      id: stockImport._?.soul ?? `stock-import:${index}`,
+      type: 'purchase',
+      source: 'stockImport',
+      referenceSoul: stockImport._?.soul,
+      issuedAt:
+        stockImport.importDate ??
+        getIsoDateFromTimestamp(stockImport.timestamp),
+      partyName:
+        partiesBySoul.get(stockImport.party ?? '')?.name || 'Unknown party',
+      totalAmount: getLegacyItemsTotal(stockImport.items),
+      paidAmount: getLegacyPaidAmount(
+        stockImport.payments,
+        stockImport.paidAmount,
+      ),
+    }),
+  );
+
+  const transactionRecords = [
+    ...invoiceRecords,
+    ...legacySaleRecords,
+    ...legacyStockImportRecords,
+  ].sort((a, b) => {
+    const aTimestamp = getDateTimestamp(a.issuedAt);
+    const bTimestamp = getDateTimestamp(b.issuedAt);
+    return bTimestamp - aTimestamp;
   });
 
-  const totalPaidAmount = invoices.reduce(
-    (sum, invoice) => sum + getInvoicePaidAmount(invoice),
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+  const filteredTransactions = transactionRecords.filter((record) => {
+    if (!normalizedSearchQuery) return true;
+    const referenceId = record.referenceSoul?.split('/').at(-1);
+    return (
+      record.partyName.toLowerCase().includes(normalizedSearchQuery) ||
+      record.type.toLowerCase().includes(normalizedSearchQuery) ||
+      getSourceLabel(record.source)
+        .toLowerCase()
+        .includes(normalizedSearchQuery) ||
+      referenceId?.toLowerCase().includes(normalizedSearchQuery)
+    );
+  });
+
+  const totalPaidAmount = transactionRecords.reduce(
+    (sum, record) => sum + record.paidAmount,
     0,
   );
-  const totalPurchaseAmount = invoices
-    .filter((invoice) => invoice.type === 'purchase')
-    .reduce((sum, invoice) => sum + getInvoiceTotalAmount(invoice), 0);
-  const totalSaleAmount = invoices
-    .filter((invoice) => invoice.type === 'sale')
-    .reduce((sum, invoice) => sum + getInvoiceTotalAmount(invoice), 0);
+  const totalPurchaseAmount = transactionRecords
+    .filter((record) => record.type === 'purchase')
+    .reduce((sum, record) => sum + record.totalAmount, 0);
+  const totalSaleAmount = transactionRecords
+    .filter((record) => record.type === 'sale')
+    .reduce((sum, record) => sum + record.totalAmount, 0);
+  const paymentCount = transactionRecords.filter(
+    (record) => record.type === 'purchase',
+  ).length;
+  const receiptCount = transactionRecords.filter(
+    (record) => record.type === 'sale',
+  ).length;
+  const legacyRecordCount = transactionRecords.length - invoices.length;
 
-  const getTransactionTypeIcon = (
-    type: (typeof invoices)[number]['type'] | undefined,
-  ) => {
+  const getTransactionTypeIcon = (type: TransactionType | undefined) => {
     switch (type) {
       case 'purchase':
         return <ArrowDown className="w-4 h-4" />;
@@ -115,7 +281,7 @@ function _TransactionManagement({ slug }: TransactionManagementProps) {
   };
 
   const getTransactionTypeBadgeVariant = (
-    type: (typeof invoices)[number]['type'] | undefined,
+    type: TransactionType | undefined,
   ) => {
     switch (type) {
       case 'purchase':
@@ -128,43 +294,36 @@ function _TransactionManagement({ slug }: TransactionManagementProps) {
   };
 
   const renderTransactionCard = (
-    invoice: (typeof filteredInvoices)[number],
+    transaction: (typeof filteredTransactions)[number],
   ) => {
-    const party = parties.find((row) => row._?.soul === invoice.partyId);
-    const customer = customers.find((row) => row._?.soul === invoice.partyId);
-    const totalAmount = getInvoiceTotalAmount(invoice);
-    const paidAmount = getInvoicePaidAmount(invoice);
-    const invoiceId = invoice._?.soul?.split('/').at(-1) ?? 'N/A';
-    const issuedOn = invoice.issuedAt
-      ? format(new Date(invoice.issuedAt), 'MMM dd, yyyy')
-      : 'N/A';
-    const displayName = party?.name || customer?.name || 'Unknown party';
+    const referenceId = transaction.referenceSoul?.split('/').at(-1) ?? 'N/A';
+    const issuedOn = formatDateLabel(transaction.issuedAt);
 
     return (
       <div
-        key={invoice._?.soul}
+        key={transaction.id}
         className="rounded-md border bg-card p-4 shadow-xs flex flex-col gap-3"
       >
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3">
             <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded-lg">
-              {getTransactionTypeIcon(invoice.type)}
+              {getTransactionTypeIcon(transaction.type)}
             </div>
             <div>
               <h3 className="font-semibold text-sm capitalize">
-                {invoice.type}
+                {transaction.type}
               </h3>
               <Badge
-                variant={getTransactionTypeBadgeVariant(invoice.type)}
+                variant={getTransactionTypeBadgeVariant(transaction.type)}
                 className="mt-1 text-xs"
               >
-                {invoice.type}
+                {transaction.type}
               </Badge>
             </div>
           </div>
           <div className="text-right">
             <div className="font-bold text-sm">
-              {formatCurrency(totalAmount)}
+              {formatCurrency(transaction.totalAmount)}
             </div>
             <div className="text-xs text-gray-500">{issuedOn}</div>
           </div>
@@ -173,15 +332,17 @@ function _TransactionManagement({ slug }: TransactionManagementProps) {
         <div className="space-y-2 text-sm">
           <div className="flex items-center gap-2">
             <span className="text-gray-500">Party:</span>
-            <span>{displayName}</span>
+            <span>{transaction.partyName}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-gray-500">Invoice:</span>
-            <span>#{invoiceId}</span>
+            <span className="text-gray-500">Reference:</span>
+            <span>
+              {getSourceLabel(transaction.source)} #{referenceId}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-gray-500">Paid:</span>
-            <span>{formatCurrency(paidAmount)}</span>
+            <span>{formatCurrency(transaction.paidAmount)}</span>
           </div>
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-gray-500" />
@@ -225,7 +386,7 @@ function _TransactionManagement({ slug }: TransactionManagementProps) {
                   Total Transactions
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  {invoices.length}
+                  {transactionRecords.length}
                 </p>
               </div>
               <Calendar className="w-8 h-8 text-gray-400" />
@@ -241,10 +402,7 @@ function _TransactionManagement({ slug }: TransactionManagementProps) {
                   Payments
                 </p>
                 <p className="text-2xl font-bold text-red-600">
-                  {
-                    invoices.filter((invoice) => invoice.type === 'purchase')
-                      .length
-                  }
+                  {paymentCount}
                 </p>
               </div>
               <ArrowDown className="w-8 h-8 text-red-500" />
@@ -260,7 +418,7 @@ function _TransactionManagement({ slug }: TransactionManagementProps) {
                   Receipts
                 </p>
                 <p className="text-2xl font-bold text-green-600">
-                  {invoices.filter((invoice) => invoice.type === 'sale').length}
+                  {receiptCount}
                 </p>
               </div>
               <ArrowUp className="w-8 h-8 text-green-500" />
@@ -289,7 +447,7 @@ function _TransactionManagement({ slug }: TransactionManagementProps) {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
         <Input
-          placeholder="Search transactions by party, invoice, or type..."
+          placeholder="Search transactions by party, reference, or type..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10"
@@ -305,21 +463,30 @@ function _TransactionManagement({ slug }: TransactionManagementProps) {
         </TabsList>
 
         <TabsContent value="table" className="space-y-4">
+          {invoices.length === 0 && legacyRecordCount > 0 && (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Table View lists invoices only. Legacy sale and stock import
+              transactions are shown in Cards and Summary.
+            </p>
+          )}
           <AutoTable schema="invoice" slug={slug} />
         </TabsContent>
 
         <TabsContent value="cards" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredInvoices.map((invoice) => renderTransactionCard(invoice))}
+            {filteredTransactions.map((transaction) =>
+              renderTransactionCard(transaction),
+            )}
           </div>
-          {filteredInvoices.length === 0 && !isLoading && (
+          {filteredTransactions.length === 0 && !isLoading && (
             <div className="text-center py-12">
               <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                 No transactions found
               </h3>
               <p className="text-gray-500 dark:text-gray-400 mb-4">
-                Try adjusting your search or add a new transaction
+                No invoice, sale, or stock import transactions matched your
+                filters
               </p>
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
@@ -344,21 +511,16 @@ function _TransactionManagement({ slug }: TransactionManagementProps) {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span>Payments</span>
-                      <span className="font-medium">
-                        {
-                          invoices.filter(
-                            (invoice) => invoice.type === 'purchase',
-                          ).length
-                        }
-                      </span>
+                      <span className="font-medium">{paymentCount}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Receipts</span>
+                      <span className="font-medium">{receiptCount}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Legacy Records</span>
                       <span className="font-medium">
-                        {
-                          invoices.filter((invoice) => invoice.type === 'sale')
-                            .length
-                        }
+                        {Math.max(0, legacyRecordCount)}
                       </span>
                     </div>
                   </div>
