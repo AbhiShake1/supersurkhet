@@ -1,6 +1,16 @@
 export interface DataMatrixAction {
   version: string;
-  action: 'wifi_connect' | 'profile_enrichment' | 'equipment_session' | 'restaurant_ordering' | 'product_interaction' | 'navigate' | 'form_request' | 'choice_selection' | 'notification' | 'equipment_control';
+  action:
+    | 'wifi_connect'
+    | 'profile_enrichment'
+    | 'equipment_session'
+    | 'restaurant_ordering'
+    | 'product_interaction'
+    | 'navigate'
+    | 'form_request'
+    | 'choice_selection'
+    | 'notification'
+    | 'equipment_control';
   wifi?: {
     ssid: string;
     password: string;
@@ -85,7 +95,11 @@ export interface DataMatrixAction {
   flow?: {
     steps: Array<{
       step: number;
-      type: 'menu_display' | 'order_building' | 'order_confirmation' | 'payment_selection';
+      type:
+        | 'menu_display'
+        | 'order_building'
+        | 'order_confirmation'
+        | 'payment_selection';
       categories?: string[];
       filters?: {
         dietary?: string;
@@ -130,4 +144,92 @@ export interface DataMatrixAction {
       };
     };
   };
+}
+
+export type QrRetryClass =
+  | 'interactive_fast_fail'
+  | 'device_bridge'
+  | 'commit_background'
+  | 'scheduled_batch';
+
+export type QrLocationPolicyMode = 'disabled' | 'balanced' | 'precision';
+
+export interface QrLocationPolicy {
+  mode: QrLocationPolicyMode;
+  sampleWindowMs: number;
+  minSampleCount: number;
+  minDwellMs: number;
+  maxHorizontalAccuracyMeters: number;
+  minConfidence: number;
+  allowPartialExecution: boolean;
+  maxSampleAgeMs: number;
+}
+
+export interface QrEngineRetryPolicy {
+  maxAttempts: number;
+  backoffMs?: number;
+}
+
+export type QrEngineNodeKind = 'action' | 'branch' | 'delay' | 'humanGate';
+
+export interface QrEngineNode {
+  nodeId: string;
+  kind: QrEngineNodeKind;
+  actionId?: string;
+  input?: unknown;
+  runIf?: unknown;
+  retryClass?: QrRetryClass;
+  retryPolicy?: QrEngineRetryPolicy;
+  timeoutMs?: number;
+  delayMs?: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface QrEngineEdge {
+  from: string;
+  to: string;
+  on?: 'success' | 'failure' | 'always';
+  condition?: unknown;
+}
+
+export interface QrEngineDefinition {
+  schemaVersion: string;
+  engineId: string;
+  engineVersion: string;
+  businessId: string;
+  title?: string;
+  lane: 'deterministic';
+  entryNodeId: string;
+  defaultRetryClass: QrRetryClass;
+  locationPolicy: QrLocationPolicy;
+  nodes: QrEngineNode[];
+  edges: QrEngineEdge[];
+  metadata?: Record<string, unknown>;
+}
+
+export interface QrSignedRefTarget {
+  businessId: string;
+  engineId: string;
+  engineVersion: string;
+  definitionHash?: string;
+}
+
+export interface QrSignedRefPayload {
+  tokenVersion: string;
+  payloadVersion: string;
+  lane: 'deterministic';
+  issuedAt: number;
+  expiresAt: number;
+  notBefore?: number;
+  nonce: string;
+  reference: QrSignedRefTarget;
+  locationPolicyOverride?: Partial<QrLocationPolicy>;
+  metadata?: Record<string, unknown>;
+}
+
+export interface QrSignedRefToken {
+  payload: QrSignedRefPayload;
+  signature: string;
+  signatureAlgorithm: 'HS256' | 'Ed25519';
+  keyId?: string;
 }
