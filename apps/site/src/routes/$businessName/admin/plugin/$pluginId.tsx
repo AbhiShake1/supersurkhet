@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import {
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   Download,
   ExternalLink,
   MessageCircle,
@@ -12,7 +14,9 @@ import {
 import type { ReactNode } from 'react';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { z } from 'zod';
 import { useAuth } from '@/components/auth-provider';
+import { AutoAdmin } from '@/components/auto-admin';
 import { useConfetti } from '@/components/confetti-provider';
 import { useLoginPrompt } from '@/components/login-prompt-provider';
 import { PluginPreviewDialog } from '@/components/plugin-preview-dialog';
@@ -31,6 +35,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import LayerRenderer from '@/components/ui/ui-builder/layer-renderer';
+import type { ComponentLayer } from '@/components/ui/ui-builder/types';
 import { Unauthorized } from '@/components/ui/unauthorized';
 import { api } from '@/lib/api';
 import { buildPluginCatalog } from '@/lib/plugins/admin-plugin-catalog';
@@ -42,11 +48,18 @@ import {
   pickSimilarPlugins,
 } from '@/lib/plugins/admin-plugin-market';
 import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
+import {
+  resolveReleaseSubdomainSurface,
+  toAdminFallbackUiLayers,
+} from '@/lib/plugins/subdomain-surface';
 import type {
   BusinessPluginInstallDoc,
   PluginReleaseDoc,
   PluginUserReviewDoc,
 } from '@/lib/plugins/types';
+import { ContextDataStore } from '@/lib/ui-builder/context/context-data-store';
+import { complexComponentDefinitions } from '@/lib/ui-builder/registry/complex-component-definitions';
+import { primitiveComponentDefinitions } from '@/lib/ui-builder/registry/primitive-component-definitions';
 import { cn } from '@/lib/utils';
 import {
   installPluginRelease,
@@ -56,6 +69,34 @@ import {
 export const Route = createFileRoute('/$businessName/admin/plugin/$pluginId')({
   component: PluginDetailsPage,
 });
+
+const baseComponentRegistry = {
+  ...primitiveComponentDefinitions,
+  ...complexComponentDefinitions,
+};
+
+function toSubdomainPreviewPage(
+  subdomain: string,
+  layers: unknown[] | null,
+): ComponentLayer {
+  if (Array.isArray(layers) && layers.length > 0) {
+    return layers[0] as ComponentLayer;
+  }
+  if (subdomain === 'admin') {
+    const fallback = toAdminFallbackUiLayers('admin');
+    return fallback[0] as ComponentLayer;
+  }
+  return {
+    id: `${subdomain}-preview-empty`,
+    name: `${subdomain} preview`,
+    type: 'div',
+    props: {
+      className:
+        'flex min-h-[420px] w-full items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 p-8 text-center text-sm text-muted-foreground',
+    },
+    children: `No UI layers available for "${subdomain}" yet.`,
+  } satisfies ComponentLayer;
+}
 
 function decodeURIComponentOrNull(value: string): string | null {
   try {
@@ -82,6 +123,7 @@ function PluginDetailsPage() {
   const [previewSubdomain, setPreviewSubdomain] = useState<string | undefined>(
     undefined,
   );
+  const [activePreviewIndex, setActivePreviewIndex] = useState(0);
   const [installing, setInstalling] = useState(false);
   const [uninstalling, setUninstalling] = useState(false);
   const [savingReview, setSavingReview] = useState(false);
@@ -226,6 +268,46 @@ function PluginDetailsPage() {
     selectedPreviewTab?.screenshotUrls?.[0] ??
     details?.previewScreenshots?.[0] ??
     null;
+  const previewSurface = useMemo(() => {
+    if (!decoratedPlugin) {
+      return {
+        subdomains: [] as string[],
+        surfaces: [],
+        uiLayersBySubdomain: {} as Record<string, unknown[]>,
+        imageUrlsBySubdomain: {} as Record<string, string[]>,
+        accessRuleBySubdomain: {},
+      };
+    }
+    return resolveReleaseSubdomainSurface(decoratedPlugin.latestRelease, {
+      ensureDefaultSubdomains: true,
+      includeAdminFallbackLayers: true,
+    });
+  }, [decoratedPlugin]);
+  const previewSubdomains = previewSurface.subdomains;
+  const clampedPreviewIndex =
+    previewSubdomains.length === 0
+      ? 0
+      : Math.min(activePreviewIndex, previewSubdomains.length - 1);
+  const activeSubdomain = previewSubdomains[clampedPreviewIndex] ?? 'admin';
+  const activeSubdomainPage = useMemo(
+    () =>
+      toSubdomainPreviewPage(
+        activeSubdomain,
+        previewSurface.uiLayersBySubdomain[activeSubdomain] ?? null,
+      ),
+    [activeSubdomain, previewSurface.uiLayersBySubdomain],
+  );
+  const previewComponentRegistry = useMemo(() => {
+    const autoAdminEntry = baseComponentRegistry.AutoAdmin;
+    return {
+      ...baseComponentRegistry,
+      AutoAdmin: {
+        ...autoAdminEntry,
+        component: () => <AutoAdmin tabs={[]} />,
+        schema: z.object({}),
+      },
+    };
+  }, []);
 
   const persistedReviewSourceKey =
     details?.userReview?.id ??
@@ -254,6 +336,14 @@ function PluginDetailsPage() {
     );
   }
   const pluginData = decoratedPlugin;
+  const ratingBreakdownRows = [5, 4, 3, 2, 1].map((stars) => ({
+    stars,
+    count: details.reviewStats.breakdown[stars] ?? 0,
+  }));
+  const totalBreakdownCount = ratingBreakdownRows.reduce(
+    (sum, row) => sum + row.count,
+    0,
+  );
 
   const installLabel = pluginData.isInstalled
     ? pluginData.isUpgradable
@@ -518,90 +608,102 @@ function PluginDetailsPage() {
               <CardTitle>Preview</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 px-5">
-              {details.previewScreenshots.length > 0 ? (
-                <div className="grid gap-3 md:grid-cols-2">
-                  {details.previewScreenshots.map((src, index) => (
-                    <img
-                      key={`${src}:${index.toString()}`}
-                      src={src}
-                      alt={`${pluginData.title} preview ${index + 1}`}
-                      className="h-64 w-full rounded-2xl border object-cover"
+              <div className="group relative overflow-hidden rounded-2xl border border-border/70 bg-background">
+                <div className="absolute left-3 top-3 z-10 rounded-full bg-background/90 px-3 py-1 text-xs font-medium shadow">
+                  {activeSubdomain}
+                </div>
+                {previewSubdomains.length > 1 ? (
+                  <>
+                    <button
+                      type="button"
+                      aria-label="Previous subdomain preview"
+                      className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full border border-border/70 bg-background/90 p-2 text-foreground opacity-0 shadow transition-opacity group-hover:opacity-100"
+                      onClick={() =>
+                        setActivePreviewIndex((current) =>
+                          current === 0
+                            ? previewSubdomains.length - 1
+                            : current - 1,
+                        )
+                      }
+                    >
+                      <ChevronLeft className="size-4" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Next subdomain preview"
+                      className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full border border-border/70 bg-background/90 p-2 text-foreground opacity-0 shadow transition-opacity group-hover:opacity-100"
+                      onClick={() =>
+                        setActivePreviewIndex(
+                          (current) => (current + 1) % previewSubdomains.length,
+                        )
+                      }
+                    >
+                      <ChevronRight className="size-4" />
+                    </button>
+                  </>
+                ) : null}
+                <div className="h-[500px] overflow-auto bg-muted/10 p-3">
+                  <ContextDataStore
+                    contextData={{
+                      business: { basePath: businessName },
+                      search: {},
+                      date: {
+                        currentTime: new Date().toISOString(),
+                        locale: 'en-US',
+                        timezone: 'UTC',
+                      },
+                    }}
+                  >
+                    <LayerRenderer
+                      componentRegistry={previewComponentRegistry}
+                      page={activeSubdomainPage}
                     />
-                  ))}
+                  </ContextDataStore>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    No screenshots yet. Try preview for dashboard impact on each
-                    tab.
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {details.previewTabs.map((tab) => (
-                      <Button
-                        key={tab.schema}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setPreviewSubdomain(tab.subdomain);
-                          setIsPreviewOpen(true);
-                        }}
-                      >
-                        Try {tab.title ?? tab.schema}
-                      </Button>
-                    ))}
-                    {details.previewTabs.length === 0 ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setPreviewSubdomain(undefined);
-                          setIsPreviewOpen(true);
-                        }}
-                      >
-                        Try dashboard preview
-                      </Button>
-                    ) : null}
-                  </div>
-                </div>
-              )}
-              {details.previewTabs.length > 0 ? (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">Subdomain galleries</p>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {details.previewTabs.map((tab) => (
-                      <button
-                        type="button"
-                        key={`preview-gallery-${tab.schema}`}
-                        onClick={() => {
-                          setPreviewSubdomain(tab.subdomain);
-                          setIsPreviewOpen(true);
-                        }}
-                        className="overflow-hidden rounded-2xl border border-border/70 bg-background text-left transition-colors hover:border-primary/40"
-                      >
-                        {tab.screenshotUrls?.[0] ? (
-                          <img
-                            src={tab.screenshotUrls[0]}
-                            alt={`${tab.title} preview`}
-                            className="h-36 w-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-36 w-full items-center justify-center bg-muted/30 text-xs text-muted-foreground">
-                            No screenshot
-                          </div>
-                        )}
-                        <div className="space-y-1 p-3">
-                          <p className="text-xs uppercase tracking-[0.08em] text-muted-foreground">
-                            {tab.group ?? 'Subdomain'}
-                          </p>
-                          <p className="text-sm font-medium text-foreground">
-                            {tab.title}
-                          </p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
+              </div>
+
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {previewSubdomains.map((subdomain, index) => (
+                  <Button
+                    key={`subdomain-carousel-${subdomain}`}
+                    size="sm"
+                    variant={
+                      index === clampedPreviewIndex ? 'default' : 'outline'
+                    }
+                    onClick={() => setActivePreviewIndex(index)}
+                  >
+                    {subdomain}
+                  </Button>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {details.previewTabs.map((tab) => (
+                  <Button
+                    key={tab.schema}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setPreviewSubdomain(tab.subdomain);
+                      setIsPreviewOpen(true);
+                    }}
+                  >
+                    Try {tab.title ?? tab.schema}
+                  </Button>
+                ))}
+                {details.previewTabs.length === 0 ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setPreviewSubdomain(undefined);
+                      setIsPreviewOpen(true);
+                    }}
+                  >
+                    Try dashboard preview
+                  </Button>
+                ) : null}
+              </div>
             </CardContent>
           </Card>
 
@@ -635,28 +737,57 @@ function PluginDetailsPage() {
             <div className="relative overflow-hidden rounded-3xl border border-amber-200/70 bg-gradient-to-br from-amber-50 via-background to-sky-50 p-6 shadow-sm dark:border-amber-300/30 dark:from-amber-950/20 dark:to-sky-950/30 md:p-8">
               <div className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full bg-amber-300/20 blur-3xl dark:bg-amber-500/20" />
               <div className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-sky-300/20 blur-3xl dark:bg-sky-500/20" />
-              <div className="relative">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                  Marketplace average
-                </p>
-                <div className="mt-3 flex items-end gap-3">
-                  <p className="text-6xl font-semibold tracking-tight md:text-7xl">
-                    {details.reviewStats.averageRating.toFixed(1)}
+              <div className="relative grid gap-6 md:grid-cols-[240px_minmax(0,1fr)] md:items-center">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    Marketplace average
                   </p>
-                  <span className="pb-2 text-sm text-muted-foreground md:text-base">
-                    out of 5
-                  </span>
+                  <div className="mt-3 flex items-end gap-3">
+                    <p className="text-6xl font-semibold tracking-tight md:text-7xl">
+                      {details.reviewStats.averageRating.toFixed(1)}
+                    </p>
+                    <span className="pb-2 text-sm text-muted-foreground md:text-base">
+                      out of 5
+                    </span>
+                  </div>
+                  <div className="mt-4">
+                    <Stars
+                      rating={details.reviewStats.averageRating}
+                      starClassName="size-6 md:size-7"
+                    />
+                  </div>
+                  <p className="mt-4 text-sm text-muted-foreground">
+                    Based on {details.reviewStats.totalReviews.toLocaleString()}{' '}
+                    verified marketplace reviews.
+                  </p>
                 </div>
-                <div className="mt-4">
-                  <Stars
-                    rating={details.reviewStats.averageRating}
-                    starClassName="size-6 md:size-7"
-                  />
+                <div className="space-y-2.5">
+                  {ratingBreakdownRows.map((row) => {
+                    const widthPercent =
+                      totalBreakdownCount > 0
+                        ? (row.count / totalBreakdownCount) * 100
+                        : 0;
+                    return (
+                      <div
+                        key={`rating-breakdown-${row.stars}`}
+                        className="grid grid-cols-[20px_minmax(0,1fr)_56px] items-center gap-3 text-sm"
+                      >
+                        <span className="text-right font-medium text-foreground">
+                          {row.stars}
+                        </span>
+                        <div className="h-2.5 overflow-hidden rounded-full bg-muted/70">
+                          <div
+                            className="h-full rounded-full bg-amber-500 transition-all duration-300 ease-out"
+                            style={{ width: `${widthPercent}%` }}
+                          />
+                        </div>
+                        <span className="text-right text-xs text-muted-foreground">
+                          {row.count.toLocaleString()}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
-                <p className="mt-4 text-sm text-muted-foreground">
-                  Based on {details.reviewStats.totalReviews.toLocaleString()}{' '}
-                  verified marketplace reviews.
-                </p>
               </div>
             </div>
 

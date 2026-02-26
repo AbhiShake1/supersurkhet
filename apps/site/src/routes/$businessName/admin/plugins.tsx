@@ -1,33 +1,73 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { z } from 'zod';
 import { useAuth } from '@/components/auth-provider';
+import { AutoAdmin } from '@/components/auto-admin';
 import { useLoginPrompt } from '@/components/login-prompt-provider';
-import { PluginIcon as MarketplacePluginIcon } from '@/components/plugins/plugin-icon';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import LayerRenderer from '@/components/ui/ui-builder/layer-renderer';
+import type { ComponentLayer } from '@/components/ui/ui-builder/types';
 import { Unauthorized } from '@/components/ui/unauthorized';
 import { api } from '@/lib/api';
 import { buildPluginCatalog } from '@/lib/plugins/admin-plugin-catalog';
 import {
   buildMarketplaceGroups,
+  type PluginMarketItem,
   type PluginUserReview,
 } from '@/lib/plugins/admin-plugin-market';
 import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
+import {
+  resolveReleaseSubdomainSurface,
+  toAdminFallbackUiLayers,
+} from '@/lib/plugins/subdomain-surface';
 import type {
   BusinessPluginInstallDoc,
   PluginReleaseDoc,
   PluginUserReviewDoc,
 } from '@/lib/plugins/types';
+import { ContextDataStore } from '@/lib/ui-builder/context/context-data-store';
+import { complexComponentDefinitions } from '@/lib/ui-builder/registry/complex-component-definitions';
+import { primitiveComponentDefinitions } from '@/lib/ui-builder/registry/primitive-component-definitions';
 
 export const Route = createFileRoute('/$businessName/admin/plugins')({
   component: PluginsRouteComponent,
 });
 
 type ChartType = 'top-installed' | 'recently-updated';
+
+const baseComponentRegistry = {
+  ...primitiveComponentDefinitions,
+  ...complexComponentDefinitions,
+};
+const MINI_SUBDOMAIN_PREVIEW_SCALE = 0.24;
+
+function toSubdomainPreviewPage(
+  subdomain: string,
+  layers: unknown[] | null,
+): ComponentLayer {
+  if (Array.isArray(layers) && layers.length > 0) {
+    return layers[0] as ComponentLayer;
+  }
+  if (subdomain === 'admin') {
+    const fallback = toAdminFallbackUiLayers('admin');
+    return fallback[0] as ComponentLayer;
+  }
+  return {
+    id: `${subdomain}-preview-empty`,
+    name: `${subdomain} preview`,
+    type: 'div',
+    props: {
+      className:
+        'flex min-h-[420px] w-full items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 p-8 text-center text-sm text-muted-foreground',
+    },
+    children: `No UI layers available for "${subdomain}" yet.`,
+  } satisfies ComponentLayer;
+}
 
 function PluginsRouteComponent() {
   const { businessName } = Route.useParams();
@@ -194,29 +234,13 @@ function PluginsRouteComponent() {
         </CardHeader>
         <CardContent className="grid gap-3 px-5 md:grid-cols-2 xl:grid-cols-3">
           {topCharts.slice(0, 12).map((plugin, index) => (
-            <Link
+            <MarketplacePluginCard
               key={`${plugin.pluginId}:${index.toString()}`}
-              to="/$businessName/admin/plugin/$pluginId"
-              params={{
-                businessName,
-                pluginId: encodeURIComponent(plugin.pluginId),
-              }}
-              className="group flex items-center gap-3 rounded-xl border p-3 transition-colors hover:border-primary/40"
-            >
-              <div className="w-5 text-sm text-muted-foreground">
-                {index + 1}
-              </div>
-              <MarketplacePluginIcon plugin={plugin} compact />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{plugin.title}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {plugin.category}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {plugin.installs.toLocaleString()} installs
-                </p>
-              </div>
-            </Link>
+              plugin={plugin}
+              businessName={businessName}
+              subtitle={plugin.category}
+              meta={`${plugin.installs.toLocaleString()} installs`}
+            />
           ))}
         </CardContent>
       </Card>
@@ -251,34 +275,14 @@ function PluginsRouteComponent() {
                 <h2 className="text-xl font-semibold">{category}</h2>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {items.map((plugin) => (
-                    <Link
+                    <MarketplacePluginCard
                       key={plugin.pluginId}
-                      to="/$businessName/admin/plugin/$pluginId"
-                      params={{
-                        businessName,
-                        pluginId: encodeURIComponent(plugin.pluginId),
-                      }}
-                      className="group rounded-2xl border border-border/70 p-4 transition-colors hover:border-primary/40"
-                    >
-                      <div className="mb-3 flex items-start gap-3">
-                        <MarketplacePluginIcon plugin={plugin} />
-                        <div className="min-w-0">
-                          <p className="truncate text-base font-medium">
-                            {plugin.title}
-                          </p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {plugin.publisher}
-                          </p>
-                        </div>
-                      </div>
-                      <p className="line-clamp-2 text-sm text-muted-foreground">
-                        {plugin.description}
-                      </p>
-                      <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{plugin.publisher}</span>
-                        <span>{plugin.installs.toLocaleString()} installs</span>
-                      </div>
-                    </Link>
+                      plugin={plugin}
+                      businessName={businessName}
+                      subtitle={plugin.publisher}
+                      meta={`${plugin.installs.toLocaleString()} installs`}
+                      description={plugin.description}
+                    />
                   ))}
                 </div>
               </div>
@@ -286,6 +290,162 @@ function PluginsRouteComponent() {
           })}
       </section>
     </div>
+  );
+}
+
+function MarketplacePluginCard({
+  plugin,
+  businessName,
+  subtitle,
+  meta,
+  description,
+}: {
+  plugin: PluginMarketItem;
+  businessName: string;
+  subtitle?: string;
+  meta?: string;
+  description?: string;
+}) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const previewSurface = useMemo(
+    () =>
+      resolveReleaseSubdomainSurface(plugin.latestRelease, {
+        ensureDefaultSubdomains: true,
+        includeAdminFallbackLayers: true,
+      }),
+    [plugin.latestRelease],
+  );
+  const previewSubdomains = previewSurface.subdomains;
+  const clampedIndex =
+    previewSubdomains.length === 0
+      ? 0
+      : Math.min(activeIndex, previewSubdomains.length - 1);
+  const activeSubdomain = previewSubdomains[clampedIndex] ?? 'admin';
+  const activePage = toSubdomainPreviewPage(
+    activeSubdomain,
+    previewSurface.uiLayersBySubdomain[activeSubdomain] ?? null,
+  );
+  const previewComponentRegistry = useMemo(() => {
+    const autoAdminEntry = baseComponentRegistry.AutoAdmin;
+    return {
+      ...baseComponentRegistry,
+      AutoAdmin: {
+        ...autoAdminEntry,
+        component: () => <AutoAdmin tabs={[]} />,
+        schema: z.object({}),
+      },
+    };
+  }, []);
+
+  const scaleStyle = {
+    transform: `scale(${MINI_SUBDOMAIN_PREVIEW_SCALE.toString()})`,
+    width: `${(100 / MINI_SUBDOMAIN_PREVIEW_SCALE).toFixed(2)}%`,
+    height: `${(100 / MINI_SUBDOMAIN_PREVIEW_SCALE).toFixed(2)}%`,
+  };
+  const pluginRouteParams = {
+    businessName,
+    pluginId: encodeURIComponent(plugin.pluginId),
+  };
+
+  return (
+    <article className="group overflow-hidden rounded-2xl border border-border/70 bg-card transition-colors hover:border-primary/40">
+      <div className="flex items-start justify-between gap-3 p-3 pb-2">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold">{plugin.title}</p>
+          {subtitle ? (
+            <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
+          ) : null}
+        </div>
+        <Button asChild size="sm" variant="outline" className="shrink-0">
+          <Link
+            to="/$businessName/admin/plugin/$pluginId"
+            params={pluginRouteParams}
+          >
+            Open
+          </Link>
+        </Button>
+      </div>
+      <div
+        aria-hidden="true"
+        className="relative h-40 overflow-hidden border-y border-border/70 bg-muted/10"
+      >
+        <div className="absolute right-2 top-2 z-10 rounded-full bg-background/90 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.08em] shadow">
+          {activeSubdomain}
+        </div>
+        {previewSubdomains.length > 1 ? (
+          <>
+            <button
+              type="button"
+              aria-label="Previous subdomain preview"
+              className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-border/70 bg-background/90 p-1.5 text-foreground opacity-0 shadow transition-opacity group-hover:opacity-100"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setActiveIndex((current) =>
+                  current === 0 ? previewSubdomains.length - 1 : current - 1,
+                );
+              }}
+            >
+              <ChevronLeft className="size-3.5" />
+            </button>
+            <button
+              type="button"
+              aria-label="Next subdomain preview"
+              className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-border/70 bg-background/90 p-1.5 text-foreground opacity-0 shadow transition-opacity group-hover:opacity-100"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setActiveIndex(
+                  (current) => (current + 1) % previewSubdomains.length,
+                );
+              }}
+            >
+              <ChevronRight className="size-3.5" />
+            </button>
+          </>
+        ) : null}
+        <div className="origin-top-left pointer-events-none" style={scaleStyle}>
+          <ContextDataStore
+            contextData={{
+              business: { basePath: businessName },
+              search: {},
+              date: {
+                currentTime: new Date().toISOString(),
+                locale: 'en-US',
+                timezone: 'UTC',
+              },
+            }}
+          >
+            <LayerRenderer
+              componentRegistry={previewComponentRegistry}
+              page={activePage}
+            />
+          </ContextDataStore>
+        </div>
+      </div>
+      <div className="space-y-2 p-3 pt-2">
+        {description ? (
+          <p className="line-clamp-2 text-xs text-muted-foreground">
+            {description}
+          </p>
+        ) : null}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap gap-1">
+            {previewSubdomains.slice(0, 4).map((subdomain, index) => (
+              <span
+                key={`${plugin.pluginId}:${subdomain}`}
+                className={`rounded-full border px-2 py-0.5 text-[10px] ${index === clampedIndex ? 'border-primary/60 text-foreground' : 'border-border text-muted-foreground'}`}
+              >
+                {subdomain}
+              </span>
+            ))}
+          </div>
+          {meta ? (
+            <span className="text-[10px] text-muted-foreground">{meta}</span>
+          ) : null}
+        </div>
+      </div>
+    </article>
   );
 }
 
