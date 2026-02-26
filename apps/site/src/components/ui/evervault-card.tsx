@@ -1,6 +1,6 @@
 'use client';
 import { motion, useMotionTemplate, useMotionValue } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 export const EvervaultCard = ({
@@ -13,12 +13,9 @@ export const EvervaultCard = ({
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
-  const [randomString, setRandomString] = useState('');
-
-  useEffect(() => {
-    const str = generateRandomString(1500);
-    setRandomString(str);
-  }, []);
+  const [randomString, setRandomString] = useState(() =>
+    generateRandomString(1500),
+  );
 
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   function onMouseMove({ currentTarget, clientX, clientY }: any) {

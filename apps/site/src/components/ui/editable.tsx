@@ -150,11 +150,8 @@ const EditableRoot = React.forwardRef<HTMLDivElement, EditableRootProps>(
 
     // Add loading state
     const [loading, setLoading] = React.useState(false);
-
-    React.useEffect(() => {
-      onValueChangeRef.current = onValueChangeProp;
-      onEditingChangeRef.current = onEditingChangeProp;
-    });
+    onValueChangeRef.current = onValueChangeProp;
+    onEditingChangeRef.current = onEditingChangeProp;
 
     const onValueChange = React.useCallback(
       (nextValue: string) => {
@@ -176,11 +173,9 @@ const EditableRoot = React.forwardRef<HTMLDivElement, EditableRootProps>(
       [isEditingControlled],
     );
 
-    React.useEffect(() => {
-      if (isControlled && valueProp !== previousValueRef.current) {
-        previousValueRef.current = valueProp;
-      }
-    }, [isControlled, valueProp]);
+    if (isControlled && valueProp !== previousValueRef.current) {
+      previousValueRef.current = valueProp;
+    }
 
     const [formTrigger, setFormTrigger] = React.useState<RootElement | null>(
       null,
@@ -216,12 +211,10 @@ const EditableRoot = React.forwardRef<HTMLDivElement, EditableRootProps>(
     );
 
     // Handle finishing submission (reset loading state after a delay or based on external feedback)
-    React.useEffect(() => {
-      if (loading && !editing) {
-        // Reset loading when no longer in editing state
-        setLoading(false);
-      }
-    }, [loading, editing]);
+    if (loading && !editing) {
+      // Reset loading when no longer in editing state
+      setLoading(false);
+    }
 
     const contextValue = React.useMemo<EditableContextValue>(
       () => ({

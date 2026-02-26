@@ -25,7 +25,6 @@ export function MentionInputTextarea({
   className,
   contextData = {},
 }: MentionInputTextareaProps) {
-  const [inputValue, setInputValue] = useState(value);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<MentionSuggestion[]>([]);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
@@ -254,7 +253,6 @@ export function MentionInputTextarea({
   const handleInput = useCallback(
     (e: React.FormEvent<HTMLTextAreaElement>) => {
       const newValue = e.currentTarget.value;
-      setInputValue(newValue);
       onChange(newValue);
 
       const selectionStart = e.currentTarget.selectionStart;
@@ -277,8 +275,8 @@ export function MentionInputTextarea({
       if (!textareaRef.current) return;
 
       const cursorPos = textareaRef.current.selectionStart || 0;
-      const textBefore = inputValue.substring(0, cursorPos);
-      const textAfter = inputValue.substring(cursorPos);
+      const textBefore = value.substring(0, cursorPos);
+      const textAfter = value.substring(cursorPos);
 
       // Find the @ symbol and extract the query
       let i = cursorPos - 1;
@@ -300,7 +298,6 @@ export function MentionInputTextarea({
           `@${suggestion.label}` +
           (textAfter.startsWith(' ') ? textAfter : ` ${textAfter}`);
 
-        setInputValue(newText);
         onChange(newText);
 
         setTimeout(() => {
@@ -314,7 +311,7 @@ export function MentionInputTextarea({
         setShowSuggestions(false);
       }
     },
-    [inputValue, onChange],
+    [value, onChange],
   );
 
   const handleKeyDown = useCallback(
@@ -360,16 +357,11 @@ export function MentionInputTextarea({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Update internal value when prop changes
-  useEffect(() => {
-    setInputValue(value);
-  }, [value]);
-
   return (
     <div className="relative">
       <Textarea
         ref={textareaRef}
-        value={inputValue}
+        value={value}
         onInput={handleInput}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}

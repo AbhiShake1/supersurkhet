@@ -16,63 +16,36 @@ const QRScannerButton = React.forwardRef<HTMLDivElement, QRScannerButtonProps>(
   ({ className, onActionDetected, ...props }, ref) => {
     if (typeof window === 'undefined') return null;
     // Calculate default position (bottom center)
-    const getDefaultPosition = () => {
-      if (typeof window !== 'undefined') {
-        return {
-          x: window.innerWidth / 2 - 32,
-          y: window.innerHeight - 100,
-        };
+    const getDefaultPosition = () => ({
+      x: window.innerWidth / 2 - 32,
+      y: window.innerHeight - 100,
+    });
+    const getInitialPosition = () => {
+      const defaultPosition = getDefaultPosition();
+      const savedPosition = localStorage.getItem('qrScannerButtonPosition');
+      if (!savedPosition) {
+        return defaultPosition;
       }
-      return { x: 0, y: 0 }; // Fallback for SSR
+      try {
+        return JSON.parse(savedPosition) as { x: number; y: number };
+      } catch {
+        return defaultPosition;
+      }
     };
 
     // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
-    const [position, setPosition] = React.useState(getDefaultPosition);
+    const [position, setPosition] = React.useState(getInitialPosition);
     // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
     const [isDragging, setIsDragging] = React.useState(false);
     // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
     const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 });
     // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
     const [isOpen, setIsOpen] = React.useState(false);
-    // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
-    const [initialPosition, setInitialPosition] = React.useState(
-      getDefaultPosition(),
-    );
+    const [initialPosition, setInitialPosition] =
+      // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
+      React.useState(getInitialPosition);
     // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
     const buttonRef = React.useRef<HTMLButtonElement>(null);
-
-    // Load position from localStorage on mount
-    // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
-    React.useEffect(() => {
-      const savedPosition = localStorage.getItem('qrScannerButtonPosition');
-      if (savedPosition) {
-        try {
-          const parsed = JSON.parse(savedPosition);
-          setPosition(parsed);
-          setInitialPosition(parsed);
-        } catch {
-          // Default position - bottom center
-          const defaultPos = getDefaultPosition();
-          setPosition(defaultPos);
-          setInitialPosition(defaultPos);
-        }
-      }
-      // If no saved position, component will use the default position from useState
-      // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
-    }, [getDefaultPosition]);
-
-    // Save position to localStorage with debounce
-    // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
-    React.useEffect(() => {
-      const timer = setTimeout(() => {
-        localStorage.setItem(
-          'qrScannerButtonPosition',
-          JSON.stringify(position),
-        );
-      }, 500);
-
-      return () => clearTimeout(timer);
-    }, [position]);
 
     // Handle window resize
     // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
@@ -84,6 +57,10 @@ const QRScannerButton = React.forwardRef<HTMLDivElement, QRScannerButtonProps>(
             x: Math.max(0, Math.min(prev.x, window.innerWidth - 64)),
             y: Math.max(0, Math.min(prev.y, window.innerHeight - 64)),
           };
+          localStorage.setItem(
+            'qrScannerButtonPosition',
+            JSON.stringify(boundedPosition),
+          );
           return boundedPosition;
         });
       };
@@ -126,6 +103,7 @@ const QRScannerButton = React.forwardRef<HTMLDivElement, QRScannerButtonProps>(
     // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
     const handleMouseUp = React.useCallback(() => {
       setIsDragging(false);
+      localStorage.setItem('qrScannerButtonPosition', JSON.stringify(position));
 
       // If the button didn't move much, treat it as a click
       const distance = Math.sqrt(

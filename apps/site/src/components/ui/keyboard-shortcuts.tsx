@@ -405,18 +405,9 @@ export function KeyboardShortcutsProvider({
     exactMatches: RegisteredShortcutActionListener[];
     timeoutId: number | null;
   } | null>(null);
-
-  React.useEffect(() => {
-    bindingsRef.current = bindings;
-  }, [bindings]);
-
-  React.useEffect(() => {
-    registryRef.current = registry;
-  }, [registry]);
-
-  React.useEffect(() => {
-    sequenceTimeoutRef.current = sequenceTimeoutMs;
-  }, [sequenceTimeoutMs]);
+  bindingsRef.current = bindings;
+  registryRef.current = registry;
+  sequenceTimeoutRef.current = sequenceTimeoutMs;
 
   dialogOpenRef.current = dialogState.open;
 
@@ -1149,11 +1140,9 @@ function ShortcutRecorder({
   const pendingSequenceRef = React.useRef<ShortcutStroke[]>([]);
   const finalizeTimeoutRef = React.useRef<number | null>(null);
 
-  React.useEffect(() => {
-    if (!recording) {
-      setPreviewBinding(binding);
-    }
-  }, [binding, recording]);
+  if (!recording && !isSameBinding(previewBinding, binding)) {
+    setPreviewBinding(binding);
+  }
 
   React.useEffect(() => {
     if (!recording) return;
@@ -1398,6 +1387,7 @@ function SingleShortcutEditor({
   const sequenceTimeoutMs =
     context?.sequenceTimeoutMs ?? DEFAULT_SEQUENCE_TIMEOUT_MS;
   const captureRef = React.useRef<HTMLButtonElement | null>(null);
+  const hasAutoFocusedRef = React.useRef(false);
   const pendingSequenceRef = React.useRef<ShortcutStroke[]>([]);
   const finalizeTimeoutRef = React.useRef<number | null>(null);
   const [isListening, setIsListening] = React.useState(true);
@@ -1433,6 +1423,15 @@ function SingleShortcutEditor({
   const hasChange = candidate ? !isSameBinding(candidate, binding) : false;
   const canSave =
     Boolean(candidate) && hasChange && !conflictDetails.exactConflict;
+
+  const setCaptureRef = React.useCallback((node: HTMLButtonElement | null) => {
+    captureRef.current = node;
+    if (!node || hasAutoFocusedRef.current) {
+      return;
+    }
+    hasAutoFocusedRef.current = true;
+    node.focus();
+  }, []);
 
   const saveCandidate = React.useCallback(() => {
     if (!candidate || !canSave) return;
@@ -1537,10 +1536,6 @@ function SingleShortcutEditor({
     };
   }, [isListening, sequenceTimeoutMs]);
 
-  React.useEffect(() => {
-    captureRef.current?.focus();
-  }, []);
-
   return (
     <section className="space-y-4">
       <div className="space-y-1">
@@ -1556,7 +1551,7 @@ function SingleShortcutEditor({
         <ShortcutKeyGroup actionId={`${action.id}-current`} binding={binding} />
       </div>
       <button
-        ref={captureRef}
+        ref={setCaptureRef}
         type="button"
         className={`w-full rounded-xl border px-4 py-4 text-left transition ${
           isListening
@@ -1634,12 +1629,6 @@ function KeyboardShortcutSettingsDialog() {
   const context = React.useContext(ShortcutContext);
   const sequenceTimeoutMs =
     context?.sequenceTimeoutMs ?? DEFAULT_SEQUENCE_TIMEOUT_MS;
-  const [sequenceTimeoutInputValue, setSequenceTimeoutInputValue] =
-    React.useState<string>(() => String(sequenceTimeoutMs));
-
-  React.useEffect(() => {
-    setSequenceTimeoutInputValue(String(sequenceTimeoutMs));
-  }, [sequenceTimeoutMs]);
 
   const actionsByScope = React.useMemo(() => {
     const map = new Map<string, ShortcutDefinition[]>();
@@ -1717,21 +1706,15 @@ function KeyboardShortcutSettingsDialog() {
                   max={MAX_SEQUENCE_TIMEOUT_MS}
                   step={25}
                   className="h-8 w-24"
-                  value={sequenceTimeoutInputValue}
+                  value={String(sequenceTimeoutMs)}
                   onChange={(event) => {
-                    const nextValue = event.currentTarget.value;
-                    setSequenceTimeoutInputValue(nextValue);
-                    const parsedValue = Number.parseInt(nextValue, 10);
+                    const parsedValue = Number.parseInt(
+                      event.currentTarget.value,
+                      10,
+                    );
                     if (Number.isFinite(parsedValue)) {
                       setSequenceTimeoutMs(parsedValue);
                     }
-                  }}
-                  onBlur={() => {
-                    const parsedValue = Number.parseInt(
-                      sequenceTimeoutInputValue,
-                      10,
-                    );
-                    setSequenceTimeoutMs(parsedValue);
                   }}
                 />
               </div>

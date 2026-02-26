@@ -27,7 +27,6 @@ export function MentionInput({
   className,
   contextData = {},
 }: MentionInputProps) {
-  const [inputValue, setInputValue] = useState(value);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<MentionSuggestion[]>([]);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
@@ -253,7 +252,6 @@ export function MentionInput({
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const newValue = e.target.value;
-      setInputValue(newValue);
       onChange(newValue);
 
       const selectionStart = e.target.selectionStart;
@@ -276,8 +274,8 @@ export function MentionInput({
       if (!inputRef.current) return;
 
       const cursorPos = inputRef.current.selectionStart || 0;
-      const textBefore = inputValue.substring(0, cursorPos);
-      const textAfter = inputValue.substring(cursorPos);
+      const textBefore = value.substring(0, cursorPos);
+      const textAfter = value.substring(cursorPos);
 
       // Find the @ symbol and extract the query
       let i = cursorPos - 1;
@@ -294,7 +292,6 @@ export function MentionInput({
           `@${suggestion.label}` +
           (textAfter.startsWith(' ') ? textAfter : ` ${textAfter}`);
 
-        setInputValue(newText);
         onChange(newText);
 
         setTimeout(() => {
@@ -308,7 +305,7 @@ export function MentionInput({
         setShowSuggestions(false);
       }
     },
-    [inputValue, onChange],
+    [value, onChange],
   );
 
   const handleKeyDown = useCallback(
@@ -354,17 +351,12 @@ export function MentionInput({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Update internal value when prop changes
-  useEffect(() => {
-    setInputValue(value);
-  }, [value]);
-
   return (
     <div className="relative">
       <Input
         ref={inputRef}
         type="text"
-        value={inputValue}
+        value={value}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}

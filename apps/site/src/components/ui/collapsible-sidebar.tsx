@@ -574,17 +574,16 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
   const currentTab =
     (search?.tab as string) ?? (tabs.length > 0 ? tabs[0].title : '');
 
-  useEffect(() => {
-    let isCancelled = false;
-    void loadSidebarPreferences(preferenceOwnerId).then((next) => {
-      if (isCancelled) return;
+  const loadedPreferenceOwnerRef = useRef<string | null | undefined>(undefined);
+  if (loadedPreferenceOwnerRef.current !== preferenceOwnerId) {
+    const ownerId = preferenceOwnerId;
+    loadedPreferenceOwnerRef.current = ownerId;
+    void loadSidebarPreferences(ownerId).then((next) => {
+      if (loadedPreferenceOwnerRef.current !== ownerId) return;
       setFrequentUsage(next.frequentUsage);
       setGroupOpenState(next.groupOpenState);
     });
-    return () => {
-      isCancelled = true;
-    };
-  }, [preferenceOwnerId]);
+  }
 
   const { groupedItems, ungroupedItems } = useMemo(() => {
     const nextFilteredItems = searchQuery
