@@ -39,8 +39,7 @@ type RuntimeRollbackView = Awaited<
   ReturnType<RuntimeHealthService['getRollbackTriggerView']>
 >;
 
-type LiveRuntimeRecoveryExecutionStatus =
-  RollbackExecutionResultDoc['status'];
+type LiveRuntimeRecoveryExecutionStatus = RollbackExecutionResultDoc['status'];
 
 export type LiveRuntimeRecoveryExecutionResult = {
   status: LiveRuntimeRecoveryExecutionStatus;

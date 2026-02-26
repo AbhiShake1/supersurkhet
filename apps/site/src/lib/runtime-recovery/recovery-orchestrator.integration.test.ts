@@ -7,9 +7,9 @@ import {
   type RecoveryAuditGraphPort,
   RecoveryAuditLog,
   type RecoveryAuditRow,
-  type RollbackExecutionResultDoc,
 } from './recovery-audit-log';
 import { RecoveryOrchestrator } from './recovery-orchestrator';
+import type { RollbackExecutionResultDoc } from './rollback-health-verify';
 
 function createPlan(overrides: Partial<RollbackPlanDoc> = {}): RollbackPlanDoc {
   return {
