@@ -1,7 +1,10 @@
 import type { SchemaKeys } from '@gta/react-hooks';
 import NepaliDate from 'nepali-datetime';
 import z from 'zod';
-import type { AutoAdminTabInput } from '@/components/auto-admin';
+import type {
+  AutoAdminTabInput,
+  UpdateContext,
+} from '@/components/auto-admin';
 import { AutoFormSubmit } from '@/components/ui/auto-form';
 import { AutoForm, fieldConfig } from '@/components/ui/autoform';
 import { Button } from '@/components/ui/button';
@@ -708,9 +711,15 @@ export function useBusinessConfig({
             fiscalYear: calculateFiscalYear(),
           });
         },
-        onUpdate(_, variables) {
+        onUpdate(_, variables, updateContext) {
           if (variables.orderStatus !== 'done') return;
-          const order = ordersBySoul.get(variables.id);
+          const currentOrder =
+            (updateContext as UpdateContext<'order'>)?.previousData ??
+            ordersBySoul.get(variables.id);
+          if (currentOrder?.orderStatus === 'done') return;
+          const order =
+            (updateContext as UpdateContext<'order'>)?.newData ??
+            ordersBySoul.get(variables.id);
           if (!order?.items?.length || !order?.customerId) return;
 
           const itemsByProductIdWithQuantity = order.items?.reduce(

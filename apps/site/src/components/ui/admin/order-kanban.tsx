@@ -1,4 +1,7 @@
-import { AutoKanban } from '@/components/auto-admin';
+import {
+  AutoKanban,
+  type UpdateContext,
+} from '@/components/auto-admin';
 import type { AdminComponent } from '.';
 import type { Order } from '@/lib/schema';
 import { api } from '@/lib/api';
@@ -68,9 +71,15 @@ const OrderKanban: AdminComponent = ({ slug }) => {
           order.orderStatus === 'done' ||
           order.orderStatus === 'cancelled'
         }
-        onUpdate={(_, variables) => {
+        onUpdate={(_, variables, updateContext) => {
           if (variables.orderStatus !== 'done') return;
-          const order = ordersBySoul.get(variables.id);
+          const currentOrder =
+            (updateContext as UpdateContext<'order'>)?.previousData ??
+            ordersBySoul.get(variables.id);
+          if (currentOrder?.orderStatus === 'done') return;
+          const order =
+            (updateContext as UpdateContext<'order'>)?.newData ??
+            ordersBySoul.get(variables.id);
           if (!order?.items?.length || !order?.customerId) return;
 
           const itemsByProductIdWithQuantity = order.items?.reduce(

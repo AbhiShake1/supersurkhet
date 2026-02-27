@@ -261,7 +261,17 @@ export type AutoKanbanProps<K extends SchemaKeys> = {
   cardBuilder: (data: NestedSchemaType<K>) => ReactNode;
   schema: K;
   isItemLocked?: (item: NestedSchemaType<K>) => boolean;
-  onUpdate?: (data: GunMessagePut, variables: UpdaterParams<K>, onMutateResult: unknown, context: MutationFunctionContext) => Promise<unknown> | unknown;
+  onUpdate?: (
+    data: GunMessagePut,
+    variables: UpdaterParams<K>,
+    updateContext: UpdateContext<K>,
+    context: MutationFunctionContext,
+  ) => Promise<unknown> | unknown;
+};
+
+export type UpdateContext<K extends SchemaKeys> = {
+  previousData?: NestedSchemaType<K>;
+  newData?: NestedSchemaType<K>;
 };
 
 type WrappedEnumField = {
@@ -341,7 +351,28 @@ export function AutoKanban<K extends SchemaKeys>({
   });
   const { mutate: update } = api[schemaName].useUpdate({
     keys: [slug],
-    onSuccess: onUpdate
+    onMutate(variables) {
+      const previousData = orders.find(
+        (order) => getSoulFromUnknown(order) === variables.id,
+      );
+      if (!previousData) return {};
+
+      return {
+        previousData,
+        newData: {
+          ...previousData,
+          ...variables,
+        } as NestedSchemaType<K>,
+      } satisfies UpdateContext<K>;
+    },
+    onSuccess(data, variables, updateContext, context) {
+      onUpdate?.(
+        data,
+        variables,
+        (updateContext ?? {}) as UpdateContext<K>,
+        context,
+      );
+    },
   });
   const columns = _.groupBy(orders, (o) => o[groupKey]);
   const schema = getNestedZodShape(schemaName, appSchema.schemaShape);
