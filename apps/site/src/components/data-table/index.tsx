@@ -46,8 +46,11 @@ export function DataTable<TData>({
   return (
     <div className={cn('flex w-full flex-col gap-2.5', className)} {...props}>
       {children}
-      <div className="rounded-md border">
-        <Table className="min-w-max">
+      <div className="overflow-hidden rounded-md border">
+        <Table
+          className="min-w-max"
+          containerClassName="relative max-h-[70vh] overflow-auto"
+        >
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => {
               const reorderableHeaders = headerGroup.headers.filter(
@@ -66,6 +69,10 @@ export function DataTable<TData>({
                         colSpan={header.colSpan}
                         style={{
                           ...getCommonPinningStyles({ column: header.column }),
+                          position: 'sticky',
+                          top: 0,
+                          zIndex: header.column.getIsPinned() ? 30 : 20,
+                          backgroundColor: 'var(--color-card)',
                         }}
                       >
                         {header.isPlaceholder
@@ -110,6 +117,10 @@ export function DataTable<TData>({
                               ...getCommonPinningStyles({
                                 column: header.column,
                               }),
+                              position: 'sticky',
+                              top: 0,
+                              zIndex: header.column.getIsPinned() ? 30 : 20,
+                              backgroundColor: 'var(--color-card)',
                             }}
                           >
                             {header.isPlaceholder
