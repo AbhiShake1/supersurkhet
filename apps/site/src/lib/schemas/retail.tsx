@@ -8,6 +8,49 @@ import { getItemsTotalForPaymentStatus, getPaymentStatusFromTotals } from "@/con
 
 export type SalesItem = NonNullable<InferredTable<'sale'>['items']>[number];
 type InvoiceItem = NonNullable<InferredTable<'invoice'>['items']>[number];
+const paymentMethods = [
+  'cash',
+  'card',
+  'bankTransfer',
+  'credit',
+  'online',
+  'check',
+] as const;
+const methodsRequiringBankVoucher = new Set(['bankTransfer', 'online', 'check']);
+
+const paymentRowSchema = z.object({
+  paidAt: z
+    .string()
+    .datetime({ offset: true })
+    .default(() => new Date().toISOString())
+    .describe('Paid At')
+    .superRefine(fieldConfig({ fieldType: 'datetime' })),
+  paidAmount: z
+    .number({ coerce: true })
+    .nonnegative()
+    .describe('Paid Amount')
+    .superRefine(fieldConfig({ fieldType: 'number' })),
+  paymentMethod: z
+    .enum(paymentMethods)
+    .optional()
+    .describe('Payment Method')
+    .superRefine(fieldConfig({ fieldType: 'select' })),
+  bankVoucherNumber: z
+    .string()
+    .optional()
+    .describe('Bank Voucher Number'),
+}).superRefine((payment, ctx) => {
+  if (!payment.paymentMethod) return;
+  if (!methodsRequiringBankVoucher.has(payment.paymentMethod)) return;
+
+  if (!payment.bankVoucherNumber?.trim()) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Bank voucher number is required for this payment method.',
+      path: ['bankVoucherNumber'],
+    });
+  }
+});
 
 function getValueAtPath(input: unknown, path: string[]) {
   return path.reduce<unknown>((acc, key) => {
@@ -499,21 +542,7 @@ export const saleSchema = z
       .nonnegative()
       .describe('Total Amount'),
     payments: z
-      .array(
-        z.object({
-          paidAt: z
-            .string()
-            .datetime({ offset: true })
-            .default(() => new Date().toISOString())
-            .describe('Paid At')
-            .superRefine(fieldConfig({ fieldType: 'datetime' })),
-          paidAmount: z
-            .number({ coerce: true })
-            .nonnegative()
-            .describe('Paid Amount')
-            .superRefine(fieldConfig({ fieldType: 'number' })),
-        }),
-      )
+      .array(paymentRowSchema)
       .optional()
       .describe('Payments'),
     paidAmount: z.number({ coerce: true }).nonnegative().describe('Paid Amount'),
@@ -530,7 +559,7 @@ export const saleSchema = z
         }),
       ),
     paymentMethod: z
-      .enum(['cash', 'card', 'bankTransfer', 'credit'])
+      .enum(paymentMethods)
       .optional()
       .describe('Payment Method'),
     notes: z
@@ -594,21 +623,7 @@ export const orderSchema = z
       .nonnegative()
       .describe('Total Amount'),
     payments: z
-      .array(
-        z.object({
-          paidAt: z
-            .string()
-            .datetime({ offset: true })
-            .default(() => new Date().toISOString())
-            .describe('Paid At')
-            .superRefine(fieldConfig({ fieldType: 'datetime' })),
-          paidAmount: z
-            .number({ coerce: true })
-            .nonnegative()
-            .describe('Paid Amount')
-            .superRefine(fieldConfig({ fieldType: 'number' })),
-        }),
-      )
+      .array(paymentRowSchema)
       .optional()
       .describe('Payments'),
     paidAmount: z.number({ coerce: true }).nonnegative().describe('Paid Amount'),
@@ -637,7 +652,7 @@ export const orderSchema = z
         }),
       ),
     paymentMethod: z
-      .enum(['cash', 'card', 'bankTransfer', 'credit'])
+      .enum(paymentMethods)
       .optional()
       .describe('Payment Method'),
     notes: z
@@ -688,7 +703,7 @@ export const stockImportSchema = z
       .string()
       .datetime({ offset: true })
       .default(() => new Date().toISOString())
-      .describe('Import Date')
+      .describe('Purchase Date')
       .superRefine(fieldConfig({ fieldType: 'datetime' })),
     items: salesItemSchema
       .extend({
@@ -698,27 +713,13 @@ export const stockImportSchema = z
       })
       .array()
       .min(1, { message: 'Please add at least one item.' })
-      .describe('Items to Import'),
+      .describe('Items to Purchase'),
     totalAmount: z
       .number({ coerce: true })
       .nonnegative()
       .describe('Total Amount'),
     payments: z
-      .array(
-        z.object({
-          paidAt: z
-            .string()
-            .datetime({ offset: true })
-            .default(() => new Date().toISOString())
-            .describe('Paid At')
-            .superRefine(fieldConfig({ fieldType: 'datetime' })),
-          paidAmount: z
-            .number({ coerce: true })
-            .nonnegative()
-            .describe('Paid Amount')
-            .superRefine(fieldConfig({ fieldType: 'number' })),
-        }),
-      )
+      .array(paymentRowSchema)
       .optional()
       .describe('Payments'),
     paidAmount: z.number({ coerce: true }).nonnegative().describe('Paid Amount'),
@@ -760,7 +761,7 @@ export const stockImportSchema = z
         path: ['paidAmount'],
       });
   })
-  .describe('Stock Import');
+  .describe('Purchase');
 
 export type StockImport = z.infer<typeof stockImportSchema>;
 
@@ -816,21 +817,7 @@ export const invoiceSchema = z
     tax: z.number({ coerce: true }).int().nonnegative().default(0),
     totalAmount: z.number({ coerce: true }).nonnegative().describe('Total Amount'),
     payments: z
-      .array(
-        z.object({
-          paidAt: z
-            .string()
-            .datetime({ offset: true })
-            .default(() => new Date().toISOString())
-            .describe('Paid At')
-            .superRefine(fieldConfig({ fieldType: 'datetime' })),
-          paidAmount: z
-            .number({ coerce: true })
-            .nonnegative()
-            .describe('Paid Amount')
-            .superRefine(fieldConfig({ fieldType: 'number' })),
-        }),
-      )
+      .array(paymentRowSchema)
       .optional()
       .describe('Payments'),
     paidAmount: z
