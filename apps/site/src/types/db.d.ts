@@ -579,7 +579,7 @@ declare global {
      paidAt: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
      paidAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
      paymentMethod: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodEnum<["cash", "card", "bankTransfer", "credit", "online", "check"]>>, "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined, "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined>;
-     bankVoucherNumber: import("zod").ZodOptional<import("zod").ZodString>;
+     bankVoucherNumber: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
     }, "strip", import("zod").ZodTypeAny, {
      paidAmount: number;
      paidAt: string;
@@ -746,7 +746,7 @@ declare global {
      paidAt: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
      paidAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
      paymentMethod: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodEnum<["cash", "card", "bankTransfer", "credit", "online", "check"]>>, "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined, "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined>;
-     bankVoucherNumber: import("zod").ZodOptional<import("zod").ZodString>;
+     bankVoucherNumber: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
     }, "strip", import("zod").ZodTypeAny, {
      paidAmount: number;
      paidAt: string;
@@ -975,7 +975,7 @@ declare global {
      paidAt: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
      paidAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
      paymentMethod: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodEnum<["cash", "card", "bankTransfer", "credit", "online", "check"]>>, "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined, "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined>;
-     bankVoucherNumber: import("zod").ZodOptional<import("zod").ZodString>;
+     bankVoucherNumber: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
     }, "strip", import("zod").ZodTypeAny, {
      paidAmount: number;
      paidAt: string;
@@ -1198,7 +1198,7 @@ declare global {
      paidAt: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
      paidAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
      paymentMethod: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodEnum<["cash", "card", "bankTransfer", "credit", "online", "check"]>>, "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined, "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined>;
-     bankVoucherNumber: import("zod").ZodOptional<import("zod").ZodString>;
+     bankVoucherNumber: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
     }, "strip", import("zod").ZodTypeAny, {
      paidAmount: number;
      paidAt: string;
