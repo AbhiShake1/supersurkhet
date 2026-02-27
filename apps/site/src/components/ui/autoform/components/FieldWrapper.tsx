@@ -12,6 +12,8 @@ export const FieldWrapperWithoutLabel: React.FC<FieldWrapperProps> = ({
   error,
   testId,
 }) => {
+  if (field.fieldConfig?.inputProps?.hidden) return null;
+
   return (
     <div
       className="space-y-2"
@@ -36,6 +38,8 @@ export const FieldWrapper: React.FC<FieldWrapperProps> = ({
   error,
   testId,
 }) => {
+  if (field.fieldConfig?.inputProps?.hidden) return null;
+
   const isDisabled = DISABLED_LABELS.includes(field.type);
 
   return (

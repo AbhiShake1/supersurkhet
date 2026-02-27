@@ -16,7 +16,7 @@ const paymentMethods = [
   'online',
   'check',
 ] as const;
-const methodsRequiringBankVoucher = new Set(['bankTransfer', 'online', 'check']);
+const methodsRequiringBankVoucher = new Set(['bankTransfer', 'check']);
 
 const paymentRowSchema = z.object({
   paidAt: z
@@ -38,7 +38,28 @@ const paymentRowSchema = z.object({
   bankVoucherNumber: z
     .string()
     .optional()
-    .describe('Bank Voucher Number'),
+    .describe('Bank Voucher Number')
+    .superRefine(
+      fieldConfig({
+        customData: {
+          derive: ({ formValues, rowPath }) => {
+            const payment = getValueAtPath(formValues, rowPath) as
+              | { paymentMethod?: string | null }
+              | undefined;
+            const shouldShowBankVoucher = Boolean(
+              payment?.paymentMethod &&
+                methodsRequiringBankVoucher.has(payment.paymentMethod),
+            );
+            return {
+              inputProps: {
+                hidden: !shouldShowBankVoucher,
+                type: shouldShowBankVoucher ? 'text' : 'hidden',
+              },
+            };
+          },
+        },
+      }),
+    ),
 }).superRefine((payment, ctx) => {
   if (!payment.paymentMethod) return;
   if (!methodsRequiringBankVoucher.has(payment.paymentMethod)) return;
