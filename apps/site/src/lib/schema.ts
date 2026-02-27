@@ -15,6 +15,7 @@ import {
   Users,
   Users2,
 } from 'lucide-react';
+import React from 'react';
 import { z } from 'zod';
 import { fieldConfig } from '@/components/ui/autoform';
 import { dataMatrixActionSchema } from './datamatrix';
@@ -43,15 +44,22 @@ import {
   tripSchema,
 } from './schemas/retail';
 import { uiBuilderSchema } from './schemas/ui-builder-schema';
-import React from 'react';
 
-
-const OrderKanban = React.lazy(() => import('@/components/ui/admin/order-kanban'));
-const MenuManagement = React.lazy(() => import('@/components/ui/admin/menu-management'));
-const TripManagement = React.lazy(() => import('@/components/ui/admin/trip-management'));
-const PartyManagement = React.lazy(() => import('@/components/ui/admin/party-management'));
-const InvoiceManagement = React.lazy(() => import('@/components/ui/admin/invoice-management'));
-
+const OrderKanban = React.lazy(
+  () => import('@/components/ui/admin/order-kanban'),
+);
+const MenuManagement = React.lazy(
+  () => import('@/components/ui/admin/menu-management'),
+);
+const TripManagement = React.lazy(
+  () => import('@/components/ui/admin/trip-management'),
+);
+const PartyManagement = React.lazy(
+  () => import('@/components/ui/admin/party-management'),
+);
+const InvoiceManagement = React.lazy(
+  () => import('@/components/ui/admin/invoice-management'),
+);
 
 function getPermissions() {
   return ['product'] as readonly [string, ...string[]];
@@ -316,7 +324,7 @@ export const featureSchema = createSchema({
     components: () => {
       return [
         {
-          name: 'Invoices By Parties',
+          name: 'Invoices by Parties',
           component: InvoiceManagement,
         },
       ];
@@ -330,7 +338,7 @@ export const featureSchema = createSchema({
   },
   stockImport: {
     schema: stockImportSchema,
-    title: 'Stock Imports',
+    title: 'Purchases',
     icon: ShoppingCart,
     group: 'Financial',
   },
