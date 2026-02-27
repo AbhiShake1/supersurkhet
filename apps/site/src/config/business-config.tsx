@@ -1,10 +1,7 @@
 import type { SchemaKeys } from '@gta/react-hooks';
 import NepaliDate from 'nepali-datetime';
 import z from 'zod';
-import type {
-  AutoAdminTabInput,
-  UpdateContext,
-} from '@/components/auto-admin';
+import type { AutoAdminTabInput, UpdateContext } from '@/components/auto-admin';
 import { AutoFormSubmit } from '@/components/ui/auto-form';
 import { AutoForm, fieldConfig } from '@/components/ui/autoform';
 import { Button } from '@/components/ui/button';
@@ -73,6 +70,70 @@ function getPaidAmountFromPayments(payments: PaymentInput[] | undefined) {
   }, 0);
 }
 
+type ProductStockRecord = {
+  _?: { soul?: string };
+  unit?: string | null;
+  stockQuantity?: number | null;
+};
+
+type StockEntryItem = Pick<SalesItem, 'product' | 'quantity' | 'unit'>;
+
+function getAdjustedQuantity(
+  item: StockEntryItem,
+  productInfo: ProductStockRecord | undefined,
+) {
+  let adjustedQuantity = Number(item.quantity ?? 0);
+  if (!productInfo?.unit?.includes(':')) return adjustedQuantity;
+
+  const [unitType, piecesPerUnit] = productInfo.unit.split(':');
+  const parsedPiecesPerUnit = parseInt(piecesPerUnit, 10);
+  if (!Number.isFinite(parsedPiecesPerUnit) || item.unit !== unitType) {
+    return adjustedQuantity;
+  }
+
+  adjustedQuantity = adjustedQuantity * parsedPiecesPerUnit;
+  return adjustedQuantity;
+}
+
+function getItemsByProductIdWithQuantity(
+  items: StockEntryItem[] | undefined,
+  productsBySoul: Map<string, ProductStockRecord>,
+) {
+  return (
+    items?.reduce(
+      (acc, item) => {
+        const productInfo = productsBySoul.get(item.product);
+        if (!productInfo) return acc;
+
+        const adjustedQuantity = getAdjustedQuantity(item, productInfo);
+        acc[item.product] = (acc[item.product] || 0) + adjustedQuantity;
+        return acc;
+      },
+      {} as Record<string, number>,
+    ) ?? {}
+  );
+}
+
+function buildInvoiceItems(
+  items: SalesItem[] | undefined,
+  productsBySoul: Map<string, ProductStockRecord>,
+) {
+  return (
+    items?.map((item) => ({
+      product: item.product,
+      quantity: getAdjustedQuantity(item, productsBySoul.get(item.product)),
+      rate: item.unitPrice,
+      total: item.quantity * item.unitPrice,
+    })) ?? []
+  );
+}
+
+function getTotalAmount(items: SalesItem[] | undefined) {
+  return (
+    items?.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0) ?? 0
+  );
+}
+
 export function useBusinessConfig({
   slug,
 }: {
@@ -85,12 +146,16 @@ export function useBusinessConfig({
   const { data: products } = api.product.useGet({ keys: [slug] });
   const { data: customers } = api.customer.useGet({ keys: [slug] });
   const { data: orders } = api.order.useGet({ keys: [slug] });
+  const { data: stockImports } = api.stockImport.useGet({ keys: [slug] });
+  const { data: sales } = api.sale.useGet({ keys: [slug] });
   const partiesBySoul = new Map(parties?.map((p) => [p._?.soul, p]));
   const vehiclesBySoul = new Map(vehicles?.map((v) => [v._?.soul, v]));
   const tripsBySoul = new Map(trips?.map((t) => [t._?.soul, t]));
   const customersBySoul = new Map(customers?.map((c) => [c._?.soul, c]));
   const productsBySoul = new Map(products?.map((p) => [p._?.soul, p]));
   const ordersBySoul = new Map(orders?.map((o) => [o._?.soul, o]));
+  const stockImportsBySoul = new Map(stockImports?.map((s) => [s._?.soul, s]));
+  const salesBySoul = new Map(sales?.map((s) => [s._?.soul, s]));
 
   function returnedProductsSchemaWithProducts(products: string[]) {
     return salesItemSchema
@@ -112,7 +177,7 @@ export function useBusinessConfig({
       })
       .array()
       .optional()
-      .describe('Products Returned from Trip')
+      .describe('Products Returned from Trip');
   }
 
   const returnedProductsSchema = returnedProductsSchemaWithProducts(
@@ -236,7 +301,7 @@ export function useBusinessConfig({
             return mapped;
           },
         },
-        async onCreate(_, variables) {
+        async onCreate(data, variables) {
           const products = await db.product.get({ keys: [slug] });
           const productsBySoul = new Map(
             products
@@ -308,6 +373,7 @@ export function useBusinessConfig({
           const paidAmount = getPaidAmountFromPayments(payments);
 
           void db.invoice.create(slug)({
+            id: data.id,
             type: 'purchase',
             partyId: variables.party,
             issuedAt: variables.importDate,
@@ -323,20 +389,59 @@ export function useBusinessConfig({
             fiscalYear: calculateFiscalYear(),
           });
         },
-        onUpdate(_, variables) {
-          const totalAmount =
-            variables.items?.reduce(
-              (sum, item) => sum + item.quantity * item.unitPrice,
-              0,
-            ) ?? 0;
+        onUpdate(_, variables, updateContext) {
+          const stockImport = stockImportsBySoul.get(variables.id);
+          const currentStockImport =
+            (updateContext as UpdateContext<'stockImport'>)?.newData ??
+            stockImport;
+          const previousStockImport =
+            (updateContext as UpdateContext<'stockImport'>)?.previousData ??
+            stockImport;
+          const previousItemsByProduct = getItemsByProductIdWithQuantity(
+            previousStockImport?.items,
+            productsBySoul as Map<string, ProductStockRecord>,
+          );
+          const updatedItemsByProduct = getItemsByProductIdWithQuantity(
+            currentStockImport?.items ?? variables.items,
+            productsBySoul as Map<string, ProductStockRecord>,
+          );
+          const affectedProductIds = new Set([
+            ...Object.keys(previousItemsByProduct),
+            ...Object.keys(updatedItemsByProduct),
+          ]);
+
+          affectedProductIds.forEach((productId) => {
+            const previousQuantity = previousItemsByProduct[productId] || 0;
+            const updatedQuantity = updatedItemsByProduct[productId] || 0;
+            const delta = updatedQuantity - previousQuantity;
+            if (!delta) return;
+
+            const product = productsBySoul.get(productId);
+            if (!product?._?.soul) return;
+            void db.product.update(slug)({
+              id: product._.soul,
+              stockQuantity: Number(product.stockQuantity || 0) + delta,
+            });
+          });
+
+          const items = currentStockImport?.items ?? variables.items;
+          const totalAmount = getTotalAmount(items);
           const payments = normalizePaymentsWithFallback(
-            variables.payments,
-            variables.paidAmount,
+            currentStockImport?.payments ?? variables.payments,
+            currentStockImport?.paidAmount ?? variables.paidAmount,
           );
           const paidAmount = getPaidAmountFromPayments(payments);
 
           db.invoice.update(slug)({
             id: variables.id,
+            partyId: currentStockImport?.party ?? variables.party,
+            issuedAt: currentStockImport?.importDate ?? variables.importDate,
+            items: buildInvoiceItems(
+              items,
+              productsBySoul as Map<string, ProductStockRecord>,
+            ),
+            subTotal: totalAmount,
+            tax: 0,
             payments,
             paidAmount,
             paymentStatus: getPaymentStatusFromTotals({
@@ -357,12 +462,12 @@ export function useBusinessConfig({
           saleDate: (date) =>
             date
               ? new Date(date).toLocaleString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
               : '-',
           items: (items) => {
             const mapped = items?.map((item: SalesItem) => ({
@@ -374,41 +479,45 @@ export function useBusinessConfig({
             return mapped;
           },
         },
-        extender: schema => schema.superRefine((data, ctx) => {
-          if (!data?.items) return;
+        extender: (schema) =>
+          schema.superRefine((data, ctx) => {
+            if (!data?.items) return;
 
-          // Sum quantities per product
-          const totalsByProduct = new Map<string, number>();
+            // Sum quantities per product
+            const totalsByProduct = new Map<string, number>();
 
-          data.items.forEach((item) => {
-            const productId = item?.product;
-            if (!productId) return;
+            data.items.forEach((item) => {
+              const productId = item?.product;
+              if (!productId) return;
 
-            const qty = Number(item?.quantity ?? 0);
-            if (!Number.isFinite(qty) || qty <= 0) return;
+              const qty = Number(item?.quantity ?? 0);
+              if (!Number.isFinite(qty) || qty <= 0) return;
 
-            totalsByProduct.set(productId, (totalsByProduct.get(productId) ?? 0) + qty);
-          });
+              totalsByProduct.set(
+                productId,
+                (totalsByProduct.get(productId) ?? 0) + qty,
+              );
+            });
 
-          // Validate against stock
-          for (const [productId, total] of totalsByProduct) {
-            const product = productsBySoul.get(productId);
-            const available = Number(product?.stockQuantity ?? 0);
+            // Validate against stock
+            for (const [productId, total] of totalsByProduct) {
+              const product = productsBySoul.get(productId);
+              const available = Number(product?.stockQuantity ?? 0);
 
-            if (total > available) {
-              // Put the error on each row that uses that product
-              data.items.forEach((item, index) => {
-                if (item?.product !== productId) return;
+              if (total > available) {
+                // Put the error on each row that uses that product
+                data.items.forEach((item, index) => {
+                  if (item?.product !== productId) return;
 
-                ctx.addIssue({
-                  code: "custom",
-                  message: `${product?.title ?? "This product"} has ${available} in stock. You tried to order ${total}.`,
-                  path: ["items", index, "quantity"],
+                  ctx.addIssue({
+                    code: 'custom',
+                    message: `${product?.title ?? 'This product'} has ${available} in stock. You tried to order ${total}.`,
+                    path: ['items', index, 'quantity'],
+                  });
                 });
-              });
+              }
             }
-          }
-        }),
+          }),
         async onCreate(data, variables) {
           const itemsByProductIdWithQuantity = variables.items?.reduce(
             (a, { product, quantity, unit }) => {
@@ -491,27 +600,63 @@ export function useBusinessConfig({
             fiscalYear: calculateFiscalYear(),
           });
         },
-        onUpdate(_, variables) {
-          const totalAmount =
-            variables.items?.reduce(
-              (sum, item) => sum + item.quantity * item.unitPrice,
-              0,
-            ) ?? 0;
+        onUpdate(_, variables, updateContext) {
+          const sale = salesBySoul.get(variables.id);
+          const currentSale =
+            (updateContext as UpdateContext<'sale'>)?.newData ?? sale;
+          const previousSale =
+            (updateContext as UpdateContext<'sale'>)?.previousData ?? sale;
+          const previousItemsByProduct = getItemsByProductIdWithQuantity(
+            previousSale?.items,
+            productsBySoul as Map<string, ProductStockRecord>,
+          );
+          const updatedItemsByProduct = getItemsByProductIdWithQuantity(
+            currentSale?.items ?? variables.items,
+            productsBySoul as Map<string, ProductStockRecord>,
+          );
+          const affectedProductIds = new Set([
+            ...Object.keys(previousItemsByProduct),
+            ...Object.keys(updatedItemsByProduct),
+          ]);
+
+          affectedProductIds.forEach((productId) => {
+            const previousQuantity = previousItemsByProduct[productId] || 0;
+            const updatedQuantity = updatedItemsByProduct[productId] || 0;
+            const delta = updatedQuantity - previousQuantity;
+            if (!delta) return;
+
+            const product = productsBySoul.get(productId);
+            if (!product?._?.soul) return;
+            void db.product.update(slug)({
+              id: product._.soul,
+              stockQuantity: Number(product.stockQuantity || 0) - delta,
+            });
+          });
+
+          const items = currentSale?.items ?? variables.items;
+          const totalAmount = getTotalAmount(items);
           const payments = normalizePaymentsWithFallback(
-            variables.payments,
-            variables.paidAmount,
+            currentSale?.payments ?? variables.payments,
+            currentSale?.paidAmount ?? variables.paidAmount,
           );
           const paidAmount = getPaidAmountFromPayments(payments);
 
           db.invoice.update(slug)({
             id: variables.id,
+            partyId: currentSale?.customerId ?? variables.customerId,
+            issuedAt: currentSale?.saleDate ?? variables.saleDate,
+            items: buildInvoiceItems(
+              items,
+              productsBySoul as Map<string, ProductStockRecord>,
+            ),
+            subTotal: totalAmount,
+            tax: 0,
             payments,
             paidAmount,
             paymentStatus: getPaymentStatusFromTotals({
               paidAmount,
               totalAmount,
             }),
-
           });
         },
       },
@@ -554,20 +699,20 @@ export function useBusinessConfig({
           issuedAt: (date) =>
             date
               ? new Date(date).toLocaleString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
               : '-',
           dueDate: (date) =>
             date
               ? new Date(date).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-              })
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                })
               : '-',
           items: (items) => {
             const mapped = items?.map((item: SalesItem) => ({
@@ -598,43 +743,47 @@ export function useBusinessConfig({
             return mapped;
           },
         },
-        extender: schema => schema.superRefine((data, ctx) => {
-          if (!data?.items) return;
+        extender: (schema) =>
+          schema.superRefine((data, ctx) => {
+            if (!data?.items) return;
 
-          // Sum quantities per product
-          const totalsByProduct = new Map<string, number>();
+            // Sum quantities per product
+            const totalsByProduct = new Map<string, number>();
 
-          data.items.forEach((item) => {
-            const productId = item?.product;
-            if (!productId) return;
+            data.items.forEach((item) => {
+              const productId = item?.product;
+              if (!productId) return;
 
-            const qty = Number(item?.quantity ?? 0);
-            if (!Number.isFinite(qty) || qty <= 0) return;
+              const qty = Number(item?.quantity ?? 0);
+              if (!Number.isFinite(qty) || qty <= 0) return;
 
-            totalsByProduct.set(productId, (totalsByProduct.get(productId) ?? 0) + qty);
-          });
+              totalsByProduct.set(
+                productId,
+                (totalsByProduct.get(productId) ?? 0) + qty,
+              );
+            });
 
-          // Validate against stock
-          for (const [productId, total] of totalsByProduct) {
-            const product = productsBySoul.get(productId);
-            const available = Number(product?.stockQuantity ?? 0);
+            // Validate against stock
+            for (const [productId, total] of totalsByProduct) {
+              const product = productsBySoul.get(productId);
+              const available = Number(product?.stockQuantity ?? 0);
 
-            if (total > available) {
-              // Put the error on each row that uses that product
-              data.items.forEach((item, index) => {
-                if (item?.product !== productId) return;
+              if (total > available) {
+                // Put the error on each row that uses that product
+                data.items.forEach((item, index) => {
+                  if (item?.product !== productId) return;
 
-                ctx.addIssue({
-                  code: "custom",
-                  message: `${product?.title ?? "This product"} has ${available} in stock. You tried to order ${total}.`,
-                  path: ["items", index, "quantity"],
+                  ctx.addIssue({
+                    code: 'custom',
+                    message: `${product?.title ?? 'This product'} has ${available} in stock. You tried to order ${total}.`,
+                    path: ['items', index, 'quantity'],
+                  });
                 });
-              });
+              }
             }
-          }
-        }),
+          }),
         async onCreate(_, variables) {
-          if (variables.orderStatus !== 'done') return
+          if (variables.orderStatus !== 'done') return;
           const itemsByProductIdWithQuantity = variables.items?.reduce(
             (a, item) => {
               const product = productsBySoul.get(item.product);
@@ -832,43 +981,48 @@ export function useBusinessConfig({
           },
         },
         extender: (schema) =>
-          schema.extend({
-            returnedProducts: returnedProductsSchema,
-          }).superRefine((data, ctx) => {
-            if (!data?.products) return;
+          schema
+            .extend({
+              returnedProducts: returnedProductsSchema,
+            })
+            .superRefine((data, ctx) => {
+              if (!data?.products) return;
 
-            // Sum quantities per product
-            const totalsByProduct = new Map<string, number>();
+              // Sum quantities per product
+              const totalsByProduct = new Map<string, number>();
 
-            data.products.forEach((item) => {
-              const productId = item?.product;
-              if (!productId) return;
+              data.products.forEach((item) => {
+                const productId = item?.product;
+                if (!productId) return;
 
-              const qty = Number(item?.quantity ?? 0);
-              if (!Number.isFinite(qty) || qty <= 0) return;
+                const qty = Number(item?.quantity ?? 0);
+                if (!Number.isFinite(qty) || qty <= 0) return;
 
-              totalsByProduct.set(productId, (totalsByProduct.get(productId) ?? 0) + qty);
-            });
+                totalsByProduct.set(
+                  productId,
+                  (totalsByProduct.get(productId) ?? 0) + qty,
+                );
+              });
 
-            // Validate against stock
-            for (const [productId, total] of totalsByProduct) {
-              const product = productsBySoul.get(productId);
-              const available = Number(product?.stockQuantity ?? 0);
+              // Validate against stock
+              for (const [productId, total] of totalsByProduct) {
+                const product = productsBySoul.get(productId);
+                const available = Number(product?.stockQuantity ?? 0);
 
-              if (total > available) {
-                // Put the error on each row that uses that product
-                data.products.forEach((item, index) => {
-                  if (item?.product !== productId) return;
+                if (total > available) {
+                  // Put the error on each row that uses that product
+                  data.products.forEach((item, index) => {
+                    if (item?.product !== productId) return;
 
-                  ctx.addIssue({
-                    code: "custom",
-                    message: `${product?.title ?? "This product"} has ${available} in stock. You tried to order ${total}.`,
-                    path: ["items", index, "quantity"],
+                    ctx.addIssue({
+                      code: 'custom',
+                      message: `${product?.title ?? 'This product'} has ${available} in stock. You tried to order ${total}.`,
+                      path: ['items', index, 'quantity'],
+                    });
                   });
-                });
+                }
               }
-            }
-          }),
+            }),
         async onCreate(_, variables) {
           const products = await db.product.get({ keys: [slug] });
           const productsBySoul = new Map(
@@ -908,10 +1062,117 @@ export function useBusinessConfig({
             },
           );
         },
-        onUpdate(_) {
-          console.log(
-            'Trip update functionality would handle stock adjustments here',
+        async onUpdate(_, variables, updateContext) {
+          const currentTrip =
+            (updateContext as UpdateContext<'trip'>)?.previousData ??
+            tripsBySoul.get(variables.id);
+          if (currentTrip?.returnTime) return;
+
+          const trip =
+            (updateContext as UpdateContext<'trip'>)?.newData ??
+            tripsBySoul.get(variables.id);
+          if (!trip?.returnTime || !trip?.products?.length) return;
+
+          const soldProducts = trip.products
+            .map((dispatchedProduct) => {
+              const returnedProduct = trip.returnedProducts?.find(
+                (rp) => rp.product === dispatchedProduct.product,
+              );
+              const returnedQty = returnedProduct
+                ? returnedProduct.quantity
+                : 0;
+              const soldQty = dispatchedProduct.quantity - returnedQty;
+
+              return {
+                productId: dispatchedProduct.product,
+                quantity: Math.max(0, soldQty),
+              };
+            })
+            .filter((sp) => sp.quantity > 0);
+
+          const products = await db.product.get({ keys: [slug] });
+          const productsBySoul = new Map(
+            products
+              .filter((item) => item?._?.soul)
+              // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
+              .map((item) => [item._?.soul!, item]),
           );
+
+          for (const returnedProduct of trip.returnedProducts ?? []) {
+            const product = productsBySoul.get(returnedProduct.product);
+            if (!product?._?.soul) continue;
+
+            let adjustedQuantity = returnedProduct.quantity;
+
+            if (product.unit?.includes(':')) {
+              const [unitType, piecesPerUnit] = product.unit.split(':');
+              if (returnedProduct.unit === unitType) {
+                adjustedQuantity =
+                  returnedProduct.quantity * parseInt(piecesPerUnit, 10);
+              }
+            }
+
+            void db.product.update(slug)({
+              id: product._.soul,
+              stockQuantity: product.stockQuantity + adjustedQuantity,
+            });
+          }
+
+          if (!soldProducts.length) return;
+
+          const invoiceItems = soldProducts.map((item) => ({
+            product: item.productId,
+            quantity: item.quantity,
+            rate: productsBySoul.get(item.productId)?.sellingPrice || 0,
+            total:
+              item.quantity *
+              (productsBySoul.get(item.productId)?.sellingPrice || 0),
+            vehicleId: trip.vehicleId,
+          }));
+
+          const totalAmount = soldProducts.reduce(
+            (sum, item) =>
+              sum +
+              item.quantity *
+                (productsBySoul.get(item.productId)?.sellingPrice || 0),
+            0,
+          );
+
+          const vehicles = await db.vehicle.get({ keys: [slug] });
+          const vehicle = vehicles.find(
+            (item) => item?._?.soul === trip.vehicleId,
+          );
+
+          void db.invoice.create(slug)({
+            type: 'sale',
+            partyId: 'trip-sale',
+            issuedAt: new Date().toISOString(),
+            items: invoiceItems,
+            subTotal: totalAmount,
+            tax: 0,
+            payments: [
+              {
+                paidAt: new Date().toISOString(),
+                paidAmount: totalAmount,
+              },
+            ],
+            paidAmount: totalAmount,
+            paymentStatus: 'paid',
+            fiscalYear: calculateFiscalYear(),
+            vehicleId: trip.vehicleId,
+            tripId: trip._?.soul,
+            description: `Sale from trip ${trip._?.soul} by ${vehicle?.name || 'vehicle'}`,
+          });
+
+          soldProducts.forEach((soldProduct) => {
+            const product = productsBySoul.get(soldProduct.productId);
+            if (product?._?.soul) {
+              void db.product.update(slug)({
+                id: product._.soul,
+                stockQuantity: product.stockQuantity - soldProduct.quantity,
+              });
+            }
+          });
         },
         actions: async ({ row }) => {
           if (row.original.returnTime) return null;
@@ -976,139 +1237,11 @@ export function useBusinessConfig({
                                 ),
                             })}
                             onSubmit={async (data) => {
-                              const soldProducts = row.original.products
-                                .map((dispatchedProduct) => {
-                                  const returnedProduct =
-                                    data.returnedProducts?.find(
-                                      (rp) =>
-                                        rp.product ===
-                                        dispatchedProduct.product,
-                                    );
-                                  const returnedQty = returnedProduct
-                                    ? returnedProduct.quantity
-                                    : 0;
-                                  const soldQty =
-                                    dispatchedProduct.quantity - returnedQty;
-
-                                  return {
-                                    productId: dispatchedProduct.product,
-                                    quantity: Math.max(0, soldQty),
-                                  };
-                                })
-                                .filter((sp) => sp.quantity > 0);
-
                               void db.trip.update(slug)({
                                 id: row.original._?.soul ?? '',
                                 returnTime: new Date().toISOString(),
                                 returnedProducts: data.returnedProducts,
                               });
-
-                              for (const returnedProduct of data.returnedProducts ??
-                                []) {
-                                const products = await db.product.get({
-                                  keys: [slug],
-                                });
-                                const product = products.find(
-                                  (item) =>
-                                    item?._?.soul === returnedProduct.product,
-                                );
-                                if (!product?._?.soul) return;
-
-                                let adjustedQuantity = returnedProduct.quantity;
-
-                                if (product.unit?.includes(':')) {
-                                  const [unitType, piecesPerUnit] =
-                                    product.unit.split(':');
-                                  if (returnedProduct.unit === unitType) {
-                                    adjustedQuantity =
-                                      returnedProduct.quantity *
-                                      parseInt(piecesPerUnit, 10);
-                                  }
-                                }
-
-                                void db.product.update(slug)({
-                                  id: product._.soul,
-                                  stockQuantity:
-                                    product.stockQuantity + adjustedQuantity,
-                                });
-                              }
-                              if (soldProducts.length > 0) {
-                                const products = await db.product.get({
-                                  keys: [slug],
-                                });
-                                const productsBySoul = new Map(
-                                  products
-                                    .filter((item) => item?._?.soul)
-                                    // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
-                                    .map((item) => [item._?.soul!, item]),
-                                );
-                                const invoiceItems = soldProducts.map(
-                                  (item) => ({
-                                    product: item.productId,
-                                    quantity: item.quantity,
-                                    rate:
-                                      productsBySoul.get(item.productId)
-                                        ?.sellingPrice || 0,
-                                    total:
-                                      item.quantity *
-                                      (productsBySoul.get(item.productId)
-                                        ?.sellingPrice || 0),
-                                    vehicleId: row.original.vehicleId,
-                                  }),
-                                );
-
-                                const totalAmount = soldProducts.reduce(
-                                  (sum, item) =>
-                                    sum +
-                                    item.quantity *
-                                    (productsBySoul.get(item.productId)
-                                      ?.sellingPrice || 0),
-                                  0,
-                                );
-
-                                const vehicles = await db.vehicle.get({
-                                  keys: [slug],
-                                });
-                                const vehicle = vehicles.find(
-                                  (item) =>
-                                    item?._?.soul === row.original.vehicleId,
-                                );
-
-                                void db.invoice.create(slug)({
-                                  type: 'sale',
-                                  partyId: 'trip-sale',
-                                  issuedAt: new Date().toISOString(),
-                                  items: invoiceItems,
-                                  subTotal: totalAmount,
-                                  tax: 0,
-                                  payments: [
-                                    {
-                                      paidAt: new Date().toISOString(),
-                                      paidAmount: totalAmount,
-                                    },
-                                  ],
-                                  paidAmount: totalAmount,
-                                  paymentStatus: 'paid',
-                                  fiscalYear: calculateFiscalYear(),
-                                  vehicleId: row.original.vehicleId,
-                                  tripId: row.original._?.soul,
-                                  description: `Sale from trip ${row.original._?.soul} by ${vehicle?.name || 'vehicle'}`,
-                                });
-
-                                soldProducts.forEach((soldProduct) => {
-                                  const product = productsBySoul.get(
-                                    soldProduct.productId,
-                                  );
-                                  if (product?._?.soul) {
-                                    void db.product.update(slug)({
-                                      id: product._.soul,
-                                      stockQuantity:
-                                        product.stockQuantity -
-                                        soldProduct.quantity,
-                                    });
-                                  }
-                                });
-                              }
 
                               // const closeBtn = document.querySelector(
                               //   '[data-state="open"] [data-dismiss]',
