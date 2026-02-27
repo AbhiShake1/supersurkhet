@@ -40,6 +40,8 @@ function calculateFiscalYear() {
 type PaymentInput = {
   paidAt?: string | null;
   paidAmount?: number | string | null;
+  paymentMethod?: string | null;
+  bankVoucherNumber?: string | null;
 } | null;
 
 function normalizePaymentsWithFallback(
@@ -50,6 +52,8 @@ function normalizePaymentsWithFallback(
     return payments.map((payment) => ({
       paidAt: payment?.paidAt || new Date().toISOString(),
       paidAmount: Number(payment?.paidAmount ?? 0),
+      paymentMethod: payment?.paymentMethod || undefined,
+      bankVoucherNumber: payment?.bankVoucherNumber?.trim() || undefined,
     }));
   }
 
@@ -314,6 +318,28 @@ export function useBusinessConfig({
               totalAmount,
             }),
             fiscalYear: calculateFiscalYear(),
+          });
+        },
+        onUpdate(_, variables) {
+          const totalAmount =
+            variables.items?.reduce(
+              (sum, item) => sum + item.quantity * item.unitPrice,
+              0,
+            ) ?? 0;
+          const payments = normalizePaymentsWithFallback(
+            variables.payments,
+            variables.paidAmount,
+          );
+          const paidAmount = getPaidAmountFromPayments(payments);
+
+          db.invoice.update(slug)({
+            id: variables.id,
+            payments,
+            paidAmount,
+            paymentStatus: getPaymentStatusFromTotals({
+              paidAmount,
+              totalAmount,
+            }),
           });
         },
       },
