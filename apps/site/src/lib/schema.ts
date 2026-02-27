@@ -60,6 +60,9 @@ const PartyManagement = React.lazy(
 const InvoiceManagement = React.lazy(
   () => import('@/components/ui/admin/invoice-management'),
 );
+const BlazorLedgerManagement = React.lazy(
+  () => import('@/components/ui/admin/blazor-ledger-management'),
+);
 
 function getPermissions() {
   return ['product'] as readonly [string, ...string[]];
@@ -326,6 +329,10 @@ export const featureSchema = createSchema({
         {
           name: 'Invoices by Parties',
           component: InvoiceManagement,
+        },
+        {
+          name: 'Ledger',
+          component: BlazorLedgerManagement,
         },
       ];
     },
