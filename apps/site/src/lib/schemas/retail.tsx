@@ -792,12 +792,6 @@ export const invoiceSchema = z
   .object({
     type: z.enum(['purchase', 'sale']),
     partyId: z.string().describe('Party').optional(),
-    vehicleId: z.string().describe('Vehicle').optional(),
-    tripId: z.string().describe('Trip').optional(),
-    description: z
-      .string()
-      .optional()
-      .superRefine(fieldConfig({ fieldType: 'richText' })),
     issuedAt: z
       .string()
       .datetime({ offset: true })
@@ -857,6 +851,13 @@ export const invoiceSchema = z
         }),
       ),
     fiscalYear: z.string().describe('Fiscal Year'),
+    description: z
+      .string()
+      .optional()
+      .describe('Notes')
+      .superRefine(fieldConfig({ fieldType: 'richText' })),
+    vehicleId: z.string().describe('Vehicle').optional(),
+    tripId: z.string().describe('Trip').optional(),
   })
   .withDerivation('paidAmount', ({ formValues }) =>
     createPaidAmountFieldFromFormValues(formValues),
