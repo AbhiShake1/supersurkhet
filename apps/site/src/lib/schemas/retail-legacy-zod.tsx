@@ -128,6 +128,216 @@ function createPaidAmountFieldFromFormValues(formValues: {
     );
 }
 
+function createDerivedTotalAmountFieldFromFormValues(formValues: {
+  items?: Array<
+    Partial<Pick<SalesItem, 'totalAmount' | 'quantity' | 'unitPrice'>> | null
+  > | null;
+}) {
+  return z
+    .number({ coerce: true })
+    .default(0)
+    .nonnegative()
+    .describe('Total Amount')
+    .superRefine(
+      fieldConfig({
+        inputProps: {
+          readOnly: true,
+          disabled: true,
+          className: 'border-none',
+        },
+        customData: {
+          derive: () => {
+            const items = Array.isArray(formValues.items) ? formValues.items : [];
+            const totalAmount = getItemsTotalForPaymentStatus(
+              items.map((item) => {
+                if (!item) return null;
+                const { quantity, unitPrice, totalAmount } = item;
+                return { quantity, unitPrice, totalAmount };
+              }),
+            );
+            return {
+              inputProps: {
+                value: Number.isFinite(totalAmount) ? totalAmount : 0,
+              },
+            };
+          },
+        },
+      }),
+    );
+}
+
+function createDerivedInvoiceTotalAmountFieldFromFormValues(formValues: {
+  subTotal?: unknown;
+  tax?: unknown;
+}) {
+  return z
+    .number({ coerce: true })
+    .default(0)
+    .nonnegative()
+    .describe('Total Amount')
+    .superRefine(
+      fieldConfig({
+        inputProps: {
+          readOnly: true,
+          disabled: true,
+          className: 'border-none',
+        },
+        customData: {
+          derive: () => {
+            const subTotal = Number(formValues.subTotal ?? 0);
+            const tax = Number(formValues.tax ?? 0);
+            const totalAmount = subTotal + tax;
+            return {
+              inputProps: {
+                value: Number.isFinite(totalAmount) ? totalAmount : 0,
+              },
+            };
+          },
+        },
+      }),
+    );
+}
+
+function createDerivedInvoiceSubTotalFieldFromFormValues(formValues: {
+  items?: Array<Partial<Pick<InvoiceItem, 'quantity' | 'rate' | 'total'>> | null> | null;
+}) {
+  return z
+    .number({ coerce: true })
+    .int()
+    .nonnegative()
+    .default(0)
+    .describe('Sub Total')
+    .superRefine(
+      fieldConfig({
+        inputProps: {
+          readOnly: true,
+          disabled: true,
+          className: 'border-none',
+        },
+        customData: {
+          derive: () => {
+            const items = Array.isArray(formValues.items) ? formValues.items : [];
+            const subtotal = items.reduce((sum, item) => {
+              if (!item) return sum;
+              const explicitTotal = Number(item.total ?? 0);
+              const quantity = Number(item.quantity ?? 0);
+              const rate = Number(item.rate ?? 0);
+              const safeLineTotal = Number.isFinite(explicitTotal)
+                ? explicitTotal
+                : Number.isFinite(quantity) && Number.isFinite(rate)
+                  ? quantity * rate
+                  : 0;
+              return sum + (Number.isFinite(safeLineTotal) ? safeLineTotal : 0);
+            }, 0);
+
+            return {
+              inputProps: {
+                value: Number.isFinite(subtotal) ? subtotal : 0,
+              },
+            };
+          },
+        },
+      }),
+    );
+}
+
+function createDerivedInvoicePaymentStatusFieldFromFormValues(formValues: {
+  subTotal?: unknown;
+  tax?: unknown;
+  payments?: Array<{ paidAmount?: number | null | string } | null> | null;
+}) {
+  return z
+    .string()
+    .default('pending')
+    .describe('Payment Status')
+    .superRefine(
+      fieldConfig({
+        inputProps: {
+          className: 'border-none',
+          disabled: true,
+        },
+        customData: {
+          derive: () => {
+            const subTotal = Number(formValues.subTotal ?? 0);
+            const tax = Number(formValues.tax ?? 0);
+            const totalAmount = subTotal + tax;
+            const paidAmount = getPaidAmountFromFormValues(formValues);
+            return {
+              inputProps: {
+                value: getPaymentStatusFromTotals({
+                  paidAmount,
+                  totalAmount: Number.isFinite(totalAmount) ? totalAmount : 0,
+                }),
+              },
+            };
+          },
+        },
+      }),
+    );
+}
+
+function createDerivedSalesItemTotalAmountFieldFromFormValues(
+  formValues: unknown,
+) {
+  return z
+    .number({ coerce: true })
+    .nonnegative()
+    .describe('Total Amount')
+    .superRefine(
+      fieldConfig({
+        inputProps: {
+          className: 'border-none',
+          readOnly: true,
+        },
+        customData: {
+          derive: ({ rowPath }) => {
+            const row = getValueAtPath(formValues, rowPath);
+            const quantity = Number(
+              (row as { quantity?: number | null } | undefined)?.quantity ?? 0,
+            );
+            const unitPrice = Number(
+              (row as { unitPrice?: number | null } | undefined)?.unitPrice ?? 0,
+            );
+            return {
+              value: quantity * unitPrice,
+            };
+          },
+        },
+      }),
+    );
+}
+
+function createDerivedInvoiceItemTotalAmountFieldFromFormValues(
+  formValues: unknown,
+) {
+  return z
+    .number({ coerce: true })
+    .int()
+    .nonnegative()
+    .superRefine(
+      fieldConfig({
+        inputProps: {
+          className: 'border-none',
+          readOnly: true,
+        },
+        customData: {
+          derive: ({ rowPath }) => {
+            const row = getValueAtPath(formValues, rowPath);
+            const quantity = Number(
+              (row as { quantity?: number | null } | undefined)?.quantity ?? 0,
+            );
+            const rate = Number(
+              (row as { rate?: number | null } | undefined)?.rate ?? 0,
+            );
+            return {
+              value: quantity * rate,
+            };
+          },
+        },
+      }),
+    );
+}
+
 function createDerivedPaymentStatusFieldFromFormValues(formValues: {
   items?: Array<{
     quantity?: number | null;
@@ -242,32 +452,11 @@ export const salesItemSchema = z
     unitPrice: z.number({ coerce: true }).positive().describe('Unit Price'),
     totalAmount: z
       .number({ coerce: true })
-      .describe('Total Amount')
-      .superRefine(
-        fieldConfig({
-          inputProps: {
-            className: 'border-none',
-            readOnly: true,
-          },
-          customData: {
-            derive: ({ formValues, rowPath }) => {
-              const row = getValueAtPath(formValues, rowPath);
-              const quantity = Number(
-                (row as { quantity?: number | null } | undefined)?.quantity ??
-                0,
-              );
-              const unitPrice = Number(
-                (row as { unitPrice?: number | null } | undefined)?.unitPrice ??
-                0,
-              );
-              return {
-                value: quantity * unitPrice,
-              };
-            },
-          },
-        }),
-      ),
+      .describe('Total Amount'),
   })
+  .withDerivation('totalAmount', ({ formValues }) =>
+    createDerivedSalesItemTotalAmountFieldFromFormValues(formValues),
+  )
   .extend(table);
 
 export const saleSchema = z
@@ -304,6 +493,10 @@ export const saleSchema = z
       .array()
       .min(1, { message: 'Please add at least one item.' })
       .describe('Items Sold'),
+    totalAmount: z
+      .number({ coerce: true })
+      .nonnegative()
+      .describe('Total Amount'),
     payments: z
       .array(
         z.object({
@@ -354,6 +547,9 @@ export const saleSchema = z
   .withDerivation('paymentStatus', ({ formValues }) =>
     createDerivedPaymentStatusFieldFromFormValues(formValues),
   )
+  .withDerivation('totalAmount', ({ formValues }) =>
+    createDerivedTotalAmountFieldFromFormValues(formValues),
+  )
   .extend(table)
   .superRefine((sale, ctx) => {
     if (!sale.paidAmount) return;
@@ -369,6 +565,7 @@ export const saleSchema = z
 export type Sale = z.infer<typeof saleSchema>;
 
 export type SalesItem = NonNullable<InferredTable<'sale'>['items']>[number];
+type InvoiceItem = NonNullable<InferredTable<'invoice'>['items']>[number];
 
 export const orderSchema = z
   .object({
@@ -397,6 +594,10 @@ export const orderSchema = z
       .array()
       .min(1, { message: 'Please add at least one item.' })
       .describe('Items Ordered'),
+    totalAmount: z
+      .number({ coerce: true })
+      .nonnegative()
+      .describe('Total Amount'),
     payments: z
       .array(
         z.object({
@@ -459,6 +660,9 @@ export const orderSchema = z
   .withDerivation('paymentStatus', ({ formValues }) =>
     createDerivedPaymentStatusFieldFromFormValues(formValues),
   )
+  .withDerivation('totalAmount', ({ formValues }) =>
+    createDerivedTotalAmountFieldFromFormValues(formValues),
+  )
   .extend(table)
   .superRefine((order, ctx) => {
     if (!order.paidAmount) return;
@@ -504,7 +708,7 @@ export const stockImportSchema = z
       .array()
       .min(1, { message: 'Please add at least one item.' })
       .describe('Items to Import'),
-    totalAmount: z.number(),
+    totalAmount: z.number({ coerce: true }).nonnegative(),
     payments: z
       .array(
         z.object({
@@ -545,29 +749,9 @@ export const stockImportSchema = z
       .describe('Notes')
       .superRefine(fieldConfig({ fieldType: 'richText' })),
   })
-  .withDerivation('totalAmount', ({ formValues }) => {
-    return z
-      .number({ coerce: true })
-      .describe('Total Amount')
-      .superRefine(
-        fieldConfig({
-          inputProps: {
-            placeholder: 'Select a product first',
-            className: 'border-none',
-            readOnly: true,
-          },
-          customData: {
-            derive: () => {
-              return {
-                inputProps: {
-                  value: formValues.items?.reduce((sum, item) => sum + (item?.quantity ?? 0) * (item?.unitPrice ?? 0), 0)
-                },
-              };
-            },
-          },
-        }),
-      );
-  })
+  .withDerivation('totalAmount', ({ formValues }) =>
+    createDerivedTotalAmountFieldFromFormValues(formValues),
+  )
   .withDerivation('paidAmount', ({ formValues }) =>
     createPaidAmountFieldFromFormValues(formValues),
   )
@@ -638,8 +822,15 @@ export const invoiceSchema = z
         product: z.string().describe('Product'),
         quantity: z.number({ coerce: true }).positive(),
         rate: z.number({ coerce: true }).int().nonnegative(), // paisa
-        total: z.number({ coerce: true }).int().nonnegative(),
-      }),
+        total: z
+          .number({ coerce: true })
+          .int()
+          .nonnegative(),
+      }).withDerivation(
+        'total',
+        ({ formValues }) =>
+          createDerivedInvoiceItemTotalAmountFieldFromFormValues(formValues),
+      ),
     ),
 
     subTotal: z.number({ coerce: true }).int().nonnegative(),
@@ -679,39 +870,20 @@ export const invoiceSchema = z
           },
         }),
       ),
+    totalAmount: z.number({ coerce: true }).nonnegative().describe('Total Amount'),
     fiscalYear: z.string().describe('Fiscal Year'),
   })
   .withDerivation('paidAmount', ({ formValues }) =>
     createPaidAmountFieldFromFormValues(formValues),
   )
   .withDerivation('paymentStatus', ({ formValues }) =>
-    z
-      .string()
-      .default('pending')
-      .describe('Payment Status')
-      .superRefine(
-        fieldConfig({
-          inputProps: {
-            className: 'border-none',
-            disabled: true,
-          },
-          customData: {
-            derive: () => {
-              const subTotal = Number(formValues.subTotal ?? 0);
-              const tax = Number(formValues.tax ?? 0);
-              const paidAmount = getPaidAmountFromFormValues(formValues);
-              return {
-                inputProps: {
-                  value: getPaymentStatusFromTotals({
-                    paidAmount,
-                    totalAmount: subTotal + tax,
-                  }),
-                },
-              };
-            },
-          },
-        }),
-      ),
+    createDerivedInvoicePaymentStatusFieldFromFormValues(formValues),
+  )
+  .withDerivation('subTotal', ({ formValues }) =>
+    createDerivedInvoiceSubTotalFieldFromFormValues(formValues),
+  )
+  .withDerivation('totalAmount', ({ formValues }) =>
+    createDerivedInvoiceTotalAmountFieldFromFormValues(formValues),
   )
   .extend(table);
 
