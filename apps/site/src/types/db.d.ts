@@ -18,13 +18,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      email: string;
@@ -38,7 +38,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }, {
      email: string;
@@ -52,7 +52,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }>;
      readonly title: "Users";
@@ -113,20 +113,20 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      timestamp?: number | undefined;
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      layers?: string | undefined;
     }, {
@@ -134,7 +134,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      layers?: string | undefined;
     }>>;
@@ -143,13 +143,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      name: string;
@@ -159,7 +159,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      basePath?: string | undefined;
      features?: Record<string, boolean> | undefined;
@@ -184,7 +184,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      layers?: string | undefined;
     } | undefined;
@@ -196,7 +196,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      basePath?: string | undefined;
      features?: Record<string, boolean> | undefined;
@@ -221,7 +221,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      layers?: string | undefined;
     } | undefined;
@@ -239,13 +239,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      name: string;
@@ -254,7 +254,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }, {
      name: string;
@@ -263,7 +263,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }>;
      readonly title: "Roles";
@@ -280,13 +280,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      userId: string;
@@ -296,7 +296,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }, {
      userId: string;
@@ -306,7 +306,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }>;
      readonly title: "Memberships";
@@ -321,13 +321,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      otp: string;
@@ -335,7 +335,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }, {
      otp: string;
@@ -343,7 +343,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }>;
      readonly title: "OTPs";
@@ -712,13 +712,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      id: string;
@@ -741,7 +741,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      docs?: {
      description?: string | undefined;
@@ -821,7 +821,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      visibility?: "public" | undefined;
      docs?: {
@@ -904,13 +904,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      status: "active" | "paused";
@@ -926,7 +926,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      requestedCapabilities?: string[] | undefined;
     }, {
@@ -943,7 +943,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      requestedCapabilities?: string[] | undefined;
     }>;
@@ -1358,13 +1358,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      id: string;
@@ -1387,7 +1387,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      docs?: {
      description?: string | undefined;
@@ -1467,7 +1467,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      visibility?: "public" | undefined;
      docs?: {
@@ -1553,7 +1553,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      docs?: {
      description?: string | undefined;
@@ -1638,7 +1638,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      visibility?: "public" | undefined;
      docs?: {
@@ -1710,13 +1710,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      id: string;
@@ -1762,7 +1762,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      docs?: {
      description?: string | undefined;
@@ -1829,7 +1829,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      created_at?: string | undefined;
      updated_at?: string | undefined;
@@ -1875,7 +1875,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      visibility?: "public" | undefined;
      docs?: {
@@ -1943,7 +1943,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      visibility?: "public" | undefined;
      created_at?: string | undefined;
@@ -1987,13 +1987,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      status: "active";
@@ -2015,7 +2015,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }, {
      id: string;
@@ -2036,7 +2036,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      mergeStrategy?: "best-effort" | undefined;
     }>;
@@ -2145,13 +2145,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      name: string;
@@ -2164,7 +2164,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      description?: string | undefined;
      slug?: string | undefined;
@@ -2198,7 +2198,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      visibility?: "private" | "internal" | undefined;
      description?: string | undefined;
@@ -2241,13 +2241,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      role: "editor" | "admin" | "owner" | "viewer";
@@ -2259,7 +2259,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      invitedByUserId?: string | undefined;
     }, {
@@ -2272,7 +2272,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      invitedByUserId?: string | undefined;
     }>;
@@ -2298,13 +2298,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      email: string;
@@ -2319,7 +2319,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      expiresAt?: string | undefined;
      acceptedByUserId?: string | undefined;
@@ -2337,7 +2337,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      expiresAt?: string | undefined;
      acceptedByUserId?: string | undefined;
@@ -2365,13 +2365,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      status: "active" | "archived";
@@ -2385,7 +2385,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      description?: string | undefined;
      title?: string | undefined;
@@ -2403,7 +2403,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      description?: string | undefined;
      title?: string | undefined;
@@ -2757,13 +2757,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      id: string;
@@ -2837,7 +2837,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }, {
      id: string;
@@ -2852,7 +2852,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      actionManifest?: {
      actionId: string;
@@ -2936,13 +2936,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      status: "active" | "paused";
@@ -2960,7 +2960,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }, {
      id: string;
@@ -2978,7 +2978,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }>;
      readonly title: "Business Plugin Draft Installs";
@@ -3001,13 +3001,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      id: string;
@@ -3022,7 +3022,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      payload?: unknown;
     }, {
@@ -3038,7 +3038,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      payload?: unknown;
     }>;
@@ -3103,13 +3103,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      status: "ready" | "blocking";
@@ -3140,7 +3140,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }, {
      id: string;
@@ -3170,7 +3170,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      environment?: string | undefined;
     }>;
@@ -3194,13 +3194,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      status: "not-required" | "required-pending" | "approved";
@@ -3214,7 +3214,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      approvedByUserId?: string | undefined;
      note?: string | undefined;
@@ -3229,7 +3229,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      environment?: string | undefined;
      approvedByUserId?: string | undefined;
@@ -3255,13 +3255,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      rating: number;
@@ -3276,7 +3276,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      businessId?: string | undefined;
     }, {
@@ -3291,7 +3291,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      businessId?: string | undefined;
      comment?: string | undefined;
@@ -3317,13 +3317,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      id: string;
@@ -3338,7 +3338,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      businessId?: string | undefined;
      parentReplyId?: string | undefined;
@@ -3355,7 +3355,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      businessId?: string | undefined;
      parentReplyId?: string | undefined;
@@ -3381,13 +3381,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      value: "up" | "down";
@@ -3403,7 +3403,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      businessId?: string | undefined;
     }, {
@@ -3420,7 +3420,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      businessId?: string | undefined;
     }>;
@@ -3443,13 +3443,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      id: string;
@@ -3463,7 +3463,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      deniedActionIds?: string[] | undefined;
     }, {
@@ -3476,7 +3476,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      environment?: string | undefined;
      runtimeTarget?: "sandbox-worker" | "core" | undefined;
@@ -3528,13 +3528,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      id: string;
@@ -3558,7 +3558,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }, {
      id: string;
@@ -3582,7 +3582,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }>;
      readonly title: "Plugin Routes Tabs Config";
@@ -3600,13 +3600,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      version: string;
@@ -3617,7 +3617,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }, {
      version: string;
@@ -3628,7 +3628,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }>;
      readonly title: "Plugin Schema Docs";
@@ -3646,13 +3646,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      version: string;
@@ -3662,7 +3662,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      doc?: unknown;
     }, {
@@ -3673,7 +3673,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      doc?: unknown;
     }>;
@@ -3741,13 +3741,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      version: string;
@@ -3771,7 +3771,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }, {
      version: string;
@@ -3795,7 +3795,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }>;
      readonly title: "Plugin Action Definitions V3";
@@ -3823,13 +3823,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      status: "queued" | "leased" | "running" | "completed" | "failed" | "dead-lettered" | "cancelled";
@@ -3849,7 +3849,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      payload?: unknown;
     }, {
@@ -3870,7 +3870,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      payload?: unknown;
     }>;
@@ -3893,13 +3893,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      status: "running" | "completed" | "failed" | "cancelled" | "timed_out";
@@ -3911,7 +3911,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      finishedAt?: string | undefined;
      errorCode?: string | undefined;
@@ -3926,7 +3926,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      finishedAt?: string | undefined;
      errorCode?: string | undefined;
@@ -3952,13 +3952,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      message: string;
@@ -3972,7 +3972,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      nodeId?: string | undefined;
      data?: unknown;
@@ -3988,7 +3988,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      nodeId?: string | undefined;
      data?: unknown;
@@ -4011,13 +4011,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      id: string;
@@ -4030,7 +4030,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      payload?: unknown;
     }, {
@@ -4044,7 +4044,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      payload?: unknown;
     }>;
@@ -4081,13 +4081,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      status: "active" | "paused";
@@ -4103,7 +4103,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
@@ -4125,7 +4125,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
@@ -4177,13 +4177,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      status: "queued" | "leased" | "running" | "completed" | "failed" | "cancelled";
@@ -4199,7 +4199,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
@@ -4229,7 +4229,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      retryPolicy?: {
@@ -4271,13 +4271,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      status: "running" | "completed" | "failed" | "cancelled";
@@ -4291,7 +4291,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      finishedAt?: string | undefined;
@@ -4310,7 +4310,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      retryClass?: "interactive_fast_fail" | "device_bridge" | "commit_background" | "scheduled_batch" | undefined;
      finishedAt?: string | undefined;
@@ -4340,13 +4340,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      status: "running" | "completed" | "failed" | "cancelled" | "skipped";
@@ -4360,7 +4360,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      finishedAt?: string | undefined;
      errorCode?: string | undefined;
@@ -4378,7 +4378,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      finishedAt?: string | undefined;
      errorCode?: string | undefined;
@@ -4407,13 +4407,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      message: string;
@@ -4426,7 +4426,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      jobId?: string | undefined;
      data?: unknown;
@@ -4444,7 +4444,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      jobId?: string | undefined;
      data?: unknown;
@@ -4474,13 +4474,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      id: string;
@@ -4497,7 +4497,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      result?: unknown;
     }, {
@@ -4515,7 +4515,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      result?: unknown;
     }>;
@@ -4538,13 +4538,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      status: "queued" | "running" | "completed" | "failed";
@@ -4557,7 +4557,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      nextRunAt?: string | undefined;
      lastErrorCode?: string | undefined;
@@ -4572,7 +4572,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      nextRunAt?: string | undefined;
      lastErrorCode?: string | undefined;
@@ -4600,13 +4600,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      status: "running" | "completed" | "failed" | "retry_scheduled";
@@ -4622,7 +4622,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      result?: unknown;
      errorCode?: string | undefined;
@@ -4641,7 +4641,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      result?: unknown;
      errorCode?: string | undefined;
@@ -4668,13 +4668,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      id: string;
@@ -4690,7 +4690,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      enqueuedAt?: string | undefined;
     }, {
@@ -4707,7 +4707,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      enqueuedAt?: string | undefined;
     }>;
@@ -4733,13 +4733,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      id: string;
@@ -4754,7 +4754,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      lastUsedAt?: string | undefined;
      revokedAt?: string | undefined;
@@ -4772,7 +4772,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      lastUsedAt?: string | undefined;
      revokedAt?: string | undefined;
@@ -5091,13 +5091,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      id: string;
@@ -5157,7 +5157,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }, {
      id: string;
@@ -5217,7 +5217,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }>;
      readonly title: "CLI Schema Snapshots";
@@ -5246,13 +5246,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      isActive: boolean;
@@ -5265,7 +5265,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      description?: string | undefined;
      category?: string | undefined;
@@ -5285,7 +5285,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      description?: string | undefined;
      category?: string | undefined;
@@ -5306,7 +5306,56 @@ declare global {
     }[];
     };
      readonly party: {
-     readonly schema: import("../lib/plugins/schema-compiler").CompiledSchema;
+     readonly schema: import("zod").ZodObject<{
+     name: import("zod").ZodString;
+     address: import("zod").ZodOptional<import("zod").ZodString>;
+     panNumber: import("zod").ZodOptional<import("zod").ZodString>;
+     phone: import("zod").ZodOptional<import("zod").ZodString>;
+     creditLimit: import("zod").ZodOptional<import("zod").ZodNumber>;
+     paymentTerms: import("zod").ZodOptional<import("zod").ZodString>;
+     notes: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     name: string;
+     phone?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     address?: string | undefined;
+     panNumber?: string | undefined;
+     creditLimit?: number | undefined;
+     paymentTerms?: string | undefined;
+     notes?: string | undefined;
+    }, {
+     name: string;
+     phone?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     address?: string | undefined;
+     panNumber?: string | undefined;
+     creditLimit?: number | undefined;
+     paymentTerms?: string | undefined;
+     notes?: string | undefined;
+    }>;
      readonly title: "Purchase Parties";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
@@ -5316,13 +5365,194 @@ declare global {
     }[];
     };
      readonly customer: {
-     readonly schema: import("../lib/plugins/schema-compiler").CompiledSchema;
+     readonly schema: import("zod").ZodObject<{
+     name: import("zod").ZodString;
+     address: import("zod").ZodOptional<import("zod").ZodString>;
+     panNumber: import("zod").ZodOptional<import("zod").ZodString>;
+     phone: import("zod").ZodOptional<import("zod").ZodString>;
+     creditLimit: import("zod").ZodOptional<import("zod").ZodNumber>;
+     paymentTerms: import("zod").ZodOptional<import("zod").ZodString>;
+     notes: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     name: string;
+     phone?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     address?: string | undefined;
+     panNumber?: string | undefined;
+     creditLimit?: number | undefined;
+     paymentTerms?: string | undefined;
+     notes?: string | undefined;
+    }, {
+     name: string;
+     phone?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     address?: string | undefined;
+     panNumber?: string | undefined;
+     creditLimit?: number | undefined;
+     paymentTerms?: string | undefined;
+     notes?: string | undefined;
+    }>;
      readonly title: "Customers";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
     };
      readonly invoice: {
-     readonly schema: import("../lib/plugins/schema-compiler").CompiledSchema;
+     readonly schema: import("zod").ZodObject<{
+     type: import("zod").ZodEnum<["purchase", "sale"]>;
+     partyId: import("zod").ZodOptional<import("zod").ZodString>;
+     issuedAt: import("zod").ZodOptional<import("zod").ZodString>;
+     dueDate: import("zod").ZodOptional<import("zod").ZodString>;
+     items: import("zod").ZodArray<import("zod").ZodObject<{
+     product: import("zod").ZodString;
+     quantity: import("zod").ZodNumber;
+     rate: import("zod").ZodNumber;
+    } & Record<"total", import("zod").ZodEffects<import("zod").ZodNumber, number, number>>, "strip", import("zod").ZodTypeAny, {
+     product: string;
+     quantity: number;
+     rate: number;
+     total: number;
+    }, {
+     product: string;
+     quantity: number;
+     rate: number;
+     total: number;
+    }>, "many">;
+     subTotal: import("zod").ZodNumber;
+     tax: import("zod").ZodDefault<import("zod").ZodNumber>;
+     totalAmount: import("zod").ZodNumber;
+     payments: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodEffects<import("zod").ZodObject<{
+     paidAt: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
+     paidAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     paymentMethod: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodEnum<["cash", "card", "bankTransfer", "credit", "online", "check"]>>, "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined, "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined>;
+     bankVoucherNumber: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+    }, "strip", import("zod").ZodTypeAny, {
+     paidAt: string;
+     paidAmount: number;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }, {
+     paidAmount: number;
+     paidAt?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }>, {
+     paidAt: string;
+     paidAmount: number;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }, {
+     paidAmount: number;
+     paidAt?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }>, "many">>;
+     paidAmount: import("zod").ZodDefault<import("zod").ZodNumber>;
+     paymentStatus: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
+     fiscalYear: import("zod").ZodString;
+     description: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+     vehicleId: import("zod").ZodOptional<import("zod").ZodString>;
+     tripId: import("zod").ZodOptional<import("zod").ZodString>;
+    } & Record<"paidAmount", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>> & Record<"paymentStatus", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>> & Record<"subTotal", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>> & Record<"totalAmount", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>> & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     type: "sale" | "purchase";
+     items: {
+     product: string;
+     quantity: number;
+     rate: number;
+     total: number;
+    }[];
+     subTotal: number;
+     tax: number;
+     totalAmount: number;
+     paidAmount: number;
+     paymentStatus: string;
+     fiscalYear: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     description?: string | undefined;
+     partyId?: string | undefined;
+     issuedAt?: string | undefined;
+     dueDate?: string | undefined;
+     payments?: {
+     paidAt: string;
+     paidAmount: number;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }[] | undefined;
+     vehicleId?: string | undefined;
+     tripId?: string | undefined;
+    }, {
+     type: "sale" | "purchase";
+     items: {
+     product: string;
+     quantity: number;
+     rate: number;
+     total: number;
+    }[];
+     subTotal: number;
+     totalAmount: number;
+     fiscalYear: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     description?: string | undefined;
+     partyId?: string | undefined;
+     issuedAt?: string | undefined;
+     dueDate?: string | undefined;
+     tax?: number | undefined;
+     paidAmount?: number | undefined;
+     payments?: {
+     paidAmount: number;
+     paidAt?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }[] | undefined;
+     paymentStatus?: string | undefined;
+     vehicleId?: string | undefined;
+     tripId?: string | undefined;
+    }>;
      readonly title: "Invoices";
      readonly icon: React.ForwardRefExoticComponent<import("@tabler/icons-react").IconProps & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
@@ -5332,19 +5562,683 @@ declare global {
     }[];
     };
      readonly sale: {
-     readonly schema: import("../lib/plugins/schema-compiler").CompiledSchema;
+     readonly schema: import("zod").ZodEffects<import("zod").ZodObject<{
+     customerId: import("zod").ZodEffects<import("zod").ZodString, string, string>;
+     saleDate: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
+     items: import("zod").ZodArray<import("zod").ZodObject<{
+     product: import("zod").ZodEffects<import("zod").ZodString, string, string>;
+     unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+     quantity: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     totalAmount: import("zod").ZodNumber & import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    } & {
+     unitPrice: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+    }, "strip", import("zod").ZodTypeAny, {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }, {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }>, "many">;
+     totalAmount: import("zod").ZodNumber;
+     payments: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodEffects<import("zod").ZodObject<{
+     paidAt: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
+     paidAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     paymentMethod: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodEnum<["cash", "card", "bankTransfer", "credit", "online", "check"]>>, "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined, "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined>;
+     bankVoucherNumber: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+    }, "strip", import("zod").ZodTypeAny, {
+     paidAt: string;
+     paidAmount: number;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }, {
+     paidAmount: number;
+     paidAt?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }>, {
+     paidAt: string;
+     paidAmount: number;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }, {
+     paidAmount: number;
+     paidAt?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }>, "many">>;
+     paidAmount: import("zod").ZodNumber;
+     paymentStatus: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
+     paymentMethod: import("zod").ZodOptional<import("zod").ZodEnum<["cash", "card", "bankTransfer", "credit", "online", "check"]>>;
+     notes: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+    } & Record<"paidAmount", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>> & Record<"paymentStatus", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>> & Record<"totalAmount", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>> & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     totalAmount: number;
+     paidAmount: number;
+     paymentStatus: string;
+     customerId: string;
+     saleDate: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     payments?: {
+     paidAt: string;
+     paidAmount: number;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }[] | undefined;
+    }, {
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     totalAmount: number;
+     paidAmount: number;
+     customerId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     payments?: {
+     paidAmount: number;
+     paidAt?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }[] | undefined;
+     paymentStatus?: string | undefined;
+     saleDate?: string | undefined;
+    }>, {
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     totalAmount: number;
+     paidAmount: number;
+     paymentStatus: string;
+     customerId: string;
+     saleDate: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     payments?: {
+     paidAt: string;
+     paidAmount: number;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }[] | undefined;
+    }, {
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     totalAmount: number;
+     paidAmount: number;
+     customerId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     payments?: {
+     paidAmount: number;
+     paidAt?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }[] | undefined;
+     paymentStatus?: string | undefined;
+     saleDate?: string | undefined;
+    }>;
      readonly title: "Sales";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
     };
      readonly stockImport: {
-     readonly schema: import("../lib/plugins/schema-compiler").CompiledSchema;
+     readonly schema: import("zod").ZodEffects<import("zod").ZodObject<{
+     party: import("zod").ZodEffects<import("zod").ZodString, string, string>;
+     importDate: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
+     items: import("zod").ZodArray<import("zod").ZodObject<{
+     product: import("zod").ZodEffects<import("zod").ZodString, string, string>;
+     unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+     quantity: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     totalAmount: import("zod").ZodNumber & import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    } & {
+     unitPrice: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+    }, "strip", import("zod").ZodTypeAny, {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }, {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }>, "many">;
+     totalAmount: import("zod").ZodNumber;
+     payments: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodEffects<import("zod").ZodObject<{
+     paidAt: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
+     paidAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     paymentMethod: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodEnum<["cash", "card", "bankTransfer", "credit", "online", "check"]>>, "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined, "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined>;
+     bankVoucherNumber: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+    }, "strip", import("zod").ZodTypeAny, {
+     paidAt: string;
+     paidAmount: number;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }, {
+     paidAmount: number;
+     paidAt?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }>, {
+     paidAt: string;
+     paidAmount: number;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }, {
+     paidAmount: number;
+     paidAt?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }>, "many">>;
+     paidAmount: import("zod").ZodNumber;
+     paymentStatus: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
+     notes: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+    } & Record<"paidAmount", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>> & Record<"paymentStatus", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>> & Record<"totalAmount", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>> & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     party: string;
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     totalAmount: number;
+     paidAmount: number;
+     paymentStatus: string;
+     importDate: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     payments?: {
+     paidAt: string;
+     paidAmount: number;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }[] | undefined;
+    }, {
+     party: string;
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     totalAmount: number;
+     paidAmount: number;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     payments?: {
+     paidAmount: number;
+     paidAt?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }[] | undefined;
+     paymentStatus?: string | undefined;
+     importDate?: string | undefined;
+    }>, {
+     party: string;
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     totalAmount: number;
+     paidAmount: number;
+     paymentStatus: string;
+     importDate: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     payments?: {
+     paidAt: string;
+     paidAmount: number;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }[] | undefined;
+    }, {
+     party: string;
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     totalAmount: number;
+     paidAmount: number;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     payments?: {
+     paidAmount: number;
+     paidAt?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }[] | undefined;
+     paymentStatus?: string | undefined;
+     importDate?: string | undefined;
+    }>;
      readonly title: "Stock Imports";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
     };
      readonly order: {
-     readonly schema: import("../lib/plugins/schema-compiler").CompiledSchema;
+     readonly schema: import("zod").ZodEffects<import("zod").ZodObject<{
+     customerId: import("zod").ZodEffects<import("zod").ZodString, string, string>;
+     items: import("zod").ZodArray<import("zod").ZodObject<{
+     product: import("zod").ZodEffects<import("zod").ZodString, string, string>;
+     unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+     quantity: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     totalAmount: import("zod").ZodNumber & import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    } & {
+     unitPrice: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+    }, "strip", import("zod").ZodTypeAny, {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }, {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }>, "many">;
+     totalAmount: import("zod").ZodNumber;
+     payments: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodEffects<import("zod").ZodObject<{
+     paidAt: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
+     paidAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     paymentMethod: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodEnum<["cash", "card", "bankTransfer", "credit", "online", "check"]>>, "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined, "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined>;
+     bankVoucherNumber: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+    }, "strip", import("zod").ZodTypeAny, {
+     paidAt: string;
+     paidAmount: number;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }, {
+     paidAmount: number;
+     paidAt?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }>, {
+     paidAt: string;
+     paidAmount: number;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }, {
+     paidAmount: number;
+     paidAt?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }>, "many">>;
+     paidAmount: import("zod").ZodNumber;
+     paymentStatus: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
+     orderStatus: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodEnum<["pending", "done", "cancelled"]>>, "pending" | "cancelled" | "done", "pending" | "cancelled" | "done" | undefined>;
+     paymentMethod: import("zod").ZodOptional<import("zod").ZodEnum<["cash", "card", "bankTransfer", "credit", "online", "check"]>>;
+     notes: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+    } & Record<"paidAmount", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>> & Record<"paymentStatus", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>> & Record<"totalAmount", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>> & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     totalAmount: number;
+     paidAmount: number;
+     paymentStatus: string;
+     customerId: string;
+     orderStatus: "pending" | "cancelled" | "done";
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     payments?: {
+     paidAt: string;
+     paidAmount: number;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }[] | undefined;
+    }, {
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     totalAmount: number;
+     paidAmount: number;
+     customerId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     payments?: {
+     paidAmount: number;
+     paidAt?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }[] | undefined;
+     paymentStatus?: string | undefined;
+     orderStatus?: "pending" | "cancelled" | "done" | undefined;
+    }>, {
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     totalAmount: number;
+     paidAmount: number;
+     paymentStatus: string;
+     customerId: string;
+     orderStatus: "pending" | "cancelled" | "done";
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     payments?: {
+     paidAt: string;
+     paidAmount: number;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }[] | undefined;
+    }, {
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     totalAmount: number;
+     paidAmount: number;
+     customerId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     payments?: {
+     paidAmount: number;
+     paidAt?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | "online" | "check" | undefined;
+     bankVoucherNumber?: string | undefined;
+    }[] | undefined;
+     paymentStatus?: string | undefined;
+     orderStatus?: "pending" | "cancelled" | "done" | undefined;
+    }>;
      readonly title: "Orders";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Business Operations";
@@ -5374,13 +6268,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     } & {
      isVegetarian: import("zod").ZodDefault<import("zod").ZodBoolean>;
@@ -5400,7 +6294,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      description?: string | undefined;
      category?: string | undefined;
@@ -5422,7 +6316,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      description?: string | undefined;
      category?: string | undefined;
@@ -5840,7 +6734,7 @@ declare global {
     }, "strip", import("zod").ZodTypeAny, {
      type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
      step: number;
-     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
+     options?: ("cash" | "card" | "mobile_payment")[] | undefined;
      validation?: {
      allergen_check?: boolean | undefined;
      preparation_time?: string | undefined;
@@ -5859,7 +6753,7 @@ declare global {
     }, {
      type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
      step: number;
-     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
+     options?: ("cash" | "card" | "mobile_payment")[] | undefined;
      validation?: {
      allergen_check?: boolean | undefined;
      preparation_time?: string | undefined;
@@ -5880,7 +6774,7 @@ declare global {
      steps: {
      type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
      step: number;
-     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
+     options?: ("cash" | "card" | "mobile_payment")[] | undefined;
      validation?: {
      allergen_check?: boolean | undefined;
      preparation_time?: string | undefined;
@@ -5901,7 +6795,7 @@ declare global {
      steps: {
      type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
      step: number;
-     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
+     options?: ("cash" | "card" | "mobile_payment")[] | undefined;
      validation?: {
      allergen_check?: boolean | undefined;
      preparation_time?: string | undefined;
@@ -5993,6 +6887,13 @@ declare global {
      type: "product_details";
      sections: string[];
     } | undefined;
+     purchase?: {
+     options: {
+     delivery: ("in_store" | "home_delivery")[];
+     payment: string[];
+    };
+     type: "quick_buy";
+    } | undefined;
      demo?: {
      type: "ar_experience";
      features: string[];
@@ -6001,19 +6902,19 @@ declare global {
      compare?: {
      type: "product_comparison";
      related_products: string[];
-    } | undefined;
-     purchase?: {
-     options: {
-     delivery: ("in_store" | "home_delivery")[];
-     payment: string[];
-    };
-     type: "quick_buy";
     } | undefined;
     }, {
      info?: {
      type: "product_details";
      sections: string[];
     } | undefined;
+     purchase?: {
+     options: {
+     delivery: ("in_store" | "home_delivery")[];
+     payment: string[];
+    };
+     type: "quick_buy";
+    } | undefined;
      demo?: {
      type: "ar_experience";
      features: string[];
@@ -6022,13 +6923,6 @@ declare global {
      compare?: {
      type: "product_comparison";
      related_products: string[];
-    } | undefined;
-     purchase?: {
-     options: {
-     delivery: ("in_store" | "home_delivery")[];
-     payment: string[];
-    };
-     type: "quick_buy";
     } | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
@@ -6123,7 +7017,7 @@ declare global {
      steps: {
      type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
      step: number;
-     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
+     options?: ("cash" | "card" | "mobile_payment")[] | undefined;
      validation?: {
      allergen_check?: boolean | undefined;
      preparation_time?: string | undefined;
@@ -6146,6 +7040,13 @@ declare global {
      type: "product_details";
      sections: string[];
     } | undefined;
+     purchase?: {
+     options: {
+     delivery: ("in_store" | "home_delivery")[];
+     payment: string[];
+    };
+     type: "quick_buy";
+    } | undefined;
      demo?: {
      type: "ar_experience";
      features: string[];
@@ -6154,13 +7055,6 @@ declare global {
      compare?: {
      type: "product_comparison";
      related_products: string[];
-    } | undefined;
-     purchase?: {
-     options: {
-     delivery: ("in_store" | "home_delivery")[];
-     payment: string[];
-    };
-     type: "quick_buy";
     } | undefined;
     } | undefined;
     }, {
@@ -6255,7 +7149,7 @@ declare global {
      steps: {
      type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
      step: number;
-     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
+     options?: ("cash" | "card" | "mobile_payment")[] | undefined;
      validation?: {
      allergen_check?: boolean | undefined;
      preparation_time?: string | undefined;
@@ -6278,6 +7172,13 @@ declare global {
      type: "product_details";
      sections: string[];
     } | undefined;
+     purchase?: {
+     options: {
+     delivery: ("in_store" | "home_delivery")[];
+     payment: string[];
+    };
+     type: "quick_buy";
+    } | undefined;
      demo?: {
      type: "ar_experience";
      features: string[];
@@ -6286,13 +7187,6 @@ declare global {
      compare?: {
      type: "product_comparison";
      related_products: string[];
-    } | undefined;
-     purchase?: {
-     options: {
-     delivery: ("in_store" | "home_delivery")[];
-     payment: string[];
-    };
-     type: "quick_buy";
     } | undefined;
     } | undefined;
     }>;
@@ -6313,13 +7207,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      appId: string;
@@ -6328,7 +7222,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }, {
      appId: string;
@@ -6336,7 +7230,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      usageCount?: number | undefined;
     }>;
@@ -6354,13 +7248,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      userId: string;
@@ -6370,7 +7264,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }, {
      userId: string;
@@ -6379,7 +7273,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      apps?: Record<string, boolean> | undefined;
     }>;
@@ -6544,13 +7438,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      id: string;
@@ -6598,7 +7492,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      description?: string | undefined;
     }, {
@@ -6647,7 +7541,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      description?: string | undefined;
     }>;
@@ -6665,13 +7559,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      name: string;
@@ -6680,7 +7574,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      description?: string | undefined;
     }, {
@@ -6690,7 +7584,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      description?: string | undefined;
     }>;
@@ -6699,7 +7593,187 @@ declare global {
      readonly group: "Logistics";
     };
      readonly trip: {
-     readonly schema: import("../lib/plugins/schema-compiler").CompiledSchema;
+     readonly schema: import("zod").ZodObject<{
+     vehicleId: import("zod").ZodEffects<import("zod").ZodString, string, string>;
+     dispatchTime: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
+     returnTime: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodString, string, string>>;
+     destination: import("zod").ZodOptional<import("zod").ZodString>;
+     products: import("zod").ZodArray<import("zod").ZodObject<{
+     product: import("zod").ZodEffects<import("zod").ZodString, string, string>;
+     unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+     quantity: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     totalAmount: import("zod").ZodNumber & import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    } & {
+     unitPrice: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+    }, "strip", import("zod").ZodTypeAny, {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }, {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }>, "many">;
+     returnedProducts: import("zod").ZodArray<import("zod").ZodObject<{
+     product: import("zod").ZodEffects<import("zod").ZodString, string, string>;
+     unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+     quantity: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     totalAmount: import("zod").ZodNumber & import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    } & {
+     unitPrice: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+    }, "strip", import("zod").ZodTypeAny, {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }, {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }>, "many">;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     vehicleId: string;
+     dispatchTime: string;
+     products: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     returnedProducts: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     returnTime?: string | undefined;
+     destination?: string | undefined;
+    }, {
+     vehicleId: string;
+     products: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     returnedProducts: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     dispatchTime?: string | undefined;
+     returnTime?: string | undefined;
+     destination?: string | undefined;
+    }>;
      readonly title: "Trips";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Logistics";
