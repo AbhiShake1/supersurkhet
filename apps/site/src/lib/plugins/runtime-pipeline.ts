@@ -1,5 +1,6 @@
 import { SSRGetTimeoutError, get as ssrGet } from '@/lib/gun/ssr/get';
 import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
+import { retailRuntimeActionHandlers } from '@/lib/plugins/retail-runtime-action-handlers';
 import { createPluginRuntimeRegistry } from '@/lib/plugins/runtime-registry';
 import type {
   BusinessPluginDraftInstallDoc,
@@ -11,7 +12,9 @@ import type {
 } from '@/lib/plugins/types';
 import { executeLifecycleHook } from '@/lib/plugins/workflow-executor';
 
-const runtimeActionHandlers: RuntimeActionHandlers = {};
+const runtimeActionHandlers: RuntimeActionHandlers = {
+  ...retailRuntimeActionHandlers,
+};
 
 export function registerRuntimeActionHandlers(handlers: RuntimeActionHandlers) {
   Object.assign(runtimeActionHandlers, handlers);

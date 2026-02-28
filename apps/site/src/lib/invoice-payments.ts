@@ -3,6 +3,8 @@ import type { Invoice } from '@/lib/schema';
 type InvoicePayment = {
   paidAt?: string;
   paidAmount?: number;
+  paymentMethod?: string;
+  bankVoucherNumber?: string;
 };
 
 function toSafeNumber(value: unknown) {
@@ -24,6 +26,8 @@ export function getInvoicePayments(invoice: Invoice): InvoicePayment[] {
   return invoice.payments.map((payment) => ({
     paidAt: payment.paidAt,
     paidAmount: toSafeNumber(payment.paidAmount),
+    paymentMethod: payment.paymentMethod,
+    bankVoucherNumber: payment.bankVoucherNumber,
   }));
 }
 

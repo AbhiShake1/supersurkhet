@@ -317,6 +317,10 @@ function toFallbackSchemaDocs(release: MarketplaceSeedRelease): SchemaDoc[] {
     ];
   }
 
+  if (release.pluginId === 'supersurkhet.plugin.restaurant-admin') {
+    return toRestaurantAdminSchemaDocs(release, schemaTabs);
+  }
+
   return schemaTabs.map((tab, index) => {
     const schemaId = toTemplateSchemaId(tab.schema);
     return {
@@ -330,6 +334,97 @@ function toFallbackSchemaDocs(release: MarketplaceSeedRelease): SchemaDoc[] {
         },
       ],
       workflows: toFallbackSchemaWorkflows(release, schemaId, index),
+    };
+  });
+}
+
+function toSchemaWorkflowsForRestaurantAdmin(
+  release: MarketplaceSeedRelease,
+  schemaId: string,
+  index: number,
+): NonNullable<SchemaDoc['workflows']> {
+  const actionForSchema = (() => {
+    if (schemaId === 'stockImport' || schemaId === 'sale') {
+      return 'restaurant.stock.adjust';
+    }
+    if (schemaId === 'order') {
+      return 'restaurant.order.finalize';
+    }
+    if (schemaId === 'trip') {
+      return 'restaurant.trip.reconcile';
+    }
+    return toActionIdForWorkflow(release.actionManifest, index);
+  })();
+
+  if (
+    schemaId === 'stockImport' ||
+    schemaId === 'sale' ||
+    schemaId === 'order' ||
+    schemaId === 'trip'
+  ) {
+    return [
+      {
+        workflowId: `${toTemplateWorkflowId(release.pluginId, schemaId, index)}.afterCreate`,
+        hook: 'afterCreate',
+        nodes: [
+          {
+            nodeId: 'n1',
+            type: 'action',
+            actionId: actionForSchema,
+            input: {
+              expression: {
+                kind: 'ref',
+                source: 'payload',
+                path: [],
+              },
+            },
+          },
+        ],
+        edges: [],
+      },
+      {
+        workflowId: `${toTemplateWorkflowId(release.pluginId, schemaId, index)}.afterUpdate`,
+        hook: 'afterUpdate',
+        nodes: [
+          {
+            nodeId: 'n1',
+            type: 'action',
+            actionId: actionForSchema,
+            input: {
+              expression: {
+                kind: 'ref',
+                source: 'payload',
+                path: [],
+              },
+            },
+          },
+        ],
+        edges: [],
+      },
+    ];
+  }
+
+  return toFallbackSchemaWorkflows(release, schemaId, index);
+}
+
+function toRestaurantAdminSchemaDocs(
+  release: MarketplaceSeedRelease,
+  schemaTabs: AdminTabDoc[],
+): SchemaDoc[] {
+  return schemaTabs.map((tab, index) => {
+    const schemaId = toTemplateSchemaId(tab.schema);
+    return {
+      schemaId,
+      title: tab.title || schemaId,
+      fields: [
+        {
+          key: 'title',
+          type: 'string',
+          description: `Primary label for ${tab.title || schemaId}`,
+          optional: true,
+        },
+      ],
+      workflows: toSchemaWorkflowsForRestaurantAdmin(release, schemaId, index),
     };
   });
 }

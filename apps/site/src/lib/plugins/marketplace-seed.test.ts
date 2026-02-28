@@ -131,6 +131,15 @@ describe('marketplace seed catalog', () => {
         schemaDoc.schemaId.startsWith('__plugin_studio_'),
       ),
     ).toBe(false);
+    const orderSchemaDoc = (restaurantRelease?.schemaDocs ?? []).find(
+      (schemaDoc) => schemaDoc.schemaId === 'order',
+    );
+    const orderHooks = (orderSchemaDoc?.workflows ?? []).map(
+      (workflow) => workflow.hook,
+    );
+    expect(orderHooks).toEqual(
+      expect.arrayContaining(['afterCreate', 'afterUpdate']),
+    );
   });
 
   it('dedupes by pluginId@version even when live rows have different ids', () => {
