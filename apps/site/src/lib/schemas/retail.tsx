@@ -599,6 +599,31 @@ export const saleSchema = z
     createDerivedTotalAmountFieldFromFormValues(formValues),
   )
   .extend(table)
+  .withBill({
+    lineItemsField: 'items',
+    headerFields: ['customerId', 'saleDate'],
+    columns: [
+      { key: 'product', label: 'Product', width: '2.5fr' },
+      { key: 'quantity', label: 'Qty', width: '1fr', align: 'right' },
+      { key: 'unit', label: 'Unit', width: '1fr', align: 'center' },
+      { key: 'unitPrice', label: 'Unit Price', width: '1.5fr', align: 'right' },
+      {
+        key: 'totalAmount',
+        label: 'Line Total',
+        width: '1.5fr',
+        align: 'right',
+        readOnly: true,
+      },
+    ],
+    lineTotalField: 'totalAmount',
+    grandTotalField: 'totalAmount',
+    minRows: 1,
+    footer: ({ values }) => (
+      <div className="rounded-md border bg-muted/20 p-3 text-sm text-muted-foreground">
+        Payment Status: {String(values.paymentStatus ?? 'pending')}
+      </div>
+    ),
+  })
   .superRefine((sale, ctx) => {
     if (!sale.paidAmount) return;
     const totalCost = getItemsTotalForPaymentStatus(sale.items);
@@ -692,6 +717,31 @@ export const orderSchema = z
     createDerivedTotalAmountFieldFromFormValues(formValues),
   )
   .extend(table)
+  .withBill({
+    lineItemsField: 'items',
+    headerFields: ['customerId', 'orderStatus'],
+    columns: [
+      { key: 'product', label: 'Product', width: '2.5fr' },
+      { key: 'quantity', label: 'Qty', width: '1fr', align: 'right' },
+      { key: 'unit', label: 'Unit', width: '1fr', align: 'center' },
+      { key: 'unitPrice', label: 'Unit Price', width: '1.5fr', align: 'right' },
+      {
+        key: 'totalAmount',
+        label: 'Line Total',
+        width: '1.5fr',
+        align: 'right',
+        readOnly: true,
+      },
+    ],
+    lineTotalField: 'totalAmount',
+    grandTotalField: 'totalAmount',
+    minRows: 1,
+    footer: ({ values }) => (
+      <div className="rounded-md border bg-muted/20 p-3 text-sm text-muted-foreground">
+        Payment Status: {String(values.paymentStatus ?? 'pending')}
+      </div>
+    ),
+  })
   .superRefine((order, ctx) => {
     if (!order.paidAmount) return;
     const totalCost = getItemsTotalForPaymentStatus(order.items);
@@ -772,6 +822,31 @@ export const stockImportSchema = z
     createDerivedTotalAmountFieldFromFormValues(formValues),
   )
   .extend(table)
+  .withBill({
+    lineItemsField: 'items',
+    headerFields: ['party', 'importDate'],
+    columns: [
+      { key: 'product', label: 'Product', width: '2.5fr' },
+      { key: 'quantity', label: 'Qty', width: '1fr', align: 'right' },
+      { key: 'unit', label: 'Unit', width: '1fr', align: 'center' },
+      { key: 'unitPrice', label: 'Unit Price', width: '1.5fr', align: 'right' },
+      {
+        key: 'totalAmount',
+        label: 'Line Total',
+        width: '1.5fr',
+        align: 'right',
+        readOnly: true,
+      },
+    ],
+    lineTotalField: 'totalAmount',
+    grandTotalField: 'totalAmount',
+    minRows: 1,
+    footer: ({ values }) => (
+      <div className="rounded-md border bg-muted/20 p-3 text-sm text-muted-foreground">
+        Payment Status: {String(values.paymentStatus ?? 'pending')}
+      </div>
+    ),
+  })
   .superRefine((stockImport, ctx) => {
     if (!stockImport.paidAmount) return;
     const totalCost = getItemsTotalForPaymentStatus(stockImport.items);
@@ -963,6 +1038,30 @@ export const invoiceSchema = z
   .withDerivation('totalAmount', ({ formValues }) =>
     createDerivedInvoiceTotalAmountFieldFromFormValues(formValues),
   )
+  .withBill({
+    lineItemsField: 'items',
+    headerFields: ['type', 'partyId', 'issuedAt', 'dueDate'],
+    columns: [
+      { key: 'product', label: 'Product', width: '2.5fr' },
+      { key: 'quantity', label: 'Qty', width: '1fr', align: 'right' },
+      { key: 'rate', label: 'Rate', width: '1.5fr', align: 'right' },
+      {
+        key: 'total',
+        label: 'Line Total',
+        width: '1.5fr',
+        align: 'right',
+        readOnly: true,
+      },
+    ],
+    lineTotalField: 'total',
+    grandTotalField: 'totalAmount',
+    minRows: 1,
+    footer: ({ values }) => (
+      <div className="rounded-md border bg-muted/20 p-3 text-sm text-muted-foreground">
+        Payment Status: {String(values.paymentStatus ?? 'pending')}
+      </div>
+    ),
+  })
   .extend(table);
 
 export const tripSchema = z
