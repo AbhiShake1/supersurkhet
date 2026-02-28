@@ -431,7 +431,7 @@ declare global {
     }>;
      readonly title: "Products";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
-     readonly group: "Products & Inventory";
+     readonly group: "Stocks";
      readonly components: () => {
      name: string;
      component: React.LazyExoticComponent<import("../components/ui/admin/index").AdminComponent>;
@@ -920,7 +920,7 @@ declare global {
     }>;
      readonly title: "Sales";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
-     readonly group: "Financial";
+     readonly group: "Stocks";
     };
      readonly stockImport: {
      readonly schema: import("zod").ZodEffects<import("zod").ZodObject<{
@@ -1144,7 +1144,96 @@ declare global {
     }>;
      readonly title: "Purchases";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
-     readonly group: "Financial";
+     readonly group: "Stocks";
+    };
+     readonly stockBook: {
+     readonly schema: import("zod").ZodObject<{
+     entryDate: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
+     transactionType: import("zod").ZodEffects<import("zod").ZodEnum<["purchase", "sale", "stock"]>, "sale" | "purchase" | "stock", "sale" | "purchase" | "stock">;
+     movementType: import("zod").ZodEffects<import("zod").ZodEnum<["opening", "purchase", "sale", "order", "tripDispatch", "tripReturn", "adjustment"]>, "sale" | "order" | "purchase" | "opening" | "tripDispatch" | "tripReturn" | "adjustment", "sale" | "order" | "purchase" | "opening" | "tripDispatch" | "tripReturn" | "adjustment">;
+     direction: import("zod").ZodEffects<import("zod").ZodEnum<["in", "out"]>, "in" | "out", "in" | "out">;
+     productId: import("zod").ZodEffects<import("zod").ZodString, string, string>;
+     quantityIn: import("zod").ZodDefault<import("zod").ZodNumber>;
+     quantityOut: import("zod").ZodDefault<import("zod").ZodNumber>;
+     quantity: import("zod").ZodNumber;
+     unitRate: import("zod").ZodDefault<import("zod").ZodNumber>;
+     totalAmount: import("zod").ZodDefault<import("zod").ZodNumber>;
+     particulars: import("zod").ZodString;
+     remarks: import("zod").ZodOptional<import("zod").ZodString>;
+     sourceTable: import("zod").ZodEffects<import("zod").ZodEnum<["product", "stockImport", "sale", "order", "trip", "manual"]>, "product" | "sale" | "stockImport" | "order" | "trip" | "manual", "product" | "sale" | "stockImport" | "order" | "trip" | "manual">;
+     sourceId: import("zod").ZodOptional<import("zod").ZodString>;
+     sourceCode: import("zod").ZodOptional<import("zod").ZodString>;
+     counterpartyId: import("zod").ZodOptional<import("zod").ZodString>;
+     fiscalYear: import("zod").ZodOptional<import("zod").ZodString>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     totalAmount: number;
+     direction: "in" | "out";
+     quantity: number;
+     entryDate: string;
+     transactionType: "sale" | "purchase" | "stock";
+     movementType: "sale" | "order" | "purchase" | "opening" | "tripDispatch" | "tripReturn" | "adjustment";
+     productId: string;
+     quantityIn: number;
+     quantityOut: number;
+     unitRate: number;
+     particulars: string;
+     sourceTable: "product" | "sale" | "stockImport" | "order" | "trip" | "manual";
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     fiscalYear?: string | undefined;
+     remarks?: string | undefined;
+     sourceId?: string | undefined;
+     sourceCode?: string | undefined;
+     counterpartyId?: string | undefined;
+    }, {
+     direction: "in" | "out";
+     quantity: number;
+     transactionType: "sale" | "purchase" | "stock";
+     movementType: "sale" | "order" | "purchase" | "opening" | "tripDispatch" | "tripReturn" | "adjustment";
+     productId: string;
+     particulars: string;
+     sourceTable: "product" | "sale" | "stockImport" | "order" | "trip" | "manual";
+     timestamp?: number | undefined;
+     totalAmount?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     fiscalYear?: string | undefined;
+     entryDate?: string | undefined;
+     quantityIn?: number | undefined;
+     quantityOut?: number | undefined;
+     unitRate?: number | undefined;
+     remarks?: string | undefined;
+     sourceId?: string | undefined;
+     sourceCode?: string | undefined;
+     counterpartyId?: string | undefined;
+    }>;
+     readonly title: "Stock Book";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Stocks";
+     readonly components: () => {
+     name: string;
+     component: React.LazyExoticComponent<import("../components/ui/admin/index").AdminComponent>;
+    }[];
     };
      readonly order: {
      readonly schema: import("zod").ZodEffects<import("zod").ZodObject<{

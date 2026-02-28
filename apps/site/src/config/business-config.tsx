@@ -20,6 +20,7 @@ import { api } from '@/lib/api';
 import type { BusinessType } from '@/lib/schema';
 import { type SalesItem, salesItemSchema } from '@/lib/schemas/retail';
 import { db } from '@/lib/ssr/api';
+import { getSoulFromUnknown } from '@/lib/utils';
 import { getPaymentStatusFromTotals } from './payment-status-derivation';
 
 type AnyAutoTableTab = {
@@ -40,9 +41,25 @@ function calculateFiscalYear() {
 type PaymentInput = {
   paidAt?: string | null;
   paidAmount?: number | string | null;
-  paymentMethod?: string | null;
+  paymentMethod?:
+    | 'cash'
+    | 'card'
+    | 'bankTransfer'
+    | 'credit'
+    | 'online'
+    | 'check'
+    | null;
   bankVoucherNumber?: string | null;
 } | null;
+
+const validPaymentMethods = new Set([
+  'cash',
+  'card',
+  'bankTransfer',
+  'credit',
+  'online',
+  'check',
+] as const);
 
 function normalizePaymentsWithFallback(
   payments: PaymentInput[] | undefined,
@@ -52,7 +69,10 @@ function normalizePaymentsWithFallback(
     return payments.map((payment) => ({
       paidAt: payment?.paidAt || new Date().toISOString(),
       paidAmount: Number(payment?.paidAmount ?? 0),
-      paymentMethod: payment?.paymentMethod || undefined,
+      paymentMethod:
+        payment?.paymentMethod && validPaymentMethods.has(payment.paymentMethod)
+          ? payment.paymentMethod
+          : undefined,
       bankVoucherNumber: payment?.bankVoucherNumber?.trim() || undefined,
     }));
   }
@@ -157,6 +177,123 @@ export function useBusinessConfig({
   const stockImportsBySoul = new Map(stockImports?.map((s) => [s._?.soul, s]));
   const salesBySoul = new Map(sales?.map((s) => [s._?.soul, s]));
 
+  function toSourceCode(sourceId: string | undefined) {
+    if (!sourceId) return undefined;
+    return sourceId.split('/').at(-1) || sourceId;
+  }
+
+  function getMutationId(data: unknown) {
+    const soul = getSoulFromUnknown(data);
+    if (soul) return soul;
+    if (data && typeof data === 'object' && 'id' in data) {
+      const id = (data as { id?: unknown }).id;
+      return typeof id === 'string' ? id : undefined;
+    }
+    return undefined;
+  }
+
+  async function clearStockBookEntriesBySource(
+    sourceTable: 'product' | 'stockImport' | 'sale' | 'order' | 'trip' | 'manual',
+    sourceId: string | undefined,
+  ) {
+    if (!sourceId) return;
+    const entries = await db.stockBook.get({ keys: [slug] });
+    for (const entry of entries) {
+      if (!entry._?.soul) continue;
+      if (entry.sourceTable !== sourceTable) continue;
+      if (entry.sourceId !== sourceId) continue;
+      await db.stockBook.remove(slug)(entry._.soul);
+    }
+  }
+
+  async function createStockBookEntriesFromItems({
+    sourceTable,
+    sourceId,
+    transactionType,
+    movementType,
+    direction,
+    entryDate,
+    items,
+    counterpartyId,
+    particularsPrefix,
+    fiscalYear,
+  }: {
+    sourceTable: 'product' | 'stockImport' | 'sale' | 'order' | 'trip' | 'manual';
+    sourceId?: string;
+    transactionType: 'purchase' | 'sale' | 'stock';
+    movementType:
+      | 'opening'
+      | 'purchase'
+      | 'sale'
+      | 'order'
+      | 'tripDispatch'
+      | 'tripReturn'
+      | 'adjustment';
+    direction: 'in' | 'out';
+    entryDate?: string;
+    items: SalesItem[] | undefined;
+    counterpartyId?: string;
+    particularsPrefix: string;
+    fiscalYear?: string;
+  }) {
+    if (!items?.length) return;
+    const products = await db.product.get({ keys: [slug] });
+    const productsMap = new Map(
+      products
+        .filter((item) => item?._?.soul)
+        .map((item) => [item._?.soul, item]),
+    );
+
+    const aggregates = items.reduce(
+      (acc, item) => {
+        const productInfo = productsMap.get(item.product);
+        if (!productInfo?._?.soul) return acc;
+        const adjustedQuantity = getAdjustedQuantity(item, productInfo);
+        const lineAmount = Number(item.quantity || 0) * Number(item.unitPrice || 0);
+        const existing = acc.get(item.product) || {
+          quantity: 0,
+          totalAmount: 0,
+          unitRate: 0,
+        };
+        existing.quantity += adjustedQuantity;
+        existing.totalAmount += lineAmount;
+        existing.unitRate = Number(item.unitPrice || existing.unitRate || 0);
+        acc.set(item.product, existing);
+        return acc;
+      },
+      new Map<string, { quantity: number; totalAmount: number; unitRate: number }>(),
+    );
+
+    const eventDate = entryDate || new Date().toISOString();
+    const sourceCode = toSourceCode(sourceId);
+    const inferredFiscalYear = fiscalYear || calculateFiscalYear();
+
+    for (const [productId, aggregate] of aggregates.entries()) {
+      const quantity = Number(aggregate.quantity || 0);
+      if (!quantity) continue;
+      await db.stockBook.create(slug)({
+        entryDate: eventDate,
+        transactionType,
+        movementType,
+        direction,
+        productId,
+        quantityIn: direction === 'in' ? quantity : 0,
+        quantityOut: direction === 'out' ? quantity : 0,
+        quantity,
+        unitRate: Number(aggregate.unitRate || 0),
+        totalAmount: Number(aggregate.totalAmount || 0),
+        particulars: sourceCode
+          ? `${particularsPrefix} #${sourceCode}`
+          : particularsPrefix,
+        sourceTable,
+        sourceId,
+        sourceCode,
+        counterpartyId,
+        fiscalYear: inferredFiscalYear,
+      });
+    }
+  }
+
   function returnedProductsSchemaWithProducts(products: string[]) {
     return salesItemSchema
       .extend({
@@ -221,6 +358,63 @@ export function useBusinessConfig({
       {
         schema: 'product',
         slug,
+        async onCreate(data, variables) {
+          const createdId = getMutationId(data);
+          const openingQuantity = Number(variables.stockQuantity || 0);
+          if (!openingQuantity || !createdId) return;
+
+          await db.stockBook.create(slug)({
+            entryDate: new Date().toISOString(),
+            transactionType: 'stock',
+            movementType: 'opening',
+            direction: 'in',
+            productId: createdId,
+            quantityIn: openingQuantity,
+            quantityOut: 0,
+            quantity: openingQuantity,
+            unitRate: Number(variables.costPrice || 0),
+            totalAmount: openingQuantity * Number(variables.costPrice || 0),
+            particulars: 'Opening stock',
+            sourceTable: 'product',
+            sourceId: createdId,
+            sourceCode: toSourceCode(createdId),
+            fiscalYear: calculateFiscalYear(),
+          });
+        },
+        async onUpdate(_, variables, updateContext) {
+          const previousData =
+            (updateContext as UpdateContext<'product'>)?.previousData;
+          const currentData = (updateContext as UpdateContext<'product'>)?.newData;
+          const previousStock = Number(previousData?.stockQuantity || 0);
+          const currentStock = Number(currentData?.stockQuantity || previousStock);
+          const delta = currentStock - previousStock;
+          if (!delta) return;
+
+          await clearStockBookEntriesBySource('manual', variables.id);
+          await db.stockBook.create(slug)({
+            entryDate: new Date().toISOString(),
+            transactionType: 'stock',
+            movementType: 'adjustment',
+            direction: delta > 0 ? 'in' : 'out',
+            productId: variables.id,
+            quantityIn: delta > 0 ? Math.abs(delta) : 0,
+            quantityOut: delta < 0 ? Math.abs(delta) : 0,
+            quantity: Math.abs(delta),
+            unitRate: Number(currentData?.costPrice || previousData?.costPrice || 0),
+            totalAmount:
+              Math.abs(delta) *
+              Number(currentData?.costPrice || previousData?.costPrice || 0),
+            particulars: 'Manual stock adjustment',
+            sourceTable: 'manual',
+            sourceId: variables.id,
+            sourceCode: toSourceCode(variables.id),
+            fiscalYear: calculateFiscalYear(),
+          });
+        },
+        async onDelete(_, id) {
+          await clearStockBookEntriesBySource('product', id);
+          await clearStockBookEntriesBySource('manual', id);
+        },
       },
       {
         schema: 'party',
@@ -302,6 +496,7 @@ export function useBusinessConfig({
           },
         },
         async onCreate(data, variables) {
+          const createdId = getMutationId(data);
           const products = await db.product.get({ keys: [slug] });
           const productsBySoul = new Map(
             products
@@ -373,13 +568,14 @@ export function useBusinessConfig({
           const paidAmount = getPaidAmountFromPayments(payments);
 
           void db.invoice.create(slug)({
-            id: data.id,
+            ...(createdId ? { id: createdId } : {}),
             type: 'purchase',
             partyId: variables.party,
             issuedAt: variables.importDate,
             items: invoiceItems,
             subTotal: totalAmount,
             tax: 0,
+            totalAmount,
             payments,
             paidAmount,
             paymentStatus: getPaymentStatusFromTotals({
@@ -388,8 +584,21 @@ export function useBusinessConfig({
             }),
             fiscalYear: calculateFiscalYear(),
           });
+
+          await createStockBookEntriesFromItems({
+            sourceTable: 'stockImport',
+            sourceId: createdId,
+            transactionType: 'purchase',
+            movementType: 'purchase',
+            direction: 'in',
+            entryDate: variables.importDate,
+            items: variables.items,
+            counterpartyId: variables.party,
+            particularsPrefix: 'Purchase',
+            fiscalYear: calculateFiscalYear(),
+          });
         },
-        onUpdate(_, variables, updateContext) {
+        async onUpdate(_, variables, updateContext) {
           const stockImport = stockImportsBySoul.get(variables.id);
           const currentStockImport =
             (updateContext as UpdateContext<'stockImport'>)?.newData ??
@@ -449,6 +658,23 @@ export function useBusinessConfig({
               totalAmount,
             }),
           });
+
+          await clearStockBookEntriesBySource('stockImport', variables.id);
+          await createStockBookEntriesFromItems({
+            sourceTable: 'stockImport',
+            sourceId: variables.id,
+            transactionType: 'purchase',
+            movementType: 'purchase',
+            direction: 'in',
+            entryDate: currentStockImport?.importDate ?? variables.importDate,
+            items,
+            counterpartyId: currentStockImport?.party ?? variables.party,
+            particularsPrefix: 'Purchase',
+            fiscalYear: calculateFiscalYear(),
+          });
+        },
+        async onDelete(_, id) {
+          await clearStockBookEntriesBySource('stockImport', id);
         },
       },
       {
@@ -519,6 +745,7 @@ export function useBusinessConfig({
             }
           }),
         async onCreate(data, variables) {
+          const createdId = getMutationId(data);
           const itemsByProductIdWithQuantity = variables.items?.reduce(
             (a, { product, quantity, unit }) => {
               const productInfo = productsBySoul.get(product);
@@ -584,13 +811,14 @@ export function useBusinessConfig({
           const paidAmount = getPaidAmountFromPayments(payments);
 
           void db.invoice.create(slug)({
-            id: data.id,
+            ...(createdId ? { id: createdId } : {}),
             type: 'sale',
             partyId: variables.customerId,
             issuedAt: variables.saleDate,
             items: invoiceItems,
             subTotal: totalAmount,
             tax: 0,
+            totalAmount,
             payments,
             paidAmount,
             paymentStatus: getPaymentStatusFromTotals({
@@ -599,8 +827,21 @@ export function useBusinessConfig({
             }),
             fiscalYear: calculateFiscalYear(),
           });
+
+          await createStockBookEntriesFromItems({
+            sourceTable: 'sale',
+            sourceId: createdId,
+            transactionType: 'sale',
+            movementType: 'sale',
+            direction: 'out',
+            entryDate: variables.saleDate,
+            items: variables.items,
+            counterpartyId: variables.customerId,
+            particularsPrefix: 'Sale',
+            fiscalYear: calculateFiscalYear(),
+          });
         },
-        onUpdate(_, variables, updateContext) {
+        async onUpdate(_, variables, updateContext) {
           const sale = salesBySoul.get(variables.id);
           const currentSale =
             (updateContext as UpdateContext<'sale'>)?.newData ?? sale;
@@ -658,6 +899,32 @@ export function useBusinessConfig({
               totalAmount,
             }),
           });
+          await clearStockBookEntriesBySource('sale', variables.id);
+          await createStockBookEntriesFromItems({
+            sourceTable: 'sale',
+            sourceId: variables.id,
+            transactionType: 'sale',
+            movementType: 'sale',
+            direction: 'out',
+            entryDate: currentSale?.saleDate ?? variables.saleDate,
+            items,
+            counterpartyId: currentSale?.customerId ?? variables.customerId,
+            particularsPrefix: 'Sale',
+            fiscalYear: calculateFiscalYear(),
+          });
+        },
+        async onDelete(_, id) {
+          await clearStockBookEntriesBySource('sale', id);
+        },
+      },
+      {
+        schema: 'stockBook',
+        slug,
+        readOnly: true,
+        previewOverrides: {
+          productId: (id) => productsBySoul.get(id)?.title ?? '-',
+          counterpartyId: (id) =>
+            partiesBySoul.get(id)?.name || customersBySoul.get(id)?.name || '-',
         },
       },
       {
@@ -782,7 +1049,7 @@ export function useBusinessConfig({
               }
             }
           }),
-        async onCreate(_, variables) {
+        async onCreate(data, variables) {
           if (variables.orderStatus !== 'done') return;
           const itemsByProductIdWithQuantity = variables.items?.reduce(
             (a, item) => {
@@ -851,6 +1118,7 @@ export function useBusinessConfig({
             items: invoiceItems,
             subTotal: totalAmount,
             tax: 0,
+            totalAmount,
             payments,
             paidAmount,
             paymentStatus: getPaymentStatusFromTotals({
@@ -859,8 +1127,21 @@ export function useBusinessConfig({
             }),
             fiscalYear: calculateFiscalYear(),
           });
+
+          await createStockBookEntriesFromItems({
+            sourceTable: 'order',
+            sourceId: getMutationId(data),
+            transactionType: 'sale',
+            movementType: 'order',
+            direction: 'out',
+            entryDate: new Date().toISOString(),
+            items: variables.items,
+            counterpartyId: variables.customerId,
+            particularsPrefix: 'Order Fulfilled',
+            fiscalYear: calculateFiscalYear(),
+          });
         },
-        onUpdate(_, variables, updateContext) {
+        async onUpdate(_, variables, updateContext) {
           if (variables.orderStatus !== 'done') return;
           const currentOrder =
             (updateContext as UpdateContext<'order'>)?.previousData ??
@@ -938,6 +1219,7 @@ export function useBusinessConfig({
             items: invoiceItems,
             subTotal: totalAmount,
             tax: 0,
+            totalAmount,
             payments,
             paidAmount,
             paymentStatus: getPaymentStatusFromTotals({
@@ -946,6 +1228,23 @@ export function useBusinessConfig({
             }),
             fiscalYear: calculateFiscalYear(),
           });
+
+          await clearStockBookEntriesBySource('order', variables.id);
+          await createStockBookEntriesFromItems({
+            sourceTable: 'order',
+            sourceId: variables.id,
+            transactionType: 'sale',
+            movementType: 'order',
+            direction: 'out',
+            entryDate: new Date().toISOString(),
+            items: order.items,
+            counterpartyId: order.customerId,
+            particularsPrefix: 'Order Fulfilled',
+            fiscalYear: calculateFiscalYear(),
+          });
+        },
+        async onDelete(_, id) {
+          await clearStockBookEntriesBySource('order', id);
         },
       },
       {
@@ -1023,7 +1322,7 @@ export function useBusinessConfig({
                 }
               }
             }),
-        async onCreate(_, variables) {
+        async onCreate(data, variables) {
           const products = await db.product.get({ keys: [slug] });
           const productsBySoul = new Map(
             products
@@ -1061,6 +1360,18 @@ export function useBusinessConfig({
               });
             },
           );
+
+          await createStockBookEntriesFromItems({
+            sourceTable: 'trip',
+            sourceId: getMutationId(data),
+            transactionType: 'stock',
+            movementType: 'tripDispatch',
+            direction: 'out',
+            entryDate: variables.dispatchTime,
+            items: variables.products,
+            particularsPrefix: 'Trip Dispatch',
+            fiscalYear: calculateFiscalYear(),
+          });
         },
         async onUpdate(_, variables, updateContext) {
           const currentTrip =
@@ -1072,6 +1383,19 @@ export function useBusinessConfig({
             (updateContext as UpdateContext<'trip'>)?.newData ??
             tripsBySoul.get(variables.id);
           if (!trip?.returnTime || !trip?.products?.length) return;
+
+          await clearStockBookEntriesBySource('trip', variables.id);
+          await createStockBookEntriesFromItems({
+            sourceTable: 'trip',
+            sourceId: variables.id,
+            transactionType: 'stock',
+            movementType: 'tripDispatch',
+            direction: 'out',
+            entryDate: trip.dispatchTime,
+            items: trip.products,
+            particularsPrefix: 'Trip Dispatch',
+            fiscalYear: calculateFiscalYear(),
+          });
 
           const soldProducts = trip.products
             .map((dispatchedProduct) => {
@@ -1118,6 +1442,18 @@ export function useBusinessConfig({
             });
           }
 
+          await createStockBookEntriesFromItems({
+            sourceTable: 'trip',
+            sourceId: variables.id,
+            transactionType: 'stock',
+            movementType: 'tripReturn',
+            direction: 'in',
+            entryDate: trip.returnTime,
+            items: trip.returnedProducts,
+            particularsPrefix: 'Trip Return',
+            fiscalYear: calculateFiscalYear(),
+          });
+
           if (!soldProducts.length) return;
 
           const invoiceItems = soldProducts.map((item) => ({
@@ -1127,7 +1463,6 @@ export function useBusinessConfig({
             total:
               item.quantity *
               (productsBySoul.get(item.productId)?.sellingPrice || 0),
-            vehicleId: trip.vehicleId,
           }));
 
           const totalAmount = soldProducts.reduce(
@@ -1150,6 +1485,7 @@ export function useBusinessConfig({
             items: invoiceItems,
             subTotal: totalAmount,
             tax: 0,
+            totalAmount,
             payments: [
               {
                 paidAt: new Date().toISOString(),
@@ -1173,6 +1509,31 @@ export function useBusinessConfig({
               });
             }
           });
+
+          await createStockBookEntriesFromItems({
+            sourceTable: 'trip',
+            sourceId: variables.id,
+            transactionType: 'sale',
+            movementType: 'sale',
+            direction: 'out',
+            entryDate: trip.returnTime,
+            items: soldProducts.map((soldProduct) => ({
+              product: soldProduct.productId,
+              quantity: soldProduct.quantity,
+              unit: productsBySoul.get(soldProduct.productId)?.unit || '',
+              unitPrice:
+                Number(productsBySoul.get(soldProduct.productId)?.sellingPrice) || 0,
+              totalAmount:
+                soldProduct.quantity *
+                (Number(productsBySoul.get(soldProduct.productId)?.sellingPrice) ||
+                  0),
+            })) as SalesItem[],
+            particularsPrefix: 'Trip Sale',
+            fiscalYear: calculateFiscalYear(),
+          });
+        },
+        async onDelete(_, id) {
+          await clearStockBookEntriesBySource('trip', id);
         },
         actions: async ({ row }) => {
           if (row.original.returnTime) return null;

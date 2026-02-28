@@ -1,5 +1,6 @@
 import { IconMoneybag } from '@tabler/icons-react';
 import {
+  BookText,
   Building,
   Car,
   Clock,
@@ -40,6 +41,7 @@ import {
   orderSchema,
   partySchema,
   saleSchema,
+  stockBookSchema,
   stockImportSchema,
   tripSchema,
 } from './schemas/retail';
@@ -62,6 +64,9 @@ const InvoiceManagement = React.lazy(
 );
 const BlazorLedgerManagement = React.lazy(
   () => import('@/components/ui/admin/blazor-ledger-management'),
+);
+const StockBookManagement = React.lazy(
+  () => import('@/components/ui/admin/stock-book-management'),
 );
 
 function getPermissions() {
@@ -187,6 +192,8 @@ export type Invoice = InferredTable<'invoice'>;
 
 export type Trip = InferredTable<'trip'>;
 
+export type StockBook = InferredTable<'stockBook'>;
+
 export const membershipSchema = z
   .object({
     userId: withLabel(z.string(), 'User ID'),
@@ -278,7 +285,7 @@ export const featureSchema = createSchema({
     schema: productSchema,
     title: 'Products',
     icon: Package,
-    group: 'Products & Inventory',
+    group: 'Stocks',
     components: () => {
       return [
         {
@@ -341,13 +348,27 @@ export const featureSchema = createSchema({
     schema: saleSchema,
     title: 'Sales',
     icon: DollarSign,
-    group: 'Financial',
+    group: 'Stocks',
   },
   stockImport: {
     schema: stockImportSchema,
     title: 'Purchases',
     icon: ShoppingCart,
-    group: 'Financial',
+    group: 'Stocks',
+  },
+  stockBook: {
+    schema: stockBookSchema,
+    title: 'Stock Book',
+    icon: BookText,
+    group: 'Stocks',
+    components: () => {
+      return [
+        {
+          name: 'Stock Book',
+          component: StockBookManagement,
+        },
+      ];
+    },
   },
   order: {
     schema: orderSchema,

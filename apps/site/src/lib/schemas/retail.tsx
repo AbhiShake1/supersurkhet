@@ -786,6 +786,90 @@ export const stockImportSchema = z
 
 export type StockImport = z.infer<typeof stockImportSchema>;
 
+export const stockBookSchema = z
+  .object({
+    entryDate: z
+      .string()
+      .datetime({ offset: true })
+      .default(() => new Date().toISOString())
+      .describe('Entry Date')
+      .superRefine(fieldConfig({ fieldType: 'datetime' })),
+    transactionType: z
+      .enum(['purchase', 'sale', 'stock'])
+      .describe('Transaction Type')
+      .superRefine(fieldConfig({ fieldType: 'select' })),
+    movementType: z
+      .enum([
+        'opening',
+        'purchase',
+        'sale',
+        'order',
+        'tripDispatch',
+        'tripReturn',
+        'adjustment',
+      ])
+      .describe('Movement Type')
+      .superRefine(fieldConfig({ fieldType: 'select' })),
+    direction: z
+      .enum(['in', 'out'])
+      .describe('Direction')
+      .superRefine(fieldConfig({ fieldType: 'select' })),
+    productId: z
+      .string()
+      .describe('Product')
+      .superRefine(
+        fieldConfig({
+          fieldType: 'select',
+          customData: {
+            sources: [
+              {
+                table: 'product',
+                displayKeys: ['title', 'stockQuantity'],
+                separator: ' - Stock: ',
+              },
+            ],
+          },
+        }),
+      ),
+    quantityIn: z
+      .number({ coerce: true })
+      .nonnegative()
+      .default(0)
+      .describe('Quantity In'),
+    quantityOut: z
+      .number({ coerce: true })
+      .nonnegative()
+      .default(0)
+      .describe('Quantity Out'),
+    quantity: z
+      .number({ coerce: true })
+      .nonnegative()
+      .describe('Quantity'),
+    unitRate: z
+      .number({ coerce: true })
+      .nonnegative()
+      .default(0)
+      .describe('Unit Rate'),
+    totalAmount: z
+      .number({ coerce: true })
+      .nonnegative()
+      .default(0)
+      .describe('Total Amount'),
+    particulars: z.string().describe('Particulars'),
+    remarks: z.string().optional().describe('Remarks'),
+    sourceTable: z
+      .enum(['product', 'stockImport', 'sale', 'order', 'trip', 'manual'])
+      .describe('Source Table')
+      .superRefine(fieldConfig({ fieldType: 'select' })),
+    sourceId: z.string().optional().describe('Source ID'),
+    sourceCode: z.string().optional().describe('Source Code'),
+    counterpartyId: z.string().optional().describe('Counterparty'),
+    fiscalYear: z.string().optional().describe('Fiscal Year'),
+  })
+  .extend(table);
+
+export type StockBook = z.infer<typeof stockBookSchema>;
+
 export const partySchema = z
   .object({
     name: z.string().min(1).describe('Name of the party'),
