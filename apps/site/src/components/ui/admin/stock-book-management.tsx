@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { ArrowDownCircle, ArrowUpCircle, Boxes, Search } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, Boxes, Search, SearchIcon } from 'lucide-react';
 import type { AdminComponent } from '.';
 import { AutoTable } from '@/components/auto-table';
 import { Badge } from '@/components/ui/badge';
@@ -263,15 +263,13 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
         </Card>
       </div>
 
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          className="pl-9"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search product, counterparty, particulars, or reference..."
-        />
-      </div>
+      <Input
+        leadingIcon={<SearchIcon className="h-4 w-4" />}
+        className="pl-9"
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
+        placeholder="Search product, counterparty, particulars, or reference..."
+      />
 
       <Tabs defaultValue="all" className="space-y-4">
         <TabsList>
