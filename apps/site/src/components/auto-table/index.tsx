@@ -88,6 +88,7 @@ type EnhancedColumnDef<TData> = ColumnDef<TData> & {
 };
 
 export type AutoTableProps<T extends SchemaKeys> = {
+  title?: string;
   className?: string;
   transformer?: (data: any[]) => NestedSchemaType<T>[];
   enableAdvancedFiltering?: boolean;
@@ -144,6 +145,7 @@ export type AutoTableProps<T extends SchemaKeys> = {
   );
 
 export function AutoTable<T extends SchemaKeys>({
+  title,
   className,
   slug,
   data: defaultData,
@@ -309,7 +311,7 @@ export function AutoTable<T extends SchemaKeys>({
   return (
     <div className="py-6 space-y-4 flex flex-col items-end">
       {!props.readOnly && (
-        <AddRowDialog<T> schema={schemaName} slug={slug} {...props} />
+        <AddRowDialog<T> schema={schemaName} slug={slug} {...props} buttonLabel={`Add new ${title ?? ''}`} />
       )}
       <DataTable
         table={table}

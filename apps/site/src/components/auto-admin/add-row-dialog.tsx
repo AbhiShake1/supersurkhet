@@ -193,7 +193,7 @@ export function AddRowDialog<T extends SchemaKeys>({
           >
             <CredenzaHeader className="min-w-0">
               <CredenzaTitle className="capitalize">
-                Add new {schema}
+                {buttonLabel}
               </CredenzaTitle>
               <CredenzaDescription asChild>
                 <AddDataSuggestions
