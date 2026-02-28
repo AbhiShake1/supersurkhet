@@ -1,21 +1,11 @@
-import * as React from 'react';
-import { useAuth } from '@/components/auth-provider';
-import { AutoForm } from '@/components/ui/autoform';
-import { SubmitButton } from '@/components/ui/autoform/components/SubmitButton';
-import { Button } from '@/components/ui/button';
-import { ButtonGroup } from '@/components/ui/button-group';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { appSchema } from '@/lib/schema';
-import { getSoulFromUnknown } from '@/lib/utils';
 import {
-  type SchemaKeys,
-  type NestedSchema,
-  type NestedSchemaType,
   getNestedZodShape,
   getSchema,
+  type NestedSchema,
+  type NestedSchemaType,
+  type SchemaKeys,
   useCreate,
 } from '@gta/react-hooks';
-import { ZodEffects } from 'zod';
 import {
   ArrowBigUpDash,
   FileJson,
@@ -24,6 +14,31 @@ import {
   Save,
   Sheet,
 } from 'lucide-react';
+import * as React from 'react';
+import { ZodEffects } from 'zod';
+import { useAuth } from '@/components/auth-provider';
+import { AutoForm } from '@/components/ui/autoform';
+import { SubmitButton } from '@/components/ui/autoform/components/SubmitButton';
+import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { api } from '@/lib/api';
+import {
+  parseCSVFile,
+  parseExcelFile,
+  parseJSONFile,
+  validateDataAgainstSchema,
+} from '@/lib/import';
+import { appSchema } from '@/lib/schema';
+import { getSoulFromUnknown } from '@/lib/utils';
+import type { AutoTableProps } from '../auto-table';
+import type { ZodObjectOrWrapped } from '../ui/auto-form/utils';
+import { BadgeMarquee } from '../ui/badge-marquee';
 import {
   Credenza,
   CredenzaBody,
@@ -34,22 +49,6 @@ import {
   CredenzaTitle,
   CredenzaTrigger,
 } from '../ui/credenza';
-import { BadgeMarquee } from '../ui/badge-marquee';
-import { api } from '@/lib/api';
-import {
-  parseCSVFile,
-  parseExcelFile,
-  parseJSONFile,
-  validateDataAgainstSchema,
-} from '@/lib/import';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import type { AutoTableProps } from '../auto-table';
-import type { ZodObjectOrWrapped } from '../ui/auto-form/utils';
 
 export type AddRowDialogProps<T extends SchemaKeys> = Pick<
   AutoTableProps<T>,
@@ -188,7 +187,10 @@ export function AddRowDialog<T extends SchemaKeys>({
               <span className="hidden sm:inline">{buttonLabel}</span>
             </Button>
           </CredenzaTrigger>
-          <CredenzaContent>
+          <CredenzaContent
+            className="flex flex-col"
+            dialogMaxWidth="min(1320px, 94vw)"
+          >
             <CredenzaHeader className="min-w-0">
               <CredenzaTitle className="capitalize">
                 Add new {schema}
@@ -202,7 +204,7 @@ export function AddRowDialog<T extends SchemaKeys>({
               </CredenzaDescription>
             </CredenzaHeader>
             <CredenzaBody asChild>
-              <ScrollArea className="h-[50vh] max-h-[60vh]">
+              <div className="min-h-0 w-full max-h-[72dvh] overflow-auto pr-1">
                 <AutoForm
                   values={formValues}
                   schema={finalSchema}
@@ -216,7 +218,7 @@ export function AddRowDialog<T extends SchemaKeys>({
                   }}
                   formProps={{ id: 'auto-table-add-form' }}
                 />
-              </ScrollArea>
+              </div>
             </CredenzaBody>
             <CredenzaFooter className="flex flex-col gap-2 pt-2 pb-4">
               <Button

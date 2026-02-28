@@ -1,7 +1,4 @@
 import * as React from 'react';
-
-import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Dialog,
   DialogClose,
@@ -22,6 +19,8 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from '@/components/ui/drawer';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 interface BaseProps {
   children: React.ReactNode;
@@ -92,22 +91,28 @@ const CredenzaClose = ({ className, children, ...props }: CredenzaProps) => {
 const CredenzaContent = ({
   className,
   children,
+  dialogMaxWidth,
   ...props
-}: CredenzaProps & { hideClose?: boolean }) => {
+}: CredenzaProps & { hideClose?: boolean; dialogMaxWidth?: string }) => {
   const { isMobile } = useCredenzaContext();
-  const CredenzaContent = isMobile ? DrawerContent : DialogContent;
+  if (isMobile) {
+    return (
+      <DrawerContent
+        className={cn(
+          'fixed inset-x-0 bottom-0 top-auto mt-auto rounded-t-xl border-t max-h-[90vh]',
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </DrawerContent>
+    );
+  }
 
   return (
-    <CredenzaContent
-      className={cn(
-        isMobile &&
-          'fixed inset-x-0 bottom-0 top-auto mt-auto rounded-t-xl border-t max-h-[90vh]',
-        className,
-      )}
-      {...props}
-    >
+    <DialogContent className={className} maxWidth={dialogMaxWidth} {...props}>
       {children}
-    </CredenzaContent>
+    </DialogContent>
   );
 };
 
@@ -153,7 +158,7 @@ const CredenzaTitle = ({ className, children, ...props }: CredenzaProps) => {
 
 const CredenzaBody = ({ className, children, ...props }: CredenzaProps) => {
   return (
-    <div className={cn('px-4 md:px-0', className)} {...props}>
+    <div className={cn('min-h-0 flex-1 px-4 md:px-0', className)} {...props}>
       {children}
     </div>
   );
