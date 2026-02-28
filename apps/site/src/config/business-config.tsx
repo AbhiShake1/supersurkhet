@@ -92,8 +92,10 @@ function getPaidAmountFromPayments(payments: PaymentInput[] | undefined) {
 
 type ProductStockRecord = {
   _?: { soul?: string };
+  title?: string | null;
   unit?: string | null;
   stockQuantity?: number | null;
+  sellingPrice?: number | null;
 };
 
 type StockEntryItem = Pick<SalesItem, 'product' | 'quantity' | 'unit'>;
@@ -495,6 +497,31 @@ export function useBusinessConfig({
             return mapped;
           },
         },
+        extender: (schema) =>
+          schema.superRefine((data, ctx) => {
+            if (!data?.items?.length) return;
+
+            data.items.forEach((item, index) => {
+              const productId = item?.product;
+              if (!productId) return;
+
+              const product = productsBySoul.get(productId);
+              if (!product) return;
+              const sellingPrice = Number(product?.sellingPrice ?? 0);
+              const costPrice = Number(item?.unitPrice ?? 0);
+              if (!Number.isFinite(costPrice) || costPrice <= 0) return;
+              if (!Number.isFinite(sellingPrice) || sellingPrice <= 0) return;
+
+              const minimumSellingPrice = costPrice * 1.05;
+              if (sellingPrice >= minimumSellingPrice) return;
+
+              ctx.addIssue({
+                code: 'custom',
+                message: `${product?.title ?? 'Selected product'} selling price should be at least ${minimumSellingPrice.toFixed(2)}.`,
+                path: ['items', index, 'unitPrice'],
+              });
+            });
+          }),
         async onCreate(data, variables) {
           const createdId = getMutationId(data);
           const products = await db.product.get({ keys: [slug] });
