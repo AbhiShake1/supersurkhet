@@ -1,15 +1,17 @@
-import { useEffect } from 'react';
-import { useForm, FormProvider, type DefaultValues } from 'react-hook-form';
 import {
-  parseSchema,
   getDefaultValues,
-  removeEmptyValues,
-  type ParsedSchema,
   type ParsedField,
+  type ParsedSchema,
+  parseSchema,
+  removeEmptyValues,
 } from '@autoform/core';
-import type { AutoFormProps } from './types';
-import { AutoFormProvider } from './context';
+import { useEffect } from 'react';
+import { type DefaultValues, FormProvider, useForm } from 'react-hook-form';
+import { getSchemaBillConfig } from '@/lib/zod/with-bill';
+import { BillFormLayout } from '../bill';
 import { AutoFormField } from './AutoFormField';
+import { AutoFormProvider } from './context';
+import type { AutoFormProps } from './types';
 
 const FIELDS_TO_OMIT = ['_', 'created_by', 'timestamp'];
 
@@ -46,9 +48,25 @@ function omitDefaultFields(schema: ParsedSchema): ParsedSchema {
   };
 }
 
+function getNonBillFieldSpanClass(field: ParsedField): string {
+  if (
+    field.type === 'array' ||
+    field.type === 'object' ||
+    field.type === 'record' ||
+    field.type === 'richText' ||
+    field.type === 'editor' ||
+    field.type === 'map' ||
+    field.type === 'permissions'
+  ) {
+    return 'md:col-span-2';
+  }
+  return '';
+}
+
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export function AutoForm<T extends Record<string, any>>({
   schema,
+  schemaSource,
   onSubmit = () => {},
   defaultValues,
   values,
@@ -60,6 +78,7 @@ export function AutoForm<T extends Record<string, any>>({
   formProps = {},
 }: AutoFormProps<T>) {
   const parsedSchema = omitDefaultFields(parseSchema(schema));
+  const billConfig = getSchemaBillConfig(schemaSource as never);
   const methods = useForm<T>({
     defaultValues: {
       ...(getDefaultValues(schema) as Partial<T>),
@@ -123,13 +142,36 @@ export function AutoForm<T extends Record<string, any>>({
           onSubmit={methods.handleSubmit(handleSubmit)}
           {...formProps}
         >
-          {parsedSchema.fields.map((field) => (
-            <AutoFormField key={field.key} field={field} path={[field.key]} />
-          ))}
-          {withSubmit && (
-            <uiComponents.SubmitButton>Submit</uiComponents.SubmitButton>
+          {billConfig ? (
+            <BillFormLayout
+              parsedSchema={parsedSchema}
+              billConfig={billConfig}
+              withSubmit={withSubmit}
+              submitButton={
+                <uiComponents.SubmitButton>Submit</uiComponents.SubmitButton>
+              }
+              form={methods}
+            >
+              {children}
+            </BillFormLayout>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {parsedSchema.fields.map((field) => (
+                  <div
+                    key={field.key}
+                    className={getNonBillFieldSpanClass(field)}
+                  >
+                    <AutoFormField field={field} path={[field.key]} />
+                  </div>
+                ))}
+              </div>
+              {withSubmit && (
+                <uiComponents.SubmitButton>Submit</uiComponents.SubmitButton>
+              )}
+              {children}
+            </>
           )}
-          {children}
         </uiComponents.Form>
       </AutoFormProvider>
     </FormProvider>

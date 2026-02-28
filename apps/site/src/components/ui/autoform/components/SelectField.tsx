@@ -7,6 +7,7 @@ import { Combobox } from '../../combobox';
 import { useAutoFormDefaultValues } from '../AutoForm';
 import { type AutoFormFieldProps } from '../react';
 import type { FieldConfigCustomData, SourceConfig } from '../utils';
+import { cn } from '@/lib/utils';
 
 const useMultiSourceOptions = (sources: SourceConfig[], useGet: UseGet) => {
   const business = useBusinessSafe();
@@ -109,7 +110,7 @@ const _SelectField: React.FC<
         } as React.ChangeEvent<HTMLInputElement>;
         props.onChange(syntheticEvent);
       }}
-      className={error ? 'border-destructive' : ''}
+      className={cn(error ? 'border-destructive' : '', inputProps?.className)}
       disabled={props.disabled || isLocked}
       testId={inputProps?.['data-testid']}
     />

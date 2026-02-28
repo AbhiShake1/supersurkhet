@@ -112,7 +112,7 @@ export function UnitField({
         <div className="flex-1">
           <Select value={selectedUnit} onValueChange={handleUnitChange}>
             <SelectTrigger
-              className={error ? 'border-destructive' : ''}
+              className={cn(error ? 'border-destructive' : '', className)}
               data-testid={testId}
             >
               <SelectValue placeholder={placeholder} />
@@ -136,7 +136,7 @@ export function UnitField({
               value={piecesPerUnit}
               onChange={handlePiecesPerUnitChange}
               placeholder="Pieces"
-              className="h-9"
+              className={cn("h-9", className)}
               data-testid={testId ? `${testId}-pieces` : undefined}
             />
             <p className="text-xs text-muted-foreground mt-1">
