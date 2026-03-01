@@ -1094,8 +1094,14 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
               </div>
             </div>
 
-            <div className="grid min-w-0 gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
-              <Card className="min-h-0">
+            <div
+              className={`grid min-w-0 gap-4 ${
+                activePeriodLedger
+                  ? 'lg:grid-cols-[320px_minmax(0,1fr)]'
+                  : 'lg:grid-cols-1'
+              }`}
+            >
+              <Card className="min-h-0 w-full">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base">Parties</CardTitle>
                   <p className="text-sm text-muted-foreground">
@@ -1150,14 +1156,14 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
               </Card>
 
               {activePeriodLedger && (
-                <Card className="min-h-0 min-w-0">
+                <Card className="min-h-0 min-w-0 w-full overflow-hidden">
                   <CardHeader>
                     <CardTitle>{activePeriodLedger.name}</CardTitle>
                     <p className="text-sm text-muted-foreground">
                       Opening and closing by product for selected period
                     </p>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="min-w-0 space-y-3">
                     <div className="grid gap-2 sm:grid-cols-3">
                       <div className="rounded-md border p-3">
                         <p className="text-xs text-muted-foreground">
@@ -1183,7 +1189,7 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
                       </div>
                     </div>
 
-                    <div className="max-h-[min(50vh,30rem)] overflow-auto rounded-md border">
+                    <div className="max-h-[min(50vh,30rem)] w-full overflow-auto rounded-md border">
                       <table className="w-full min-w-[680px] text-sm">
                         <thead className="bg-muted/40">
                           <tr>
@@ -1222,8 +1228,12 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
           </CardContent>
         </Card>
 
-        <div className="grid gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
-          <Card className="min-h-0">
+        <div
+          className={`grid gap-4 ${
+            activeYear ? 'lg:grid-cols-[360px_minmax(0,1fr)]' : 'lg:grid-cols-1'
+          }`}
+        >
+          <Card className="min-h-0 w-full">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Fiscal Years</CardTitle>
               <p className="text-sm text-muted-foreground">
@@ -1315,8 +1325,14 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
                   </div>
                 </div>
 
-                <div className="grid min-w-0 gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
-                  <Card className="min-h-0">
+                <div
+                  className={`grid min-w-0 gap-4 ${
+                    activeFiscalLedger
+                      ? 'lg:grid-cols-[320px_minmax(0,1fr)]'
+                      : 'lg:grid-cols-1'
+                  }`}
+                >
+                  <Card className="min-h-0 w-full">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base">Parties</CardTitle>
                       <p className="text-sm text-muted-foreground">
@@ -1372,15 +1388,15 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
                   </Card>
 
                   {activeFiscalLedger && (
-                    <Card className="min-h-0 min-w-0">
+                    <Card className="min-h-0 min-w-0 w-full overflow-hidden">
                       <CardHeader>
                         <CardTitle>{activeFiscalLedger.name}</CardTitle>
                         <p className="text-sm text-muted-foreground">
                           Fiscal year opening and closing by product
                         </p>
                       </CardHeader>
-                      <CardContent>
-                        <div className="max-h-[min(56vh,36rem)] overflow-auto rounded-md border">
+                      <CardContent className="min-w-0">
+                        <div className="max-h-[min(56vh,36rem)] w-full overflow-auto rounded-md border">
                           <table className="w-full min-w-[680px] text-sm">
                             <thead className="bg-muted/40">
                               <tr>
