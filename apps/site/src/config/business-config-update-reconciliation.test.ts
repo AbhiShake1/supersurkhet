@@ -45,4 +45,19 @@ describe('business-config update reconciliation contracts', () => {
     expect(content).toContain('items: buildInvoiceItems(');
     expect(content).toContain('subTotal: totalAmount');
   });
+
+  it('keeps trip.onUpdate fallback reconciliation when updateContext newData is unavailable', () => {
+    const content = getContent();
+
+    expect(content).toContain("schema: 'trip'");
+    expect(content).toContain('const previousTrip =');
+    expect(content).toContain('...previousTrip,');
+    expect(content).toContain('...variables,');
+    expect(content).toContain(
+      'variables.returnedProducts ?? previousTrip?.returnedProducts',
+    );
+    expect(content).toContain(
+      'returnTime: variables.returnTime ?? previousTrip?.returnTime',
+    );
+  });
 });

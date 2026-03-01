@@ -1401,14 +1401,21 @@ export function useBusinessConfig({
           });
         },
         async onUpdate(_, variables, updateContext) {
-          const currentTrip =
+          const previousTrip =
             (updateContext as UpdateContext<'trip'>)?.previousData ??
             tripsBySoul.get(variables.id);
-          if (currentTrip?.returnTime) return;
+          if (previousTrip?.returnTime) return;
 
-          const trip =
+          const nextTripData =
             (updateContext as UpdateContext<'trip'>)?.newData ??
-            tripsBySoul.get(variables.id);
+            ({
+              ...previousTrip,
+              ...variables,
+              returnedProducts:
+                variables.returnedProducts ?? previousTrip?.returnedProducts,
+              returnTime: variables.returnTime ?? previousTrip?.returnTime,
+            } as typeof previousTrip);
+          const trip = nextTripData;
           if (!trip?.returnTime || !trip?.products?.length) return;
 
           await clearStockBookEntriesBySource('trip', variables.id);
