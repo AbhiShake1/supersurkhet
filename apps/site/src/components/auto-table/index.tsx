@@ -315,7 +315,13 @@ export function AutoTable<T extends SchemaKeys>({
       )}
       <DataTable
         table={table}
-        actionBar={<AutoTableActionBar table={table} onDelete={onDelete} />}
+        actionBar={
+          <AutoTableActionBar
+            table={table}
+            onDelete={onDelete}
+            readOnly={props.readOnly}
+          />
+        }
         className={className}
       >
         <DataTableAdvancedToolbar table={table}>

@@ -17,6 +17,21 @@ const paymentMethods = [
   'check',
 ] as const;
 const methodsRequiringBankVoucher = new Set(['bankTransfer', 'check']);
+const billPaymentsSectionColumns: Array<{
+  key: string;
+  label: string;
+  width: string;
+  align?: 'left' | 'center' | 'right';
+}> = [
+  { key: 'paidAt', label: 'Paid At', width: '1.6fr' },
+  { key: 'paidAmount', label: 'Paid Amount', width: '1.25fr', align: 'right' },
+  { key: 'paymentMethod', label: 'Method', width: '1.25fr' },
+  {
+    key: 'bankVoucherNumber',
+    label: 'Bank Voucher #',
+    width: '1.5fr',
+  },
+];
 
 const paymentRowSchema = z.object({
   paidAt: z
@@ -636,14 +651,19 @@ export const saleSchema = z
         readOnly: true,
       },
     ],
+    hiddenFields: ['totalAmount', 'paidAmount', 'paymentStatus', 'paymentMethod'],
+    footerFields: ['notes'],
+    arraySections: [
+      {
+        field: 'payments',
+        columns: billPaymentsSectionColumns,
+        minRows: 0,
+        summaryFields: ['paymentStatus', 'paidAmount'],
+      },
+    ],
     lineTotalField: 'totalAmount',
     grandTotalField: 'totalAmount',
     minRows: 1,
-    footer: ({ values }) => (
-      <div className="rounded-md border bg-muted/20 p-3 text-sm text-muted-foreground">
-        Payment Status: {String(values.paymentStatus ?? 'pending')}
-      </div>
-    ),
   })
   .superRefine((sale, ctx) => {
     if (!sale.paidAmount) return;
@@ -759,14 +779,19 @@ export const orderSchema = z
         readOnly: true,
       },
     ],
+    hiddenFields: ['totalAmount', 'paidAmount', 'paymentStatus', 'paymentMethod'],
+    footerFields: ['notes'],
+    arraySections: [
+      {
+        field: 'payments',
+        columns: billPaymentsSectionColumns,
+        minRows: 0,
+        summaryFields: ['paymentStatus', 'paidAmount'],
+      },
+    ],
     lineTotalField: 'totalAmount',
     grandTotalField: 'totalAmount',
     minRows: 1,
-    footer: ({ values }) => (
-      <div className="rounded-md border bg-muted/20 p-3 text-sm text-muted-foreground">
-        Payment Status: {String(values.paymentStatus ?? 'pending')}
-      </div>
-    ),
   })
   .superRefine((order, ctx) => {
     if (!order.paidAmount) return;
@@ -864,14 +889,19 @@ export const stockImportSchema = z
         readOnly: true,
       },
     ],
+    hiddenFields: ['totalAmount', 'paidAmount', 'paymentStatus'],
+    footerFields: ['notes'],
+    arraySections: [
+      {
+        field: 'payments',
+        columns: billPaymentsSectionColumns,
+        minRows: 0,
+        summaryFields: ['paymentStatus', 'paidAmount'],
+      },
+    ],
     lineTotalField: 'totalAmount',
     grandTotalField: 'totalAmount',
     minRows: 1,
-    footer: ({ values }) => (
-      <div className="rounded-md border bg-muted/20 p-3 text-sm text-muted-foreground">
-        Payment Status: {String(values.paymentStatus ?? 'pending')}
-      </div>
-    ),
   })
   .superRefine((stockImport, ctx) => {
     if (!stockImport.paidAmount) return;
@@ -1088,14 +1118,19 @@ export const invoiceSchema = z
         readOnly: true,
       },
     ],
+    hiddenFields: ['totalAmount', 'paidAmount', 'paymentStatus'],
+    footerFields: ['description'],
+    arraySections: [
+      {
+        field: 'payments',
+        columns: billPaymentsSectionColumns,
+        minRows: 0,
+        summaryFields: ['paymentStatus', 'paidAmount'],
+      },
+    ],
     lineTotalField: 'total',
     grandTotalField: 'totalAmount',
     minRows: 1,
-    footer: ({ values }) => (
-      <div className="rounded-md border bg-muted/20 p-3 text-sm text-muted-foreground">
-        Payment Status: {String(values.paymentStatus ?? 'pending')}
-      </div>
-    ),
   })
   .extend(table);
 

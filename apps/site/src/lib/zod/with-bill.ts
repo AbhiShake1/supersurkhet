@@ -26,10 +26,33 @@ export type BillRenderContext<TFormValues extends FieldValues> = {
   form: UseFormReturn<TFormValues>;
 };
 
+export type BillSummaryFieldConfig<TFormValues> = {
+  key: keyof TFormValues & string;
+  label?: string;
+  format?: (
+    value: unknown,
+    ctx: BillRenderContext<TFormValues & FieldValues>,
+  ) => React.ReactNode;
+};
+
+export type BillArraySectionConfig<TFormValues> = {
+  field: keyof TFormValues & string;
+  title?: string;
+  columns?: BillColumnConfig<Record<string, unknown>>[];
+  minRows?: number;
+  summaryFields?: Array<
+    BillSummaryFieldConfig<TFormValues> | (keyof TFormValues & string)
+  >;
+};
+
 export type BillConfig<TFormValues, TLine> = {
   lineItemsField: keyof TFormValues & string;
   columns: BillColumnConfig<TLine>[];
   headerFields?: Array<keyof TFormValues & string>;
+  detailFields?: Array<keyof TFormValues & string>;
+  footerFields?: Array<keyof TFormValues & string>;
+  hiddenFields?: Array<keyof TFormValues & string>;
+  arraySections?: BillArraySectionConfig<TFormValues>[];
   lineTotalField?: keyof TLine & string;
   grandTotalField?: keyof TFormValues & string;
   header?: (
@@ -105,8 +128,7 @@ function withBillOnEffects(
 
 // biome-ignore lint/suspicious/noExplicitAny: zod prototype patching requires broad object typing.
 const objectPrototype = z.ZodObject.prototype as z.ZodObject<any> & {
-  withBill?: (config: AnyBillConfig) => z.ZodObject<any>;
-  // biome-ignore lint/suspicious/noExplicitAny: prototype patch marker.
+  withBill?: (config: AnyBillConfig) => z.ZodObject<z.ZodRawShape>;
   __withBillExtendPatched?: boolean;
 };
 
@@ -123,10 +145,8 @@ if (!objectPrototype.__withBillExtendPatched) {
   const originalExtend = objectPrototype.extend;
   objectPrototype.extend = function extendWithBill(
     this: AnyZodObject,
-    // biome-ignore lint/suspicious/noExplicitAny: preserve original zod extend runtime signature.
-    ...args: any[]
+    ...args: Parameters<typeof originalExtend>
   ) {
-    // biome-ignore lint/suspicious/noExplicitAny: delegate to original zod implementation.
     const extended = originalExtend.call(this, ...args) as AnyZodObject;
     const ownBillConfig = billRegistry.get(this);
     if (ownBillConfig) {
@@ -139,7 +159,7 @@ if (!objectPrototype.__withBillExtendPatched) {
 
 // biome-ignore lint/suspicious/noExplicitAny: zod prototype patching requires broad effects typing.
 const effectsPrototype = z.ZodEffects.prototype as z.ZodEffects<any> & {
-  withBill?: (config: AnyBillConfig) => z.ZodEffects<any>;
+  withBill?: (config: AnyBillConfig) => z.ZodEffects<z.ZodTypeAny>;
 };
 
 if (!effectsPrototype.withBill) {

@@ -3,12 +3,18 @@ import { type UseFormReturn, useWatch } from 'react-hook-form';
 import { AutoFormField } from '../react/AutoFormField';
 import { BillLineItemsTable } from './BillLineItemsTable';
 import { BillTotalsBar } from './BillTotalsBar';
-import type { BillLayoutProps, NormalizedBillColumn } from './bill-types';
+import type {
+  BillLayoutProps,
+  NormalizedBillArraySection,
+  NormalizedBillColumn,
+} from './bill-types';
 import {
   formatBillNumber,
   normalizeBillConfig,
   resolveBillSchemaFields,
 } from './bill-utils';
+
+const DEFAULT_ARRAY_COLUMN_WIDTH = 'minmax(120px, 1fr)';
 
 function getDetailFieldSpanClass(field: ParsedField): string {
   if (
@@ -25,39 +31,66 @@ function getDetailFieldSpanClass(field: ParsedField): string {
   return '';
 }
 
-const BILL_HIDDEN_DETAIL_FIELDS = new Set([
-  'totalAmount',
-  'paidAmount',
-  'paymentStatus',
-]);
-
-function isPaymentsArrayField(field: ParsedField): boolean {
-  const row = field.schema?.[0];
-  return (
-    field.key === 'payments' && field.type === 'array' && row?.type === 'object'
-  );
+function toTitleCase(input: string): string {
+  return input
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^./, (value) => value.toUpperCase());
 }
 
-function getPaymentColumns(
-  rowObjectField: ParsedField,
-): NormalizedBillColumn[] {
+function resolveFieldsByKeys(
+  keys: string[],
+  fieldMap: Map<string, ParsedField>,
+) {
+  const seen = new Set<string>();
+  return keys
+    .map((key) => fieldMap.get(key))
+    .filter((field): field is ParsedField => {
+      if (!field) return false;
+      if (seen.has(field.key)) return false;
+      seen.add(field.key);
+      return true;
+    });
+}
+
+function resolveArraySectionColumns({
+  section,
+  rowObjectField,
+}: {
+  section: NormalizedBillArraySection;
+  rowObjectField: ParsedField;
+}): NormalizedBillColumn[] {
+  const rowFieldMap = new Map(
+    (rowObjectField.schema ?? []).map((field) => [field.key, field]),
+  );
+
+  if (section.columns.length > 0) {
+    return section.columns.filter((column) => rowFieldMap.has(column.key));
+  }
+
   return (rowObjectField.schema ?? [])
     .filter((field) => !field.fieldConfig?.inputProps?.hidden)
     .map((field) => ({
       key: field.key,
-      label: field.description ?? field.key,
-      width:
-        field.key === 'paidAmount'
-          ? '1.25fr'
-          : field.key === 'paymentMethod'
-            ? '1.25fr'
-            : '1.6fr',
+      label: field.description ?? toTitleCase(field.key),
+      width: DEFAULT_ARRAY_COLUMN_WIDTH,
       align: field.type === 'number' ? 'right' : 'left',
       readOnly: Boolean(
         field.fieldConfig?.inputProps?.readOnly ||
           field.fieldConfig?.inputProps?.disabled,
       ),
     }));
+}
+
+function formatSummaryValue(value: unknown): string {
+  if (value === null || value === undefined || value === '') return '-';
+  if (typeof value === 'number') return formatBillNumber(value);
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) return `${value.length} items`;
+  return String(value);
 }
 
 export function BillFormLayout({
@@ -71,48 +104,80 @@ export function BillFormLayout({
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   form: UseFormReturn<any>;
 }) {
+  const values = useWatch({ control: form.control });
+  const valuesRecord = (values ?? {}) as Record<string, unknown>;
+  const renderCtx = {
+    values: valuesRecord,
+    form,
+  };
   const normalized = normalizeBillConfig(billConfig);
   const resolvedSchema = resolveBillSchemaFields(
     parsedSchema,
     normalized.lineItemsField,
   );
-  const headerFieldKeys = new Set(normalized.headerFields);
   const topLevelNonLineItemFields = parsedSchema.fields.filter(
     (field) => field.key !== normalized.lineItemsField,
   );
-  const visibleNonLineItemFields = topLevelNonLineItemFields.filter(
-    (field) => !BILL_HIDDEN_DETAIL_FIELDS.has(field.key),
+  const fieldsByKey = new Map(
+    topLevelNonLineItemFields.map((field) => [field.key, field]),
   );
-  const headerFields = topLevelNonLineItemFields.filter((field) =>
-    headerFieldKeys.has(field.key),
+  const headerFields = resolveFieldsByKeys(
+    normalized.headerFields,
+    fieldsByKey,
   );
-  const detailFields = visibleNonLineItemFields.filter(
-    (field) => !headerFieldKeys.has(field.key),
+  const footerFields = resolveFieldsByKeys(
+    normalized.footerFields,
+    fieldsByKey,
   );
-  const paymentsField = detailFields.find(isPaymentsArrayField);
-  const paymentRowObjectField =
-    paymentsField?.type === 'array' ? paymentsField.schema?.[0] : undefined;
-  const paymentColumns =
-    paymentRowObjectField?.type === 'object'
-      ? getPaymentColumns(paymentRowObjectField)
-      : [];
-  const notesField = detailFields.find(
-    (field) => field.key === 'notes' && field.type !== 'array',
+
+  const headerFieldSet = new Set(headerFields.map((field) => field.key));
+  const footerFieldSet = new Set(footerFields.map((field) => field.key));
+  const hiddenFieldSet = new Set(normalized.hiddenFields);
+
+  const resolvedArraySections = normalized.arraySections
+    .map((section) => {
+      const arrayField = fieldsByKey.get(section.field);
+      if (!arrayField || arrayField.type !== 'array') return null;
+      const rowObjectField = arrayField.schema?.[0];
+      if (!rowObjectField || rowObjectField.type !== 'object') return null;
+
+      const columns = resolveArraySectionColumns({ section, rowObjectField });
+      if (columns.length === 0) return null;
+
+      return {
+        ...section,
+        title:
+          section.title ?? arrayField.description ?? toTitleCase(section.field),
+        columns,
+        rowObjectField,
+      };
+    })
+    .filter(
+      (
+        section,
+      ): section is NormalizedBillArraySection & {
+        title?: string;
+        rowObjectField: ParsedField;
+      } => Boolean(section),
+    );
+
+  const arraySectionFieldSet = new Set(
+    resolvedArraySections.map((section) => section.field),
   );
-  const miscDetailFields = detailFields.filter((field) => {
-    if (field.key === notesField?.key) return false;
-    if (field.key === paymentsField?.key) return false;
-    if (paymentsField && field.key === 'paymentMethod') return false;
-    return true;
-  });
-  const values = useWatch({ control: form.control });
-  const valuesRecord = (values ?? {}) as Record<string, unknown>;
-  const paidAmount = Number(valuesRecord.paidAmount ?? 0);
-  const paymentStatus = String(valuesRecord.paymentStatus ?? 'pending');
-  const renderCtx = {
-    values: valuesRecord,
-    form,
-  };
+  const blockedDetailFieldSet = new Set([
+    ...headerFieldSet,
+    ...footerFieldSet,
+    ...hiddenFieldSet,
+    ...arraySectionFieldSet,
+  ]);
+  const detailFields =
+    normalized.detailFields.length > 0
+      ? resolveFieldsByKeys(normalized.detailFields, fieldsByKey).filter(
+          (field) => !blockedDetailFieldSet.has(field.key),
+        )
+      : topLevelNonLineItemFields.filter(
+          (field) => !blockedDetailFieldSet.has(field.key),
+        );
 
   if (!resolvedSchema) {
     return (
@@ -154,9 +219,9 @@ export function BillFormLayout({
         columns={normalized.columns}
       />
 
-      {miscDetailFields.length > 0 && (
+      {detailFields.length > 0 && (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          {miscDetailFields.map((field) => (
+          {detailFields.map((field) => (
             <div
               key={`bill-detail-${field.key}`}
               className={getDetailFieldSpanClass(field)}
@@ -167,44 +232,66 @@ export function BillFormLayout({
         </div>
       )}
 
-      {paymentsField && paymentRowObjectField?.type === 'object' && (
-        <section className="space-y-3 rounded-md border bg-muted/10 p-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
-              Payments
-            </h3>
-            <div className="flex items-center gap-3 text-sm">
-              <span className="text-muted-foreground">
-                Status:{' '}
-                <span className="font-medium text-foreground">
-                  {paymentStatus}
-                </span>
-              </span>
-              <span className="text-muted-foreground">
-                Paid:{' '}
-                <span className="font-semibold text-foreground">
-                  {formatBillNumber(paidAmount)}
-                </span>
-              </span>
+      {resolvedArraySections.map((section) => (
+        <section
+          key={`bill-array-section-${section.field}`}
+          className="space-y-3 rounded-md border bg-muted/10 p-3"
+        >
+          {(section.title || section.summaryFields.length > 0) && (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              {section.title ? (
+                <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
+                  {section.title}
+                </h3>
+              ) : (
+                <div />
+              )}
+              {section.summaryFields.length > 0 && (
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                  {section.summaryFields.map((summaryField) => {
+                    const summaryValue = valuesRecord[summaryField.key];
+                    const content = summaryField.format
+                      ? summaryField.format(summaryValue, renderCtx)
+                      : formatSummaryValue(summaryValue);
+                    return (
+                      <span
+                        key={`bill-array-summary-${section.field}-${summaryField.key}`}
+                        className="text-muted-foreground"
+                      >
+                        {summaryField.label}:{' '}
+                        <span className="font-medium text-foreground">
+                          {content}
+                        </span>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          </div>
-
+          )}
           <BillLineItemsTable
-            lineItemsField={paymentsField.key}
-            lineItemObjectField={paymentRowObjectField}
-            columns={paymentColumns}
-            minRows={0}
+            lineItemsField={section.field}
+            lineItemObjectField={section.rowObjectField}
+            columns={section.columns}
+            minRows={section.minRows}
           />
         </section>
+      ))}
+
+      {footerFields.length > 0 && (
+        <div className="grid grid-cols-1 gap-3 rounded-md border bg-muted/5 p-3 md:grid-cols-2">
+          {footerFields.map((field) => (
+            <div
+              key={`bill-footer-field-${field.key}`}
+              className={getDetailFieldSpanClass(field)}
+            >
+              <AutoFormField field={field} path={[field.key]} />
+            </div>
+          ))}
+        </div>
       )}
 
-      {!paymentsField ? normalized.footer?.(renderCtx) : null}
-
-      {notesField && (
-        <section className="rounded-md border bg-muted/5 p-3">
-          <AutoFormField field={notesField} path={[notesField.key]} />
-        </section>
-      )}
+      {normalized.footer?.(renderCtx)}
 
       {withSubmit ? submitButton : null}
       {children}

@@ -33,9 +33,9 @@ describe('AutoForm bill mode contracts', () => {
     );
 
     expect(content).toContain('field.key !== normalized.lineItemsField');
-    expect(content).toContain('const detailFields = visibleNonLineItemFields');
+    expect(content).toContain('normalized.detailFields.length > 0');
     expect(content).toContain(`key={\`bill-detail-\${field.key}\`}`);
-    expect(content).toContain('BILL_HIDDEN_DETAIL_FIELDS');
-    expect(content).toContain('Payments');
+    expect(content).toContain('resolvedArraySections');
+    expect(content).toContain('footerFields.length > 0');
   });
 });

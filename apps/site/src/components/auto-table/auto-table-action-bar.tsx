@@ -18,11 +18,13 @@ type Action = (typeof actions)[number];
 interface AutoTableActionBarProps<T> {
   table: Table<T>;
   onDelete?: (id: string) => void;
+  readOnly?: boolean;
 }
 
 export function AutoTableActionBar<T>({
   table,
   onDelete,
+  readOnly = false,
 }: AutoTableActionBarProps<T>) {
   const rows = table.getFilteredSelectedRowModel().rows;
   const [isPending, startTransition] = React.useTransition();
@@ -67,7 +69,9 @@ export function AutoTableActionBar<T>({
         >
           <Download />
         </DataTableActionBarAction>
-        <DeleteRowDialog data={rows} onConfirm={deleteSelected} />
+        {!readOnly && (
+          <DeleteRowDialog data={rows} onConfirm={deleteSelected} />
+        )}
         {/* <DataTableActionBarAction
 					size="icon"
 					tooltip="Delete selected"

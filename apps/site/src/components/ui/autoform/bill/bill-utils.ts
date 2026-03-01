@@ -1,17 +1,41 @@
 import type { ParsedField, ParsedSchema } from '@autoform/core';
 import type {
+  NormalizedBillArraySection,
   NormalizedBillColumn,
   ResolvedBillSchema,
   RuntimeBillConfig,
 } from './bill-types';
 
 const DEFAULT_COLUMN_WIDTH = 'minmax(120px, 1fr)';
+const DEFAULT_ARRAY_SECTION_MIN_ROWS = 0;
+
+function normalizeColumns(
+  columns: RuntimeBillConfig['columns'] | undefined,
+): NormalizedBillColumn[] {
+  return (columns ?? []).map((column) => ({
+    key: String(column.key),
+    label: column.label?.trim() || toTitleCase(String(column.key)),
+    width: column.width?.trim() || DEFAULT_COLUMN_WIDTH,
+    align: column.align ?? 'left',
+    readOnly: Boolean(column.readOnly),
+  }));
+}
+
+function normalizeArraySectionMinRows(value: unknown): number {
+  const numeric = Number(value ?? DEFAULT_ARRAY_SECTION_MIN_ROWS);
+  if (!Number.isFinite(numeric)) return DEFAULT_ARRAY_SECTION_MIN_ROWS;
+  return Math.max(0, Math.floor(numeric));
+}
 
 export function normalizeBillConfig(config: RuntimeBillConfig): {
   lineItemsField: string;
   minRows: number;
   columns: NormalizedBillColumn[];
   headerFields: string[];
+  detailFields: string[];
+  footerFields: string[];
+  hiddenFields: string[];
+  arraySections: NormalizedBillArraySection[];
   lineTotalField?: string;
   grandTotalField?: string;
   header?: RuntimeBillConfig['header'];
@@ -22,21 +46,38 @@ export function normalizeBillConfig(config: RuntimeBillConfig): {
     ? Math.max(1, Math.floor(minRowsRaw))
     : 1;
 
-  const columns: NormalizedBillColumn[] = (config.columns ?? []).map(
-    (column) => ({
-      key: String(column.key),
-      label: column.label?.trim() || toTitleCase(String(column.key)),
-      width: column.width?.trim() || DEFAULT_COLUMN_WIDTH,
-      align: column.align ?? 'left',
-      readOnly: Boolean(column.readOnly),
+  const columns = normalizeColumns(config.columns);
+  const arraySections: NormalizedBillArraySection[] = (
+    config.arraySections ?? []
+  ).map((section) => ({
+    field: String(section.field),
+    title: section.title?.trim() || undefined,
+    columns: normalizeColumns(section.columns),
+    minRows: normalizeArraySectionMinRows(section.minRows),
+    summaryFields: (section.summaryFields ?? []).map((entry) => {
+      if (typeof entry === 'string') {
+        return {
+          key: entry,
+          label: toTitleCase(entry),
+        };
+      }
+      return {
+        key: String(entry.key),
+        label: entry.label?.trim() || toTitleCase(String(entry.key)),
+        format: entry.format,
+      };
     }),
-  );
+  }));
 
   return {
     lineItemsField: String(config.lineItemsField),
     minRows,
     columns,
     headerFields: (config.headerFields ?? []).map((field) => String(field)),
+    detailFields: (config.detailFields ?? []).map((field) => String(field)),
+    footerFields: (config.footerFields ?? []).map((field) => String(field)),
+    hiddenFields: (config.hiddenFields ?? []).map((field) => String(field)),
+    arraySections,
     lineTotalField: config.lineTotalField
       ? String(config.lineTotalField)
       : undefined,

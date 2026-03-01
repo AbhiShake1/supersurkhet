@@ -15,6 +15,23 @@ export type NormalizedBillColumn = {
   readOnly: boolean;
 };
 
+export type NormalizedBillSummaryField = {
+  key: string;
+  label: string;
+  format?: (
+    value: unknown,
+    ctx: Parameters<NonNullable<RuntimeBillConfig['header']>>[0],
+  ) => React.ReactNode;
+};
+
+export type NormalizedBillArraySection = {
+  field: string;
+  title?: string;
+  columns: NormalizedBillColumn[];
+  minRows: number;
+  summaryFields: NormalizedBillSummaryField[];
+};
+
 export type ResolvedBillSchema = {
   arrayField: ParsedField;
   lineItemObjectField: ParsedField;

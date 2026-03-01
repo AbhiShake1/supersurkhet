@@ -65,6 +65,37 @@ describe('bill-utils', () => {
     });
     expect(normalized.columns[1].align).toBe('right');
     expect(normalized.headerFields).toEqual([]);
+    expect(normalized.detailFields).toEqual([]);
+    expect(normalized.footerFields).toEqual([]);
+    expect(normalized.hiddenFields).toEqual([]);
+    expect(normalized.arraySections).toEqual([]);
+  });
+
+  it('normalizes generic array sections and summary fields', () => {
+    const normalized = normalizeBillConfig({
+      lineItemsField: 'items',
+      columns: [{ key: 'product' }],
+      arraySections: [
+        {
+          field: 'payments',
+          minRows: -2,
+          summaryFields: [
+            'paidAmount',
+            { key: 'paymentStatus', label: 'Status' },
+          ],
+        },
+      ],
+    });
+
+    expect(normalized.arraySections).toHaveLength(1);
+    expect(normalized.arraySections[0]).toMatchObject({
+      field: 'payments',
+      minRows: 0,
+      summaryFields: [
+        { key: 'paidAmount', label: 'Paid Amount' },
+        { key: 'paymentStatus', label: 'Status' },
+      ],
+    });
   });
 
   it('sums grand total from line totals with safe numeric coercion', () => {
