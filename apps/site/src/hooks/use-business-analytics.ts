@@ -1,12 +1,9 @@
 import { useMemo } from 'react';
 import { api } from '@/lib/api';
-import NepaliDate from 'nepali-datetime';
+import { calculateFiscalYear } from '@/lib/nepali-fiscal';
 import type { Sale, StockImport } from '@/lib/schemas/sales';
 import { aggregateStockBookEntries } from '@/lib/stock-book-aggregation';
-import {
-  lineTotal,
-  toFiniteNumber,
-} from './business-analytics-number-utils';
+import { lineTotal, toFiniteNumber } from './business-analytics-number-utils';
 
 const saleTotal = (sale: Sale) =>
   sale.items?.reduce((sum, i) => sum + lineTotal(i.quantity, i.unitPrice), 0) ??
@@ -160,7 +157,7 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
       .slice(0, 5)
       .map(([partyId, total]) => {
         const party = partiesBySoul.get(partyId);
-        return { name: party?.name || "Deleted Party", total };
+        return { name: party?.name || 'Deleted Party', total };
       });
   }, [filteredStockImports, partiesBySoul.get]);
 
@@ -182,7 +179,7 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
       .slice(0, 5)
       .map(([productId, revenue]) => {
         const product = productsBySoul.get(productId);
-        return { name: product?.title || "Deleted Product", revenue };
+        return { name: product?.title || 'Deleted Product', revenue };
       });
   }, [filteredSales, productsBySoul]);
 
@@ -409,7 +406,4 @@ function filterByPeriod<
   });
 }
 
-export function calculateFiscalYear() {
-  const year = new NepaliDate().getYear();
-  return `${year.toString().slice(0, 2)}${year.toString().slice(2)}/${(year + 1).toString().slice(2)}`;
-}
+export { calculateFiscalYear };

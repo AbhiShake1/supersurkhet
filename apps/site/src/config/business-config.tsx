@@ -1,5 +1,4 @@
 import type { SchemaKeys } from '@gta/react-hooks';
-import NepaliDate from 'nepali-datetime';
 import z from 'zod';
 import type { AutoAdminTabInput, UpdateContext } from '@/components/auto-admin';
 import { AutoFormSubmit } from '@/components/ui/auto-form';
@@ -21,6 +20,7 @@ import {
 import { ReceiptWrapper } from '@/components/ui/receipt-wrapper';
 import { useDialog } from '@/contexts/dialog-context';
 import { api } from '@/lib/api';
+import { calculateFiscalYear } from '@/lib/nepali-fiscal';
 import type { BusinessType } from '@/lib/schema';
 import { type SalesItem, salesItemSchema } from '@/lib/schemas/retail';
 import { db } from '@/lib/ssr/api';
@@ -40,13 +40,6 @@ type AnyAutoTableTab = {
 export type BusinessConfigReturn = {
   [B in BusinessType]?: AnyAutoTableTab[];
 };
-
-function calculateFiscalYear() {
-  const year = new NepaliDate().getYear();
-  return `${year.toString().slice(0, 2)}${year
-    .toString()
-    .slice(2)}/${(year + 1).toString().slice(2)}`;
-}
 
 type PaymentInput = {
   paidAt?: string | null;

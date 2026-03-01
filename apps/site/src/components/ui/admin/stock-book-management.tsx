@@ -7,18 +7,26 @@ import {
   Boxes,
   SearchIcon,
 } from 'lucide-react';
-import NepaliDate from 'nepali-datetime';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AutoTable } from '@/components/auto-table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/intl';
 import {
+  calculateFiscalYear,
+  compareFiscalYears,
+  getFiscalYearDateRange,
+  sortFiscalYearsDesc,
+} from '@/lib/nepali-fiscal';
+import {
   aggregateStockBookEntries,
   buildFiscalCloseRows,
+  buildStockOpeningClosingSnapshot,
   UNASSIGNED_STOCK_BUCKET,
 } from '@/lib/stock-book-aggregation';
 import type { AdminComponent } from '.';
@@ -101,7 +109,23 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
   const { data: customers = [] } = api.customer.useGet({ keys: [slug] });
   const createStockBookMutation = api.stockBook.useCreate({ keys: [slug] });
   const deleteStockBookMutation = api.stockBook.useDelete({ keys: [slug] });
-  const currentFiscalYear = useMemo(calculateFiscalYear, []);
+  const currentFiscalYear = calculateFiscalYear();
+  const currentFiscalRange = useMemo(
+    () => getFiscalYearDateRange(currentFiscalYear),
+    [currentFiscalYear],
+  );
+  const [periodStartDate, setPeriodStartDate] = useState<Date | undefined>(
+    currentFiscalRange?.startDate,
+  );
+  const [periodEndDate, setPeriodEndDate] = useState<Date | undefined>(
+    currentFiscalRange?.endDate,
+  );
+
+  useEffect(() => {
+    if (!currentFiscalRange) return;
+    setPeriodStartDate(currentFiscalRange.startDate);
+    setPeriodEndDate(currentFiscalRange.endDate);
+  }, [currentFiscalRange]);
 
   const productsById = useMemo(
     () => new Map(products.map((product) => [product._?.soul, product])),
@@ -192,6 +216,28 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
   const stockAggregate = useMemo(
     () => aggregateStockBookEntries(stockBook as StockEntry[]),
     [stockBook],
+  );
+
+  const selectedPeriod = useMemo(() => {
+    const fallbackStart = currentFiscalRange?.startDate || new Date(0);
+    const fallbackEnd = currentFiscalRange?.endDate || new Date();
+    const start = periodStartDate || fallbackStart;
+    const end = periodEndDate || fallbackEnd;
+
+    if (start.getTime() <= end.getTime()) {
+      return { startDate: start, endDate: end };
+    }
+    return { startDate: end, endDate: start };
+  }, [currentFiscalRange, periodEndDate, periodStartDate]);
+
+  const periodOpeningClosing = useMemo(
+    () =>
+      buildStockOpeningClosingSnapshot({
+        entries: stockBook as StockEntry[],
+        startDate: selectedPeriod.startDate,
+        endDate: selectedPeriod.endDate,
+      }),
+    [selectedPeriod.endDate, selectedPeriod.startDate, stockBook],
   );
 
   const stockNeedByParty = useMemo(() => {
@@ -419,12 +465,11 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
     autoCloseRunRef.current = runKey;
 
     let isCancelled = false;
-    const closeDate = new Date().toISOString();
 
     async function runAutoClose() {
       setIsAutoClosing(true);
       setAutoCloseMessage(
-        `Running fiscal close for ${pendingFiscalCloseYears.join(', ')}...`,
+        `Running automatic fiscal closing for ${pendingFiscalCloseYears.join(', ')}...`,
       );
 
       try {
@@ -436,6 +481,10 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
 
         for (const fiscalYear of yearsToClose) {
           const sourcePrefix = getFiscalCloseSourcePrefix(fiscalYear);
+          const fiscalRange = getFiscalYearDateRange(fiscalYear);
+          if (!fiscalRange) continue;
+          const closeDate = fiscalRange.endDate.toISOString();
+          const openingDate = fiscalRange.nextFiscalYearStartDate.toISOString();
           const staleRows = workingEntries.filter(
             (entry) =>
               entry.sourceTable === 'fiscalClose' &&
@@ -460,6 +509,7 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
           const generated = buildFiscalCloseRows({
             fiscalYear,
             closeDate,
+            openingDate,
             entries: workingEntries,
           });
 
@@ -473,15 +523,15 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
         if (isCancelled) return;
         setAutoCloseMessage(
           generatedRows
-            ? `Auto fiscal close completed. Generated ${generatedRows.toLocaleString()} stock-book rows.`
-            : 'No fiscal close rows were generated from the pending years.',
+            ? `Automatic fiscal closing completed. Generated ${generatedRows.toLocaleString()} stock-book rows.`
+            : 'No fiscal closing rows were generated for pending years.',
         );
       } catch (error) {
         if (isCancelled) return;
         const message =
           error instanceof Error
             ? error.message
-            : 'Automatic fiscal close failed unexpectedly.';
+            : 'Automatic fiscal closing failed unexpectedly.';
         setAutoCloseMessage(message);
       } finally {
         if (!isCancelled) {
@@ -787,17 +837,36 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
     );
   }
 
-  function renderFiscalCloseView() {
-    if (!fiscalYears.length) {
-      return (
-        <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
-          No fiscal-year entries found in stock book yet.
-        </div>
-      );
-    }
+  function applyQuickPeriod(days: number) {
+    const safeDays = Math.max(1, Math.floor(days));
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+    const start = new Date(end);
+    start.setDate(start.getDate() - (safeDays - 1));
+    start.setHours(0, 0, 0, 0);
+    setPeriodStartDate(start);
+    setPeriodEndDate(end);
+  }
 
+  function resetPeriodToCurrentFiscalYear() {
+    if (!currentFiscalRange) return;
+    setPeriodStartDate(currentFiscalRange.startDate);
+    setPeriodEndDate(currentFiscalRange.endDate);
+  }
+
+  function renderFiscalCloseView() {
     const activeYear =
       selectedFiscalYearStatus || fiscalCloseStatuses[0] || null;
+    const sortedPeriodRows = [...periodOpeningClosing.rows].sort((a, b) => {
+      const productA = productsById.get(a.productId)?.title || a.productId;
+      const productB = productsById.get(b.productId)?.title || b.productId;
+      if (productA !== productB) return productA.localeCompare(productB);
+      const partyA = getPartyLabel(a.partyId);
+      const partyB = getPartyLabel(b.partyId);
+      return partyA.localeCompare(partyB);
+    });
+    const periodStartFiscalYear = calculateFiscalYear(selectedPeriod.startDate);
+    const periodEndFiscalYear = calculateFiscalYear(selectedPeriod.endDate);
 
     function getPartyLabel(partyId: string) {
       if (partyId === UNASSIGNED_STOCK_BUCKET) return 'Unassigned';
@@ -818,7 +887,7 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
                   Automatic Fiscal Rollover
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Fiscal close runs automatically when a new fiscal year is
+                  Fiscal closing runs automatically when a new fiscal year is
                   detected.
                 </p>
               </div>
@@ -834,7 +903,7 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
                 <span className="font-medium">{currentFiscalYear}</span>
               </p>
               <p>
-                Pending Close Years:{' '}
+                Pending Closing Years:{' '}
                 <span className="font-medium">
                   {pendingFiscalCloseYears.length
                     ? pendingFiscalCloseYears.join(', ')
@@ -850,6 +919,169 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">
+              Opening and Closing by Period
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Default range uses current Nepali fiscal year and can be changed
+              to any date range.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Start Date
+                </p>
+                <DatePicker
+                  date={periodStartDate}
+                  setDate={(date) => setPeriodStartDate(date)}
+                />
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground">
+                  End Date
+                </p>
+                <DatePicker
+                  date={periodEndDate}
+                  setDate={(date) => setPeriodEndDate(date)}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => applyQuickPeriod(1)}
+              >
+                Last 1 Day
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => applyQuickPeriod(7)}
+              >
+                Last 7 Days
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={resetPeriodToCurrentFiscalYear}
+              >
+                Current Fiscal Year
+              </Button>
+            </div>
+
+            <div className="rounded-md border px-3 py-2 text-sm">
+              <p>
+                Selected Range:{' '}
+                <span className="font-medium">
+                  {formatDate(selectedPeriod.startDate.toISOString())} to{' '}
+                  {formatDate(selectedPeriod.endDate.toISOString())}
+                </span>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Fiscal Year Span: {periodStartFiscalYear} to{' '}
+                {periodEndFiscalYear}
+                {currentFiscalRange
+                  ? ` | Default FY: ${formatDate(
+                      currentFiscalRange.startDate.toISOString(),
+                    )} to ${formatDate(
+                      currentFiscalRange.endDate.toISOString(),
+                    )}`
+                  : ''}
+              </p>
+            </div>
+
+            <div className="grid gap-2 sm:grid-cols-4">
+              <div className="rounded-md border p-3">
+                <p className="text-xs text-muted-foreground">Opening Qty</p>
+                <p className="font-semibold tabular-nums">
+                  {periodOpeningClosing.openingTotalQty.toLocaleString()}
+                </p>
+              </div>
+              <div className="rounded-md border p-3">
+                <p className="text-xs text-muted-foreground">Closing Qty</p>
+                <p className="font-semibold tabular-nums">
+                  {periodOpeningClosing.closingTotalQty.toLocaleString()}
+                </p>
+              </div>
+              <div className="rounded-md border p-3">
+                <p className="text-xs text-muted-foreground">Net Change</p>
+                <p className="font-semibold tabular-nums">
+                  {(
+                    periodOpeningClosing.closingTotalQty -
+                    periodOpeningClosing.openingTotalQty
+                  ).toLocaleString()}
+                </p>
+              </div>
+              <div className="rounded-md border p-3">
+                <p className="text-xs text-muted-foreground">
+                  Product+Party Buckets
+                </p>
+                <p className="font-semibold tabular-nums">
+                  {sortedPeriodRows.length.toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-md border">
+              <div className="max-h-[min(50vh,28rem)] overflow-auto">
+                <table className="w-full min-w-[760px] text-sm">
+                  <thead className="bg-muted/40">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Product</th>
+                      <th className="px-3 py-2 text-left">Party Bucket</th>
+                      <th className="px-3 py-2 text-right">Opening Qty</th>
+                      <th className="px-3 py-2 text-right">Closing Qty</th>
+                      <th className="px-3 py-2 text-right">Change</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedPeriodRows.length ? (
+                      sortedPeriodRows.map((row) => (
+                        <tr key={row.key} className="border-t">
+                          <td className="px-3 py-2">
+                            {productsById.get(row.productId)?.title ||
+                              row.productId}
+                          </td>
+                          <td className="px-3 py-2">
+                            {getPartyLabel(row.partyId)}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            {row.openingQty.toLocaleString()}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            {row.closingQty.toLocaleString()}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            {(row.closingQty - row.openingQty).toLocaleString()}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          className="px-3 py-4 text-center text-muted-foreground"
+                          colSpan={5}
+                        >
+                          No opening/closing stock buckets in this range.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="grid gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
           <Card className="min-h-0">
             <CardHeader className="pb-3">
@@ -859,44 +1091,50 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
               </p>
             </CardHeader>
             <CardContent className="max-h-[min(65vh,42rem)] space-y-2 overflow-y-auto pr-1">
-              {fiscalCloseStatuses.map((status) => {
-                const isActive =
-                  selectedFiscalHistoryYear === status.fiscalYear;
-                return (
-                  <button
-                    key={status.fiscalYear}
-                    type="button"
-                    onClick={() => {
-                      setSelectedFiscalHistoryYear(status.fiscalYear);
-                    }}
-                    className={`w-full rounded-md border p-3 text-left transition ${
-                      isActive
-                        ? 'border-primary bg-primary/5'
-                        : 'hover:bg-muted/40'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-medium">{status.fiscalYear}</p>
-                      <Badge variant={status.closed ? 'default' : 'outline'}>
-                        {status.closed ? 'Closed' : 'Open'}
-                      </Badge>
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {status.closedAt
-                        ? `Closed on ${formatDate(status.closedAt)}`
-                        : 'Not closed yet'}
-                    </p>
-                    <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-                      <div className="rounded-sm border px-2 py-1">
-                        Open: {status.openingQty.toLocaleString()}
+              {fiscalCloseStatuses.length ? (
+                fiscalCloseStatuses.map((status) => {
+                  const isActive =
+                    selectedFiscalHistoryYear === status.fiscalYear;
+                  return (
+                    <button
+                      key={status.fiscalYear}
+                      type="button"
+                      onClick={() => {
+                        setSelectedFiscalHistoryYear(status.fiscalYear);
+                      }}
+                      className={`w-full rounded-md border p-3 text-left transition ${
+                        isActive
+                          ? 'border-primary bg-primary/5'
+                          : 'hover:bg-muted/40'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-medium">{status.fiscalYear}</p>
+                        <Badge variant={status.closed ? 'default' : 'outline'}>
+                          {status.closed ? 'Closing Posted' : 'Pending Closing'}
+                        </Badge>
                       </div>
-                      <div className="rounded-sm border px-2 py-1">
-                        Close: {status.closingQty.toLocaleString()}
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {status.closedAt
+                          ? `Closing posted on ${formatDate(status.closedAt)}`
+                          : 'Closing not posted yet'}
+                      </p>
+                      <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                        <div className="rounded-sm border px-2 py-1">
+                          Opening: {status.openingQty.toLocaleString()}
+                        </div>
+                        <div className="rounded-sm border px-2 py-1">
+                          Closing: {status.closingQty.toLocaleString()}
+                        </div>
                       </div>
-                    </div>
-                  </button>
-                );
-              })}
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="rounded-md border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
+                  No fiscal-year entries found in stock book yet.
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -911,7 +1149,7 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
                     </p>
                   </div>
                   <Badge variant={activeYear.closed ? 'default' : 'outline'}>
-                    {activeYear.closed ? 'Closed' : 'Open'}
+                    {activeYear.closed ? 'Closing Posted' : 'Pending Closing'}
                   </Badge>
                 </div>
               </CardHeader>
@@ -975,8 +1213,8 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
                               className="px-3 py-4 text-center text-muted-foreground"
                               colSpan={4}
                             >
-                              No fiscal close opening/closing rows found for
-                              this year.
+                              No opening/closing rows found for this fiscal
+                              year.
                             </td>
                           </tr>
                         )}
@@ -1060,7 +1298,7 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
           <TabsTrigger value="purchases">Purchases</TabsTrigger>
           <TabsTrigger value="sales">Sales</TabsTrigger>
           <TabsTrigger value="stock">Stock Need</TabsTrigger>
-          <TabsTrigger value="fiscal-close">Fiscal Close</TabsTrigger>
+          <TabsTrigger value="fiscal-close">Opening/Closing</TabsTrigger>
         </TabsList>
         <TabsContent value="all">{renderLedgerLikeView(filtered)}</TabsContent>
         <TabsContent value="purchases">
@@ -1125,35 +1363,6 @@ function formatDate(value?: string) {
   return format(date, 'dd MMM yyyy');
 }
 
-function sortFiscalYearsDesc(a: string, b: string) {
-  return compareFiscalYears(b, a);
-}
-
 function getFiscalCloseSourcePrefix(fiscalYear: string) {
   return `fiscal-close:${fiscalYear}:`;
-}
-
-function compareFiscalYears(a: string, b: string) {
-  const [aStart, aEnd] = parseFiscalYear(a);
-  const [bStart, bEnd] = parseFiscalYear(b);
-  if (aStart !== bStart) return aStart - bStart;
-  if (aEnd !== bEnd) return aEnd - bEnd;
-  return a.localeCompare(b);
-}
-
-function parseFiscalYear(fiscalYear: string): [number, number] {
-  const [startRaw, endRaw] = fiscalYear.split('/');
-  const start = Number(startRaw);
-  const end = Number(endRaw);
-  if (!Number.isFinite(start) || !Number.isFinite(end)) {
-    return [0, 0];
-  }
-  return [start, end];
-}
-
-function calculateFiscalYear() {
-  const year = new NepaliDate().getYear();
-  return `${year.toString().slice(0, 2)}${year
-    .toString()
-    .slice(2)}/${(year + 1).toString().slice(2)}`;
 }

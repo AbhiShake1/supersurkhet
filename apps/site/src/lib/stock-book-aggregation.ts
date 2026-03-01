@@ -1,3 +1,5 @@
+import { getNextFiscalYear } from './nepali-fiscal';
+
 export const UNASSIGNED_STOCK_BUCKET = '__UNASSIGNED__';
 
 export type StockBucketKey = string;
@@ -21,23 +23,58 @@ export type StockAggregation = {
   productPartyAvailable: Record<string, Record<StockBucketKey, number>>;
 };
 
+export type StockOpeningClosingRow = {
+  key: string;
+  productId: string;
+  partyId: string;
+  openingQty: number;
+  closingQty: number;
+};
+
+export type StockOpeningClosingSnapshot = {
+  startDate: Date;
+  endDate: Date;
+  openingTotalQty: number;
+  closingTotalQty: number;
+  rows: StockOpeningClosingRow[];
+};
+
 function toFiniteNumber(input: unknown) {
   const value = Number(input ?? 0);
   return Number.isFinite(value) ? value : 0;
 }
 
-function resolveInboundBucket(entry: StockBookAggregationEntry): StockBucketKey {
+function normalizeDayStart(date: Date) {
+  const value = new Date(date);
+  value.setHours(0, 0, 0, 0);
+  return value;
+}
+
+function normalizeDayEnd(date: Date) {
+  const value = new Date(date);
+  value.setHours(23, 59, 59, 999);
+  return value;
+}
+
+function getEntryTimestamp(entry: StockBookAggregationEntry) {
+  if (!entry.entryDate) return 0;
+  const parsed = new Date(entry.entryDate).getTime();
+  if (!Number.isFinite(parsed)) return 0;
+  return parsed;
+}
+
+function resolveInboundBucket(
+  entry: StockBookAggregationEntry,
+): StockBucketKey {
   if (entry.movementType === 'purchase') {
     return entry.counterpartyId || UNASSIGNED_STOCK_BUCKET;
   }
-  return (
-    entry.originPartyId ||
-    entry.counterpartyId ||
-    UNASSIGNED_STOCK_BUCKET
-  );
+  return entry.originPartyId || entry.counterpartyId || UNASSIGNED_STOCK_BUCKET;
 }
 
-function resolveOutboundBucket(entry: StockBookAggregationEntry): StockBucketKey {
+function resolveOutboundBucket(
+  entry: StockBookAggregationEntry,
+): StockBucketKey {
   return entry.originPartyId || UNASSIGNED_STOCK_BUCKET;
 }
 
@@ -45,7 +82,10 @@ export function aggregateStockBookEntries(
   entries: StockBookAggregationEntry[] | undefined,
 ): StockAggregation {
   const productTotalAvailable: Record<string, number> = {};
-  const productPartyAvailable: Record<string, Record<StockBucketKey, number>> = {};
+  const productPartyAvailable: Record<
+    string,
+    Record<StockBucketKey, number>
+  > = {};
 
   for (const entry of entries ?? []) {
     const productId = entry.productId;
@@ -89,6 +129,76 @@ export function getProductPartyAvailability(
   return Number(aggregate.productPartyAvailable[productId]?.[partyId] || 0);
 }
 
+export function buildStockOpeningClosingSnapshot({
+  entries,
+  startDate,
+  endDate,
+}: {
+  entries: StockBookAggregationEntry[] | undefined;
+  startDate: Date;
+  endDate: Date;
+}): StockOpeningClosingSnapshot {
+  const normalizedStart = normalizeDayStart(startDate);
+  const normalizedEnd = normalizeDayEnd(endDate);
+  const startTimestamp = normalizedStart.getTime();
+  const endTimestamp = normalizedEnd.getTime();
+
+  const safeEntries = entries ?? [];
+  const openingAggregate = aggregateStockBookEntries(
+    safeEntries.filter((entry) => getEntryTimestamp(entry) < startTimestamp),
+  );
+  const closingAggregate = aggregateStockBookEntries(
+    safeEntries.filter((entry) => getEntryTimestamp(entry) <= endTimestamp),
+  );
+
+  const productIds = new Set<string>([
+    ...Object.keys(openingAggregate.productPartyAvailable),
+    ...Object.keys(closingAggregate.productPartyAvailable),
+  ]);
+
+  const rows: StockOpeningClosingRow[] = [];
+  for (const productId of productIds) {
+    const openingBuckets =
+      openingAggregate.productPartyAvailable[productId] || {};
+    const closingBuckets =
+      closingAggregate.productPartyAvailable[productId] || {};
+    const bucketIds = new Set<string>([
+      ...Object.keys(openingBuckets),
+      ...Object.keys(closingBuckets),
+    ]);
+
+    for (const partyId of bucketIds) {
+      const openingQty = Number(openingBuckets[partyId] || 0);
+      const closingQty = Number(closingBuckets[partyId] || 0);
+      if (!openingQty && !closingQty) continue;
+      rows.push({
+        key: `${productId}::${partyId}`,
+        productId,
+        partyId,
+        openingQty,
+        closingQty,
+      });
+    }
+  }
+
+  rows.sort((a, b) => {
+    if (a.productId !== b.productId)
+      return a.productId.localeCompare(b.productId);
+    return a.partyId.localeCompare(b.partyId);
+  });
+
+  const openingTotalQty = rows.reduce((sum, row) => sum + row.openingQty, 0);
+  const closingTotalQty = rows.reduce((sum, row) => sum + row.closingQty, 0);
+
+  return {
+    startDate: normalizedStart,
+    endDate: normalizedEnd,
+    openingTotalQty,
+    closingTotalQty,
+    rows,
+  };
+}
+
 export type FiscalCloseRow = {
   entryDate: string;
   transactionType: 'stock';
@@ -109,26 +219,19 @@ export type FiscalCloseRow = {
   originPartyId?: string;
 };
 
-export function getNextFiscalYear(fiscalYear: string) {
-  const [startRaw, endRaw] = fiscalYear.split('/');
-  const start = Number(startRaw);
-  const end = Number(endRaw);
-  if (!Number.isFinite(start) || !Number.isFinite(end)) return fiscalYear;
-  const nextStart = String((start + 1) % 100).padStart(2, '0');
-  const nextEnd = String((end + 1) % 100).padStart(2, '0');
-  return `${nextStart}/${nextEnd}`;
-}
-
 export function buildFiscalCloseRows({
   fiscalYear,
   closeDate,
+  openingDate,
   entries,
 }: {
   fiscalYear: string;
   closeDate: string;
+  openingDate?: string;
   entries: StockBookAggregationEntry[] | undefined;
 }) {
   const nextFiscalYear = getNextFiscalYear(fiscalYear);
+  const openingEntryDate = openingDate || closeDate;
   const closingEntries = (entries ?? []).filter((entry) => {
     if (entry.fiscalYear !== fiscalYear) return false;
     if (!entry.entryDate) return true;
@@ -160,7 +263,7 @@ export function buildFiscalCloseRows({
         quantity,
         unitRate: 0,
         totalAmount: 0,
-        particulars: `Fiscal close ${fiscalYear}`,
+        particulars: `Fiscal closing ${fiscalYear}`,
         sourceTable: 'fiscalClose',
         sourceId: `${sourceId}:close`,
         sourceCode,
@@ -170,7 +273,7 @@ export function buildFiscalCloseRows({
       });
 
       rows.push({
-        entryDate: closeDate,
+        entryDate: openingEntryDate,
         transactionType: 'stock',
         movementType: 'opening',
         direction: 'in',
