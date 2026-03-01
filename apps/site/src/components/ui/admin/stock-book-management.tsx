@@ -7,7 +7,7 @@ import {
   Boxes,
   SearchIcon,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AutoTable } from '@/components/auto-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -89,6 +89,24 @@ type FiscalCloseStatus = {
   rows: FiscalYearStockRow[];
 };
 
+type OpeningClosingPartyItem = {
+  key: string;
+  productId: string;
+  product: string;
+  openingQty: number;
+  closingQty: number;
+  changeQty: number;
+};
+
+type OpeningClosingPartyLedger = {
+  id: string;
+  name: string;
+  totalOpeningQty: number;
+  totalClosingQty: number;
+  totalChangeQty: number;
+  items: OpeningClosingPartyItem[];
+};
+
 export const StockBookManagement: AdminComponent = ({ slug }) => {
   return <_StockBookManagement slug={slug} />;
 };
@@ -100,8 +118,12 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
   >(null);
   const [selectedFiscalHistoryYear, setSelectedFiscalHistoryYear] =
     useState('');
-  const [autoCloseMessage, setAutoCloseMessage] = useState<string | null>(null);
-  const [isAutoClosing, setIsAutoClosing] = useState(false);
+  const [selectedPeriodPartyId, setSelectedPeriodPartyId] = useState<
+    string | null
+  >(null);
+  const [selectedFiscalPartyId, setSelectedFiscalPartyId] = useState<
+    string | null
+  >(null);
   const autoCloseRunRef = useRef('');
   const { data: stockBook = [] } = api.stockBook.useGet({ keys: [slug] });
   const { data: products = [] } = api.product.useGet({ keys: [slug] });
@@ -138,6 +160,18 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
   const customersById = useMemo(
     () => new Map(customers.map((customer) => [customer._?.soul, customer])),
     [customers],
+  );
+
+  const getPartyLabel = useCallback(
+    (partyId: string) => {
+      if (partyId === UNASSIGNED_STOCK_BUCKET) return 'Unassigned';
+      return (
+        partiesById.get(partyId)?.name ||
+        customersById.get(partyId)?.name ||
+        partyId
+      );
+    },
+    [customersById, partiesById],
   );
 
   const normalized = useMemo(() => {
@@ -239,6 +273,61 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
       }),
     [selectedPeriod.endDate, selectedPeriod.startDate, stockBook],
   );
+
+  const periodPartyLedgers = useMemo<OpeningClosingPartyLedger[]>(() => {
+    const byParty = new Map<string, OpeningClosingPartyLedger>();
+
+    for (const row of periodOpeningClosing.rows) {
+      const productTitle =
+        productsById.get(row.productId)?.title || row.productId;
+      const partyId = row.partyId;
+      const ledger = byParty.get(partyId) || {
+        id: partyId,
+        name: getPartyLabel(partyId),
+        totalOpeningQty: 0,
+        totalClosingQty: 0,
+        totalChangeQty: 0,
+        items: [],
+      };
+
+      const changeQty = row.closingQty - row.openingQty;
+      ledger.items.push({
+        key: row.key,
+        productId: row.productId,
+        product: productTitle,
+        openingQty: row.openingQty,
+        closingQty: row.closingQty,
+        changeQty,
+      });
+      ledger.totalOpeningQty += row.openingQty;
+      ledger.totalClosingQty += row.closingQty;
+      ledger.totalChangeQty += changeQty;
+      byParty.set(partyId, ledger);
+    }
+
+    return Array.from(byParty.values())
+      .map((ledger) => ({
+        ...ledger,
+        items: [...ledger.items].sort((a, b) =>
+          a.product.localeCompare(b.product),
+        ),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [periodOpeningClosing.rows, productsById, getPartyLabel]);
+
+  useEffect(() => {
+    if (!periodPartyLedgers.length) {
+      setSelectedPeriodPartyId(null);
+      return;
+    }
+    if (
+      selectedPeriodPartyId &&
+      periodPartyLedgers.some((ledger) => ledger.id === selectedPeriodPartyId)
+    ) {
+      return;
+    }
+    setSelectedPeriodPartyId(periodPartyLedgers[0]?.id || null);
+  }, [periodPartyLedgers, selectedPeriodPartyId]);
 
   const stockNeedByParty = useMemo(() => {
     const byParty = new Map<string, StockNeedPartyLedger>();
@@ -438,6 +527,61 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
     [fiscalCloseStatuses, selectedFiscalHistoryYear],
   );
 
+  const fiscalYearPartyLedgers = useMemo<OpeningClosingPartyLedger[]>(() => {
+    const byParty = new Map<string, OpeningClosingPartyLedger>();
+    for (const row of selectedFiscalYearStatus?.rows || []) {
+      const productTitle =
+        productsById.get(row.productId)?.title || row.productId;
+      const partyId = row.partyId;
+      const ledger = byParty.get(partyId) || {
+        id: partyId,
+        name: getPartyLabel(partyId),
+        totalOpeningQty: 0,
+        totalClosingQty: 0,
+        totalChangeQty: 0,
+        items: [],
+      };
+      const changeQty = row.closingQty - row.openingQty;
+      ledger.items.push({
+        key: row.key,
+        productId: row.productId,
+        product: productTitle,
+        openingQty: row.openingQty,
+        closingQty: row.closingQty,
+        changeQty,
+      });
+      ledger.totalOpeningQty += row.openingQty;
+      ledger.totalClosingQty += row.closingQty;
+      ledger.totalChangeQty += changeQty;
+      byParty.set(partyId, ledger);
+    }
+
+    return Array.from(byParty.values())
+      .map((ledger) => ({
+        ...ledger,
+        items: [...ledger.items].sort((a, b) =>
+          a.product.localeCompare(b.product),
+        ),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [selectedFiscalYearStatus, productsById, getPartyLabel]);
+
+  useEffect(() => {
+    if (!fiscalYearPartyLedgers.length) {
+      setSelectedFiscalPartyId(null);
+      return;
+    }
+    if (
+      selectedFiscalPartyId &&
+      fiscalYearPartyLedgers.some(
+        (ledger) => ledger.id === selectedFiscalPartyId,
+      )
+    ) {
+      return;
+    }
+    setSelectedFiscalPartyId(fiscalYearPartyLedgers[0]?.id || null);
+  }, [fiscalYearPartyLedgers, selectedFiscalPartyId]);
+
   const pendingFiscalCloseYears = useMemo(() => {
     const closedYears = new Set(
       normalized
@@ -467,17 +611,11 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
     let isCancelled = false;
 
     async function runAutoClose() {
-      setIsAutoClosing(true);
-      setAutoCloseMessage(
-        `Running automatic fiscal closing for ${pendingFiscalCloseYears.join(', ')}...`,
-      );
-
       try {
         const yearsToClose = [...pendingFiscalCloseYears].sort(
           compareFiscalYears,
         );
         let workingEntries = [...normalized];
-        let generatedRows = 0;
 
         for (const fiscalYear of yearsToClose) {
           const sourcePrefix = getFiscalCloseSourcePrefix(fiscalYear);
@@ -516,27 +654,13 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
           for (const row of generated.rows) {
             await createStockBookMutation.mutateAsync({ ...row });
             workingEntries.unshift(row);
-            generatedRows += 1;
           }
         }
 
         if (isCancelled) return;
-        setAutoCloseMessage(
-          generatedRows
-            ? `Automatic fiscal closing completed. Generated ${generatedRows.toLocaleString()} stock-book rows.`
-            : 'No fiscal closing rows were generated for pending years.',
-        );
       } catch (error) {
         if (isCancelled) return;
-        const message =
-          error instanceof Error
-            ? error.message
-            : 'Automatic fiscal closing failed unexpectedly.';
-        setAutoCloseMessage(message);
-      } finally {
-        if (!isCancelled) {
-          setIsAutoClosing(false);
-        }
+        console.error(error);
       }
     }
 
@@ -857,68 +981,23 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
   function renderFiscalCloseView() {
     const activeYear =
       selectedFiscalYearStatus || fiscalCloseStatuses[0] || null;
-    const sortedPeriodRows = [...periodOpeningClosing.rows].sort((a, b) => {
-      const productA = productsById.get(a.productId)?.title || a.productId;
-      const productB = productsById.get(b.productId)?.title || b.productId;
-      if (productA !== productB) return productA.localeCompare(productB);
-      const partyA = getPartyLabel(a.partyId);
-      const partyB = getPartyLabel(b.partyId);
-      return partyA.localeCompare(partyB);
-    });
+    const activePeriodLedger =
+      periodPartyLedgers.find(
+        (ledger) => ledger.id === selectedPeriodPartyId,
+      ) ||
+      periodPartyLedgers[0] ||
+      null;
+    const activeFiscalLedger =
+      fiscalYearPartyLedgers.find(
+        (ledger) => ledger.id === selectedFiscalPartyId,
+      ) ||
+      fiscalYearPartyLedgers[0] ||
+      null;
     const periodStartFiscalYear = calculateFiscalYear(selectedPeriod.startDate);
     const periodEndFiscalYear = calculateFiscalYear(selectedPeriod.endDate);
 
-    function getPartyLabel(partyId: string) {
-      if (partyId === UNASSIGNED_STOCK_BUCKET) return 'Unassigned';
-      return (
-        partiesById.get(partyId)?.name ||
-        customersById.get(partyId)?.name ||
-        partyId
-      );
-    }
-
     return (
       <div className="space-y-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <CardTitle className="text-base">
-                  Automatic Fiscal Rollover
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Fiscal closing runs automatically when a new fiscal year is
-                  detected.
-                </p>
-              </div>
-              <Badge variant={isAutoClosing ? 'secondary' : 'outline'}>
-                {isAutoClosing ? 'Running' : 'Up to date'}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-              <p>
-                Current Fiscal Year:{' '}
-                <span className="font-medium">{currentFiscalYear}</span>
-              </p>
-              <p>
-                Pending Closing Years:{' '}
-                <span className="font-medium">
-                  {pendingFiscalCloseYears.length
-                    ? pendingFiscalCloseYears.join(', ')
-                    : 'None'}
-                </span>
-              </p>
-            </div>
-            {autoCloseMessage && (
-              <div className="rounded-md border px-3 py-2 text-sm">
-                {autoCloseMessage}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">
@@ -978,26 +1057,12 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
               </Button>
             </div>
 
-            <div className="rounded-md border px-3 py-2 text-sm">
-              <p>
-                Selected Range:{' '}
-                <span className="font-medium">
-                  {formatDate(selectedPeriod.startDate.toISOString())} to{' '}
-                  {formatDate(selectedPeriod.endDate.toISOString())}
-                </span>
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Fiscal Year Span: {periodStartFiscalYear} to{' '}
-                {periodEndFiscalYear}
-                {currentFiscalRange
-                  ? ` | Default FY: ${formatDate(
-                      currentFiscalRange.startDate.toISOString(),
-                    )} to ${formatDate(
-                      currentFiscalRange.endDate.toISOString(),
-                    )}`
-                  : ''}
-              </p>
-            </div>
+            <p className="text-xs text-muted-foreground">
+              Selected Range:{' '}
+              {formatDate(selectedPeriod.startDate.toISOString())} to{' '}
+              {formatDate(selectedPeriod.endDate.toISOString())} | Fiscal Year
+              Span: {periodStartFiscalYear} to {periodEndFiscalYear}
+            </p>
 
             <div className="grid gap-2 sm:grid-cols-4">
               <div className="rounded-md border p-3">
@@ -1022,62 +1087,137 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
                 </p>
               </div>
               <div className="rounded-md border p-3">
-                <p className="text-xs text-muted-foreground">
-                  Product+Party Buckets
-                </p>
+                <p className="text-xs text-muted-foreground">Parties</p>
                 <p className="font-semibold tabular-nums">
-                  {sortedPeriodRows.length.toLocaleString()}
+                  {periodPartyLedgers.length.toLocaleString()}
                 </p>
               </div>
             </div>
 
-            <div className="rounded-md border">
-              <div className="max-h-[min(50vh,28rem)] overflow-auto">
-                <table className="w-full min-w-[760px] text-sm">
-                  <thead className="bg-muted/40">
-                    <tr>
-                      <th className="px-3 py-2 text-left">Product</th>
-                      <th className="px-3 py-2 text-left">Party Bucket</th>
-                      <th className="px-3 py-2 text-right">Opening Qty</th>
-                      <th className="px-3 py-2 text-right">Closing Qty</th>
-                      <th className="px-3 py-2 text-right">Change</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedPeriodRows.length ? (
-                      sortedPeriodRows.map((row) => (
-                        <tr key={row.key} className="border-t">
-                          <td className="px-3 py-2">
-                            {productsById.get(row.productId)?.title ||
-                              row.productId}
-                          </td>
-                          <td className="px-3 py-2">
-                            {getPartyLabel(row.partyId)}
-                          </td>
-                          <td className="px-3 py-2 text-right">
-                            {row.openingQty.toLocaleString()}
-                          </td>
-                          <td className="px-3 py-2 text-right">
-                            {row.closingQty.toLocaleString()}
-                          </td>
-                          <td className="px-3 py-2 text-right">
-                            {(row.closingQty - row.openingQty).toLocaleString()}
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td
-                          className="px-3 py-4 text-center text-muted-foreground"
-                          colSpan={5}
+            <div className="grid min-w-0 gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
+              <Card className="min-h-0">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Parties</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Select a party to view opening and closing by product.
+                  </p>
+                </CardHeader>
+                <CardContent className="max-h-[min(50vh,30rem)] space-y-2 overflow-y-auto pr-1">
+                  {periodPartyLedgers.length ? (
+                    periodPartyLedgers.map((ledger) => {
+                      const isActive = activePeriodLedger?.id === ledger.id;
+                      return (
+                        <button
+                          key={ledger.id}
+                          type="button"
+                          onClick={() => setSelectedPeriodPartyId(ledger.id)}
+                          className={`w-full rounded-md border p-3 text-left transition ${
+                            isActive
+                              ? 'border-primary bg-primary/5'
+                              : 'hover:bg-muted/40'
+                          }`}
                         >
-                          No opening/closing stock buckets in this range.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                          <p className="font-medium">{ledger.name}</p>
+                          <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                            <div>
+                              <p className="text-muted-foreground">Opening</p>
+                              <p className="font-semibold tabular-nums">
+                                {ledger.totalOpeningQty.toLocaleString()}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Closing</p>
+                              <p className="font-semibold tabular-nums">
+                                {ledger.totalClosingQty.toLocaleString()}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Change</p>
+                              <p className="font-semibold tabular-nums">
+                                {ledger.totalChangeQty.toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="rounded-md border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
+                      No opening/closing stock buckets in this range.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {activePeriodLedger && (
+                <Card className="min-h-0 min-w-0">
+                  <CardHeader>
+                    <CardTitle>{activePeriodLedger.name}</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Opening and closing by product for selected period
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      <div className="rounded-md border p-3">
+                        <p className="text-xs text-muted-foreground">
+                          Opening Qty
+                        </p>
+                        <p className="font-semibold tabular-nums">
+                          {activePeriodLedger.totalOpeningQty.toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="rounded-md border p-3">
+                        <p className="text-xs text-muted-foreground">
+                          Closing Qty
+                        </p>
+                        <p className="font-semibold tabular-nums">
+                          {activePeriodLedger.totalClosingQty.toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="rounded-md border p-3">
+                        <p className="text-xs text-muted-foreground">Change</p>
+                        <p className="font-semibold tabular-nums">
+                          {activePeriodLedger.totalChangeQty.toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="max-h-[min(50vh,30rem)] overflow-auto rounded-md border">
+                      <table className="w-full min-w-[680px] text-sm">
+                        <thead className="bg-muted/40">
+                          <tr>
+                            <th className="px-3 py-2 text-left">Product</th>
+                            <th className="px-3 py-2 text-right">
+                              Opening Qty
+                            </th>
+                            <th className="px-3 py-2 text-right">
+                              Closing Qty
+                            </th>
+                            <th className="px-3 py-2 text-right">Change</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {activePeriodLedger.items.map((item) => (
+                            <tr key={item.key} className="border-t">
+                              <td className="px-3 py-2">{item.product}</td>
+                              <td className="px-3 py-2 text-right">
+                                {item.openingQty.toLocaleString()}
+                              </td>
+                              <td className="px-3 py-2 text-right">
+                                {item.closingQty.toLocaleString()}
+                              </td>
+                              <td className="px-3 py-2 text-right">
+                                {item.changeQty.toLocaleString()}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -1168,59 +1308,113 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
                     </p>
                   </div>
                   <div className="rounded-md border p-3">
-                    <p className="text-xs text-muted-foreground">
-                      Stock Buckets
-                    </p>
+                    <p className="text-xs text-muted-foreground">Parties</p>
                     <p className="font-semibold tabular-nums">
-                      {activeYear.rows.length.toLocaleString()}
+                      {fiscalYearPartyLedgers.length.toLocaleString()}
                     </p>
                   </div>
                 </div>
 
-                <div className="rounded-md border">
-                  <div className="max-h-[min(56vh,36rem)] overflow-auto">
-                    <table className="w-full min-w-[760px] text-sm">
-                      <thead className="bg-muted/40">
-                        <tr>
-                          <th className="px-3 py-2 text-left">Product</th>
-                          <th className="px-3 py-2 text-left">Party Bucket</th>
-                          <th className="px-3 py-2 text-right">Opening Qty</th>
-                          <th className="px-3 py-2 text-right">Closing Qty</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {activeYear.rows.length ? (
-                          activeYear.rows.map((row) => (
-                            <tr key={row.key} className="border-t">
-                              <td className="px-3 py-2">
-                                {productsById.get(row.productId)?.title ||
-                                  row.productId}
-                              </td>
-                              <td className="px-3 py-2">
-                                {getPartyLabel(row.partyId)}
-                              </td>
-                              <td className="px-3 py-2 text-right">
-                                {row.openingQty.toLocaleString()}
-                              </td>
-                              <td className="px-3 py-2 text-right">
-                                {row.closingQty.toLocaleString()}
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td
-                              className="px-3 py-4 text-center text-muted-foreground"
-                              colSpan={4}
+                <div className="grid min-w-0 gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
+                  <Card className="min-h-0">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">Parties</CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        Select a party to view fiscal opening/closing by
+                        product.
+                      </p>
+                    </CardHeader>
+                    <CardContent className="max-h-[min(56vh,36rem)] space-y-2 overflow-y-auto pr-1">
+                      {fiscalYearPartyLedgers.length ? (
+                        fiscalYearPartyLedgers.map((ledger) => {
+                          const isActive = activeFiscalLedger?.id === ledger.id;
+                          return (
+                            <button
+                              key={ledger.id}
+                              type="button"
+                              onClick={() =>
+                                setSelectedFiscalPartyId(ledger.id)
+                              }
+                              className={`w-full rounded-md border p-3 text-left transition ${
+                                isActive
+                                  ? 'border-primary bg-primary/5'
+                                  : 'hover:bg-muted/40'
+                              }`}
                             >
-                              No opening/closing rows found for this fiscal
-                              year.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                              <p className="font-medium">{ledger.name}</p>
+                              <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                                <div>
+                                  <p className="text-muted-foreground">
+                                    Opening
+                                  </p>
+                                  <p className="font-semibold tabular-nums">
+                                    {ledger.totalOpeningQty.toLocaleString()}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-muted-foreground">
+                                    Closing
+                                  </p>
+                                  <p className="font-semibold tabular-nums">
+                                    {ledger.totalClosingQty.toLocaleString()}
+                                  </p>
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <div className="rounded-md border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
+                          No opening/closing rows found for this fiscal year.
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {activeFiscalLedger && (
+                    <Card className="min-h-0 min-w-0">
+                      <CardHeader>
+                        <CardTitle>{activeFiscalLedger.name}</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                          Fiscal year opening and closing by product
+                        </p>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="max-h-[min(56vh,36rem)] overflow-auto rounded-md border">
+                          <table className="w-full min-w-[680px] text-sm">
+                            <thead className="bg-muted/40">
+                              <tr>
+                                <th className="px-3 py-2 text-left">Product</th>
+                                <th className="px-3 py-2 text-right">
+                                  Opening Qty
+                                </th>
+                                <th className="px-3 py-2 text-right">
+                                  Closing Qty
+                                </th>
+                                <th className="px-3 py-2 text-right">Change</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {activeFiscalLedger.items.map((item) => (
+                                <tr key={item.key} className="border-t">
+                                  <td className="px-3 py-2">{item.product}</td>
+                                  <td className="px-3 py-2 text-right">
+                                    {item.openingQty.toLocaleString()}
+                                  </td>
+                                  <td className="px-3 py-2 text-right">
+                                    {item.closingQty.toLocaleString()}
+                                  </td>
+                                  <td className="px-3 py-2 text-right">
+                                    {item.changeQty.toLocaleString()}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -1322,7 +1516,6 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
       </Tabs>
 
       <div className="space-y-2">
-        <h3 className="text-base font-medium">Raw Table</h3>
         <AutoTable
           schema="stockBook"
           slug={slug}
