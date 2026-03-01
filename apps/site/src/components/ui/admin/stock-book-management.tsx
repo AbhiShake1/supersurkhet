@@ -427,7 +427,14 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
 
       <div className="space-y-2">
         <h3 className="text-base font-medium">Raw Table</h3>
-        <AutoTable schema="stockBook" slug={slug} readOnly />
+        <AutoTable
+          schema="stockBook"
+          slug={slug}
+          readOnly
+          previewOverrides={{
+            productId: (id) => productsById.get(id)?.title ?? '-',
+          }}
+        />
       </div>
     </div>
   );
