@@ -31,6 +31,7 @@ type StockEntry = {
   quantity?: number;
   totalAmount?: number;
   particulars?: string;
+  sourceId?: string;
   sourceCode?: string;
   fiscalYear?: string;
   counterpartyId?: string;
@@ -72,6 +73,15 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
     });
     return entries;
   }, [stockBook]);
+
+  const sourceCodeById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const entry of normalized) {
+      if (!entry.sourceId || !entry.sourceCode) continue;
+      map.set(entry.sourceId, entry.sourceCode);
+    }
+    return map;
+  }, [normalized]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -433,6 +443,19 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
           readOnly
           previewOverrides={{
             productId: (id) => productsById.get(id)?.title ?? '-',
+            counterpartyId: (id) => {
+              if (typeof id !== 'string' || !id) return '-';
+              return (
+                partiesById.get(id)?.name ||
+                customersById.get(id)?.name ||
+                id.split('/').at(-1) ||
+                id
+              );
+            },
+            sourceId: (id) => {
+              if (typeof id !== 'string' || !id) return '-';
+              return sourceCodeById.get(id) || id.split('/').at(-1) || id;
+            },
           }}
         />
       </div>
