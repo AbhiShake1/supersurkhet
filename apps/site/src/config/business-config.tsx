@@ -280,12 +280,6 @@ export function useBusinessConfig({
     return partiesBySoul.get(partyId)?.name || partyId;
   }
 
-  function getProductPurchasePartyIds(productId: string) {
-    return Object.entries(stockAggregate.productPartyAvailable[productId] || {})
-      .filter(([, quantity]) => Number(quantity || 0) > 0)
-      .map(([partyId]) => partyId);
-  }
-
   function getProductStockLabel(
     productId: string,
     { includeParty = false }: { includeParty?: boolean } = {},
@@ -304,67 +298,26 @@ export function useBusinessConfig({
     return `${product?.title ?? '-'} - Available: ${available}`;
   }
 
-  function getPartyStockLabel(productId: string, partyId: string) {
-    const available = getProductPartyAvailability(
-      stockAggregate,
-      productId,
-      partyId,
-    );
-    return `${getPartyDisplayName(partyId)} - Available: ${available}`;
-  }
-
   function buildOutflowItemSchema({
-    requirePurchaseParty = true,
-    derivePurchasePartyFromProduct = true,
-    hidePurchasePartyField = true,
     includeProductPartyInLabel = false,
     includePurchasePartyField = true,
   }: {
-    requirePurchaseParty?: boolean;
-    derivePurchasePartyFromProduct?: boolean;
-    hidePurchasePartyField?: boolean;
     includeProductPartyInLabel?: boolean;
     includePurchasePartyField?: boolean;
   } = {}) {
-    const purchasePartyField = (
-      requirePurchaseParty
-        ? z.string().min(1, { message: 'Purchase party is required.' })
-        : z.string().optional()
-    )
+    const purchasePartyField = z
+      .string()
+      .optional()
       .describe('Purchase Party')
       .superRefine(
         fieldConfig({
           fieldType: 'select',
-          inputProps: hidePurchasePartyField
-            ? {
-                hidden: true,
-                type: 'hidden',
-              }
-            : undefined,
+          inputProps: {
+            hidden: true,
+            type: 'hidden',
+          },
           customData: {
             derive: ({ formValues, rowPath }) => {
-              if (derivePurchasePartyFromProduct) {
-                const row = rowPath.reduce<unknown>((acc, key) => {
-                  if (!acc || typeof acc !== 'object') return undefined;
-                  return (acc as Record<string, unknown>)[key];
-                }, formValues);
-                const productId =
-                  row && typeof row === 'object' && 'product' in row
-                    ? String((row as { product?: string }).product || '')
-                    : '';
-                const product = productsBySoul.get(productId);
-                const derivedPartyId = getProductLinkedPartyId(product);
-                if (!derivedPartyId) return null;
-                return {
-                  value: derivedPartyId,
-                  inputProps: hidePurchasePartyField
-                    ? {
-                        hidden: true,
-                        type: 'hidden',
-                      }
-                    : undefined,
-                };
-              }
               const row = rowPath.reduce<unknown>((acc, key) => {
                 if (!acc || typeof acc !== 'object') return undefined;
                 return (acc as Record<string, unknown>)[key];
@@ -373,17 +326,12 @@ export function useBusinessConfig({
                 row && typeof row === 'object' && 'product' in row
                   ? String((row as { product?: string }).product || '')
                   : '';
-              const partyIds = productId
-                ? getProductPurchasePartyIds(productId)
-                : [];
-              const options = partyIds.map((partyId) => [
-                partyId,
-                getPartyStockLabel(productId, partyId),
-              ]);
+              if (!productId) return null;
+              const product = productsBySoul.get(productId);
+              const derivedPartyId = getProductLinkedPartyId(product);
+              if (!derivedPartyId) return null;
               return {
-                customData: {
-                  options,
-                },
+                value: derivedPartyId,
               };
             },
           },
@@ -450,17 +398,15 @@ export function useBusinessConfig({
                   shouldValidate: false,
                 });
 
-                if (derivePurchasePartyFromProduct) {
-                  const derivedPartyId = getProductLinkedPartyId(
-                    product as ProductStockRecord,
-                  );
-                  if (derivedPartyId) {
-                    form.setValue(purchasePartyPath, derivedPartyId, {
-                      shouldDirty: false,
-                      shouldTouch: false,
-                      shouldValidate: false,
-                    });
-                  }
+                const derivedPartyId = getProductLinkedPartyId(
+                  product as ProductStockRecord,
+                );
+                if (derivedPartyId) {
+                  form.setValue(purchasePartyPath, derivedPartyId, {
+                    shouldDirty: false,
+                    shouldTouch: false,
+                    shouldValidate: false,
+                  });
                 }
               },
             },
@@ -686,15 +632,11 @@ export function useBusinessConfig({
                     row && typeof row === 'object' && 'product' in row
                       ? String((row as { product?: string }).product || '')
                       : '';
-                  const matchingPartyIds = Object.entries(dispatchedByBucket).flatMap(
-                    ([bucketKey, quantity]) => {
-                      const [productId, partyId] = bucketKey.split('::');
-                      if (productId !== selectedProductId) return [];
-                      return Number(quantity || 0) > 0 ? [partyId] : [];
-                    },
+                  if (!selectedProductId) return null;
+                  const derivedPartyId = getProductLinkedPartyId(
+                    productsBySoul.get(selectedProductId),
                   );
-
-                  const derivedPartyId = matchingPartyIds[0] || '';
+                  if (!derivedPartyId) return null;
                   return {
                     value: derivedPartyId,
                   };
@@ -817,24 +759,12 @@ export function useBusinessConfig({
                   row && typeof row === 'object' && 'product' in row
                     ? String((row as { product?: string }).product || '')
                     : '';
-                const dispatchedItems = Array.isArray(
-                  (formValues as { products?: unknown[] })?.products,
-                )
-                  ? ((formValues as { products?: SalesItem[] }).products ?? [])
-                  : [];
-                const dispatchedByBucket = getItemsByProductAndPartyQuantity(
-                  dispatchedItems,
-                  productsBySoul as Map<string, ProductStockRecord>,
-                );
-                const matchingPartyIds = Object.entries(dispatchedByBucket).flatMap(
-                  ([bucketKey, quantity]) => {
-                    const [productId, partyId] = bucketKey.split('::');
-                    if (!partyId || productId !== selectedProductId) return [];
-                    return Number(quantity || 0) > 0 ? [partyId] : [];
-                  },
+                if (!selectedProductId) return null;
+                const matchingPartyId = getProductLinkedPartyId(
+                  productsBySoul.get(selectedProductId),
                 );
                 return {
-                  value: matchingPartyIds[0] || '',
+                  value: matchingPartyId || '',
                 };
               },
             },
@@ -1512,8 +1442,6 @@ export function useBusinessConfig({
           schema
             .extend({
               items: buildOutflowItemSchema({
-                derivePurchasePartyFromProduct: true,
-                hidePurchasePartyField: true,
                 includeProductPartyInLabel: true,
                 includePurchasePartyField: false,
               })
@@ -1745,7 +1673,7 @@ export function useBusinessConfig({
         extender: (schema) =>
           schema
             .extend({
-              items: buildOutflowItemSchema({ requirePurchaseParty: false })
+              items: buildOutflowItemSchema()
                 .array()
                 .min(1, { message: 'Please add at least one item.' })
                 .describe('Items Ordered'),
