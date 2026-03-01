@@ -23,7 +23,19 @@ describe('AutoForm bill mode contracts', () => {
     expect(content).toContain('useFieldArray');
     expect(content).toContain('data-testid="af-bill-table"');
     expect(content).toContain(`data-testid={\`af-bill-row-\${rowIndex}\`}`);
-    expect(content).toContain('data-testid={`af-add-${lineItemsField}`}');
+    expect(content).toContain(`data-testid={\`af-add-\${lineItemsField}\`}`);
     expect(content).toContain('onKeyDownCapture');
+  });
+
+  it('bill layout keeps non-line-item detail fields rendered', () => {
+    const content = readSource(
+      'components/ui/autoform/bill/BillFormLayout.tsx',
+    );
+
+    expect(content).toContain('field.key !== normalized.lineItemsField');
+    expect(content).toContain('const detailFields = visibleNonLineItemFields');
+    expect(content).toContain(`key={\`bill-detail-\${field.key}\`}`);
+    expect(content).toContain('BILL_HIDDEN_DETAIL_FIELDS');
+    expect(content).toContain('Payments');
   });
 });
