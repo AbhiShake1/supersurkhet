@@ -21,6 +21,7 @@ test.describe("Business Admin - Sales", () => {
     await gotoAdminTab(page, "Products");
     await openAddNew(page);
     await page.getByTestId(inputTestId(["title"])).fill(productName);
+    await selectCombobox(page, inputTestId(["purchasePartyId"]), partyName);
     await page.getByTestId(inputTestId(["hsCode"])).fill("HS-3001");
     await page.getByTestId(inputTestId(["costPrice"])).fill("60");
     await page.getByTestId(inputTestId(["sellingPrice"])).fill("120");

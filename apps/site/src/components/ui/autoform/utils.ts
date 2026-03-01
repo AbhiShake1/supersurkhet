@@ -1,36 +1,42 @@
+import type { FieldConfig } from '@autoform/core';
+import type { ReactNode } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import type { PossibleTabConfig } from '@/components/auto-admin';
+import { fieldConfig as zodFieldConfig } from '@/components/ui/autoform/zod';
 import type { NestedSchemaType, SchemaKeys } from '@/lib/gun/index';
 import type { FieldTypes } from './AutoForm';
 import type { FieldWrapperProps } from './react';
-import type { FieldConfig } from '@autoform/core';
-import type { ReactNode } from 'react';
-import { fieldConfig as zodFieldConfig } from '@/components/ui/autoform/zod';
 
-export const ZOD_FIELD_CONFIG_SYMBOL = Symbol("GetFieldConfig");
+export const ZOD_FIELD_CONFIG_SYMBOL = Symbol('GetFieldConfig');
 
 export type DeepNullableRequired<T> = T extends Array<infer U>
   ? Array<DeepNullableRequired<U> | null> | null
   : T extends object
-  ? {
-    [K in keyof T]-?: DeepNullableRequired<T[K]> | null;
-  }
-  : T | null;
+    ? {
+        [K in keyof T]-?: DeepNullableRequired<T[K]> | null;
+      }
+    : T | null;
 
 export type SourceConfigFor<K extends SchemaKeys> = {
   table: K;
   key?: string;
+  filter?: (ctx: {
+    formValues: DeepNullableRequired<Record<string, unknown>>;
+    rowPath: string[];
+    fieldPath: string[];
+    sourceRow: NestedSchemaType<K>;
+  }) => boolean;
 } & (
-    | {
+  | {
       displayKey: keyof NestedSchemaType<K>;
     }
-    | {
+  | {
       displayKey?: never;
       displayKeys: Array<keyof NestedSchemaType<K>>;
       separator: string;
       suffix?: string;
     }
-  );
+);
 
 export type SourceConfig = {
   [K in SchemaKeys]: SourceConfigFor<K>;
@@ -112,11 +118,11 @@ type FieldConfigCustomDataWithoutSource = FieldConfigCustomDataBase & {
 
 export type FieldConfigCustomData =
   | {
-    [K in SchemaKeys]: FieldConfigCustomDataWithSource<K>;
-  }[SchemaKeys]
+      [K in SchemaKeys]: FieldConfigCustomDataWithSource<K>;
+    }[SchemaKeys]
   | {
-    [K in SchemaKeys]: FieldConfigCustomDataWithSources<K>;
-  }[SchemaKeys]
+      [K in SchemaKeys]: FieldConfigCustomDataWithSources<K>;
+    }[SchemaKeys]
   | FieldConfigCustomDataWithoutSource;
 
 export function withSourceCustomData<K extends SchemaKeys>(

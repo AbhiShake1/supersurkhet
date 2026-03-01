@@ -23,15 +23,15 @@ const billPaymentsSectionColumns: Array<{
   width: string;
   align?: 'left' | 'center' | 'right';
 }> = [
-  { key: 'paidAt', label: 'Paid At', width: '1.6fr' },
-  { key: 'paidAmount', label: 'Paid Amount', width: '1.25fr', align: 'right' },
-  { key: 'paymentMethod', label: 'Method', width: '1.25fr' },
-  {
-    key: 'bankVoucherNumber',
-    label: 'Bank Voucher #',
-    width: '1.5fr',
-  },
-];
+    { key: 'paidAt', label: 'Paid At', width: '1.6fr' },
+    { key: 'paidAmount', label: 'Paid Amount', width: '1.25fr', align: 'right' },
+    { key: 'paymentMethod', label: 'Method', width: '1.25fr' },
+    {
+      key: 'bankVoucherNumber',
+      label: 'Bank Voucher #',
+      width: '1.5fr',
+    },
+  ];
 
 const paymentRowSchema = z.object({
   paidAt: z
@@ -63,7 +63,7 @@ const paymentRowSchema = z.object({
               | undefined;
             const shouldShowBankVoucher = Boolean(
               payment?.paymentMethod &&
-                methodsRequiringBankVoucher.has(payment.paymentMethod),
+              methodsRequiringBankVoucher.has(payment.paymentMethod),
             );
             return {
               inputProps: {
@@ -829,6 +829,38 @@ export const stockImportSchema = z
       .superRefine(fieldConfig({ fieldType: 'datetime' })),
     items: salesItemSchema
       .extend({
+        product: z
+          .string()
+          .describe('Product')
+          .superRefine(
+            fieldConfig({
+              fieldType: 'select',
+              customData: withSourceCustomData({
+                source: {
+                  table: 'product',
+                  displayKey: 'title',
+                  filter: ({ formValues, sourceRow }) => {
+                    const selectedPartyId = String(
+                      (formValues as { party?: string | null })?.party ?? '',
+                    );
+                    if (!selectedPartyId) return true;
+                    const productPartyId = String(
+                      (sourceRow as {
+                        partyId?: unknown;
+                        purchasePartyId?: unknown;
+                      }).partyId ??
+                        (sourceRow as {
+                          partyId?: unknown;
+                          purchasePartyId?: unknown;
+                        }).purchasePartyId ??
+                        '',
+                    );
+                    return productPartyId === selectedPartyId;
+                  },
+                },
+              }),
+            }),
+          ),
         unitPrice: createSoftDerivedUnitPriceField({
           priceKey: 'costPrice',
         }),

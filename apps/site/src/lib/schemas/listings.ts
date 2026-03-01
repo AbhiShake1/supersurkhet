@@ -42,6 +42,23 @@ export const table = {
 export const baseListingSchema = z
   .object({
     title: z.string().min(1).describe('Product Name'),
+    purchasePartyId: z
+      .string()
+      .min(1, { message: 'Purchase party is required.' })
+      .describe('Purchase Party')
+      .superRefine(
+        fieldConfig({
+          fieldType: 'select',
+          customData: {
+            sources: [
+              {
+                table: 'party',
+                displayKey: 'name',
+              },
+            ],
+          },
+        }),
+      ),
     hsCode: z.string().min(1).describe('HS Code'),
     unit: z
       .string()

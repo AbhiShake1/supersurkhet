@@ -80,15 +80,15 @@ export function NotFound({ title, description }: NotFoundProps) {
   const message = title
     ? { title, description: description || "We couldn't find that page." }
     : funnyNotFoundMessages[
-        Math.floor(Math.random() * funnyNotFoundMessages.length)
-      ];
+    Math.floor(Math.random() * funnyNotFoundMessages.length)
+    ];
 
   return (
     <div className="relative flex flex-col w-full justify-center min-h-svh bg-background p-6 md:p-10 overflow-hidden">
       <div className="relative max-w-5xl mx-auto w-full">
         {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">
-          <Illustration className="absolute inset-0 w-full h-[50vh] opacity-[0.04] dark:opacity-[0.03] text-foreground animate-pulse" />
+          <Illustration className="absolute inset-0 w-full h-[50vh] opacity-[0.04] dark:opacity-[0.03] text-foreground" />
 
           {/* Floating particles */}
           <FloatingElements count={15} />

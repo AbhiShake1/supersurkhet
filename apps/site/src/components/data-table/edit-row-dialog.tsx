@@ -34,7 +34,7 @@ export function EditRowDialog<T, S extends ZodObject<any>>({
   return (
     <Credenza open={open} onOpenChange={onOpenChange}>
       <CredenzaContent
-        className="flex flex-col"
+        className="flex h-[90vh] max-h-[90vh] flex-col"
         dialogMaxWidth="min(1320px, 94vw)"
       >
         <CredenzaHeader className="min-w-0">
@@ -42,7 +42,7 @@ export function EditRowDialog<T, S extends ZodObject<any>>({
           <CredenzaDescription>Edit details</CredenzaDescription>
         </CredenzaHeader>
         <CredenzaBody asChild>
-          <div className="min-h-0 w-full max-h-[72dvh] overflow-auto pr-1">
+          <div className="h-full min-h-0 w-full overflow-y-auto pr-1">
             <AutoForm
               formProps={{ id: 'edit-row-form' }}
               schema={schema}

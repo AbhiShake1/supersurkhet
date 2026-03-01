@@ -1,15 +1,23 @@
-import { useBusinessSafe } from '@/contexts/business-context';
-import type { UseGet } from '@/lib/gun/index';
 import { useQuery } from '@tanstack/react-query';
 import type React from 'react';
-import { useFormContext } from 'react-hook-form';
+import { useFormContext, useWatch } from 'react-hook-form';
+import { useBusinessSafe } from '@/contexts/business-context';
+import type { UseGet } from '@/lib/gun/index';
+import { cn } from '@/lib/utils';
 import { Combobox } from '../../combobox';
 import { useAutoFormDefaultValues } from '../AutoForm';
-import { type AutoFormFieldProps } from '../react';
+import type { AutoFormFieldProps } from '../react';
 import type { FieldConfigCustomData, SourceConfig } from '../utils';
-import { cn } from '@/lib/utils';
 
-const useMultiSourceOptions = (sources: SourceConfig[], useGet: UseGet) => {
+const useMultiSourceOptions = (
+  sources: SourceConfig[],
+  useGet: UseGet,
+  filterContext: {
+    formValues: Record<string, unknown>;
+    rowPath: string[];
+    fieldPath: string[];
+  },
+) => {
   const business = useBusinessSafe();
   const basePath = business?.business?.basePath ?? '';
 
@@ -27,22 +35,33 @@ const useMultiSourceOptions = (sources: SourceConfig[], useGet: UseGet) => {
       basePath,
     );
 
+    const sourceRows = data.filter((item) => {
+      if (!source.filter) return true;
+      return source.filter({
+        formValues: filterContext.formValues as never,
+        rowPath: filterContext.rowPath,
+        fieldPath: filterContext.fieldPath,
+        sourceRow: item as never,
+      });
+    });
+
     // Transform raw data into [value, label] format based on source config
-    // NOTE: This includes ALL products, even those with zero stock, 
+    // NOTE: This includes ALL products, even those with zero stock,
     // to ensure they can be selected during import operations
-    const formattedOptions = data.map((item) => {
+    const formattedOptions = sourceRows.map((item) => {
       const soul = item?._?.soul ?? '';
       let label = '';
 
       if ('displayKeys' in source) {
         // Handle display keys, ensuring that even zero values are displayed
-        label = source.displayKeys
-          .map((k: string) => {
-            const value = item[k];
-            // Convert undefined/null values to empty string, but keep zero values
-            return value === null || value === undefined ? '' : String(value);
-          })
-          .join(source.separator ?? ' - ') + (source.suffix ?? '');
+        label =
+          source.displayKeys
+            .map((k: string) => {
+              const value = item[k];
+              // Convert undefined/null values to empty string, but keep zero values
+              return value === null || value === undefined ? '' : String(value);
+            })
+            .join(source.separator ?? ' - ') + (source.suffix ?? '');
       } else {
         label = item[source.displayKey] || '';
       }
@@ -63,10 +82,12 @@ const _SelectField: React.FC<
   AutoFormFieldProps & {
     useGet: UseGet;
   }
-> = ({ field, inputProps, error, id, value, path, useGet }) => {
-  const { key, ...props } = inputProps;
+> = ({ field, inputProps, error, value, path, useGet }) => {
+  const props = inputProps;
   const customData = field.fieldConfig?.customData as FieldConfigCustomData;
-  const defaultValues = useAutoFormDefaultValues()
+  const defaultValues = useAutoFormDefaultValues();
+  const formValuesSnapshot = useWatch() as Record<string, unknown>;
+  const rowPath = path.slice(0, -1);
 
   const sources =
     customData && 'sources' in customData
@@ -75,10 +96,14 @@ const _SelectField: React.FC<
         ? [customData.source]
         : [];
 
-  const { options: fetchedOptions } = useMultiSourceOptions(sources, useGet);
+  const { options: fetchedOptions } = useMultiSourceOptions(sources, useGet, {
+    formValues: formValuesSnapshot,
+    rowPath,
+    fieldPath: path,
+  });
 
   function getOptions(): typeof field.options {
-    if (customData && 'sources' in customData) {
+    if (sources.length > 0) {
       return fetchedOptions;
     }
     return (customData?.options as typeof field.options) || field.options;
@@ -89,7 +114,8 @@ const _SelectField: React.FC<
   const currentValue = String(value ?? field.default ?? '');
   const lockedValues = customData?.disableWhenValueIn;
   const isLocked =
-    lockedValues && Array.isArray(lockedValues) &&
+    lockedValues &&
+    Array.isArray(lockedValues) &&
     lockedValues.includes(defaultValues[field.key]);
 
   return (

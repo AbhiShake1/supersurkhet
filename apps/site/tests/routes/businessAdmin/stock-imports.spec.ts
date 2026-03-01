@@ -21,6 +21,7 @@ test.describe("Business Admin - Stock Imports", () => {
     await openAddNew(page);
 
     await page.getByTestId(inputTestId(["title"])).fill(productName);
+    await selectCombobox(page, inputTestId(["purchasePartyId"]), partyName);
     await page.getByTestId(inputTestId(["hsCode"])).fill("HS-1001");
     await page.getByTestId(inputTestId(["costPrice"])).fill("100");
 
