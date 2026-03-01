@@ -951,7 +951,11 @@ export function useBusinessConfig({
         previewOverrides: {
           productId: (id) => productsBySoul.get(id)?.title ?? '-',
           counterpartyId: (id) =>
-            partiesBySoul.get(id)?.name || customersBySoul.get(id)?.name || '-',
+            partiesBySoul.get(id)?.name ||
+            customersBySoul.get(id)?.name ||
+            (typeof id === 'string' ? (id.split('/').at(-1) ?? id) : '-'),
+          sourceId: (id) =>
+            typeof id === 'string' ? (id.split('/').at(-1) ?? id) : '-',
         },
       },
       {
