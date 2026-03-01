@@ -27,6 +27,13 @@ type TripLine = {
   unitPrice?: number | string | null;
 };
 
+type ProductLookup = {
+  _?: { soul?: string };
+  partyId?: string | null;
+  purchasePartyId?: string | null;
+  title?: string | null;
+};
+
 type TripRow = {
   _?: { soul?: string };
   vehicleId?: string | null;
@@ -62,6 +69,19 @@ function makeBucketKey(
   purchasePartyId?: string | null,
 ): string {
   return `${productId}::${purchasePartyId ?? ''}`;
+}
+
+function getLinePartyId(
+  line: TripLine,
+  productsMap: Map<string | undefined, ProductLookup>,
+) {
+  const explicitPartyId =
+    typeof line.purchasePartyId === 'string' ? line.purchasePartyId : '';
+  if (explicitPartyId) return explicitPartyId;
+  const productId = getLineProductId(line);
+  if (!productId) return '';
+  const product = productsMap.get(productId);
+  return String(product?.partyId ?? product?.purchasePartyId ?? '');
 }
 
 function formatDateTime(value?: string | null): string {
@@ -126,14 +146,14 @@ const TripManagement: AdminComponent = ({ slug }) => {
     for (const line of trip.products ?? []) {
       const productId = getLineProductId(line);
       if (!productId) continue;
-      const bucketKey = makeBucketKey(productId, line.purchasePartyId);
+      const bucketKey = makeBucketKey(productId, getLinePartyId(line, productsMap));
       const bucketCount = (countersByBucket.get(bucketKey) ?? 0) + 1;
       countersByBucket.set(bucketKey, bucketCount);
 
       draftedLines.push({
         key: line._?.soul || `${bucketKey}::${bucketCount}`,
         productId,
-        purchasePartyId: line.purchasePartyId ?? undefined,
+        purchasePartyId: getLinePartyId(line, productsMap) || undefined,
         sentQuantity: toSafeQuantity(line.quantity),
         returnedQuantity: 0,
         unit: String(line.unit ?? ''),
@@ -208,7 +228,10 @@ const TripManagement: AdminComponent = ({ slug }) => {
                 (acc, line) => {
                   const productId = getLineProductId(line);
                   if (!productId) return acc;
-                  const key = makeBucketKey(productId, line.purchasePartyId);
+                  const key = makeBucketKey(
+                    productId,
+                    getLinePartyId(line, productsMap),
+                  );
                   const qty = toSafeQuantity(line.quantity);
                   acc.set(key, (acc.get(key) ?? 0) + qty);
                   return acc;
@@ -221,7 +244,7 @@ const TripManagement: AdminComponent = ({ slug }) => {
                   const productId = getLineProductId(line);
                   const bucketKey = makeBucketKey(
                     productId,
-                    line.purchasePartyId,
+                    getLinePartyId(line, productsMap),
                   );
                   const bucketCount =
                     (countersByBucket.get(bucketKey) ?? 0) + 1;
@@ -297,9 +320,10 @@ const TripManagement: AdminComponent = ({ slug }) => {
                                       'Unknown Product'}
                                   </div>
                                   <div>
-                                    {line.purchasePartyId
-                                      ? (partiesMap.get(line.purchasePartyId)
-                                          ?.name ?? line.purchasePartyId)
+                                    {getLinePartyId(line, productsMap)
+                                      ? (partiesMap.get(
+                                          getLinePartyId(line, productsMap),
+                                        )?.name ?? getLinePartyId(line, productsMap))
                                       : 'Unassigned'}
                                   </div>
                                   <div className="text-center">
@@ -340,7 +364,7 @@ const TripManagement: AdminComponent = ({ slug }) => {
                       <div className="space-y-1">
                         {dispatchedLinesWithKeys.map(({ line, key }) => {
                           const productId = getLineProductId(line);
-                          const partyId = line.purchasePartyId;
+                          const partyId = getLinePartyId(line, productsMap);
                           const bucketKey = makeBucketKey(productId, partyId);
                           const returnedQuantity =
                             returnedByBucket.get(bucketKey) ?? 0;

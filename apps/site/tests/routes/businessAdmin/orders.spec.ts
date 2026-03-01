@@ -53,11 +53,6 @@ test.describe("Business Admin - Orders", () => {
       inputTestId(["items", "0", "product"]),
       `${productName} - Available: 1`,
     );
-    await selectCombobox(
-      page,
-      inputTestId(["items", "0", "purchasePartyId"]),
-      `${partyName} - Available: 1`,
-    );
 
     await expect(
       page.getByTestId(inputTestId(["items", "0", "unitPrice"])),

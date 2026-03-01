@@ -51,12 +51,7 @@ test.describe("Business Admin - Sales", () => {
     await selectCombobox(
       page,
       inputTestId(["items", "0", "product"]),
-      `${productName} - Available: 5`,
-    );
-    await selectCombobox(
-      page,
-      inputTestId(["items", "0", "purchasePartyId"]),
-      `${partyName} - Available: 5`,
+      `${productName} | ${partyName} | Available: 5`,
     );
 
     await page.getByTestId(inputTestId(["items", "0", "quantity"])).fill("1");

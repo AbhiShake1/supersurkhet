@@ -517,23 +517,6 @@ export const salesItemSchema = z
           },
         }),
       ),
-    purchasePartyId: z
-      .string()
-      .optional()
-      .describe('Purchase Party')
-      .superRefine(
-        fieldConfig({
-          fieldType: 'select',
-          customData: {
-            sources: [
-              {
-                table: 'party',
-                displayKey: 'name',
-              },
-            ],
-          },
-        }),
-      ),
     unit: createSoftDerivedUnitField(),
     quantity: z
       .number({ coerce: true })
@@ -635,12 +618,7 @@ export const saleSchema = z
     headerFields: ['customerId', 'saleDate'],
     columns: [
       { key: 'product', label: 'Product', width: '2.5fr' },
-      {
-        key: 'purchasePartyId',
-        label: 'Purchase Party',
-        width: '2fr',
-      },
-      { key: 'quantity', label: 'Qty', width: '1fr', align: 'right' },
+      { key: 'quantity', label: 'Quantity', width: '1fr', align: 'right' },
       { key: 'unit', label: 'Unit', width: '1fr', align: 'center' },
       { key: 'unitPrice', label: 'Unit Price', width: '1.5fr', align: 'right' },
       {
@@ -768,7 +746,7 @@ export const orderSchema = z
         label: 'Purchase Party',
         width: '2fr',
       },
-      { key: 'quantity', label: 'Qty', width: '1fr', align: 'right' },
+      { key: 'quantity', label: 'Quantity', width: '1fr', align: 'right' },
       { key: 'unit', label: 'Unit', width: '1fr', align: 'center' },
       { key: 'unitPrice', label: 'Unit Price', width: '1.5fr', align: 'right' },
       {
@@ -849,11 +827,11 @@ export const stockImportSchema = z
                         partyId?: unknown;
                         purchasePartyId?: unknown;
                       }).partyId ??
-                        (sourceRow as {
-                          partyId?: unknown;
-                          purchasePartyId?: unknown;
-                        }).purchasePartyId ??
-                        '',
+                      (sourceRow as {
+                        partyId?: unknown;
+                        purchasePartyId?: unknown;
+                      }).purchasePartyId ??
+                      '',
                     );
                     return productPartyId === selectedPartyId;
                   },
@@ -910,7 +888,7 @@ export const stockImportSchema = z
     headerFields: ['party', 'importDate'],
     columns: [
       { key: 'product', label: 'Product', width: '2.5fr' },
-      { key: 'quantity', label: 'Qty', width: '1fr', align: 'right' },
+      { key: 'quantity', label: 'Quantity', width: '1fr', align: 'right' },
       { key: 'unit', label: 'Unit', width: '1fr', align: 'center' },
       { key: 'unitPrice', label: 'Unit Price', width: '1.5fr', align: 'right' },
       {
@@ -1140,7 +1118,7 @@ export const invoiceSchema = z
     headerFields: ['type', 'partyId', 'issuedAt', 'dueDate'],
     columns: [
       { key: 'product', label: 'Product', width: '2.5fr' },
-      { key: 'quantity', label: 'Qty', width: '1fr', align: 'right' },
+      { key: 'quantity', label: 'Quantity', width: '1fr', align: 'right' },
       { key: 'rate', label: 'Rate', width: '1.5fr', align: 'right' },
       {
         key: 'total',

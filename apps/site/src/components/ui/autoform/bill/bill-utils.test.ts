@@ -123,7 +123,7 @@ describe('bill-utils', () => {
       },
       {
         key: 'quantity',
-        label: 'Qty',
+        label: 'Quantity',
         width: '1fr',
         align: 'right',
         readOnly: false,

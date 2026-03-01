@@ -98,12 +98,17 @@ type ProductStockRecord = {
   title?: string | null;
   unit?: string | null;
   sellingPrice?: number | null;
+  partyId?: string | null;
+  purchasePartyId?: string | null;
 };
 
-type StockEntryItem = Pick<
-  SalesItem,
-  'product' | 'quantity' | 'unit' | 'purchasePartyId'
->;
+type StockEntryItem = {
+  product?: string | null;
+  productId?: string | null;
+  quantity?: number | string | null;
+  unit?: string | null;
+  purchasePartyId?: string | null;
+};
 
 type SalesItemRuntime = Partial<SalesItem> & {
   productId?: string | null;
@@ -141,6 +146,23 @@ function resolveSalesItemProductId(item: SalesItemRuntime | null | undefined) {
   return '';
 }
 
+function getProductLinkedPartyId(
+  productInfo: ProductStockRecord | null | undefined,
+) {
+  return String(productInfo?.partyId ?? productInfo?.purchasePartyId ?? '');
+}
+
+function resolveItemPurchasePartyId(
+  item: SalesItemRuntime | null | undefined,
+  productsBySoul: Map<string, ProductStockRecord>,
+) {
+  const explicitPartyId = String(item?.purchasePartyId ?? '');
+  if (explicitPartyId) return explicitPartyId;
+  const productId = resolveSalesItemProductId(item);
+  if (!productId) return '';
+  return getProductLinkedPartyId(productsBySoul.get(productId));
+}
+
 function getItemsByProductAndPartyQuantity(
   items: StockEntryItem[] | undefined,
   productsBySoul: Map<string, ProductStockRecord>,
@@ -152,7 +174,7 @@ function getItemsByProductAndPartyQuantity(
         if (!productId) return acc;
         const productInfo = productsBySoul.get(productId);
         if (!productInfo) return acc;
-        const partyId = item.purchasePartyId;
+        const partyId = resolveItemPurchasePartyId(item, productsBySoul);
         if (!partyId) return acc;
         const adjustedQuantity = getAdjustedQuantity(item, productInfo);
         const key = `${productId}::${partyId}`;
@@ -264,11 +286,21 @@ export function useBusinessConfig({
       .map(([partyId]) => partyId);
   }
 
-  function getProductStockLabel(productId: string) {
+  function getProductStockLabel(
+    productId: string,
+    { includeParty = false }: { includeParty?: boolean } = {},
+  ) {
     const product = productsBySoul.get(productId);
     const available = Number(
       stockAggregate.productTotalAvailable[productId] || 0,
     );
+    const productPartyId = getProductLinkedPartyId(product);
+    if (includeParty) {
+      return `${product?.title ?? '-'} | ${
+        productPartyId ? getPartyDisplayName(productPartyId) : '-'
+      } | Available: ${available}`;
+    }
+
     return `${product?.title ?? '-'} - Available: ${available}`;
   }
 
@@ -283,8 +315,16 @@ export function useBusinessConfig({
 
   function buildOutflowItemSchema({
     requirePurchaseParty = true,
+    derivePurchasePartyFromProduct = true,
+    hidePurchasePartyField = true,
+    includeProductPartyInLabel = false,
+    includePurchasePartyField = true,
   }: {
     requirePurchaseParty?: boolean;
+    derivePurchasePartyFromProduct?: boolean;
+    hidePurchasePartyField?: boolean;
+    includeProductPartyInLabel?: boolean;
+    includePurchasePartyField?: boolean;
   } = {}) {
     const purchasePartyField = (
       requirePurchaseParty
@@ -295,8 +335,36 @@ export function useBusinessConfig({
       .superRefine(
         fieldConfig({
           fieldType: 'select',
+          inputProps: hidePurchasePartyField
+            ? {
+                hidden: true,
+                type: 'hidden',
+              }
+            : undefined,
           customData: {
             derive: ({ formValues, rowPath }) => {
+              if (derivePurchasePartyFromProduct) {
+                const row = rowPath.reduce<unknown>((acc, key) => {
+                  if (!acc || typeof acc !== 'object') return undefined;
+                  return (acc as Record<string, unknown>)[key];
+                }, formValues);
+                const productId =
+                  row && typeof row === 'object' && 'product' in row
+                    ? String((row as { product?: string }).product || '')
+                    : '';
+                const product = productsBySoul.get(productId);
+                const derivedPartyId = getProductLinkedPartyId(product);
+                if (!derivedPartyId) return null;
+                return {
+                  value: derivedPartyId,
+                  inputProps: hidePurchasePartyField
+                    ? {
+                        hidden: true,
+                        type: 'hidden',
+                      }
+                    : undefined,
+                };
+              }
               const row = rowPath.reduce<unknown>((acc, key) => {
                 if (!acc || typeof acc !== 'object') return undefined;
                 return (acc as Record<string, unknown>)[key];
@@ -322,7 +390,7 @@ export function useBusinessConfig({
         }),
       );
 
-    return salesItemSchema.extend({
+    const schemaWithComputedProduct = salesItemSchema.extend({
       product: z
         .string()
         .describe('Product')
@@ -334,7 +402,12 @@ export function useBusinessConfig({
                 .filter((product) => Boolean(product._?.soul))
                 .map((product) => {
                   const productId = product._?.soul ?? '';
-                  return [productId, getProductStockLabel(productId)];
+                  return [
+                    productId,
+                    getProductStockLabel(productId, {
+                      includeParty: includeProductPartyInLabel,
+                    }),
+                  ];
                 }),
               onValueChange: (value, path, form) => {
                 const product = productsBySoul.get(value);
@@ -342,6 +415,7 @@ export function useBusinessConfig({
                 const rowPath = path.slice(0, -1);
                 const unitPath = [...rowPath, 'unit'].join('.');
                 const unitPricePath = [...rowPath, 'unitPrice'].join('.');
+                const purchasePartyPath = [...rowPath, 'purchasePartyId'].join('.');
 
                 const currentUnitRaw = form.getValues(unitPath);
                 const productUnit = String(product.unit ?? '');
@@ -375,11 +449,33 @@ export function useBusinessConfig({
                   shouldTouch: false,
                   shouldValidate: false,
                 });
+
+                if (derivePurchasePartyFromProduct) {
+                  const derivedPartyId = getProductLinkedPartyId(
+                    product as ProductStockRecord,
+                  );
+                  if (derivedPartyId) {
+                    form.setValue(purchasePartyPath, derivedPartyId, {
+                      shouldDirty: false,
+                      shouldTouch: false,
+                      shouldValidate: false,
+                    });
+                  }
+                }
               },
             },
           }),
         ),
       unitPrice: createSoftDerivedSellingUnitPriceField(),
+    });
+
+    if (!includePurchasePartyField) {
+      return schemaWithComputedProduct.omit({
+        purchasePartyId: true,
+      });
+    }
+
+    return schemaWithComputedProduct.extend({
       purchasePartyId: purchasePartyField,
     });
   }
@@ -474,7 +570,7 @@ export function useBusinessConfig({
         if (!productId) return acc;
         const productInfo = productsMap.get(productId);
         if (!productInfo?._?.soul) return acc;
-        const originPartyId = item.purchasePartyId || undefined;
+        const originPartyId = resolveItemPurchasePartyId(item, productsMap) || undefined;
         if (requireOriginPartyId && !originPartyId) {
           throw new Error(
             'Missing purchase party allocation for stock out line.',
@@ -571,11 +667,15 @@ export function useBusinessConfig({
           ),
         purchasePartyId: z
           .string()
-          .min(1, { message: 'Purchase party is required.' })
+          .optional()
           .describe('Purchase Party')
           .superRefine(
             fieldConfig({
               fieldType: 'select',
+              inputProps: {
+                hidden: true,
+                type: 'hidden',
+              },
               customData: {
                 derive: ({ formValues, rowPath }) => {
                   const row = rowPath.reduce<unknown>((acc, key) => {
@@ -586,28 +686,17 @@ export function useBusinessConfig({
                     row && typeof row === 'object' && 'product' in row
                       ? String((row as { product?: string }).product || '')
                       : '';
-
-                  const options = Object.entries(dispatchedByBucket).flatMap(
+                  const matchingPartyIds = Object.entries(dispatchedByBucket).flatMap(
                     ([bucketKey, quantity]) => {
                       const [productId, partyId] = bucketKey.split('::');
                       if (productId !== selectedProductId) return [];
-                      const partyLabel =
-                        partyId === UNASSIGNED_STOCK_BUCKET
-                          ? 'Unassigned'
-                          : partiesBySoul.get(partyId)?.name || partyId;
-                      return [
-                        [
-                          partyId,
-                          `${partyLabel} - Dispatched: ${Number(quantity || 0)}`,
-                        ] as [string, string],
-                      ];
+                      return Number(quantity || 0) > 0 ? [partyId] : [];
                     },
                   );
 
+                  const derivedPartyId = matchingPartyIds[0] || '';
                   return {
-                    customData: {
-                      options,
-                    },
+                    value: derivedPartyId,
                   };
                 },
               },
@@ -624,12 +713,14 @@ export function useBusinessConfig({
 
         items.forEach((item, index) => {
           const productId = resolveSalesItemProductId(item);
-          if (!productId || !item.purchasePartyId) return;
+          if (!productId) return;
+          const partyId = resolveItemPurchasePartyId(item, productsBySoul);
+          if (!partyId) return;
           const adjustedQuantity = getAdjustedQuantity(
             item,
             productsBySoul.get(productId),
           );
-          const key = `${productId}::${item.purchasePartyId}`;
+          const key = `${productId}::${partyId}`;
           returnedByBucket.set(
             key,
             (returnedByBucket.get(key) || 0) + adjustedQuantity,
@@ -707,11 +798,15 @@ export function useBusinessConfig({
         ),
       purchasePartyId: z
         .string()
-        .min(1, { message: 'Purchase party is required.' })
+        .optional()
         .describe('Purchase Party')
         .superRefine(
           fieldConfig({
             fieldType: 'select',
+            inputProps: {
+              hidden: true,
+              type: 'hidden',
+            },
             customData: {
               derive: ({ formValues, rowPath }) => {
                 const row = rowPath.reduce<unknown>((acc, key) => {
@@ -731,26 +826,15 @@ export function useBusinessConfig({
                   dispatchedItems,
                   productsBySoul as Map<string, ProductStockRecord>,
                 );
-                const options = Object.entries(dispatchedByBucket).flatMap(
+                const matchingPartyIds = Object.entries(dispatchedByBucket).flatMap(
                   ([bucketKey, quantity]) => {
                     const [productId, partyId] = bucketKey.split('::');
                     if (!partyId || productId !== selectedProductId) return [];
-                    const partyLabel =
-                      partyId === UNASSIGNED_STOCK_BUCKET
-                        ? 'Unassigned'
-                        : partiesBySoul.get(partyId)?.name || partyId;
-                    return [
-                      [
-                        partyId,
-                        `${partyLabel} - Dispatched: ${Number(quantity || 0)}`,
-                      ] as [string, string],
-                    ];
+                    return Number(quantity || 0) > 0 ? [partyId] : [];
                   },
                 );
                 return {
-                  customData: {
-                    options,
-                  },
+                  value: matchingPartyIds[0] || '',
                 };
               },
             },
@@ -791,11 +875,12 @@ export function useBusinessConfig({
     items.forEach((item, index) => {
       const productId = resolveSalesItemProductId(item);
       if (!productId) return;
-      if (!item.purchasePartyId) {
+      const partyId = resolveItemPurchasePartyId(item, productsBySoul);
+      if (!partyId) {
         ctx.addIssue({
           code: 'custom',
-          message: 'Purchase party is required.',
-          path: [fieldPath, index, 'purchasePartyId'],
+          message: 'Selected product must be associated with a party.',
+          path: [fieldPath, index, 'product'],
         });
         return;
       }
@@ -803,7 +888,7 @@ export function useBusinessConfig({
         item,
         productsBySoul.get(productId),
       );
-      const key = `${productId}::${item.purchasePartyId}`;
+      const key = `${productId}::${partyId}`;
       totalsByBucket.set(
         key,
         (totalsByBucket.get(key) || 0) + adjustedQuantity,
@@ -858,12 +943,14 @@ export function useBusinessConfig({
 
     returnedItems.forEach((item, index) => {
       const productId = resolveSalesItemProductId(item);
-      if (!productId || !item.purchasePartyId) return;
+      if (!productId) return;
+      const partyId = resolveItemPurchasePartyId(item, productsBySoul);
+      if (!partyId) return;
       const adjustedQuantity = getAdjustedQuantity(
         item,
         productsBySoul.get(productId),
       );
-      const key = `${productId}::${item.purchasePartyId}`;
+      const key = `${productId}::${partyId}`;
       returnedByBucket.set(
         key,
         (returnedByBucket.get(key) || 0) + adjustedQuantity,
@@ -919,16 +1006,17 @@ export function useBusinessConfig({
     for (const item of items) {
       const productId = resolveSalesItemProductId(item);
       if (!productId) continue;
-      if (!item.purchasePartyId) {
+      const partyId = resolveItemPurchasePartyId(item, productsBySoul);
+      if (!partyId) {
         throw new Error(
-          `Purchase party is required for every ${contextLabel} outflow line.`,
+          `Every product in ${contextLabel} must be associated with a party.`,
         );
       }
       const adjustedQuantity = getAdjustedQuantity(
         item,
         productsBySoul.get(productId),
       );
-      const key = `${productId}::${item.purchasePartyId}`;
+      const key = `${productId}::${partyId}`;
       totalsByBucket.set(
         key,
         (totalsByBucket.get(key) || 0) + adjustedQuantity,
@@ -1423,7 +1511,12 @@ export function useBusinessConfig({
         extender: (schema) =>
           schema
             .extend({
-              items: buildOutflowItemSchema()
+              items: buildOutflowItemSchema({
+                derivePurchasePartyFromProduct: true,
+                hidePurchasePartyField: true,
+                includeProductPartyInLabel: true,
+                includePurchasePartyField: false,
+              })
                 .array()
                 .min(1, { message: 'Please add at least one item.' })
                 .describe('Items Sold'),
