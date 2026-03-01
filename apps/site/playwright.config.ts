@@ -1,9 +1,12 @@
 /// <reference types="node" />
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig, devices } from "@playwright/test";
 
 const isCI = !!process.env.CI;
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const authFile = path.join(__dirname, "tests/.auth/user.json");
 
 export default defineConfig({

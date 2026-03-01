@@ -32,7 +32,6 @@ const result = await skills.schema.createRecord(
   {
     title: 'New Product',
     price: 100,
-    stockQuantity: 10
   },
   'business-slug'
 );

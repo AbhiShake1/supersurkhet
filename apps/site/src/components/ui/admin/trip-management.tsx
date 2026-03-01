@@ -1,9 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { api } from '@/lib/api';
-import { useState } from 'react';
 import { format } from 'date-fns';
+import { useMemo, useState } from 'react';
+import type { AutoAdminTabInput } from '@/components/auto-admin';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -11,101 +11,183 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { AutoForm } from '@/components/ui/autoform';
-import { z } from 'zod';
-import { useAuth } from '@/components/auth-provider';
+import { Input } from '@/components/ui/input';
+import { useBusinessConfig } from '@/config/business-config';
+import { useBusiness } from '@/contexts/business-context';
+import { api } from '@/lib/api';
+import type { AdminComponent } from '.';
 
-// Define the schema for returned products
-const ReturnedProductsSchema = z.object({
-  returnedProducts: z
-    .array(
-      z.object({
-        productId: z.string().describe('Product'),
-        quantity: z
-          .number({ coerce: true })
-          .int()
-          .nonnegative()
-          .describe('Quantity Returned'),
-      }),
-    )
-    .describe('Products Returned'),
-});
+type TripLine = {
+  _?: { soul?: string };
+  product?: string | null;
+  productId?: string | null;
+  purchasePartyId?: string | null;
+  quantity?: number | string | null;
+  unit?: string | null;
+  unitPrice?: number | string | null;
+};
 
-type ReturnedProductsFormData = z.infer<typeof ReturnedProductsSchema>;
+type TripRow = {
+  _?: { soul?: string };
+  vehicleId?: string | null;
+  dispatchTime?: string | null;
+  returnTime?: string | null;
+  products?: TripLine[] | null;
+  returnedProducts?: TripLine[] | null;
+};
 
-export default function TripManagement({ slug }: { slug: string }) {
+type ReturnDraftLine = {
+  key: string;
+  productId: string;
+  purchasePartyId?: string;
+  sentQuantity: number;
+  returnedQuantity: number;
+  unit: string;
+  unitPrice: number;
+};
+
+function toSafeQuantity(value: unknown): number {
+  const parsed = Number(value ?? 0);
+  if (!Number.isFinite(parsed)) return 0;
+  return Math.max(0, Math.trunc(parsed));
+}
+
+function getLineProductId(line: TripLine): string {
+  const id = line.product ?? line.productId;
+  return typeof id === 'string' ? id : '';
+}
+
+function makeBucketKey(
+  productId: string,
+  purchasePartyId?: string | null,
+): string {
+  return `${productId}::${purchasePartyId ?? ''}`;
+}
+
+function formatDateTime(value?: string | null): string {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+  return format(date, 'MMM dd, yyyy HH:mm');
+}
+
+function isTripTableTab(
+  tab: AutoAdminTabInput | undefined,
+): tab is Extract<AutoAdminTabInput, { schema: 'trip' }> {
+  if (!tab || typeof tab !== 'object' || !('schema' in tab)) return false;
+  return tab.schema === 'trip';
+}
+
+const TripManagement: AdminComponent = ({ slug }) => {
+  const { business } = useBusiness();
+  const businessConfig = useBusinessConfig({ slug });
+  const tripTableTab =
+    businessConfig[business.businessType]?.find(isTripTableTab);
   const { data: trips = [], isLoading } = api.trip.useGet({ keys: [slug] });
   const { data: products = [] } = api.product.useGet({ keys: [slug] });
+  const { data: parties = [] } = api.party.useGet({ keys: [slug] });
   const { data: vehicles = [] } = api.vehicle.useGet({ keys: [slug] });
-  const { mutate: updateTrip } = api.trip.useUpdate({ keys: [slug] });
-  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
-  const { user } = useAuth();
+  const { mutateAsync: updateTrip } = api.trip.useUpdate({ keys: [slug] });
+
+  const tripRows = trips as TripRow[];
+  const productsMap = useMemo(
+    () => new Map(products.map((product) => [product._?.soul, product])),
+    [products],
+  );
+  const partiesMap = useMemo(
+    () => new Map(parties.map((party) => [party._?.soul, party])),
+    [parties],
+  );
+  const vehiclesMap = useMemo(
+    () => new Map(vehicles.map((vehicle) => [vehicle._?.soul, vehicle])),
+    [vehicles],
+  );
 
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  const [currentTrip, setCurrentTrip] = useState<any>(null);
-  const [returnFormData, setReturnFormData] =
-    useState<ReturnedProductsFormData>({ returnedProducts: [] });
+  const [currentTripId, setCurrentTripId] = useState<string | null>(null);
+  const [returnLines, setReturnLines] = useState<ReturnDraftLine[]>([]);
 
-  // Find products by ID for display
-  const productsMap = new Map(products?.map((p) => [p._?.soul, p]));
+  const currentTrip = useMemo(
+    () => tripRows.find((trip) => trip._?.soul === currentTripId),
+    [tripRows, currentTripId],
+  );
 
-  // Find vehicles by ID for display
-  const vehiclesMap = new Map(vehicles?.map((v) => [v._?.soul, v]));
-
-  // Handle opening the return dialog
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  const handleMarkReturn = (trip: any) => {
-    setCurrentTrip(trip);
-
-    // Pre-populate with products that were sent
-    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    const initialReturnedProducts = trip.products?.map((p: any) => ({
-      productId: p.productId,
-      quantity: 0, // Start with 0 returned
-    }));
-
-    setReturnFormData({ returnedProducts: initialReturnedProducts });
-    setReturnDialogOpen(true);
+  const closeReturnDialog = () => {
+    setReturnDialogOpen(false);
+    setCurrentTripId(null);
+    setReturnLines([]);
   };
 
-  // Handle form submission for returned products
-  const handleSubmitReturn = (data: ReturnedProductsFormData) => {
-    if (!currentTrip) return;
+  function handleMarkReturn(trip: TripRow) {
+    setCurrentTripId(trip._?.soul ?? null);
+    const countersByBucket = new Map<string, number>();
+    const draftedLines: ReturnDraftLine[] = [];
 
-    // Calculate sold products (dispatched - returned)
-    const soldProducts = currentTrip.products
-      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-      ?.map((dispatchedProduct: any) => {
-        const returnedProduct = data.returnedProducts.find(
-          (rp) => rp.productId === dispatchedProduct.productId,
-        );
-        const returnedQty = returnedProduct ? returnedProduct.quantity : 0;
-        const soldQty = dispatchedProduct.quantity - returnedQty;
+    for (const line of trip.products ?? []) {
+      const productId = getLineProductId(line);
+      if (!productId) continue;
+      const bucketKey = makeBucketKey(productId, line.purchasePartyId);
+      const bucketCount = (countersByBucket.get(bucketKey) ?? 0) + 1;
+      countersByBucket.set(bucketKey, bucketCount);
 
-        return {
-          productId: dispatchedProduct.productId,
-          quantity: Math.max(0, soldQty), // Ensure non-negative
-        };
-      })
-      .filter((sp) => sp.quantity > 0); // Only include products that were actually sold
-
-    // Update the trip with return time and returned products
-    updateTrip({
-      id: currentTrip._.soul,
-      returnTime: new Date().toISOString(),
-      returnedProducts: data.returnedProducts,
-    });
-
-    // Create a sale record for the sold products
-    if (soldProducts.length > 0) {
-      // In a real implementation, you would create a sale record here
-      console.log('Creating sale for sold products:', soldProducts);
+      draftedLines.push({
+        key: line._?.soul || `${bucketKey}::${bucketCount}`,
+        productId,
+        purchasePartyId: line.purchasePartyId ?? undefined,
+        sentQuantity: toSafeQuantity(line.quantity),
+        returnedQuantity: 0,
+        unit: String(line.unit ?? ''),
+        unitPrice: Number(line.unitPrice ?? 0),
+      });
     }
 
-    setReturnDialogOpen(false);
-    setCurrentTrip(null);
-  };
+    setReturnLines(draftedLines);
+    setReturnDialogOpen(true);
+  }
+
+  function handleReturnQuantityChange(index: number, value: string) {
+    setReturnLines((prev) =>
+      prev.map((line, lineIndex) => {
+        if (lineIndex !== index) return line;
+        const safeQuantity = toSafeQuantity(value);
+        return {
+          ...line,
+          returnedQuantity: Math.min(line.sentQuantity, safeQuantity),
+        };
+      }),
+    );
+  }
+
+  async function handleSubmitReturn() {
+    if (!currentTrip?._?.soul) return;
+    const payload = {
+      id: currentTrip._.soul,
+      returnTime: new Date().toISOString(),
+      returnedProducts: returnLines.map((line) => ({
+        product: line.productId,
+        purchasePartyId: line.purchasePartyId,
+        quantity: line.returnedQuantity,
+        unit: line.unit,
+        unitPrice: line.unitPrice,
+        totalAmount: line.returnedQuantity * line.unitPrice,
+      })),
+    };
+
+    const updatedTrip = await updateTrip(payload);
+    await tripTableTab?.onUpdate?.(
+      updatedTrip as never,
+      payload as never,
+      {
+        previousData: currentTrip as never,
+        newData: {
+          ...currentTrip,
+          ...payload,
+        } as never,
+      } as never,
+      {} as never,
+    );
+    closeReturnDialog();
+  }
 
   if (isLoading) {
     return <div>Loading trips...</div>;
@@ -119,9 +201,37 @@ export default function TripManagement({ slug }: { slug: string }) {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {trips?.map((trip) => {
+            {tripRows.map((trip) => {
               const vehicle = vehiclesMap.get(trip.vehicleId);
               const status = trip.returnTime ? 'Completed' : 'In Transit';
+              const returnedByBucket = (trip.returnedProducts ?? []).reduce(
+                (acc, line) => {
+                  const productId = getLineProductId(line);
+                  if (!productId) return acc;
+                  const key = makeBucketKey(productId, line.purchasePartyId);
+                  const qty = toSafeQuantity(line.quantity);
+                  acc.set(key, (acc.get(key) ?? 0) + qty);
+                  return acc;
+                },
+                new Map<string, number>(),
+              );
+              const dispatchedLinesWithKeys = (() => {
+                const countersByBucket = new Map<string, number>();
+                return (trip.products ?? []).map((line) => {
+                  const productId = getLineProductId(line);
+                  const bucketKey = makeBucketKey(
+                    productId,
+                    line.purchasePartyId,
+                  );
+                  const bucketCount =
+                    (countersByBucket.get(bucketKey) ?? 0) + 1;
+                  countersByBucket.set(bucketKey, bucketCount);
+                  return {
+                    line,
+                    key: line._?.soul || `${bucketKey}::${bucketCount}`,
+                  };
+                });
+              })();
 
               return (
                 <Card key={trip._?.soul}>
@@ -132,18 +242,10 @@ export default function TripManagement({ slug }: { slug: string }) {
                         {vehicle?.licensePlate || 'No Plate'}
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        Dispatched:{' '}
-                        {
-                          trip.dispatchTime &&
-                          <>
-                            {format(
-                              new Date(trip.dispatchTime),
-                              'MMM dd, yyyy HH:mm',
-                            )}
-                          </>
-                        }
-                        {trip.returnTime &&
-                          ` | Returned: ${format(new Date(trip.returnTime), 'MMM dd, yyyy HH:mm')}`}
+                        Dispatched: {formatDateTime(trip.dispatchTime)}
+                        {trip.returnTime
+                          ? ` | Returned: ${formatDateTime(trip.returnTime)}`
+                          : ''}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -155,16 +257,17 @@ export default function TripManagement({ slug }: { slug: string }) {
                       {!trip.returnTime && (
                         <Dialog
                           open={
-                            returnDialogOpen &&
-                            currentTrip?._?.soul === trip._?.soul
+                            returnDialogOpen && currentTripId === trip._?.soul
                           }
-                          onOpenChange={setReturnDialogOpen}
+                          onOpenChange={(open) => {
+                            if (open) return;
+                            closeReturnDialog();
+                          }}
                         >
                           <DialogTrigger asChild>
                             <Button
                               variant="outline"
                               onClick={() => handleMarkReturn(trip)}
-                              disabled={!!trip.returnTime}
                             >
                               Mark Return
                             </Button>
@@ -177,71 +280,54 @@ export default function TripManagement({ slug }: { slug: string }) {
                             </DialogHeader>
 
                             <div className="space-y-4">
-                              <div>
-                                <h4 className="font-medium mb-2">
-                                  Products Dispatched:
-                                </h4>
-                                <div className="grid grid-cols-3 gap-2 text-sm font-medium">
-                                  <div>Product</div>
-                                  <div className="text-center">Sent</div>
-                                  <div className="text-center">Returned</div>
-                                </div>
-                                {trip.products?.map(
-                                  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                                  (product: any, idx: number) => {
-                                    const prod = productsMap.get(
-                                      product.productId,
-                                    );
-                                    return (
-                                      <div
-                                        // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-                                        key={idx}
-                                        className="grid grid-cols-3 gap-2 text-sm"
-                                      >
-                                        <div>
-                                          {prod?.title || 'Unknown Product'}
-                                        </div>
-                                        <div className="text-center">
-                                          {product.quantity}
-                                        </div>
-                                        <div className="text-center">
-                                          {returnFormData.returnedProducts[idx]
-                                            ?.quantity || 0}
-                                        </div>
-                                      </div>
-                                    );
-                                  },
-                                )}
+                              <div className="grid grid-cols-4 gap-2 text-sm font-medium">
+                                <div>Product</div>
+                                <div>Supplier Bucket</div>
+                                <div className="text-center">Sent</div>
+                                <div className="text-center">Returned</div>
                               </div>
 
-                              <div>
-                                <h4 className="font-medium mb-2">
-                                  Enter Returned Products:
-                                </h4>
-                                <AutoForm
-                                  formSchema={ReturnedProductsSchema}
-                                  values={returnFormData}
-                                  onSubmit={handleSubmitReturn}
-                                  fieldConfig={{
-                                    returnedProducts: {
-                                      fieldType: 'nested',
-                                      fields: {
-                                        productId: {
-                                          fieldType: 'select',
-                                          options: products?.map((p) => [
-                                            // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
-                                            p._?.soul!,
-                                            p.title,
-                                          ]),
-                                        },
-                                        quantity: {
-                                          fieldType: 'number',
-                                        },
-                                      },
-                                    },
-                                  }}
-                                />
-                              </div>
+                              {returnLines.map((line, index) => (
+                                <div
+                                  key={line.key}
+                                  className="grid grid-cols-4 gap-2 items-center text-sm"
+                                >
+                                  <div>
+                                    {productsMap.get(line.productId)?.title ||
+                                      'Unknown Product'}
+                                  </div>
+                                  <div>
+                                    {line.purchasePartyId
+                                      ? (partiesMap.get(line.purchasePartyId)
+                                          ?.name ?? line.purchasePartyId)
+                                      : 'Unassigned'}
+                                  </div>
+                                  <div className="text-center">
+                                    {line.sentQuantity}
+                                  </div>
+                                  <Input
+                                    type="number"
+                                    min={0}
+                                    max={line.sentQuantity}
+                                    value={line.returnedQuantity}
+                                    onChange={(event) =>
+                                      handleReturnQuantityChange(
+                                        index,
+                                        event.target.value,
+                                      )
+                                    }
+                                    className="h-8 text-center"
+                                  />
+                                </div>
+                              ))}
+
+                              <Button
+                                type="button"
+                                className="w-full"
+                                onClick={handleSubmitReturn}
+                              >
+                                Save Return
+                              </Button>
                             </div>
                           </DialogContent>
                         </Dialog>
@@ -251,18 +337,32 @@ export default function TripManagement({ slug }: { slug: string }) {
                   <CardContent>
                     <div className="space-y-2">
                       <h4 className="font-medium">Products on Trip:</h4>
-                      <div className="grid grid-cols-2 gap-2">
-                        {/** biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup */}
-                        {trip.products?.map((product: any, idx: number) => {
-                          const prod = productsMap.get(product.productId);
+                      <div className="space-y-1">
+                        {dispatchedLinesWithKeys.map(({ line, key }) => {
+                          const productId = getLineProductId(line);
+                          const partyId = line.purchasePartyId;
+                          const bucketKey = makeBucketKey(productId, partyId);
+                          const returnedQuantity =
+                            returnedByBucket.get(bucketKey) ?? 0;
+                          const partyName = partyId
+                            ? (partiesMap.get(partyId)?.name ?? partyId)
+                            : 'Unassigned';
                           return (
                             <div
-                              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-                              key={idx}
-                              className="flex justify-between text-sm"
+                              key={key}
+                              className="flex justify-between gap-4 text-sm"
                             >
-                              <span>{prod?.title || 'Unknown Product'}</span>
-                              <span>{product.quantity}</span>
+                              <span>
+                                {productsMap.get(productId)?.title ||
+                                  'Unknown Product'}{' '}
+                                ({partyName})
+                              </span>
+                              <span>
+                                Sent: {toSafeQuantity(line.quantity)}
+                                {trip.returnTime
+                                  ? ` | Returned: ${returnedQuantity}`
+                                  : ''}
+                              </span>
                             </div>
                           );
                         })}
@@ -273,7 +373,7 @@ export default function TripManagement({ slug }: { slug: string }) {
               );
             })}
 
-            {trips.length === 0 && (
+            {tripRows.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 No trips recorded yet
               </div>
@@ -283,4 +383,6 @@ export default function TripManagement({ slug }: { slug: string }) {
       </Card>
     </div>
   );
-}
+};
+
+export default TripManagement;

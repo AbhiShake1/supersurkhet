@@ -496,8 +496,24 @@ export const salesItemSchema = z
             sources: [
               {
                 table: 'product',
-                displayKeys: ['title', 'stockQuantity'],
-                separator: ' - Stock: ',
+                displayKey: 'title',
+              },
+            ],
+          },
+        }),
+      ),
+    purchasePartyId: z
+      .string()
+      .optional()
+      .describe('Purchase Party')
+      .superRefine(
+        fieldConfig({
+          fieldType: 'select',
+          customData: {
+            sources: [
+              {
+                table: 'party',
+                displayKey: 'name',
               },
             ],
           },
@@ -886,6 +902,7 @@ export const stockBookSchema = z
     movementType: z
       .enum([
         'opening',
+        'closing',
         'purchase',
         'sale',
         'order',
@@ -909,8 +926,7 @@ export const stockBookSchema = z
             sources: [
               {
                 table: 'product',
-                displayKeys: ['title', 'stockQuantity'],
-                separator: ' - Stock: ',
+                displayKey: 'title',
               },
             ],
           },
@@ -943,12 +959,21 @@ export const stockBookSchema = z
     particulars: z.string().describe('Particulars'),
     remarks: z.string().optional().describe('Remarks'),
     sourceTable: z
-      .enum(['product', 'stockImport', 'sale', 'order', 'trip', 'manual'])
+      .enum([
+        'product',
+        'stockImport',
+        'sale',
+        'order',
+        'trip',
+        'manual',
+        'fiscalClose',
+      ])
       .describe('Source Table')
       .superRefine(fieldConfig({ fieldType: 'select' })),
     sourceId: z.string().optional().describe('Source ID'),
     sourceCode: z.string().optional().describe('Source Code'),
     counterpartyId: z.string().optional().describe('Counterparty'),
+    originPartyId: z.string().optional().describe('Origin Party'),
     fiscalYear: z.string().optional().describe('Fiscal Year'),
   })
   .extend(table);

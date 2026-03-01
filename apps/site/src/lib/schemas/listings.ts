@@ -31,7 +31,7 @@ export const table = {
   _: z
     .object({
       soul: z.string().optional(),
-      ">": z.record(z.union([z.string(), z.number()])).optional(),
+      '>': z.record(z.union([z.string(), z.number()])).optional(),
     })
     .optional(),
 };
@@ -55,13 +55,6 @@ export const baseListingSchema = z
       .optional()
       .describe('Default Selling Price')
       .superRefine(fieldConfig({ label: 'Default Selling Price' })),
-    stockQuantity: z
-      .number({ coerce: true })
-      .int()
-      .min(0)
-      .default(0)
-      .describe('Quantity in Stock')
-      .superRefine(fieldConfig({ label: 'Opening Stock Quantity' })),
     barcode: z.string().optional().describe('Barcode'),
     reorderLevel: z
       .number({ coerce: true })

@@ -11,22 +11,21 @@ test.describe("Business Admin - Stock Imports", () => {
     const productName = `E2E Stock Product ${Date.now()}`;
     const partyName = `E2E Party ${Date.now()}`;
 
+    await gotoAdminTab(page, "Purchase Parties");
+    await openAddNew(page);
+    await page.getByTestId(inputTestId(["name"])).fill(partyName);
+    await page.getByRole("button", { name: /^Save$/i }).click();
+    await expect(page.getByText(partyName)).toBeVisible();
+
     await gotoAdminTab(page, "Products");
     await openAddNew(page);
 
     await page.getByTestId(inputTestId(["title"])).fill(productName);
     await page.getByTestId(inputTestId(["hsCode"])).fill("HS-1001");
     await page.getByTestId(inputTestId(["costPrice"])).fill("100");
-    await page.getByTestId(inputTestId(["stockQuantity"])).fill("5");
 
     await page.getByRole("button", { name: /^Save$/i }).click();
     await expect(page.getByText(productName)).toBeVisible();
-
-    await gotoAdminTab(page, "Purchase Parties");
-    await openAddNew(page);
-    await page.getByTestId(inputTestId(["name"])).fill(partyName);
-    await page.getByRole("button", { name: /^Save$/i }).click();
-    await expect(page.getByText(partyName)).toBeVisible();
 
     await gotoAdminTab(page, "Stock Imports");
     await openAddNew(page);
@@ -35,11 +34,10 @@ test.describe("Business Admin - Stock Imports", () => {
 
     await page.getByTestId("af-add-items").click();
 
-    const productLabel = `${productName} - Stock: 5`;
     await selectCombobox(
       page,
       inputTestId(["items", "0", "product"]),
-      productLabel,
+      productName,
     );
 
     await page.getByTestId(inputTestId(["items", "0", "quantity"])).fill("2");

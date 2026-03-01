@@ -1,6 +1,6 @@
 import {
   AutoKanban,
-  type UpdateContext,
+  type AutoAdminTabInput,
 } from '@/components/auto-admin';
 import type { AdminComponent } from '.';
 import type { Order } from '@/lib/schema';
@@ -19,45 +19,31 @@ import { AddRowDialog } from '@/components/auto-admin/add-row-dialog';
 import { Plus } from 'lucide-react';
 import { formatCurrency } from '@/lib/intl';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip';
-import { db } from '@/lib/ssr/api';
-import NepaliDate from 'nepali-datetime';
+import { useBusiness } from '@/contexts/business-context';
+import { useBusinessConfig } from '@/config/business-config';
 
-type PaymentInput = {
-  paidAt?: string | null;
-  paidAmount?: number | string | null;
-  paymentMethod?: string | null;
-  bankVoucherNumber?: string | null;
-} | null;
-
-function normalizePaymentsWithFallback(
-  payments: PaymentInput[] | undefined,
-  fallbackPaidAmount: number | undefined,
-) {
-  if (Array.isArray(payments) && payments.length) {
-    return payments.map((payment) => ({
-      paidAt: payment?.paidAt || new Date().toISOString(),
-      paidAmount: Number(payment?.paidAmount ?? 0),
-      paymentMethod: payment?.paymentMethod || undefined,
-      bankVoucherNumber: payment?.bankVoucherNumber?.trim() || undefined,
-    }));
-  }
-
-  const paidAmount = Number(fallbackPaidAmount ?? 0);
-  if (!paidAmount) return [];
-  return [{ paidAt: new Date().toISOString(), paidAmount }];
+function isOrderTableTab(
+  tab: AutoAdminTabInput | undefined,
+): tab is Extract<AutoAdminTabInput, { schema: 'order' }> {
+  if (!tab || typeof tab !== 'object' || !('schema' in tab)) return false;
+  return tab.schema === 'order';
 }
 
 const OrderKanban: AdminComponent = ({ slug }) => {
-  const { data: products } = api.product.useGet({ keys: [slug] });
-  const { data: orders } = api.order.useGet({ keys: [slug] });
-  const ordersBySoul = new Map(orders?.map((o) => [o._?.soul, o]));
-  const productsBySoul = new Map(products?.map((p) => [p._?.soul, p]));
+  const { business } = useBusiness();
+  const businessConfig = useBusinessConfig({ slug });
+  const orderTableTab = businessConfig[business.businessType]?.find(isOrderTableTab);
+
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
         <AddRowDialog
           schema="order"
           slug={slug}
+          extender={orderTableTab?.extender}
+          onCreate={orderTableTab?.onCreate}
+          readOnly={orderTableTab?.readOnly}
+          className={orderTableTab?.className}
           buttonLabel="Add New Order"
           buttonIcon={<Plus className="h-4 w-4" />}
         />
@@ -71,93 +57,7 @@ const OrderKanban: AdminComponent = ({ slug }) => {
           order.orderStatus === 'done' ||
           order.orderStatus === 'cancelled'
         }
-        onUpdate={(_, variables, updateContext) => {
-          if (variables.orderStatus !== 'done') return;
-          const currentOrder =
-            (updateContext as UpdateContext<'order'>)?.previousData ??
-            ordersBySoul.get(variables.id);
-          if (currentOrder?.orderStatus === 'done') return;
-          const order =
-            (updateContext as UpdateContext<'order'>)?.newData ??
-            ordersBySoul.get(variables.id);
-          if (!order?.items?.length || !order?.customerId) return;
-
-          const itemsByProductIdWithQuantity = order.items?.reduce(
-            (a, item) => {
-              const product = productsBySoul.get(item.product);
-              let adjustedQuantity = item.quantity;
-              if (product?.unit?.includes(':')) {
-                const [unitType, piecesPerUnit] = product.unit.split(':');
-                if (item.unit === unitType) {
-                  adjustedQuantity =
-                    item.quantity * parseInt(piecesPerUnit, 10);
-                }
-              }
-              a[item.product] = (a[item.product] || 0) + adjustedQuantity;
-              return a;
-            },
-            {} as Record<string, number>,
-          );
-
-          Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(
-            ([productId, quantity]) => {
-              const product = productsBySoul.get(productId);
-              if (!product?._?.soul) return;
-              db.product.update(slug)({
-                id: product._.soul,
-                stockQuantity: product.stockQuantity - quantity,
-              });
-            },
-          );
-
-          const invoiceItems =
-            order.items?.map((item) => {
-              const productInfo = productsBySoul.get(item.product);
-              let adjustedQuantity = item.quantity;
-
-              if (productInfo?.unit?.includes(':')) {
-                const [unitType, piecesPerUnit] = productInfo.unit.split(':');
-                if (item.unit === unitType) {
-                  adjustedQuantity =
-                    item.quantity * parseInt(piecesPerUnit, 10);
-                }
-              }
-
-              return {
-                product: item.product,
-                quantity: adjustedQuantity,
-                rate: item.unitPrice,
-                total: item.quantity * item.unitPrice,
-              };
-            }) ?? [];
-
-          const totalAmount =
-            order.items?.reduce(
-              (sum, item) => sum + item.quantity * item.unitPrice,
-              0,
-            ) ?? 0;
-          const payments = normalizePaymentsWithFallback(
-            order.payments,
-            order.paidAmount,
-          );
-          const paidAmount = getPaidAmountFromPayments(payments);
-
-          db.invoice.create(slug)({
-            type: 'sale',
-            partyId: order.customerId,
-            issuedAt: new Date().toISOString(),
-            items: invoiceItems,
-            subTotal: totalAmount,
-            tax: 0,
-            payments,
-            paidAmount,
-            paymentStatus: getPaymentStatusFromTotals({
-              paidAmount,
-              totalAmount,
-            }),
-            fiscalYear: calculateFiscalYear(),
-          });
-        }}
+        onUpdate={orderTableTab?.onUpdate}
       />
     </div>
   );
@@ -168,7 +68,7 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
   const { data: menuItems = [] } = api.menuItem.useGet({ keys: [slug] });
   const customerById = useMemo(
     () => new Map(customers.map((c) => [c._?.soul, c])),
-    [customers.map],
+    [customers],
   );
   const { data: products = [] } = api.product.useGet({ keys: [slug] });
 
@@ -387,34 +287,6 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
       </div>
     </div>
   );
-}
-
-function getPaidAmountFromPayments(payments: PaymentInput[] | undefined) {
-  if (!Array.isArray(payments) || !payments.length) return 0;
-  return payments.reduce((sum, payment) => {
-    const paidAmount = Number(payment?.paidAmount ?? 0);
-    return Number.isFinite(paidAmount) ? sum + paidAmount : sum;
-  }, 0);
-}
-
-export function getPaymentStatusFromTotals({
-  paidAmount,
-  totalAmount,
-}: {
-  paidAmount: number;
-  totalAmount: number;
-}): string {
-  if (paidAmount === totalAmount) return 'paid';
-  if (paidAmount === 0) return 'pending';
-  if (paidAmount > totalAmount) return 'overpaid (invalid)';
-  return `partial (${formatCurrency(totalAmount - paidAmount)} to pay)`;
-}
-
-function calculateFiscalYear() {
-  const year = new NepaliDate().getYear();
-  return `${year.toString().slice(0, 2)}${year
-    .toString()
-    .slice(2)}/${(year + 1).toString().slice(2)}`;
 }
 
 export default OrderKanban;

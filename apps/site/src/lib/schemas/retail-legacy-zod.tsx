@@ -431,8 +431,7 @@ export const salesItemSchema = z
             sources: [
               {
                 table: 'product',
-                displayKeys: ['title', 'stockQuantity'],
-                separator: ' - Stock: ',
+                displayKey: 'title',
               },
             ],
           },

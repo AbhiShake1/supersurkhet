@@ -9,7 +9,14 @@ import {
 test.describe("Business Admin - Sales", () => {
   test("updates payment status based on paid amount", async ({ page }) => {
     const productName = `E2E Sale Product ${Date.now()}`;
+    const partyName = `E2E Sale Party ${Date.now()}`;
     const customerName = `E2E Sale Customer ${Date.now()}`;
+
+    await gotoAdminTab(page, "Purchase Parties");
+    await openAddNew(page);
+    await page.getByTestId(inputTestId(["name"])).fill(partyName);
+    await page.getByRole("button", { name: /^Save$/i }).click();
+    await expect(page.getByText(partyName)).toBeVisible();
 
     await gotoAdminTab(page, "Products");
     await openAddNew(page);
@@ -17,9 +24,16 @@ test.describe("Business Admin - Sales", () => {
     await page.getByTestId(inputTestId(["hsCode"])).fill("HS-3001");
     await page.getByTestId(inputTestId(["costPrice"])).fill("60");
     await page.getByTestId(inputTestId(["sellingPrice"])).fill("120");
-    await page.getByTestId(inputTestId(["stockQuantity"])).fill("5");
     await page.getByRole("button", { name: /^Save$/i }).click();
     await expect(page.getByText(productName)).toBeVisible();
+
+    await gotoAdminTab(page, "Stock Imports");
+    await openAddNew(page);
+    await selectCombobox(page, inputTestId(["party"]), partyName);
+    await page.getByTestId("af-add-items").click();
+    await selectCombobox(page, inputTestId(["items", "0", "product"]), productName);
+    await page.getByTestId(inputTestId(["items", "0", "quantity"])).fill("5");
+    await page.getByRole("button", { name: /^Save$/i }).click();
 
     await gotoAdminTab(page, "Customers");
     await openAddNew(page);
@@ -33,11 +47,15 @@ test.describe("Business Admin - Sales", () => {
     await selectCombobox(page, inputTestId(["customerId"]), customerName);
     await page.getByTestId("af-add-items").click();
 
-    const productLabel = `${productName} - Stock: 5`;
     await selectCombobox(
       page,
       inputTestId(["items", "0", "product"]),
-      productLabel,
+      `${productName} - Available: 5`,
+    );
+    await selectCombobox(
+      page,
+      inputTestId(["items", "0", "purchasePartyId"]),
+      `${partyName} - Available: 5`,
     );
 
     await page.getByTestId(inputTestId(["items", "0", "quantity"])).fill("1");

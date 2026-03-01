@@ -1,14 +1,19 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
 
 const businessConfigPath = resolve(
   process.cwd(),
   'src/config/business-config.tsx',
 );
+const retailSchemaPath = resolve(process.cwd(), 'src/lib/schemas/retail.tsx');
 
 function getContent() {
   return readFileSync(businessConfigPath, 'utf8');
+}
+
+function getRetailSchemaContent() {
+  return readFileSync(retailSchemaPath, 'utf8');
 }
 
 describe('business-config derived contracts', () => {
@@ -22,7 +27,9 @@ describe('business-config derived contracts', () => {
 
   it('keeps product-backed unit derivation keyed by selected product', () => {
     const content = getContent();
-    const productSourceBlocks = [...content.matchAll(/source:\s*\{[\s\S]*?table:\s*'product'[\s\S]*?\}/g)];
+    const productSourceBlocks = [
+      ...content.matchAll(/source:\s*\{[\s\S]*?table:\s*'product'[\s\S]*?\}/g),
+    ];
 
     expect(productSourceBlocks.length).toBeGreaterThan(0);
 
@@ -32,38 +39,42 @@ describe('business-config derived contracts', () => {
   });
 
   it('keeps payment status as a derived schema field for all payment flows', () => {
-    const content = getContent();
+    const content = getRetailSchemaContent();
     const matches = content.match(/withDerivation\('paymentStatus'/g) ?? [];
 
-    // stockImport + sale + order
-    expect(matches).toHaveLength(3);
+    // sale + order + stockImport (+ invoice)
+    expect(matches.length).toBeGreaterThanOrEqual(3);
   });
 
   it('keeps paymentStatus hard-derived while paidAmount is soft-derived for all payment flows', () => {
-    const content = getContent();
+    const content = getRetailSchemaContent();
 
     const paymentStatusDerivations =
       content.match(/withDerivation\('paymentStatus'/g) ?? [];
     const paidAmountDerivations =
       content.match(/withDerivation\('paidAmount'/g) ?? [];
 
-    // stockImport + sale + order
-    expect(paymentStatusDerivations).toHaveLength(3);
-    expect(paidAmountDerivations).toHaveLength(3);
+    expect(paymentStatusDerivations.length).toBeGreaterThanOrEqual(3);
+    expect(paidAmountDerivations.length).toBeGreaterThanOrEqual(3);
 
-    expect(content).not.toContain('function refreshPaidAmount(form: UseFormReturn)');
-    expect(content).not.toContain('function refreshPaymentStatus(form: UseFormReturn)');
+    expect(content).not.toContain(
+      'function refreshPaidAmount(form: UseFormReturn)',
+    );
+    expect(content).not.toContain(
+      'function refreshPaymentStatus(form: UseFormReturn)',
+    );
   });
 
-  it('keeps item totals and pricing/unit defaults fully derived with no imperative setValue writes', () => {
+  it('keeps item totals derived while outflow unit price supports product-select autofill', () => {
     const content = getContent();
+    const retailContent = getRetailSchemaContent();
     const totalAmountDerivations =
-      content.match(/totalAmount:\s*createDerivedItemTotalAmountField\(/g) ?? [];
-    const setValueCalls = content.match(/form\.setValue\(/g) ?? [];
+      retailContent.match(/withDerivation\('totalAmount'/g) ?? [];
 
     expect(content).not.toContain('function syncItemDerivedFields');
     expect(content).not.toContain('function setItemUnitPrice');
-    expect(totalAmountDerivations).toHaveLength(3);
-    expect(setValueCalls).toHaveLength(0);
+    expect(totalAmountDerivations.length).toBeGreaterThanOrEqual(3);
+    expect(content).toContain('createSoftDerivedSellingUnitPriceField');
+    expect(content).toContain('form.setValue(unitPricePath');
   });
 });

@@ -3,7 +3,11 @@ import NepaliDate from 'nepali-datetime';
 import z from 'zod';
 import type { AutoAdminTabInput, UpdateContext } from '@/components/auto-admin';
 import { AutoFormSubmit } from '@/components/ui/auto-form';
-import { AutoForm, fieldConfig } from '@/components/ui/autoform';
+import {
+  AutoForm,
+  fieldConfig,
+  withSourceCustomData,
+} from '@/components/ui/autoform';
 import { Button } from '@/components/ui/button';
 import {
   Credenza,
@@ -20,8 +24,14 @@ import { api } from '@/lib/api';
 import type { BusinessType } from '@/lib/schema';
 import { type SalesItem, salesItemSchema } from '@/lib/schemas/retail';
 import { db } from '@/lib/ssr/api';
+import {
+  aggregateStockBookEntries,
+  getProductPartyAvailability,
+  UNASSIGNED_STOCK_BUCKET,
+} from '@/lib/stock-book-aggregation';
 import { getSoulFromUnknown } from '@/lib/utils';
 import { getPaymentStatusFromTotals } from './payment-status-derivation';
+import { deriveUnitPrice } from './unit-price-derivation';
 
 type AnyAutoTableTab = {
   [K in SchemaKeys]: AutoAdminTabInput;
@@ -94,11 +104,17 @@ type ProductStockRecord = {
   _?: { soul?: string };
   title?: string | null;
   unit?: string | null;
-  stockQuantity?: number | null;
   sellingPrice?: number | null;
 };
 
-type StockEntryItem = Pick<SalesItem, 'product' | 'quantity' | 'unit'>;
+type StockEntryItem = Pick<
+  SalesItem,
+  'product' | 'quantity' | 'unit' | 'purchasePartyId'
+>;
+
+type SalesItemRuntime = Partial<SalesItem> & {
+  productId?: string | null;
+};
 
 function getAdjustedQuantity(
   item: StockEntryItem,
@@ -117,18 +133,37 @@ function getAdjustedQuantity(
   return adjustedQuantity;
 }
 
-function getItemsByProductIdWithQuantity(
+function getValueAtPath(input: unknown, path: string[]) {
+  return path.reduce<unknown>((acc, key) => {
+    if (!acc || typeof acc !== 'object') return undefined;
+    return (acc as Record<string, unknown>)[key];
+  }, input);
+}
+
+function resolveSalesItemProductId(item: SalesItemRuntime | null | undefined) {
+  const product = item?.product;
+  if (typeof product === 'string' && product) return product;
+  const productId = item?.productId;
+  if (typeof productId === 'string' && productId) return productId;
+  return '';
+}
+
+function getItemsByProductAndPartyQuantity(
   items: StockEntryItem[] | undefined,
   productsBySoul: Map<string, ProductStockRecord>,
 ) {
   return (
     items?.reduce(
       (acc, item) => {
-        const productInfo = productsBySoul.get(item.product);
+        const productId = resolveSalesItemProductId(item);
+        if (!productId) return acc;
+        const productInfo = productsBySoul.get(productId);
         if (!productInfo) return acc;
-
+        const partyId = item.purchasePartyId;
+        if (!partyId) return acc;
         const adjustedQuantity = getAdjustedQuantity(item, productInfo);
-        acc[item.product] = (acc[item.product] || 0) + adjustedQuantity;
+        const key = `${productId}::${partyId}`;
+        acc[key] = (acc[key] || 0) + adjustedQuantity;
         return acc;
       },
       {} as Record<string, number>,
@@ -136,17 +171,61 @@ function getItemsByProductIdWithQuantity(
   );
 }
 
+function createSoftDerivedSellingUnitPriceField() {
+  return z
+    .number({ coerce: true })
+    .describe('Unit Price')
+    .superRefine(
+      fieldConfig({
+        fieldType: 'number',
+        customData: withSourceCustomData({
+          source: {
+            table: 'product',
+            key: 'product',
+            displayKey: 'title',
+          },
+          derive: async ({ sourceRow, formValues, rowPath }) => {
+            if (!sourceRow) return null;
+            const row = getValueAtPath(formValues, rowPath) as
+              | { unit?: string | null }
+              | undefined;
+            const sourceRowValue = sourceRow as Record<string, unknown>;
+            const basePrice = Number(sourceRowValue.sellingPrice ?? 0);
+            const productUnit = String(sourceRowValue.unit ?? '');
+            const selectedUnit = String(row?.unit ?? sourceRowValue.unit ?? '');
+            const derivedUnitPrice = deriveUnitPrice({
+              basePrice,
+              productUnit,
+              selectedUnit,
+            });
+            return {
+              inputProps: {
+                value: derivedUnitPrice,
+              },
+            };
+          },
+        }),
+      }),
+    );
+}
+
 function buildInvoiceItems(
   items: SalesItem[] | undefined,
   productsBySoul: Map<string, ProductStockRecord>,
 ) {
   return (
-    items?.map((item) => ({
-      product: item.product,
-      quantity: getAdjustedQuantity(item, productsBySoul.get(item.product)),
-      rate: item.unitPrice,
-      total: item.quantity * item.unitPrice,
-    })) ?? []
+    items
+      ?.map((item) => {
+        const productId = resolveSalesItemProductId(item);
+        if (!productId) return null;
+        return {
+          product: productId,
+          quantity: getAdjustedQuantity(item, productsBySoul.get(productId)),
+          rate: item.unitPrice,
+          total: item.quantity * item.unitPrice,
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => Boolean(item)) ?? []
   );
 }
 
@@ -170,6 +249,7 @@ export function useBusinessConfig({
   const { data: orders } = api.order.useGet({ keys: [slug] });
   const { data: stockImports } = api.stockImport.useGet({ keys: [slug] });
   const { data: sales } = api.sale.useGet({ keys: [slug] });
+  const { data: stockBook = [] } = api.stockBook.useGet({ keys: [slug] });
   const partiesBySoul = new Map(parties?.map((p) => [p._?.soul, p]));
   const vehiclesBySoul = new Map(vehicles?.map((v) => [v._?.soul, v]));
   const tripsBySoul = new Map(trips?.map((t) => [t._?.soul, t]));
@@ -178,6 +258,138 @@ export function useBusinessConfig({
   const ordersBySoul = new Map(orders?.map((o) => [o._?.soul, o]));
   const stockImportsBySoul = new Map(stockImports?.map((s) => [s._?.soul, s]));
   const salesBySoul = new Map(sales?.map((s) => [s._?.soul, s]));
+  const stockAggregate = aggregateStockBookEntries(stockBook);
+
+  function getPartyDisplayName(partyId: string) {
+    if (partyId === UNASSIGNED_STOCK_BUCKET) return 'Unassigned';
+    return partiesBySoul.get(partyId)?.name || partyId;
+  }
+
+  function getProductPurchasePartyIds(productId: string) {
+    return Object.entries(stockAggregate.productPartyAvailable[productId] || {})
+      .filter(([, quantity]) => Number(quantity || 0) > 0)
+      .map(([partyId]) => partyId);
+  }
+
+  function getProductStockLabel(productId: string) {
+    const product = productsBySoul.get(productId);
+    const available = Number(
+      stockAggregate.productTotalAvailable[productId] || 0,
+    );
+    return `${product?.title ?? '-'} - Available: ${available}`;
+  }
+
+  function getPartyStockLabel(productId: string, partyId: string) {
+    const available = getProductPartyAvailability(
+      stockAggregate,
+      productId,
+      partyId,
+    );
+    return `${getPartyDisplayName(partyId)} - Available: ${available}`;
+  }
+
+  function buildOutflowItemSchema({
+    requirePurchaseParty = true,
+  }: {
+    requirePurchaseParty?: boolean;
+  } = {}) {
+    const purchasePartyField = (
+      requirePurchaseParty
+        ? z.string().min(1, { message: 'Purchase party is required.' })
+        : z.string().optional()
+    )
+      .describe('Purchase Party')
+      .superRefine(
+        fieldConfig({
+          fieldType: 'select',
+          customData: {
+            derive: ({ formValues, rowPath }) => {
+              const row = rowPath.reduce<unknown>((acc, key) => {
+                if (!acc || typeof acc !== 'object') return undefined;
+                return (acc as Record<string, unknown>)[key];
+              }, formValues);
+              const productId =
+                row && typeof row === 'object' && 'product' in row
+                  ? String((row as { product?: string }).product || '')
+                  : '';
+              const partyIds = productId
+                ? getProductPurchasePartyIds(productId)
+                : [];
+              const options = partyIds.map((partyId) => [
+                partyId,
+                getPartyStockLabel(productId, partyId),
+              ]);
+              return {
+                customData: {
+                  options,
+                },
+              };
+            },
+          },
+        }),
+      );
+
+    return salesItemSchema.extend({
+      product: z
+        .string()
+        .describe('Product')
+        .superRefine(
+          fieldConfig({
+            fieldType: 'select',
+            customData: {
+              options: (products ?? [])
+                .filter((product) => Boolean(product._?.soul))
+                .map((product) => {
+                  const productId = product._?.soul ?? '';
+                  return [productId, getProductStockLabel(productId)];
+                }),
+              onValueChange: (value, path, form) => {
+                const product = productsBySoul.get(value);
+                if (!product) return;
+                const rowPath = path.slice(0, -1);
+                const unitPath = [...rowPath, 'unit'].join('.');
+                const unitPricePath = [...rowPath, 'unitPrice'].join('.');
+
+                const currentUnitRaw = form.getValues(unitPath);
+                const productUnit = String(product.unit ?? '');
+                const [packedUnit, piecesPerUnit] = productUnit.split(':');
+                const currentUnit = String(currentUnitRaw ?? '');
+                const allowedUnits = [
+                  packedUnit,
+                  piecesPerUnit ? 'piece' : undefined,
+                ].filter((unit): unit is string => Boolean(unit));
+
+                const nextUnit = allowedUnits.includes(currentUnit)
+                  ? currentUnit
+                  : productUnit;
+
+                if (nextUnit && nextUnit !== currentUnit) {
+                  form.setValue(unitPath, nextUnit, {
+                    shouldDirty: false,
+                    shouldTouch: false,
+                    shouldValidate: false,
+                  });
+                }
+
+                const derivedUnitPrice = deriveUnitPrice({
+                  basePrice: Number(product.sellingPrice ?? 0),
+                  productUnit,
+                  selectedUnit: nextUnit || productUnit,
+                });
+
+                form.setValue(unitPricePath, derivedUnitPrice, {
+                  shouldDirty: false,
+                  shouldTouch: false,
+                  shouldValidate: false,
+                });
+              },
+            },
+          }),
+        ),
+      unitPrice: createSoftDerivedSellingUnitPriceField(),
+      purchasePartyId: purchasePartyField,
+    });
+  }
 
   function toSourceCode(sourceId: string | undefined) {
     if (!sourceId) return undefined;
@@ -195,7 +407,14 @@ export function useBusinessConfig({
   }
 
   async function clearStockBookEntriesBySource(
-    sourceTable: 'product' | 'stockImport' | 'sale' | 'order' | 'trip' | 'manual',
+    sourceTable:
+      | 'product'
+      | 'stockImport'
+      | 'sale'
+      | 'order'
+      | 'trip'
+      | 'manual'
+      | 'fiscalClose',
     sourceId: string | undefined,
   ) {
     if (!sourceId) return;
@@ -219,12 +438,21 @@ export function useBusinessConfig({
     counterpartyId,
     particularsPrefix,
     fiscalYear,
+    requireOriginPartyId = false,
   }: {
-    sourceTable: 'product' | 'stockImport' | 'sale' | 'order' | 'trip' | 'manual';
+    sourceTable:
+      | 'product'
+      | 'stockImport'
+      | 'sale'
+      | 'order'
+      | 'trip'
+      | 'manual'
+      | 'fiscalClose';
     sourceId?: string;
     transactionType: 'purchase' | 'sale' | 'stock';
     movementType:
       | 'opening'
+      | 'closing'
       | 'purchase'
       | 'sale'
       | 'order'
@@ -237,6 +465,7 @@ export function useBusinessConfig({
     counterpartyId?: string;
     particularsPrefix: string;
     fiscalYear?: string;
+    requireOriginPartyId?: boolean;
   }) {
     if (!items?.length) return;
     const products = await db.product.get({ keys: [slug] });
@@ -248,11 +477,23 @@ export function useBusinessConfig({
 
     const aggregates = items.reduce(
       (acc, item) => {
-        const productInfo = productsMap.get(item.product);
+        const productId = resolveSalesItemProductId(item);
+        if (!productId) return acc;
+        const productInfo = productsMap.get(productId);
         if (!productInfo?._?.soul) return acc;
+        const originPartyId = item.purchasePartyId || undefined;
+        if (requireOriginPartyId && !originPartyId) {
+          throw new Error(
+            'Missing purchase party allocation for stock out line.',
+          );
+        }
         const adjustedQuantity = getAdjustedQuantity(item, productInfo);
-        const lineAmount = Number(item.quantity || 0) * Number(item.unitPrice || 0);
-        const existing = acc.get(item.product) || {
+        const lineAmount =
+          Number(item.quantity || 0) * Number(item.unitPrice || 0);
+        const key = `${productId}::${originPartyId || ''}`;
+        const existing = acc.get(key) || {
+          productId,
+          originPartyId,
           quantity: 0,
           totalAmount: 0,
           unitRate: 0,
@@ -260,17 +501,26 @@ export function useBusinessConfig({
         existing.quantity += adjustedQuantity;
         existing.totalAmount += lineAmount;
         existing.unitRate = Number(item.unitPrice || existing.unitRate || 0);
-        acc.set(item.product, existing);
+        acc.set(key, existing);
         return acc;
       },
-      new Map<string, { quantity: number; totalAmount: number; unitRate: number }>(),
+      new Map<
+        string,
+        {
+          productId: string;
+          originPartyId?: string;
+          quantity: number;
+          totalAmount: number;
+          unitRate: number;
+        }
+      >(),
     );
 
     const eventDate = entryDate || new Date().toISOString();
     const sourceCode = toSourceCode(sourceId);
     const inferredFiscalYear = fiscalYear || calculateFiscalYear();
 
-    for (const [productId, aggregate] of aggregates.entries()) {
+    for (const aggregate of aggregates.values()) {
       const quantity = Number(aggregate.quantity || 0);
       if (!quantity) continue;
       await db.stockBook.create(slug)({
@@ -278,7 +528,7 @@ export function useBusinessConfig({
         transactionType,
         movementType,
         direction,
-        productId,
+        productId: aggregate.productId,
         quantityIn: direction === 'in' ? quantity : 0,
         quantityOut: direction === 'out' ? quantity : 0,
         quantity,
@@ -291,12 +541,25 @@ export function useBusinessConfig({
         sourceId,
         sourceCode,
         counterpartyId,
+        originPartyId: aggregate.originPartyId,
         fiscalYear: inferredFiscalYear,
       });
     }
   }
 
-  function returnedProductsSchemaWithProducts(products: string[]) {
+  function returnedProductsSchemaWithProducts(dispatchedItems: SalesItem[]) {
+    const dispatchedByBucket = getItemsByProductAndPartyQuantity(
+      dispatchedItems,
+      productsBySoul as Map<string, ProductStockRecord>,
+    );
+    const dispatchedProductIds = Array.from(
+      new Set(
+        Object.keys(dispatchedByBucket)
+          .map((key) => key.split('::')[0])
+          .filter(Boolean),
+      ),
+    );
+
     return salesItemSchema
       .extend({
         product: z
@@ -306,22 +569,584 @@ export function useBusinessConfig({
             fieldConfig({
               fieldType: 'select',
               customData: {
-                options: products.map((p) => [
+                options: dispatchedProductIds.map((p) => [
                   p,
                   productsBySoul.get(p)?.title ?? '-',
                 ]),
               },
             }),
           ),
+        purchasePartyId: z
+          .string()
+          .min(1, { message: 'Purchase party is required.' })
+          .describe('Purchase Party')
+          .superRefine(
+            fieldConfig({
+              fieldType: 'select',
+              customData: {
+                derive: ({ formValues, rowPath }) => {
+                  const row = rowPath.reduce<unknown>((acc, key) => {
+                    if (!acc || typeof acc !== 'object') return undefined;
+                    return (acc as Record<string, unknown>)[key];
+                  }, formValues);
+                  const selectedProductId =
+                    row && typeof row === 'object' && 'product' in row
+                      ? String((row as { product?: string }).product || '')
+                      : '';
+
+                  const options = Object.entries(dispatchedByBucket).flatMap(
+                    ([bucketKey, quantity]) => {
+                      const [productId, partyId] = bucketKey.split('::');
+                      if (productId !== selectedProductId) return [];
+                      const partyLabel =
+                        partyId === UNASSIGNED_STOCK_BUCKET
+                          ? 'Unassigned'
+                          : partiesBySoul.get(partyId)?.name || partyId;
+                      return [
+                        [
+                          partyId,
+                          `${partyLabel} - Dispatched: ${Number(quantity || 0)}`,
+                        ] as [string, string],
+                      ];
+                    },
+                  );
+
+                  return {
+                    customData: {
+                      options,
+                    },
+                  };
+                },
+              },
+            }),
+          ),
       })
       .array()
       .optional()
+      .superRefine((items, ctx) => {
+        if (!items?.length) return;
+
+        const returnedByBucket = new Map<string, number>();
+        const indexesByBucket = new Map<string, number[]>();
+
+        items.forEach((item, index) => {
+          const productId = resolveSalesItemProductId(item);
+          if (!productId || !item.purchasePartyId) return;
+          const adjustedQuantity = getAdjustedQuantity(
+            item,
+            productsBySoul.get(productId),
+          );
+          const key = `${productId}::${item.purchasePartyId}`;
+          returnedByBucket.set(
+            key,
+            (returnedByBucket.get(key) || 0) + adjustedQuantity,
+          );
+          indexesByBucket.set(key, [
+            ...(indexesByBucket.get(key) || []),
+            index,
+          ]);
+        });
+
+        for (const [bucketKey, returnedQty] of returnedByBucket.entries()) {
+          const dispatchedQty = Number(dispatchedByBucket[bucketKey] || 0);
+          if (returnedQty <= dispatchedQty) continue;
+
+          const [productId, partyId] = bucketKey.split('::');
+          const productTitle =
+            productsBySoul.get(productId)?.title ?? 'This product';
+          const partyName =
+            partyId === UNASSIGNED_STOCK_BUCKET
+              ? 'Unassigned'
+              : partiesBySoul.get(partyId)?.name || 'selected party';
+          const message =
+            dispatchedQty > 0
+              ? `${productTitle} can return at most ${dispatchedQty} for ${partyName}. You entered ${returnedQty}.`
+              : `${productTitle} was not dispatched for ${partyName}.`;
+          const indexes = indexesByBucket.get(bucketKey) || [];
+
+          for (const index of indexes) {
+            ctx.addIssue({
+              code: 'custom',
+              message,
+              path: [index, 'quantity'],
+            });
+          }
+        }
+      })
       .describe('Products Returned from Trip');
   }
 
-  const returnedProductsSchema = returnedProductsSchemaWithProducts(
-    products?.map((p) => p._?.soul ?? '') ?? [],
-  );
+  function buildTripReturnedItemSchema() {
+    return salesItemSchema.extend({
+      product: z
+        .string()
+        .describe('Product')
+        .superRefine(
+          fieldConfig({
+            fieldType: 'select',
+            customData: {
+              derive: ({ formValues }) => {
+                const dispatchedItems = Array.isArray(
+                  (formValues as { products?: unknown[] })?.products,
+                )
+                  ? ((formValues as { products?: SalesItem[] }).products ?? [])
+                  : [];
+                const productIds = Array.from(
+                  new Set(
+                    dispatchedItems
+                      .map((item) => resolveSalesItemProductId(item))
+                      .filter((productId): productId is string =>
+                        Boolean(productId),
+                      ),
+                  ),
+                );
+                return {
+                  customData: {
+                    options: productIds.map((productId) => [
+                      productId,
+                      productsBySoul.get(productId)?.title ?? '-',
+                    ]),
+                  },
+                };
+              },
+            },
+          }),
+        ),
+      purchasePartyId: z
+        .string()
+        .min(1, { message: 'Purchase party is required.' })
+        .describe('Purchase Party')
+        .superRefine(
+          fieldConfig({
+            fieldType: 'select',
+            customData: {
+              derive: ({ formValues, rowPath }) => {
+                const row = rowPath.reduce<unknown>((acc, key) => {
+                  if (!acc || typeof acc !== 'object') return undefined;
+                  return (acc as Record<string, unknown>)[key];
+                }, formValues);
+                const selectedProductId =
+                  row && typeof row === 'object' && 'product' in row
+                    ? String((row as { product?: string }).product || '')
+                    : '';
+                const dispatchedItems = Array.isArray(
+                  (formValues as { products?: unknown[] })?.products,
+                )
+                  ? ((formValues as { products?: SalesItem[] }).products ?? [])
+                  : [];
+                const dispatchedByBucket = getItemsByProductAndPartyQuantity(
+                  dispatchedItems,
+                  productsBySoul as Map<string, ProductStockRecord>,
+                );
+                const options = Object.entries(dispatchedByBucket).flatMap(
+                  ([bucketKey, quantity]) => {
+                    const [productId, partyId] = bucketKey.split('::');
+                    if (!partyId || productId !== selectedProductId) return [];
+                    const partyLabel =
+                      partyId === UNASSIGNED_STOCK_BUCKET
+                        ? 'Unassigned'
+                        : partiesBySoul.get(partyId)?.name || partyId;
+                    return [
+                      [
+                        partyId,
+                        `${partyLabel} - Dispatched: ${Number(quantity || 0)}`,
+                      ] as [string, string],
+                    ];
+                  },
+                );
+                return {
+                  customData: {
+                    options,
+                  },
+                };
+              },
+            },
+          }),
+        ),
+      unitPrice: z.number({ coerce: true }).positive().describe('Unit Price'),
+    });
+  }
+
+  function stockAggregateExcludingSource(
+    sourceTable: 'sale' | 'order' | 'trip',
+    sourceId: string | undefined,
+  ) {
+    if (!sourceId) return stockAggregate;
+    return aggregateStockBookEntries(
+      stockBook.filter(
+        (entry) =>
+          !(entry.sourceTable === sourceTable && entry.sourceId === sourceId),
+      ),
+    );
+  }
+
+  function validateOutflowItemsByParty({
+    items,
+    ctx,
+    fieldPath,
+    aggregate,
+  }: {
+    items: SalesItem[] | undefined;
+    ctx: z.RefinementCtx;
+    fieldPath: string;
+    aggregate: ReturnType<typeof aggregateStockBookEntries>;
+  }) {
+    if (!items?.length) return;
+    const totalsByBucket = new Map<string, number>();
+    const indexesByBucket = new Map<string, number[]>();
+
+    items.forEach((item, index) => {
+      const productId = resolveSalesItemProductId(item);
+      if (!productId) return;
+      if (!item.purchasePartyId) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'Purchase party is required.',
+          path: [fieldPath, index, 'purchasePartyId'],
+        });
+        return;
+      }
+      const adjustedQuantity = getAdjustedQuantity(
+        item,
+        productsBySoul.get(productId),
+      );
+      const key = `${productId}::${item.purchasePartyId}`;
+      totalsByBucket.set(
+        key,
+        (totalsByBucket.get(key) || 0) + adjustedQuantity,
+      );
+      indexesByBucket.set(key, [...(indexesByBucket.get(key) || []), index]);
+    });
+
+    for (const [bucketKey, quantity] of totalsByBucket.entries()) {
+      const [productId, partyId] = bucketKey.split('::');
+      const available = getProductPartyAvailability(
+        aggregate,
+        productId,
+        partyId,
+      );
+      if (quantity <= available) continue;
+      const productTitle =
+        productsBySoul.get(productId)?.title ?? 'This product';
+      const partyName =
+        partyId === UNASSIGNED_STOCK_BUCKET
+          ? 'Unassigned'
+          : (partiesBySoul.get(partyId)?.name ?? 'selected party');
+      const indexes = indexesByBucket.get(bucketKey) || [];
+      for (const index of indexes) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `${productTitle} has ${available} available for ${partyName}. You requested ${quantity}.`,
+          path: [fieldPath, index, 'quantity'],
+        });
+      }
+    }
+  }
+
+  function validateReturnedItemsByDispatchedBuckets({
+    dispatchedItems,
+    returnedItems,
+    ctx,
+    fieldPath,
+  }: {
+    dispatchedItems: SalesItem[] | undefined;
+    returnedItems: SalesItem[] | undefined;
+    ctx: z.RefinementCtx;
+    fieldPath: string;
+  }) {
+    if (!returnedItems?.length) return;
+
+    const dispatchedByBucket = getItemsByProductAndPartyQuantity(
+      dispatchedItems,
+      productsBySoul as Map<string, ProductStockRecord>,
+    );
+    const returnedByBucket = new Map<string, number>();
+    const returnedIndexesByBucket = new Map<string, number[]>();
+
+    returnedItems.forEach((item, index) => {
+      const productId = resolveSalesItemProductId(item);
+      if (!productId || !item.purchasePartyId) return;
+      const adjustedQuantity = getAdjustedQuantity(
+        item,
+        productsBySoul.get(productId),
+      );
+      const key = `${productId}::${item.purchasePartyId}`;
+      returnedByBucket.set(
+        key,
+        (returnedByBucket.get(key) || 0) + adjustedQuantity,
+      );
+      returnedIndexesByBucket.set(key, [
+        ...(returnedIndexesByBucket.get(key) || []),
+        index,
+      ]);
+    });
+
+    for (const [bucketKey, returnedQty] of returnedByBucket.entries()) {
+      const dispatchedQty = Number(dispatchedByBucket[bucketKey] || 0);
+      if (returnedQty <= dispatchedQty) continue;
+
+      const [productId, partyId] = bucketKey.split('::');
+      const productTitle =
+        productsBySoul.get(productId)?.title ?? 'This product';
+      const partyName =
+        partyId === UNASSIGNED_STOCK_BUCKET
+          ? 'Unassigned'
+          : partiesBySoul.get(partyId)?.name || 'selected party';
+
+      const message =
+        dispatchedQty > 0
+          ? `${productTitle} can return at most ${dispatchedQty} for ${partyName}. You entered ${returnedQty}.`
+          : `${productTitle} was not dispatched for ${partyName}.`;
+      const indexes = returnedIndexesByBucket.get(bucketKey) || [];
+
+      for (const index of indexes) {
+        ctx.addIssue({
+          code: 'custom',
+          message,
+          path: [fieldPath, index, 'quantity'],
+        });
+      }
+    }
+  }
+
+  function assertOutflowItemsByParty({
+    items,
+    aggregate,
+    contextLabel,
+  }: {
+    items: SalesItem[] | undefined;
+    aggregate: ReturnType<typeof aggregateStockBookEntries>;
+    contextLabel: string;
+  }) {
+    if (!items?.length) {
+      throw new Error(`Cannot process ${contextLabel} without line items.`);
+    }
+
+    const totalsByBucket = new Map<string, number>();
+    for (const item of items) {
+      const productId = resolveSalesItemProductId(item);
+      if (!productId) continue;
+      if (!item.purchasePartyId) {
+        throw new Error(
+          `Purchase party is required for every ${contextLabel} outflow line.`,
+        );
+      }
+      const adjustedQuantity = getAdjustedQuantity(
+        item,
+        productsBySoul.get(productId),
+      );
+      const key = `${productId}::${item.purchasePartyId}`;
+      totalsByBucket.set(
+        key,
+        (totalsByBucket.get(key) || 0) + adjustedQuantity,
+      );
+    }
+
+    for (const [bucketKey, requestedQty] of totalsByBucket.entries()) {
+      const [productId, partyId] = bucketKey.split('::');
+      const available = getProductPartyAvailability(
+        aggregate,
+        productId,
+        partyId,
+      );
+      if (requestedQty <= available) continue;
+      const productTitle =
+        productsBySoul.get(productId)?.title ?? 'This product';
+      const partyName =
+        partyId === UNASSIGNED_STOCK_BUCKET
+          ? 'Unassigned'
+          : partiesBySoul.get(partyId)?.name || 'selected party';
+      throw new Error(
+        `${productTitle} has ${available} available for ${partyName}. Requested ${requestedQty}.`,
+      );
+    }
+  }
+
+  async function reconcileTripReturnStockAndSale({
+    tripId,
+    trip,
+  }: {
+    tripId: string;
+    trip:
+      | {
+          _?: { soul?: string };
+          dispatchTime?: string;
+          returnTime?: string;
+          vehicleId?: string;
+          products?: SalesItem[];
+          returnedProducts?: SalesItem[];
+        }
+      | undefined;
+  }) {
+    if (!trip?.returnTime || !trip?.products?.length) return;
+
+    assertOutflowItemsByParty({
+      items: trip.products,
+      aggregate: stockAggregateExcludingSource('trip', tripId),
+      contextLabel: 'trip dispatch',
+    });
+
+    await clearStockBookEntriesBySource('trip', tripId);
+    await createStockBookEntriesFromItems({
+      sourceTable: 'trip',
+      sourceId: tripId,
+      transactionType: 'stock',
+      movementType: 'tripDispatch',
+      direction: 'out',
+      entryDate: trip.dispatchTime,
+      items: trip.products,
+      particularsPrefix: 'Trip Dispatch',
+      fiscalYear: calculateFiscalYear(),
+      requireOriginPartyId: true,
+    });
+
+    const dispatchedByBucket = getItemsByProductAndPartyQuantity(
+      trip.products,
+      productsBySoul as Map<string, ProductStockRecord>,
+    );
+    const returnedByBucket = getItemsByProductAndPartyQuantity(
+      trip.returnedProducts,
+      productsBySoul as Map<string, ProductStockRecord>,
+    );
+
+    for (const [bucketKey, returnedQty] of Object.entries(returnedByBucket)) {
+      const dispatchedQty = Number(dispatchedByBucket[bucketKey] || 0);
+      const normalizedReturnedQty = Number(returnedQty || 0);
+      if (normalizedReturnedQty <= dispatchedQty) continue;
+      const [productId, partyId] = bucketKey.split('::');
+      const productTitle =
+        productsBySoul.get(productId)?.title ?? 'This product';
+      const partyName =
+        partyId === UNASSIGNED_STOCK_BUCKET
+          ? 'Unassigned'
+          : partiesBySoul.get(partyId)?.name || 'selected party';
+      throw new Error(
+        `${productTitle} can return at most ${dispatchedQty} for ${partyName}. You entered ${normalizedReturnedQty}.`,
+      );
+    }
+
+    const soldProductsByBucket = Object.entries(dispatchedByBucket)
+      .map(([key, dispatchedQty]) => {
+        const soldQty =
+          Number(dispatchedQty || 0) - Number(returnedByBucket[key] || 0);
+        if (soldQty <= 0) return null;
+        const [productId, purchasePartyId] = key.split('::');
+        if (!productId || !purchasePartyId) return null;
+        return {
+          productId,
+          purchasePartyId,
+          quantity: soldQty,
+        };
+      })
+      .filter(
+        (
+          item,
+        ): item is {
+          productId: string;
+          purchasePartyId: string;
+          quantity: number;
+        } => Boolean(item),
+      );
+    const soldByProduct = soldProductsByBucket.reduce(
+      (acc, item) => {
+        acc[item.productId] = (acc[item.productId] || 0) + item.quantity;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    const products = await db.product.get({ keys: [slug] });
+    const productsBySoulFromDb = new Map(
+      products
+        .filter((item) => item?._?.soul)
+        // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
+        .map((item) => [item._?.soul!, item]),
+    );
+
+    await createStockBookEntriesFromItems({
+      sourceTable: 'trip',
+      sourceId: tripId,
+      transactionType: 'stock',
+      movementType: 'tripReturn',
+      direction: 'in',
+      entryDate: trip.returnTime,
+      items: trip.returnedProducts,
+      particularsPrefix: 'Trip Return',
+      fiscalYear: calculateFiscalYear(),
+      requireOriginPartyId: true,
+    });
+
+    if (!soldProductsByBucket.length) return;
+
+    const invoiceItems = Object.entries(soldByProduct).map(
+      ([productId, quantity]) => ({
+        product: productId,
+        quantity,
+        rate: productsBySoulFromDb.get(productId)?.sellingPrice || 0,
+        total:
+          quantity * (productsBySoulFromDb.get(productId)?.sellingPrice || 0),
+      }),
+    );
+
+    const totalAmount = Object.entries(soldByProduct).reduce(
+      (sum, [productId, quantity]) =>
+        sum +
+        quantity * (productsBySoulFromDb.get(productId)?.sellingPrice || 0),
+      0,
+    );
+
+    const vehicles = await db.vehicle.get({ keys: [slug] });
+    const vehicle = vehicles.find((item) => item?._?.soul === trip.vehicleId);
+
+    await db.invoice.create(slug)({
+      type: 'sale',
+      partyId: 'trip-sale',
+      issuedAt: new Date().toISOString(),
+      items: invoiceItems,
+      subTotal: totalAmount,
+      tax: 0,
+      totalAmount,
+      payments: [
+        {
+          paidAt: new Date().toISOString(),
+          paidAmount: totalAmount,
+        },
+      ],
+      paidAmount: totalAmount,
+      paymentStatus: 'paid',
+      fiscalYear: calculateFiscalYear(),
+      vehicleId: trip.vehicleId,
+      tripId: trip._?.soul,
+      description: `Sale from trip ${trip._?.soul} by ${vehicle?.name || 'vehicle'}`,
+    });
+
+    await createStockBookEntriesFromItems({
+      sourceTable: 'trip',
+      sourceId: tripId,
+      transactionType: 'sale',
+      movementType: 'sale',
+      direction: 'out',
+      entryDate: trip.returnTime,
+      items: soldProductsByBucket.map((soldProduct) => ({
+        product: soldProduct.productId,
+        purchasePartyId: soldProduct.purchasePartyId,
+        quantity: soldProduct.quantity,
+        unit: productsBySoulFromDb.get(soldProduct.productId)?.unit || '',
+        unitPrice:
+          Number(
+            productsBySoulFromDb.get(soldProduct.productId)?.sellingPrice,
+          ) || 0,
+        totalAmount:
+          soldProduct.quantity *
+          (Number(
+            productsBySoulFromDb.get(soldProduct.productId)?.sellingPrice,
+          ) || 0),
+      })) as SalesItem[],
+      particularsPrefix: 'Trip Sale',
+      fiscalYear: calculateFiscalYear(),
+      requireOriginPartyId: true,
+    });
+  }
 
   async function deleteInvoiceByPartyId(id: string) {
     const invoices = await db.invoice.get({ keys: [slug] });
@@ -360,59 +1185,8 @@ export function useBusinessConfig({
       {
         schema: 'product',
         slug,
-        async onCreate(data, variables) {
-          const createdId = getMutationId(data);
-          const openingQuantity = Number(variables.stockQuantity || 0);
-          if (!openingQuantity || !createdId) return;
-
-          await db.stockBook.create(slug)({
-            entryDate: new Date().toISOString(),
-            transactionType: 'stock',
-            movementType: 'opening',
-            direction: 'in',
-            productId: createdId,
-            quantityIn: openingQuantity,
-            quantityOut: 0,
-            quantity: openingQuantity,
-            unitRate: Number(variables.costPrice || 0),
-            totalAmount: openingQuantity * Number(variables.costPrice || 0),
-            particulars: 'Opening stock',
-            sourceTable: 'product',
-            sourceId: createdId,
-            sourceCode: toSourceCode(createdId),
-            fiscalYear: calculateFiscalYear(),
-          });
-        },
-        async onUpdate(_, variables, updateContext) {
-          const previousData =
-            (updateContext as UpdateContext<'product'>)?.previousData;
-          const currentData = (updateContext as UpdateContext<'product'>)?.newData;
-          const previousStock = Number(previousData?.stockQuantity || 0);
-          const currentStock = Number(currentData?.stockQuantity || previousStock);
-          const delta = currentStock - previousStock;
-          if (!delta) return;
-
-          await clearStockBookEntriesBySource('manual', variables.id);
-          await db.stockBook.create(slug)({
-            entryDate: new Date().toISOString(),
-            transactionType: 'stock',
-            movementType: 'adjustment',
-            direction: delta > 0 ? 'in' : 'out',
-            productId: variables.id,
-            quantityIn: delta > 0 ? Math.abs(delta) : 0,
-            quantityOut: delta < 0 ? Math.abs(delta) : 0,
-            quantity: Math.abs(delta),
-            unitRate: Number(currentData?.costPrice || previousData?.costPrice || 0),
-            totalAmount:
-              Math.abs(delta) *
-              Number(currentData?.costPrice || previousData?.costPrice || 0),
-            particulars: 'Manual stock adjustment',
-            sourceTable: 'manual',
-            sourceId: variables.id,
-            sourceCode: toSourceCode(variables.id),
-            fiscalYear: calculateFiscalYear(),
-          });
-        },
+        async onCreate() {},
+        async onUpdate() {},
         async onDelete(_, id) {
           await clearStockBookEntriesBySource('product', id);
           await clearStockBookEntriesBySource('manual', id);
@@ -490,7 +1264,9 @@ export function useBusinessConfig({
           items: (items) => {
             const mapped = items?.map((item: SalesItem) => ({
               ...item,
-              product: productsBySoul.get(item.product)?.title ?? '-',
+              product:
+                productsBySoul.get(resolveSalesItemProductId(item))?.title ??
+                '-',
             }));
             if (!mapped) return;
             mapped['#'] = items?.['#'];
@@ -502,7 +1278,7 @@ export function useBusinessConfig({
             if (!data?.items?.length) return;
 
             data.items.forEach((item, index) => {
-              const productId = item?.product;
+              const productId = resolveSalesItemProductId(item);
               if (!productId) return;
 
               const product = productsBySoul.get(productId);
@@ -524,64 +1300,11 @@ export function useBusinessConfig({
           }),
         async onCreate(data, variables) {
           const createdId = getMutationId(data);
-          const products = await db.product.get({ keys: [slug] });
-          const productsBySoul = new Map(
-            products
-              .filter((item) => item?._?.soul)
-              .map((item) => [item._?.soul, item]),
+
+          const invoiceItems = buildInvoiceItems(
+            variables.items,
+            productsBySoul as Map<string, ProductStockRecord>,
           );
-          const itemsByProductIdWithQuantity = variables.items?.reduce(
-            (a, { product, quantity, unit }) => {
-              const productInfo = productsBySoul.get(product);
-              if (!productInfo) return a;
-
-              let adjustedQuantity = quantity;
-              if (productInfo.unit?.includes(':')) {
-                const [unitType, piecesPerUnit] = productInfo.unit.split(':');
-
-                if (unit === unitType) {
-                  adjustedQuantity = quantity * parseInt(piecesPerUnit, 10);
-                }
-              }
-
-              a[product] = (a[product] || 0) + adjustedQuantity;
-              return a;
-            },
-            {} as Record<string, number>,
-          );
-
-          Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(
-            ([productId, quantity]) => {
-              const product = productsBySoul.get(productId);
-              if (!product?._?.soul) return;
-              void db.product.update(slug)({
-                id: product?._?.soul,
-                stockQuantity: product?.stockQuantity + quantity,
-              });
-            },
-          );
-
-          const invoiceItems =
-            variables.items?.map((item) => {
-              const productInfo = productsBySoul.get(item.product);
-              let adjustedQuantity = item.quantity;
-
-              if (productInfo?.unit?.includes(':')) {
-                const [unitType, piecesPerUnit] = productInfo.unit.split(':');
-
-                if (item.unit === unitType) {
-                  adjustedQuantity =
-                    item.quantity * parseInt(piecesPerUnit, 10);
-                }
-              }
-
-              return {
-                product: item.product,
-                quantity: adjustedQuantity,
-                rate: item.unitPrice,
-                total: item.quantity * item.unitPrice,
-              };
-            }) ?? [];
 
           const totalAmount =
             variables.items?.reduce(
@@ -630,36 +1353,6 @@ export function useBusinessConfig({
           const currentStockImport =
             (updateContext as UpdateContext<'stockImport'>)?.newData ??
             stockImport;
-          const previousStockImport =
-            (updateContext as UpdateContext<'stockImport'>)?.previousData ??
-            stockImport;
-          const previousItemsByProduct = getItemsByProductIdWithQuantity(
-            previousStockImport?.items,
-            productsBySoul as Map<string, ProductStockRecord>,
-          );
-          const updatedItemsByProduct = getItemsByProductIdWithQuantity(
-            currentStockImport?.items ?? variables.items,
-            productsBySoul as Map<string, ProductStockRecord>,
-          );
-          const affectedProductIds = new Set([
-            ...Object.keys(previousItemsByProduct),
-            ...Object.keys(updatedItemsByProduct),
-          ]);
-
-          affectedProductIds.forEach((productId) => {
-            const previousQuantity = previousItemsByProduct[productId] || 0;
-            const updatedQuantity = updatedItemsByProduct[productId] || 0;
-            const delta = updatedQuantity - previousQuantity;
-            if (!delta) return;
-
-            const product = productsBySoul.get(productId);
-            if (!product?._?.soul) return;
-            void db.product.update(slug)({
-              id: product._.soul,
-              stockQuantity: Number(product.stockQuantity || 0) + delta,
-            });
-          });
-
           const items = currentStockImport?.items ?? variables.items;
           const totalAmount = getTotalAmount(items);
           const payments = normalizePaymentsWithFallback(
@@ -725,7 +1418,9 @@ export function useBusinessConfig({
           items: (items) => {
             const mapped = items?.map((item: SalesItem) => ({
               ...item,
-              product: productsBySoul.get(item.product)?.title ?? '-',
+              product:
+                productsBySoul.get(resolveSalesItemProductId(item))?.title ??
+                '-',
             }));
             if (!mapped) return;
             mapped['#'] = items?.['#'];
@@ -733,98 +1428,33 @@ export function useBusinessConfig({
           },
         },
         extender: (schema) =>
-          schema.superRefine((data, ctx) => {
-            if (!data?.items) return;
-
-            // Sum quantities per product
-            const totalsByProduct = new Map<string, number>();
-
-            data.items.forEach((item) => {
-              const productId = item?.product;
-              if (!productId) return;
-
-              const qty = Number(item?.quantity ?? 0);
-              if (!Number.isFinite(qty) || qty <= 0) return;
-
-              totalsByProduct.set(
-                productId,
-                (totalsByProduct.get(productId) ?? 0) + qty,
-              );
-            });
-
-            // Validate against stock
-            for (const [productId, total] of totalsByProduct) {
-              const product = productsBySoul.get(productId);
-              const available = Number(product?.stockQuantity ?? 0);
-
-              if (total > available) {
-                // Put the error on each row that uses that product
-                data.items.forEach((item, index) => {
-                  if (item?.product !== productId) return;
-
-                  ctx.addIssue({
-                    code: 'custom',
-                    message: `${product?.title ?? 'This product'} has ${available} in stock. You tried to order ${total}.`,
-                    path: ['items', index, 'quantity'],
-                  });
-                });
-              }
-            }
-          }),
+          schema
+            .extend({
+              items: buildOutflowItemSchema()
+                .array()
+                .min(1, { message: 'Please add at least one item.' })
+                .describe('Items Sold'),
+            })
+            .superRefine((data, ctx) => {
+              validateOutflowItemsByParty({
+                items: data?.items,
+                ctx,
+                fieldPath: 'items',
+                aggregate: stockAggregateExcludingSource('sale', data?._?.soul),
+              });
+            }),
         async onCreate(data, variables) {
           const createdId = getMutationId(data);
-          const itemsByProductIdWithQuantity = variables.items?.reduce(
-            (a, { product, quantity, unit }) => {
-              const productInfo = productsBySoul.get(product);
-              if (!productInfo) return a;
+          assertOutflowItemsByParty({
+            items: variables.items,
+            aggregate: stockAggregateExcludingSource('sale', createdId),
+            contextLabel: 'sale',
+          });
 
-              let adjustedQuantity = quantity;
-              if (productInfo.unit?.includes(':')) {
-                const [unitType, piecesPerUnit] = productInfo.unit.split(':');
-
-                if (unit === unitType) {
-                  adjustedQuantity = quantity * parseInt(piecesPerUnit, 10);
-                }
-              }
-
-              a[product] = (a[product] || 0) + adjustedQuantity;
-              return a;
-            },
-            {} as Record<string, number>,
+          const invoiceItems = buildInvoiceItems(
+            variables.items,
+            productsBySoul as Map<string, ProductStockRecord>,
           );
-
-          Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(
-            ([productId, quantity]) => {
-              const product = productsBySoul.get(productId);
-              if (!product?._?.soul) return;
-              void db.product.update(slug)({
-                id: product._.soul,
-                stockQuantity: product.stockQuantity - quantity,
-              });
-            },
-          );
-
-          const invoiceItems =
-            variables.items?.map((item) => {
-              const productInfo = productsBySoul.get(item.product);
-              let adjustedQuantity = item.quantity;
-
-              if (productInfo?.unit?.includes(':')) {
-                const [unitType, piecesPerUnit] = productInfo.unit.split(':');
-
-                if (item.unit === unitType) {
-                  adjustedQuantity =
-                    item.quantity * parseInt(piecesPerUnit, 10);
-                }
-              }
-
-              return {
-                product: item.product,
-                quantity: adjustedQuantity,
-                rate: item.unitPrice,
-                total: item.quantity * item.unitPrice,
-              };
-            }) ?? [];
 
           const totalAmount =
             variables.items?.reduce(
@@ -837,7 +1467,21 @@ export function useBusinessConfig({
           );
           const paidAmount = getPaidAmountFromPayments(payments);
 
-          void db.invoice.create(slug)({
+          await createStockBookEntriesFromItems({
+            sourceTable: 'sale',
+            sourceId: createdId,
+            transactionType: 'sale',
+            movementType: 'sale',
+            direction: 'out',
+            entryDate: variables.saleDate,
+            items: variables.items,
+            counterpartyId: variables.customerId,
+            particularsPrefix: 'Sale',
+            fiscalYear: calculateFiscalYear(),
+            requireOriginPartyId: true,
+          });
+
+          await db.invoice.create(slug)({
             ...(createdId ? { id: createdId } : {}),
             type: 'sale',
             partyId: variables.customerId,
@@ -854,54 +1498,17 @@ export function useBusinessConfig({
             }),
             fiscalYear: calculateFiscalYear(),
           });
-
-          await createStockBookEntriesFromItems({
-            sourceTable: 'sale',
-            sourceId: createdId,
-            transactionType: 'sale',
-            movementType: 'sale',
-            direction: 'out',
-            entryDate: variables.saleDate,
-            items: variables.items,
-            counterpartyId: variables.customerId,
-            particularsPrefix: 'Sale',
-            fiscalYear: calculateFiscalYear(),
-          });
         },
         async onUpdate(_, variables, updateContext) {
           const sale = salesBySoul.get(variables.id);
           const currentSale =
             (updateContext as UpdateContext<'sale'>)?.newData ?? sale;
-          const previousSale =
-            (updateContext as UpdateContext<'sale'>)?.previousData ?? sale;
-          const previousItemsByProduct = getItemsByProductIdWithQuantity(
-            previousSale?.items,
-            productsBySoul as Map<string, ProductStockRecord>,
-          );
-          const updatedItemsByProduct = getItemsByProductIdWithQuantity(
-            currentSale?.items ?? variables.items,
-            productsBySoul as Map<string, ProductStockRecord>,
-          );
-          const affectedProductIds = new Set([
-            ...Object.keys(previousItemsByProduct),
-            ...Object.keys(updatedItemsByProduct),
-          ]);
-
-          affectedProductIds.forEach((productId) => {
-            const previousQuantity = previousItemsByProduct[productId] || 0;
-            const updatedQuantity = updatedItemsByProduct[productId] || 0;
-            const delta = updatedQuantity - previousQuantity;
-            if (!delta) return;
-
-            const product = productsBySoul.get(productId);
-            if (!product?._?.soul) return;
-            void db.product.update(slug)({
-              id: product._.soul,
-              stockQuantity: Number(product.stockQuantity || 0) - delta,
-            });
-          });
-
           const items = currentSale?.items ?? variables.items;
+          assertOutflowItemsByParty({
+            items,
+            aggregate: stockAggregateExcludingSource('sale', variables.id),
+            contextLabel: 'sale',
+          });
           const totalAmount = getTotalAmount(items);
           const payments = normalizePaymentsWithFallback(
             currentSale?.payments ?? variables.payments,
@@ -909,7 +1516,21 @@ export function useBusinessConfig({
           );
           const paidAmount = getPaidAmountFromPayments(payments);
 
-          db.invoice.update(slug)({
+          await clearStockBookEntriesBySource('sale', variables.id);
+          await createStockBookEntriesFromItems({
+            sourceTable: 'sale',
+            sourceId: variables.id,
+            transactionType: 'sale',
+            movementType: 'sale',
+            direction: 'out',
+            entryDate: currentSale?.saleDate ?? variables.saleDate,
+            items,
+            counterpartyId: currentSale?.customerId ?? variables.customerId,
+            particularsPrefix: 'Sale',
+            fiscalYear: calculateFiscalYear(),
+            requireOriginPartyId: true,
+          });
+          await db.invoice.update(slug)({
             id: variables.id,
             partyId: currentSale?.customerId ?? variables.customerId,
             issuedAt: currentSale?.saleDate ?? variables.saleDate,
@@ -926,19 +1547,6 @@ export function useBusinessConfig({
               totalAmount,
             }),
           });
-          await clearStockBookEntriesBySource('sale', variables.id);
-          await createStockBookEntriesFromItems({
-            sourceTable: 'sale',
-            sourceId: variables.id,
-            transactionType: 'sale',
-            movementType: 'sale',
-            direction: 'out',
-            entryDate: currentSale?.saleDate ?? variables.saleDate,
-            items,
-            counterpartyId: currentSale?.customerId ?? variables.customerId,
-            particularsPrefix: 'Sale',
-            fiscalYear: calculateFiscalYear(),
-          });
         },
         async onDelete(_, id) {
           await clearStockBookEntriesBySource('sale', id);
@@ -953,6 +1561,9 @@ export function useBusinessConfig({
           counterpartyId: (id) =>
             partiesBySoul.get(id)?.name ||
             customersBySoul.get(id)?.name ||
+            (typeof id === 'string' ? (id.split('/').at(-1) ?? id) : '-'),
+          originPartyId: (id) =>
+            partiesBySoul.get(id)?.name ||
             (typeof id === 'string' ? (id.split('/').at(-1) ?? id) : '-'),
           sourceId: (id) =>
             typeof id === 'string' ? (id.split('/').at(-1) ?? id) : '-',
@@ -1015,7 +1626,9 @@ export function useBusinessConfig({
           items: (items) => {
             const mapped = items?.map((item: SalesItem) => ({
               ...item,
-              product: productsBySoul.get(item.product)?.title ?? '-',
+              product:
+                productsBySoul.get(resolveSalesItemProductId(item))?.title ??
+                '-',
             }));
             if (!mapped) return;
             mapped['#'] = items?.['#'];
@@ -1034,7 +1647,9 @@ export function useBusinessConfig({
           items: (items) => {
             const mapped = items?.map((item: SalesItem) => ({
               ...item,
-              product: productsBySoul.get(item.product)?.title ?? '-',
+              product:
+                productsBySoul.get(resolveSalesItemProductId(item))?.title ??
+                '-',
             }));
             if (!mapped) return;
             mapped['#'] = items?.['#'];
@@ -1042,135 +1657,92 @@ export function useBusinessConfig({
           },
         },
         extender: (schema) =>
-          schema.superRefine((data, ctx) => {
-            if (!data?.items) return;
-
-            // Sum quantities per product
-            const totalsByProduct = new Map<string, number>();
-
-            data.items.forEach((item) => {
-              const productId = item?.product;
-              if (!productId) return;
-
-              const qty = Number(item?.quantity ?? 0);
-              if (!Number.isFinite(qty) || qty <= 0) return;
-
-              totalsByProduct.set(
-                productId,
-                (totalsByProduct.get(productId) ?? 0) + qty,
-              );
-            });
-
-            // Validate against stock
-            for (const [productId, total] of totalsByProduct) {
-              const product = productsBySoul.get(productId);
-              const available = Number(product?.stockQuantity ?? 0);
-
-              if (total > available) {
-                // Put the error on each row that uses that product
-                data.items.forEach((item, index) => {
-                  if (item?.product !== productId) return;
-
-                  ctx.addIssue({
-                    code: 'custom',
-                    message: `${product?.title ?? 'This product'} has ${available} in stock. You tried to order ${total}.`,
-                    path: ['items', index, 'quantity'],
-                  });
-                });
-              }
-            }
-          }),
+          schema
+            .extend({
+              items: buildOutflowItemSchema({ requirePurchaseParty: false })
+                .array()
+                .min(1, { message: 'Please add at least one item.' })
+                .describe('Items Ordered'),
+            })
+            .superRefine((data, ctx) => {
+              if (data.orderStatus !== 'done') return;
+              validateOutflowItemsByParty({
+                items: data?.items,
+                ctx,
+                fieldPath: 'items',
+                aggregate: stockAggregateExcludingSource(
+                  'order',
+                  data?._?.soul,
+                ),
+              });
+            }),
         async onCreate(data, variables) {
           if (variables.orderStatus !== 'done') return;
-          const itemsByProductIdWithQuantity = variables.items?.reduce(
-            (a, item) => {
-              const product = productsBySoul.get(item.product);
-              let adjustedQuantity = item.quantity;
-              if (product?.unit?.includes(':')) {
-                const [unitType, piecesPerUnit] = product.unit.split(':');
-                if (item.unit === unitType) {
-                  adjustedQuantity =
-                    item.quantity * parseInt(piecesPerUnit, 10);
-                }
-              }
-              a[item.product] = (a[item.product] || 0) + adjustedQuantity;
-              return a;
-            },
-            {} as Record<string, number>,
-          );
+          const createdId = getMutationId(data);
 
-          Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(
-            ([productId, quantity]) => {
-              const product = productsBySoul.get(productId);
-              if (!product?._?.soul) return;
-              db.product.update(slug)({
-                id: product._.soul,
-                stockQuantity: product.stockQuantity - quantity,
-              });
-            },
-          );
+          try {
+            assertOutflowItemsByParty({
+              items: variables.items,
+              aggregate: stockAggregateExcludingSource('order', createdId),
+              contextLabel: 'order completion',
+            });
 
-          const invoiceItems =
-            variables.items?.map((item) => {
-              const productInfo = productsBySoul.get(item.product);
-              let adjustedQuantity = item.quantity;
+            const invoiceItems = buildInvoiceItems(
+              variables.items,
+              productsBySoul as Map<string, ProductStockRecord>,
+            );
 
-              if (productInfo?.unit?.includes(':')) {
-                const [unitType, piecesPerUnit] = productInfo.unit.split(':');
-                if (item.unit === unitType) {
-                  adjustedQuantity =
-                    item.quantity * parseInt(piecesPerUnit, 10);
-                }
-              }
+            const totalAmount =
+              variables.items?.reduce(
+                (sum, item) => sum + item.quantity * item.unitPrice,
+                0,
+              ) ?? 0;
+            const payments = normalizePaymentsWithFallback(
+              variables.payments,
+              variables.paidAmount,
+            );
+            const paidAmount = getPaidAmountFromPayments(payments);
 
-              return {
-                product: item.product,
-                quantity: adjustedQuantity,
-                rate: item.unitPrice,
-                total: item.quantity * item.unitPrice,
-              };
-            }) ?? [];
+            await createStockBookEntriesFromItems({
+              sourceTable: 'order',
+              sourceId: createdId,
+              transactionType: 'sale',
+              movementType: 'order',
+              direction: 'out',
+              entryDate: new Date().toISOString(),
+              items: variables.items,
+              counterpartyId: variables.customerId,
+              particularsPrefix: 'Order Fulfilled',
+              fiscalYear: calculateFiscalYear(),
+              requireOriginPartyId: true,
+            });
 
-          const totalAmount =
-            variables.items?.reduce(
-              (sum, item) => sum + item.quantity * item.unitPrice,
-              0,
-            ) ?? 0;
-          const payments = normalizePaymentsWithFallback(
-            variables.payments,
-            variables.paidAmount,
-          );
-          const paidAmount = getPaidAmountFromPayments(payments);
-
-          void db.invoice.create(slug)({
-            type: 'sale',
-            partyId: variables.customerId,
-            issuedAt: new Date().toISOString(),
-            items: invoiceItems,
-            subTotal: totalAmount,
-            tax: 0,
-            totalAmount,
-            payments,
-            paidAmount,
-            paymentStatus: getPaymentStatusFromTotals({
-              paidAmount,
+            await db.invoice.create(slug)({
+              type: 'sale',
+              partyId: variables.customerId,
+              issuedAt: new Date().toISOString(),
+              items: invoiceItems,
+              subTotal: totalAmount,
+              tax: 0,
               totalAmount,
-            }),
-            fiscalYear: calculateFiscalYear(),
-          });
-
-          await createStockBookEntriesFromItems({
-            sourceTable: 'order',
-            sourceId: getMutationId(data),
-            transactionType: 'sale',
-            movementType: 'order',
-            direction: 'out',
-            entryDate: new Date().toISOString(),
-            items: variables.items,
-            counterpartyId: variables.customerId,
-            particularsPrefix: 'Order Fulfilled',
-            fiscalYear: calculateFiscalYear(),
-          });
+              payments,
+              paidAmount,
+              paymentStatus: getPaymentStatusFromTotals({
+                paidAmount,
+                totalAmount,
+              }),
+              fiscalYear: calculateFiscalYear(),
+            });
+          } catch (error) {
+            if (createdId) {
+              await clearStockBookEntriesBySource('order', createdId);
+              await db.order.update(slug)({
+                id: createdId,
+                orderStatus: 'pending',
+              });
+            }
+            throw error;
+          }
         },
         async onUpdate(_, variables, updateContext) {
           if (variables.orderStatus !== 'done') return;
@@ -1183,96 +1755,68 @@ export function useBusinessConfig({
             ordersBySoul.get(variables.id);
           if (!order?.items?.length || !order?.customerId) return;
 
-          const itemsByProductIdWithQuantity = order.items?.reduce(
-            (a, item) => {
-              const product = productsBySoul.get(item.product);
-              let adjustedQuantity = item.quantity;
-              if (product?.unit?.includes(':')) {
-                const [unitType, piecesPerUnit] = product.unit.split(':');
-                if (item.unit === unitType) {
-                  adjustedQuantity =
-                    item.quantity * parseInt(piecesPerUnit, 10);
-                }
-              }
-              a[item.product] = (a[item.product] || 0) + adjustedQuantity;
-              return a;
-            },
-            {} as Record<string, number>,
-          );
+          try {
+            assertOutflowItemsByParty({
+              items: order.items,
+              aggregate: stockAggregateExcludingSource('order', variables.id),
+              contextLabel: 'order completion',
+            });
 
-          Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(
-            ([productId, quantity]) => {
-              const product = productsBySoul.get(productId);
-              if (!product?._?.soul) return;
-              db.product.update(slug)({
-                id: product._.soul,
-                stockQuantity: product.stockQuantity - quantity,
-              });
-            },
-          );
+            const invoiceItems = buildInvoiceItems(
+              order.items,
+              productsBySoul as Map<string, ProductStockRecord>,
+            );
 
-          const invoiceItems =
-            order.items?.map((item) => {
-              const productInfo = productsBySoul.get(item.product);
-              let adjustedQuantity = item.quantity;
+            const totalAmount =
+              order.items?.reduce(
+                (sum, item) => sum + item.quantity * item.unitPrice,
+                0,
+              ) ?? 0;
+            const payments = normalizePaymentsWithFallback(
+              order.payments,
+              order.paidAmount,
+            );
+            const paidAmount = getPaidAmountFromPayments(payments);
 
-              if (productInfo?.unit?.includes(':')) {
-                const [unitType, piecesPerUnit] = productInfo.unit.split(':');
-                if (item.unit === unitType) {
-                  adjustedQuantity =
-                    item.quantity * parseInt(piecesPerUnit, 10);
-                }
-              }
+            await clearStockBookEntriesBySource('order', variables.id);
+            await createStockBookEntriesFromItems({
+              sourceTable: 'order',
+              sourceId: variables.id,
+              transactionType: 'sale',
+              movementType: 'order',
+              direction: 'out',
+              entryDate: new Date().toISOString(),
+              items: order.items,
+              counterpartyId: order.customerId,
+              particularsPrefix: 'Order Fulfilled',
+              fiscalYear: calculateFiscalYear(),
+              requireOriginPartyId: true,
+            });
 
-              return {
-                product: item.product,
-                quantity: adjustedQuantity,
-                rate: item.unitPrice,
-                total: item.quantity * item.unitPrice,
-              };
-            }) ?? [];
-
-          const totalAmount =
-            order.items?.reduce(
-              (sum, item) => sum + item.quantity * item.unitPrice,
-              0,
-            ) ?? 0;
-          const payments = normalizePaymentsWithFallback(
-            order.payments,
-            order.paidAmount,
-          );
-          const paidAmount = getPaidAmountFromPayments(payments);
-
-          db.invoice.create(slug)({
-            type: 'sale',
-            partyId: order.customerId,
-            issuedAt: new Date().toISOString(),
-            items: invoiceItems,
-            subTotal: totalAmount,
-            tax: 0,
-            totalAmount,
-            payments,
-            paidAmount,
-            paymentStatus: getPaymentStatusFromTotals({
-              paidAmount,
+            await db.invoice.create(slug)({
+              type: 'sale',
+              partyId: order.customerId,
+              issuedAt: new Date().toISOString(),
+              items: invoiceItems,
+              subTotal: totalAmount,
+              tax: 0,
               totalAmount,
-            }),
-            fiscalYear: calculateFiscalYear(),
-          });
-
-          await clearStockBookEntriesBySource('order', variables.id);
-          await createStockBookEntriesFromItems({
-            sourceTable: 'order',
-            sourceId: variables.id,
-            transactionType: 'sale',
-            movementType: 'order',
-            direction: 'out',
-            entryDate: new Date().toISOString(),
-            items: order.items,
-            counterpartyId: order.customerId,
-            particularsPrefix: 'Order Fulfilled',
-            fiscalYear: calculateFiscalYear(),
-          });
+              payments,
+              paidAmount,
+              paymentStatus: getPaymentStatusFromTotals({
+                paidAmount,
+                totalAmount,
+              }),
+              fiscalYear: calculateFiscalYear(),
+            });
+          } catch (error) {
+            await clearStockBookEntriesBySource('order', variables.id);
+            await db.order.update(slug)({
+              id: variables.id,
+              orderStatus: 'pending',
+            });
+            throw error;
+          }
         },
         async onDelete(_, id) {
           await clearStockBookEntriesBySource('order', id);
@@ -1290,7 +1834,9 @@ export function useBusinessConfig({
           products: (items) => {
             const mapped = items?.map((item: SalesItem) => ({
               ...item,
-              product: productsBySoul.get(item.product)?.title ?? '-',
+              product:
+                productsBySoul.get(resolveSalesItemProductId(item))?.title ??
+                '-',
               totalAmount:
                 Number(item.quantity || 0) * Number(item.unitPrice || 0),
             }));
@@ -1301,7 +1847,9 @@ export function useBusinessConfig({
           returnedProducts: (items) => {
             const mapped = items?.map((item: SalesItem) => ({
               ...item,
-              product: productsBySoul.get(item.product)?.title ?? '-',
+              product:
+                productsBySoul.get(resolveSalesItemProductId(item))?.title ??
+                '-',
               totalAmount:
                 Number(item.quantity || 0) * Number(item.unitPrice || 0),
             }));
@@ -1313,85 +1861,40 @@ export function useBusinessConfig({
         extender: (schema) =>
           schema
             .extend({
-              returnedProducts: returnedProductsSchema,
+              products: buildOutflowItemSchema()
+                .array()
+                .min(1, {
+                  message: 'At least one product must be sent on a trip.',
+                })
+                .describe('Products Sent on Trip'),
+              returnedProducts: buildTripReturnedItemSchema()
+                .array()
+                .optional()
+                .describe('Products Returned from Trip'),
             })
             .superRefine((data, ctx) => {
-              if (!data?.products) return;
-
-              // Sum quantities per product
-              const totalsByProduct = new Map<string, number>();
-
-              data.products.forEach((item) => {
-                const productId = item?.product;
-                if (!productId) return;
-
-                const qty = Number(item?.quantity ?? 0);
-                if (!Number.isFinite(qty) || qty <= 0) return;
-
-                totalsByProduct.set(
-                  productId,
-                  (totalsByProduct.get(productId) ?? 0) + qty,
-                );
+              validateOutflowItemsByParty({
+                items: data?.products,
+                ctx,
+                fieldPath: 'products',
+                aggregate: stockAggregateExcludingSource('trip', data?._?.soul),
               });
-
-              // Validate against stock
-              for (const [productId, total] of totalsByProduct) {
-                const product = productsBySoul.get(productId);
-                const available = Number(product?.stockQuantity ?? 0);
-
-                if (total > available) {
-                  // Put the error on each row that uses that product
-                  data.products.forEach((item, index) => {
-                    if (item?.product !== productId) return;
-
-                    ctx.addIssue({
-                      code: 'custom',
-                      message: `${product?.title ?? 'This product'} has ${available} in stock. You tried to order ${total}.`,
-                      path: ['items', index, 'quantity'],
-                    });
-                  });
-                }
-              }
+              validateReturnedItemsByDispatchedBuckets({
+                dispatchedItems: data?.products,
+                returnedItems: data?.returnedProducts,
+                ctx,
+                fieldPath: 'returnedProducts',
+              });
             }),
         async onCreate(data, variables) {
-          const products = await db.product.get({ keys: [slug] });
-          const productsBySoul = new Map(
-            products
-              .filter((item) => item?._?.soul)
-              .map((item) => [item._?.soul, item]),
-          );
-
-          const itemsByProductIdWithQuantity = variables.products?.reduce(
-            (a, { product, quantity, unit }) => {
-              const productInfo = productsBySoul.get(product);
-              if (!productInfo) return a;
-
-              let adjustedQuantity = quantity;
-              if (productInfo.unit?.includes(':')) {
-                const [unitType, piecesPerUnit] = productInfo.unit.split(':');
-
-                if (unit === unitType) {
-                  adjustedQuantity = quantity * parseInt(piecesPerUnit, 10);
-                }
-              }
-
-              a[product] = (a[product] || 0) + adjustedQuantity;
-              return a;
-            },
-            {} as Record<string, number>,
-          );
-
-          Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(
-            ([productId, quantity]) => {
-              const product = productsBySoul.get(productId);
-              if (!product?._?.soul) return;
-              void db.product.update(slug)({
-                id: product._.soul,
-                stockQuantity: product.stockQuantity - quantity,
-              });
-            },
-          );
-
+          assertOutflowItemsByParty({
+            items: variables.products,
+            aggregate: stockAggregateExcludingSource(
+              'trip',
+              getMutationId(data),
+            ),
+            contextLabel: 'trip dispatch',
+          });
           await createStockBookEntriesFromItems({
             sourceTable: 'trip',
             sourceId: getMutationId(data),
@@ -1402,6 +1905,7 @@ export function useBusinessConfig({
             items: variables.products,
             particularsPrefix: 'Trip Dispatch',
             fiscalYear: calculateFiscalYear(),
+            requireOriginPartyId: true,
           });
         },
         async onUpdate(_, variables, updateContext) {
@@ -1414,153 +1918,9 @@ export function useBusinessConfig({
             (updateContext as UpdateContext<'trip'>)?.newData ??
             tripsBySoul.get(variables.id);
           if (!trip?.returnTime || !trip?.products?.length) return;
-
-          await clearStockBookEntriesBySource('trip', variables.id);
-          await createStockBookEntriesFromItems({
-            sourceTable: 'trip',
-            sourceId: variables.id,
-            transactionType: 'stock',
-            movementType: 'tripDispatch',
-            direction: 'out',
-            entryDate: trip.dispatchTime,
-            items: trip.products,
-            particularsPrefix: 'Trip Dispatch',
-            fiscalYear: calculateFiscalYear(),
-          });
-
-          const soldProducts = trip.products
-            .map((dispatchedProduct) => {
-              const returnedProduct = trip.returnedProducts?.find(
-                (rp) => rp.product === dispatchedProduct.product,
-              );
-              const returnedQty = returnedProduct
-                ? returnedProduct.quantity
-                : 0;
-              const soldQty = dispatchedProduct.quantity - returnedQty;
-
-              return {
-                productId: dispatchedProduct.product,
-                quantity: Math.max(0, soldQty),
-              };
-            })
-            .filter((sp) => sp.quantity > 0);
-
-          const products = await db.product.get({ keys: [slug] });
-          const productsBySoul = new Map(
-            products
-              .filter((item) => item?._?.soul)
-              // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
-              .map((item) => [item._?.soul!, item]),
-          );
-
-          for (const returnedProduct of trip.returnedProducts ?? []) {
-            const product = productsBySoul.get(returnedProduct.product);
-            if (!product?._?.soul) continue;
-
-            let adjustedQuantity = returnedProduct.quantity;
-
-            if (product.unit?.includes(':')) {
-              const [unitType, piecesPerUnit] = product.unit.split(':');
-              if (returnedProduct.unit === unitType) {
-                adjustedQuantity =
-                  returnedProduct.quantity * parseInt(piecesPerUnit, 10);
-              }
-            }
-
-            void db.product.update(slug)({
-              id: product._.soul,
-              stockQuantity: product.stockQuantity + adjustedQuantity,
-            });
-          }
-
-          await createStockBookEntriesFromItems({
-            sourceTable: 'trip',
-            sourceId: variables.id,
-            transactionType: 'stock',
-            movementType: 'tripReturn',
-            direction: 'in',
-            entryDate: trip.returnTime,
-            items: trip.returnedProducts,
-            particularsPrefix: 'Trip Return',
-            fiscalYear: calculateFiscalYear(),
-          });
-
-          if (!soldProducts.length) return;
-
-          const invoiceItems = soldProducts.map((item) => ({
-            product: item.productId,
-            quantity: item.quantity,
-            rate: productsBySoul.get(item.productId)?.sellingPrice || 0,
-            total:
-              item.quantity *
-              (productsBySoul.get(item.productId)?.sellingPrice || 0),
-          }));
-
-          const totalAmount = soldProducts.reduce(
-            (sum, item) =>
-              sum +
-              item.quantity *
-                (productsBySoul.get(item.productId)?.sellingPrice || 0),
-            0,
-          );
-
-          const vehicles = await db.vehicle.get({ keys: [slug] });
-          const vehicle = vehicles.find(
-            (item) => item?._?.soul === trip.vehicleId,
-          );
-
-          void db.invoice.create(slug)({
-            type: 'sale',
-            partyId: 'trip-sale',
-            issuedAt: new Date().toISOString(),
-            items: invoiceItems,
-            subTotal: totalAmount,
-            tax: 0,
-            totalAmount,
-            payments: [
-              {
-                paidAt: new Date().toISOString(),
-                paidAmount: totalAmount,
-              },
-            ],
-            paidAmount: totalAmount,
-            paymentStatus: 'paid',
-            fiscalYear: calculateFiscalYear(),
-            vehicleId: trip.vehicleId,
-            tripId: trip._?.soul,
-            description: `Sale from trip ${trip._?.soul} by ${vehicle?.name || 'vehicle'}`,
-          });
-
-          soldProducts.forEach((soldProduct) => {
-            const product = productsBySoul.get(soldProduct.productId);
-            if (product?._?.soul) {
-              void db.product.update(slug)({
-                id: product._.soul,
-                stockQuantity: product.stockQuantity - soldProduct.quantity,
-              });
-            }
-          });
-
-          await createStockBookEntriesFromItems({
-            sourceTable: 'trip',
-            sourceId: variables.id,
-            transactionType: 'sale',
-            movementType: 'sale',
-            direction: 'out',
-            entryDate: trip.returnTime,
-            items: soldProducts.map((soldProduct) => ({
-              product: soldProduct.productId,
-              quantity: soldProduct.quantity,
-              unit: productsBySoul.get(soldProduct.productId)?.unit || '',
-              unitPrice:
-                Number(productsBySoul.get(soldProduct.productId)?.sellingPrice) || 0,
-              totalAmount:
-                soldProduct.quantity *
-                (Number(productsBySoul.get(soldProduct.productId)?.sellingPrice) ||
-                  0),
-            })) as SalesItem[],
-            particularsPrefix: 'Trip Sale',
-            fiscalYear: calculateFiscalYear(),
+          await reconcileTripReturnStockAndSale({
+            tripId: variables.id,
+            trip,
           });
         },
         async onDelete(_, id) {
@@ -1592,14 +1952,17 @@ export function useBusinessConfig({
                               <div className="text-center">Returned</div>
                             </div>
                             {row.original.products?.map((product) => {
+                              const productId = resolveSalesItemProductId(
+                                product as SalesItemRuntime,
+                              );
                               return (
                                 <div
                                   key={product._?.soul ?? ''}
                                   className="grid grid-cols-3 gap-2 text-sm"
                                 >
                                   <div>
-                                    {productsBySoul.get(product.product)
-                                      ?.title || 'Unknown Product'}
+                                    {productsBySoul.get(productId)?.title ||
+                                      'Unknown Product'}
                                   </div>
                                   <div className="text-center">
                                     {product.quantity}
@@ -1616,6 +1979,9 @@ export function useBusinessConfig({
                                 row.original.products ?? []
                               ).map((p) => ({
                                 ...p,
+                                product: resolveSalesItemProductId(
+                                  p as SalesItemRuntime,
+                                ),
                                 totalAmount:
                                   (p.quantity ?? 0) * (p.unitPrice ?? 0),
                               })),
@@ -1623,22 +1989,30 @@ export function useBusinessConfig({
                             schema={z.object({
                               returnedProducts:
                                 returnedProductsSchemaWithProducts(
-                                  row.original.products?.map(
-                                    (p) => p.product,
-                                  ) ?? [],
+                                  row.original.products ?? [],
                                 ),
                             })}
                             onSubmit={async (data) => {
-                              void db.trip.update(slug)({
-                                id: row.original._?.soul ?? '',
-                                returnTime: new Date().toISOString(),
+                              const tripId = row.original._?.soul ?? '';
+                              if (!tripId) return;
+                              const returnTime = new Date().toISOString();
+                              const previousTrip =
+                                tripsBySoul.get(tripId) ?? row.original;
+                              const nextTrip = {
+                                ...previousTrip,
+                                returnTime,
+                                returnedProducts: data.returnedProducts,
+                              };
+
+                              await db.trip.update(slug)({
+                                id: tripId,
+                                returnTime,
                                 returnedProducts: data.returnedProducts,
                               });
-
-                              // const closeBtn = document.querySelector(
-                              //   '[data-state="open"] [data-dismiss]',
-                              // );
-                              // if (closeBtn) (closeBtn as HTMLElement).click();
+                              await reconcileTripReturnStockAndSale({
+                                tripId,
+                                trip: nextTrip,
+                              });
                               closeDialog();
                             }}
                           >

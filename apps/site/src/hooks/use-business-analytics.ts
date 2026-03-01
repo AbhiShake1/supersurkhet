@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { api } from '@/lib/api';
 import NepaliDate from 'nepali-datetime';
 import type { Sale, StockImport } from '@/lib/schemas/sales';
+import { aggregateStockBookEntries } from '@/lib/stock-book-aggregation';
 import {
   lineTotal,
   toFiniteNumber,
@@ -20,6 +21,7 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
   const { data: stockImports = [] } = api.stockImport.useGet({ keys: [slug] });
   const { data: parties = [] } = api.party.useGet({ keys: [slug] });
   const { data: products = [] } = api.product.useGet({ keys: [slug] });
+  const { data: stockBook = [] } = api.stockBook.useGet({ keys: [slug] });
 
   const productsBySoul = useMemo(
     // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
@@ -219,48 +221,22 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
 
   // Current Inventory Levels
   const currentInventory = useMemo(() => {
-    // Start with initial stock from products
-    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     const inventory = new Map<string, { product: any; currentStock: number }>();
+    const aggregate = aggregateStockBookEntries(stockBook);
 
-    // Initialize with product stock quantities
     products.forEach((product) => {
       if (product._?.soul) {
         inventory.set(product._.soul, {
           product,
-          currentStock: toFiniteNumber(product.stockQuantity),
+          currentStock: toFiniteNumber(
+            aggregate.productTotalAvailable[product._.soul],
+          ),
         });
       }
     });
 
-    // Subtract sales
-    // filteredSales.forEach(sale => {
-    //   sale.items?.forEach(item => {
-    //     if (inventory.has(item.product)) {
-    //       const current = inventory.get(item.product)!;
-    //       inventory.set(item.product, {
-    //         ...current,
-    //         currentStock: current.currentStock - item.quantity
-    //       });
-    //     }
-    //   });
-    // });
-
-    // Add stock imports
-    // filteredStockImports.forEach(imp => {
-    //   imp.items?.forEach(item => {
-    //     if (inventory.has(item.product)) {
-    //       const current = inventory.get(item.product)!;
-    //       inventory.set(item.product, {
-    //         ...current,
-    //         currentStock: current.currentStock + item.quantity
-    //       });
-    //     }
-    //   });
-    // });
-
     return Array.from(inventory.values());
-  }, [products]);
+  }, [products, stockBook]);
 
   // Low Stock Items
   const lowStockItems = useMemo(() => {
