@@ -1,3 +1,5 @@
+import { Save } from 'lucide-react';
+import type { ZodObject } from 'zod';
 import { AutoForm } from '@/components/ui/autoform';
 import { SubmitButton } from '@/components/ui/autoform/components/SubmitButton';
 import { Button } from '@/components/ui/button';
@@ -10,9 +12,6 @@ import {
   CredenzaHeader,
   CredenzaTitle,
 } from '@/components/ui/credenza';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Save } from 'lucide-react';
-import type { ZodObject } from 'zod';
 
 interface EditRowDialogProps<T, S> {
   open: boolean;
@@ -34,13 +33,16 @@ export function EditRowDialog<T, S extends ZodObject<any>>({
 }: EditRowDialogProps<T, S>) {
   return (
     <Credenza open={open} onOpenChange={onOpenChange}>
-      <CredenzaContent>
-        <CredenzaHeader>
+      <CredenzaContent
+        className="flex flex-col"
+        dialogMaxWidth="min(1320px, 94vw)"
+      >
+        <CredenzaHeader className="min-w-0">
           <CredenzaTitle>Edit</CredenzaTitle>
           <CredenzaDescription>Edit details</CredenzaDescription>
         </CredenzaHeader>
         <CredenzaBody asChild>
-          <ScrollArea className="h-[50vh] max-h-[60vh]">
+          <div className="min-h-0 w-full max-h-[72dvh] overflow-auto pr-1">
             <AutoForm
               formProps={{ id: 'edit-row-form' }}
               schema={schema}
@@ -50,7 +52,7 @@ export function EditRowDialog<T, S extends ZodObject<any>>({
                 onOpenChange(false);
               }}
             />
-          </ScrollArea>
+          </div>
         </CredenzaBody>
         <CredenzaFooter className="flex flex-col gap-2 pt-2 pb-4">
           <Button
