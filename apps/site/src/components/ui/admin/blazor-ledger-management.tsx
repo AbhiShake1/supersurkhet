@@ -1,6 +1,6 @@
 'use client';
 
-import { format } from 'date-fns';
+import { differenceInCalendarDays, format } from 'date-fns';
 import { AlertCircle, BookText, Loader2, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -329,7 +329,7 @@ function _BlazorLedgerManagement({ slug }: { slug: string }) {
               </div>
 
               <div className="max-h-[min(65vh,42rem)] overflow-auto rounded-md border">
-                <table className="min-w-[860px] w-full text-sm">
+                <table className="min-w-[1020px] w-full text-sm">
                   <thead className="bg-muted/40">
                     <tr>
                       <th className="px-3 py-2 text-left">Date</th>
@@ -338,6 +338,9 @@ function _BlazorLedgerManagement({ slug }: { slug: string }) {
                       <th className="px-3 py-2 text-right">Debit</th>
                       <th className="px-3 py-2 text-right">Credit</th>
                       <th className="px-3 py-2 text-right">Balance</th>
+                      <th className="whitespace-nowrap px-3 py-2 text-right">
+                        Days Ago
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -362,6 +365,9 @@ function _BlazorLedgerManagement({ slug }: { slug: string }) {
                         <td className="px-3 py-2 text-right font-semibold tabular-nums">
                           {formatCurrency(entry.balance)}
                         </td>
+                        <td className="px-3 py-2 text-right tabular-nums">
+                          {formatDaysAgo(entry.date)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -380,4 +386,16 @@ function formatDate(value?: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return 'N/A';
   return format(date, 'dd MMM yyyy');
+}
+
+function formatDaysAgo(value?: string) {
+  if (!value) return 'N/A';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'N/A';
+
+  const days = differenceInCalendarDays(new Date(), date);
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days > 0) return `${days}D`;
+  return `In ${Math.abs(days)}D`;
 }
