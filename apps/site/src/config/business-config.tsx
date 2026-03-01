@@ -45,13 +45,13 @@ type PaymentInput = {
   paidAt?: string | null;
   paidAmount?: number | string | null;
   paymentMethod?:
-    | 'cash'
-    | 'card'
-    | 'bankTransfer'
-    | 'credit'
-    | 'online'
-    | 'check'
-    | null;
+  | 'cash'
+  | 'card'
+  | 'bankTransfer'
+  | 'credit'
+  | 'online'
+  | 'check'
+  | null;
   bankVoucherNumber?: string | null;
 } | null;
 
@@ -290,9 +290,8 @@ export function useBusinessConfig({
     );
     const productPartyId = getProductLinkedPartyId(product);
     if (includeParty) {
-      return `${product?.title ?? '-'} | ${
-        productPartyId ? getPartyDisplayName(productPartyId) : '-'
-      } | Available: ${available}`;
+      return `${product?.title ?? '-'} | ${productPartyId ? getPartyDisplayName(productPartyId) : '-'
+        } | Available: ${available}`;
     }
 
     return `${product?.title ?? '-'} - Available: ${available}`;
@@ -300,10 +299,8 @@ export function useBusinessConfig({
 
   function buildOutflowItemSchema({
     includeProductPartyInLabel = false,
-    includePurchasePartyField = true,
   }: {
     includeProductPartyInLabel?: boolean;
-    includePurchasePartyField?: boolean;
   } = {}) {
     const purchasePartyField = z
       .string()
@@ -415,12 +412,6 @@ export function useBusinessConfig({
       unitPrice: createSoftDerivedSellingUnitPriceField(),
     });
 
-    if (!includePurchasePartyField) {
-      return schemaWithComputedProduct.omit({
-        purchasePartyId: true,
-      });
-    }
-
     return schemaWithComputedProduct.extend({
       purchasePartyId: purchasePartyField,
     });
@@ -476,24 +467,24 @@ export function useBusinessConfig({
     requireOriginPartyId = false,
   }: {
     sourceTable:
-      | 'product'
-      | 'stockImport'
-      | 'sale'
-      | 'order'
-      | 'trip'
-      | 'manual'
-      | 'fiscalClose';
+    | 'product'
+    | 'stockImport'
+    | 'sale'
+    | 'order'
+    | 'trip'
+    | 'manual'
+    | 'fiscalClose';
     sourceId?: string;
     transactionType: 'purchase' | 'sale' | 'stock';
     movementType:
-      | 'opening'
-      | 'closing'
-      | 'purchase'
-      | 'sale'
-      | 'order'
-      | 'tripDispatch'
-      | 'tripReturn'
-      | 'adjustment';
+    | 'opening'
+    | 'closing'
+    | 'purchase'
+    | 'sale'
+    | 'order'
+    | 'tripDispatch'
+    | 'tripReturn'
+    | 'adjustment';
     direction: 'in' | 'out';
     entryDate?: string;
     items: SalesItem[] | undefined;
@@ -979,15 +970,15 @@ export function useBusinessConfig({
   }: {
     tripId: string;
     trip:
-      | {
-          _?: { soul?: string };
-          dispatchTime?: string;
-          returnTime?: string;
-          vehicleId?: string;
-          products?: SalesItem[];
-          returnedProducts?: SalesItem[];
-        }
-      | undefined;
+    | {
+      _?: { soul?: string };
+      dispatchTime?: string;
+      returnTime?: string;
+      vehicleId?: string;
+      products?: SalesItem[];
+      returnedProducts?: SalesItem[];
+    }
+    | undefined;
   }) {
     if (!trip?.returnTime || !trip?.products?.length) return;
 
@@ -1196,8 +1187,8 @@ export function useBusinessConfig({
       {
         schema: 'product',
         slug,
-        async onCreate() {},
-        async onUpdate() {},
+        async onCreate() { },
+        async onUpdate() { },
         async onDelete(_, id) {
           await clearStockBookEntriesBySource('product', id);
           await clearStockBookEntriesBySource('manual', id);
@@ -1314,7 +1305,7 @@ export function useBusinessConfig({
 
           const invoiceItems = buildInvoiceItems(
             variables.items,
-            productsBySoul as Map<string, ProductStockRecord>,
+            productsBySoul,
           );
 
           const totalAmount =
@@ -1419,12 +1410,12 @@ export function useBusinessConfig({
           saleDate: (date) =>
             date
               ? new Date(date).toLocaleString('en-US', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
               : '-',
           items: (items) => {
             const mapped = items?.map((item: SalesItem) => ({
@@ -1443,7 +1434,6 @@ export function useBusinessConfig({
             .extend({
               items: buildOutflowItemSchema({
                 includeProductPartyInLabel: true,
-                includePurchasePartyField: false,
               })
                 .array()
                 .min(1, { message: 'Please add at least one item.' })
@@ -1622,20 +1612,20 @@ export function useBusinessConfig({
           issuedAt: (date) =>
             date
               ? new Date(date).toLocaleString('en-US', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
               : '-',
           dueDate: (date) =>
             date
               ? new Date(date).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                })
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+              })
               : '-',
           items: (items) => {
             const mapped = items?.map((item: SalesItem) => ({
