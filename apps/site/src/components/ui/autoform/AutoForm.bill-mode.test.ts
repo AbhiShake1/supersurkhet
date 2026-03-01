@@ -23,6 +23,7 @@ describe('AutoForm bill mode contracts', () => {
     expect(content).toContain('useFieldArray');
     expect(content).toContain('data-testid="af-bill-table"');
     expect(content).toContain(`data-testid={\`af-bill-row-\${rowIndex}\`}`);
+    expect(content).toContain('data-testid={`af-add-${lineItemsField}`}');
     expect(content).toContain('onKeyDownCapture');
   });
 });

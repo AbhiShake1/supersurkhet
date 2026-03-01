@@ -55,6 +55,38 @@ describe('withBill', () => {
     expect(getSchemaBillConfig(schema)?.lineItemsField).toBe('items');
   });
 
+  it('preserves bill config after extending schema', () => {
+    const baseSchema = z
+      .object({
+        customerId: z.string(),
+        items: z.array(
+          z.object({
+            product: z.string(),
+            quantity: z.number(),
+            totalAmount: z.number(),
+          }),
+        ),
+      })
+      .withBill({
+        lineItemsField: 'items',
+        columns: [
+          { key: 'product' },
+          { key: 'quantity' },
+          { key: 'totalAmount' },
+        ],
+      });
+
+    const extendedSchema = baseSchema.extend({
+      notes: z.string().optional(),
+    });
+    const wrappedSchema = extendedSchema.superRefine(() => {});
+
+    expect(hasSchemaBillConfig(extendedSchema)).toBe(true);
+    expect(getSchemaBillConfig(extendedSchema)?.lineItemsField).toBe('items');
+    expect(hasSchemaBillConfig(wrappedSchema)).toBe(true);
+    expect(getSchemaBillConfig(wrappedSchema)?.lineItemsField).toBe('items');
+  });
+
   it('enforces line item keys in column config', () => {
     z.object({
       items: z.array(

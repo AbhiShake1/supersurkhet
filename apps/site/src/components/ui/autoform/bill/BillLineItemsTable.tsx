@@ -273,6 +273,7 @@ export function BillLineItemsTable({
                 size="sm"
                 variant="outline"
                 onClick={appendRow}
+                data-testid={`af-add-${lineItemsField}`}
                 aria-label="Add row"
                 title="Add row"
               >

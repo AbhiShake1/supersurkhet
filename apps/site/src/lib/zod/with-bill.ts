@@ -106,6 +106,8 @@ function withBillOnEffects(
 // biome-ignore lint/suspicious/noExplicitAny: zod prototype patching requires broad object typing.
 const objectPrototype = z.ZodObject.prototype as z.ZodObject<any> & {
   withBill?: (config: AnyBillConfig) => z.ZodObject<any>;
+  // biome-ignore lint/suspicious/noExplicitAny: prototype patch marker.
+  __withBillExtendPatched?: boolean;
 };
 
 if (!objectPrototype.withBill) {
@@ -115,6 +117,24 @@ if (!objectPrototype.withBill) {
   ) {
     return withBillOnObject(this, config);
   };
+}
+
+if (!objectPrototype.__withBillExtendPatched) {
+  const originalExtend = objectPrototype.extend;
+  objectPrototype.extend = function extendWithBill(
+    this: AnyZodObject,
+    // biome-ignore lint/suspicious/noExplicitAny: preserve original zod extend runtime signature.
+    ...args: any[]
+  ) {
+    // biome-ignore lint/suspicious/noExplicitAny: delegate to original zod implementation.
+    const extended = originalExtend.call(this, ...args) as AnyZodObject;
+    const ownBillConfig = billRegistry.get(this);
+    if (ownBillConfig) {
+      billRegistry.set(extended, ownBillConfig);
+    }
+    return extended;
+  } as typeof objectPrototype.extend;
+  objectPrototype.__withBillExtendPatched = true;
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: zod prototype patching requires broad effects typing.
