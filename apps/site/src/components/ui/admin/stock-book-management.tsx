@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { ArrowDownCircle, ArrowUpCircle, Boxes, Search, SearchIcon } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, Boxes, SearchIcon } from 'lucide-react';
 import type { AdminComponent } from '.';
 import { AutoTable } from '@/components/auto-table';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { api } from '@/lib/api';
+import { formatCurrency } from '@/lib/intl';
+import {
+  buildStockBookCounterpartyLedgers,
+} from './stock-book-utils';
 
 interface StockBookManagementProps {
   slug: string;
@@ -27,6 +31,7 @@ type StockEntry = {
   quantity?: number;
   totalAmount?: number;
   particulars?: string;
+  sourceId?: string;
   sourceCode?: string;
   fiscalYear?: string;
   counterpartyId?: string;
@@ -38,6 +43,9 @@ export const StockBookManagement: AdminComponent = ({ slug }) => {
 
 function _StockBookManagement({ slug }: StockBookManagementProps) {
   const [search, setSearch] = useState('');
+  const [selectedCounterpartyId, setSelectedCounterpartyId] = useState<string | null>(
+    null,
+  );
   const { data: stockBook = [] } = api.stockBook.useGet({ keys: [slug] });
   const { data: products = [] } = api.product.useGet({ keys: [slug] });
   const { data: parties = [] } = api.party.useGet({ keys: [slug] });
@@ -65,6 +73,15 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
     });
     return entries;
   }, [stockBook]);
+
+  const sourceCodeById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const entry of normalized) {
+      if (!entry.sourceId || !entry.sourceCode) continue;
+      map.set(entry.sourceId, entry.sourceCode);
+    }
+    return map;
+  }, [normalized]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -155,8 +172,18 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
       .slice(0, 10);
   }, [filtered, products]);
 
-  function renderEntryRows(rows: StockEntry[]) {
-    if (!rows.length) {
+  function renderLedgerLikeView(rows: StockEntry[]) {
+    const ledgers = buildStockBookCounterpartyLedgers(
+      rows,
+      partiesById,
+      customersById,
+    );
+    const activeLedger =
+      ledgers.find((ledger) => ledger.id === selectedCounterpartyId) ||
+      ledgers[0] ||
+      null;
+
+    if (!ledgers.length) {
       return (
         <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
           No entries found for this view.
@@ -165,46 +192,129 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
     }
 
     return (
-      <div className="overflow-x-auto rounded-lg border">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/40">
-            <tr>
-              <th className="px-3 py-2 text-left">Date</th>
-              <th className="px-3 py-2 text-left">Product</th>
-              <th className="px-3 py-2 text-left">Particulars</th>
-              <th className="px-3 py-2 text-right">In</th>
-              <th className="px-3 py-2 text-right">Out</th>
-              <th className="px-3 py-2 text-right">Amount</th>
-              <th className="px-3 py-2 text-left">Reference</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((entry) => {
-              const product = productsById.get(entry.productId);
+      <div className="grid min-w-0 gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <Card className="min-h-0">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Parties</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Select a party to view full ledger
+            </p>
+          </CardHeader>
+          <CardContent className="max-h-[min(65vh,42rem)] space-y-2 overflow-y-auto pr-1">
+            {ledgers.map((ledger) => {
+              const isActive = activeLedger?.id === ledger.id;
               return (
-                <tr key={entry._?.soul} className="border-t">
-                  <td className="px-3 py-2">
-                    {entry.entryDate
-                      ? format(new Date(entry.entryDate), 'yyyy-MM-dd')
-                      : '-'}
-                  </td>
-                  <td className="px-3 py-2">{product?.title || '-'}</td>
-                  <td className="px-3 py-2">{entry.particulars || '-'}</td>
-                  <td className="px-3 py-2 text-right">
-                    {Number(entry.quantityIn || 0)}
-                  </td>
-                  <td className="px-3 py-2 text-right">
-                    {Number(entry.quantityOut || 0)}
-                  </td>
-                  <td className="px-3 py-2 text-right">
-                    {Number(entry.totalAmount || 0).toLocaleString()}
-                  </td>
-                  <td className="px-3 py-2">{entry.sourceCode || '-'}</td>
-                </tr>
+                <button
+                  key={ledger.id}
+                  type="button"
+                  onClick={() => setSelectedCounterpartyId(ledger.id)}
+                  className={`w-full rounded-md border p-3 text-left transition ${
+                    isActive ? 'border-primary bg-primary/5' : 'hover:bg-muted/40'
+                  }`}
+                >
+                  <p className="font-medium">{ledger.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {ledger.group || 'No group'}
+                  </p>
+                  <div className="mt-1 flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Closing</span>
+                    <span className="font-semibold tabular-nums">
+                      {formatCurrency(ledger.closingBalance)}
+                    </span>
+                  </div>
+                </button>
               );
             })}
-          </tbody>
-        </table>
+          </CardContent>
+        </Card>
+
+        {activeLedger && (
+          <Card className="min-h-0 min-w-0">
+            <CardHeader>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <CardTitle>{activeLedger.name}</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {activeLedger.group || 'No group'}
+                  </p>
+                </div>
+                <Badge variant="outline">
+                  {activeLedger.closingBalance > 0
+                    ? 'Receivable'
+                    : activeLedger.closingBalance < 0
+                      ? 'Payable'
+                      : 'Settled'}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="min-w-0 space-y-3">
+              <div className="grid gap-2 sm:grid-cols-3">
+                <div className="rounded-md border p-3">
+                  <p className="text-xs text-muted-foreground">Total Debit</p>
+                  <p className="font-semibold tabular-nums">
+                    {formatCurrency(activeLedger.totalDebit)}
+                  </p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-xs text-muted-foreground">Total Credit</p>
+                  <p className="font-semibold tabular-nums">
+                    {formatCurrency(activeLedger.totalCredit)}
+                  </p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-xs text-muted-foreground">
+                    Closing Balance
+                  </p>
+                  <p className="font-semibold tabular-nums">
+                    {formatCurrency(activeLedger.closingBalance)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="max-h-[min(65vh,42rem)] overflow-auto rounded-md border">
+                <table className="w-full min-w-[860px] text-sm">
+                  <thead className="bg-muted/40">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Date</th>
+                      <th className="px-3 py-2 text-left">Product</th>
+                      <th className="px-3 py-2 text-left">Particulars</th>
+                      <th className="px-3 py-2 text-right">In</th>
+                      <th className="px-3 py-2 text-right">Out</th>
+                      <th className="px-3 py-2 text-right">Amount</th>
+                      <th className="px-3 py-2 text-left">Reference</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeLedger.entries.map((entry, index) => (
+                      <tr
+                        key={`${entry.date || 'na'}-${entry.particulars}-${index}`}
+                        className="border-t"
+                      >
+                        <td className="whitespace-nowrap px-3 py-2">
+                          {formatDate(entry.date)}
+                        </td>
+                        <td className="px-3 py-2">
+                          {productsById.get(entry.productId)?.title || '-'}
+                        </td>
+                        <td className="px-3 py-2">{entry.particulars}</td>
+                        <td className="px-3 py-2 text-right">
+                          {Number(entry.quantityIn || 0)}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {Number(entry.quantityOut || 0)}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {Number(entry.totalAmount || 0).toLocaleString()}
+                        </td>
+                        <td className="px-3 py-2">{entry.sourceCode || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     );
   }
@@ -278,14 +388,14 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
           <TabsTrigger value="sales">Sales</TabsTrigger>
           <TabsTrigger value="stock">Stock Need</TabsTrigger>
         </TabsList>
-        <TabsContent value="all">{renderEntryRows(filtered)}</TabsContent>
+        <TabsContent value="all">{renderLedgerLikeView(filtered)}</TabsContent>
         <TabsContent value="purchases">
           <div className="mb-2">
             <Badge variant="secondary">
               Purchases: amount you owe suppliers
             </Badge>
           </div>
-          {renderEntryRows(purchases)}
+          {renderLedgerLikeView(purchases)}
         </TabsContent>
         <TabsContent value="sales">
           <div className="mb-2">
@@ -293,7 +403,7 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
               Sales: amount customers owe you
             </Badge>
           </div>
-          {renderEntryRows(sales)}
+          {renderLedgerLikeView(sales)}
         </TabsContent>
         <TabsContent value="stock">
           <div className="overflow-x-auto rounded-lg border">
@@ -327,10 +437,37 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
 
       <div className="space-y-2">
         <h3 className="text-base font-medium">Raw Table</h3>
-        <AutoTable schema="stockBook" slug={slug} readOnly />
+        <AutoTable
+          schema="stockBook"
+          slug={slug}
+          readOnly
+          previewOverrides={{
+            productId: (id) => productsById.get(id)?.title ?? '-',
+            counterpartyId: (id) => {
+              if (typeof id !== 'string' || !id) return '-';
+              return (
+                partiesById.get(id)?.name ||
+                customersById.get(id)?.name ||
+                id.split('/').at(-1) ||
+                id
+              );
+            },
+            sourceId: (id) => {
+              if (typeof id !== 'string' || !id) return '-';
+              return sourceCodeById.get(id) || id.split('/').at(-1) || id;
+            },
+          }}
+        />
       </div>
     </div>
   );
 }
 
 export default StockBookManagement;
+
+function formatDate(value?: string) {
+  if (!value) return 'N/A';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'N/A';
+  return format(date, 'dd MMM yyyy');
+}
