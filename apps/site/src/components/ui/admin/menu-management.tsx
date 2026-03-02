@@ -14,6 +14,7 @@ import {
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { AddRowDialog } from '@/components/auto-admin/add-row-dialog';
+import { DeleteRowDialog } from '@/components/data-table/delete-row-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -50,6 +51,10 @@ function _MenuManagement({ slug, permissions }: MenuManagementProps) {
   const canDelete = permissions?.canDelete ?? true;
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [itemPendingDelete, setItemPendingDelete] = useState<{
+    id: string;
+    name?: string;
+  } | null>(null);
   const { data: items = [] } = api.menuItem.useGet({ keys: [slug] });
   const { mutate: update } = api.menuItem.useUpdate({ keys: [slug] });
   const { mutate: remove } = api.menuItem.useDelete({ keys: [slug] });
@@ -86,8 +91,17 @@ function _MenuManagement({ slug, permissions }: MenuManagementProps) {
   const deleteItem = (itemId: string) => {
     if (!canDelete) return;
     const item = items.find((i) => i._?.soul === itemId);
-    remove({ id: itemId });
-    toast.success(`${item?.name} removed from menu`);
+    setItemPendingDelete({
+      id: itemId,
+      name: item?.name,
+    });
+  };
+
+  const confirmDelete = () => {
+    if (!itemPendingDelete) return;
+    remove({ id: itemPendingDelete.id });
+    toast.success(`${itemPendingDelete.name ?? 'Item'} removed from menu`);
+    setItemPendingDelete(null);
   };
 
   return (
@@ -311,6 +325,15 @@ function _MenuManagement({ slug, permissions }: MenuManagementProps) {
           </TabsContent>
         ))}
       </Tabs>
+      <DeleteRowDialog
+        open={Boolean(itemPendingDelete)}
+        onOpenChange={(open) => {
+          if (!open) setItemPendingDelete(null);
+        }}
+        data={itemPendingDelete ? [itemPendingDelete] : []}
+        showTrigger={false}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }
