@@ -25,26 +25,6 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import type React from 'react';
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
-
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CustomSelect } from '@/components/ui/custom-select';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
-import { useWifiNetworks } from '@/hooks/use-wifi';
 import {
   ArrowRight,
   Bell,
@@ -73,23 +53,9 @@ import {
   Wifi,
   X,
 } from 'lucide-react';
-
-import {
-  Sortable,
-  SortableContent,
-  SortableItem,
-  SortableItemHandle,
-  SortableOverlay,
-} from '@/components/ui/sortable';
-
-import { CopyButton } from '@/components/ui/copy-button';
-import { DataMatrixCode } from '@/components/ui/datamatrix-code';
-import {
-  type DataMatrixAction,
-  dataMatrixActionSchema,
-} from '@/lib/datamatrix';
+import type React from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-
 import { AnimatedSvgEdge } from '@/components/animated-svg-edge';
 import {
   BaseNode,
@@ -110,6 +76,12 @@ import {
   type NodeStatus,
   NodeStatusIndicator,
 } from '@/components/node-status-indicator';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CopyButton } from '@/components/ui/copy-button';
+import { CustomSelect } from '@/components/ui/custom-select';
+import { DataMatrixCode } from '@/components/ui/datamatrix-code';
 import {
   Drawer,
   DrawerClose,
@@ -117,6 +89,25 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Sortable,
+  SortableContent,
+  SortableItem,
+  SortableItemHandle,
+  SortableOverlay,
+} from '@/components/ui/sortable';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Tooltip,
   TooltipContent,
@@ -124,7 +115,12 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { ZoomSlider } from '@/components/zoom-slider';
+import { useWifiNetworks } from '@/hooks/use-wifi';
 import { getLayoutedElements } from '@/lib/auto-layout-utils';
+import {
+  type DataMatrixAction,
+  dataMatrixActionSchema,
+} from '@/lib/datamatrix';
 import { ScrollArea } from '../ui/scroll-area';
 
 // Define custom node types
@@ -960,6 +956,7 @@ const edgeTypes: EdgeTypes = {
 const DraggableNode = ({
   nodeType,
   onAddNode,
+  canEdit,
 }: {
   nodeType: {
     type: string;
@@ -968,6 +965,7 @@ const DraggableNode = ({
     order?: number;
   };
   onAddNode: (type: NodeType) => void;
+  canEdit: boolean;
 }) => {
   // Map node types to icons
   const iconMap = {
@@ -993,6 +991,7 @@ const DraggableNode = ({
 
   // Native drag start handler for HTML5 drag and drop
   const onNativeDragStart = (event: React.DragEvent) => {
+    if (!canEdit) return;
     // Stop propagation to prevent conflicts with sortable
     event.stopPropagation();
     event.dataTransfer.setData('application/reactflow', nodeType.type);
@@ -1007,7 +1006,8 @@ const DraggableNode = ({
             variant="outline"
             className="w-full justify-start cursor-grab active:cursor-grabbing gap-2"
             onClick={() => onAddNode(nodeType.type as NodeType)}
-            draggable
+            draggable={canEdit}
+            disabled={!canEdit}
             onDragStart={onNativeDragStart}
           >
             <div className={`w-3 h-3 rounded-full ${nodeType.color}`} />
@@ -1028,8 +1028,10 @@ const DraggableNode = ({
 // Sidebar component for node library with drag and drop
 const NodeLibrary = ({
   onAddNode,
+  canEdit,
 }: {
   onAddNode: (type: NodeType) => void;
+  canEdit: boolean;
 }) => {
   const { nodeLibraryOrder, setNodeLibraryOrder, resetNodeLibraryOrder } =
     useFlow();
@@ -1047,6 +1049,7 @@ const NodeLibrary = ({
 
   // Handle reordering
   const handleReorder = (newOrder: typeof nodeLibraryOrder) => {
+    if (!canEdit) return;
     setNodeLibraryOrder(newOrder);
   };
 
@@ -1064,6 +1067,7 @@ const NodeLibrary = ({
               size="icon"
               onClick={resetNodeLibraryOrder}
               className="h-8 w-8"
+              disabled={!canEdit}
             >
               <RefreshCw className="h-4 w-4" />
             </Button>
@@ -1080,6 +1084,7 @@ const NodeLibrary = ({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="h-8 text-xs"
+            disabled={!canEdit}
           />
         </div>
         <ScrollArea className="pb-32">
@@ -1102,6 +1107,7 @@ const NodeLibrary = ({
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 p-0 cursor-grab"
+                          disabled={!canEdit}
                         >
                           <GripVertical className="h-4 w-4" />
                         </Button>
@@ -1110,6 +1116,7 @@ const NodeLibrary = ({
                         <DraggableNode
                           nodeType={nodeType}
                           onAddNode={onAddNode}
+                          canEdit={canEdit}
                         />
                       </div>
                     </div>
@@ -1142,12 +1149,15 @@ const NodeLibrary = ({
 const NodeSetupPanel = ({
   selectedNode,
   onUpdateNode,
+  canEdit,
 }: {
   selectedNode: CustomNode;
   onUpdateNode: (id: string, data: BaseNodeData) => void;
+  canEdit: boolean;
 }) => {
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   const handleConfigChange = (key: string, value: any) => {
+    if (!canEdit) return;
     const updatedConfig = {
       ...selectedNode.data.config,
       [key]: value,
@@ -1169,6 +1179,11 @@ const NodeSetupPanel = ({
       </CardHeader>
       <CardContent className="flex-1 overflow-y-auto">
         <div className="space-y-4">
+          {!canEdit && (
+            <p className="text-xs text-muted-foreground">
+              Read-only mode: you can view configuration but cannot edit.
+            </p>
+          )}
           <div className="space-y-2">
             <Label>Description</Label>
             <p className="text-sm text-muted-foreground">
@@ -1180,6 +1195,7 @@ const NodeSetupPanel = ({
           <NodeSetupForm
             selectedNode={selectedNode}
             handleConfigChange={handleConfigChange}
+            canEdit={canEdit}
           />
 
           <div className="pt-4">
@@ -1187,6 +1203,7 @@ const NodeSetupPanel = ({
               variant="default"
               size="sm"
               className="w-full"
+              disabled={!canEdit}
               onClick={() => {
                 // Mark node as configured
                 // This would typically involve some state management
@@ -1205,10 +1222,12 @@ const NodeSetupPanel = ({
 const NodeSetupForm = ({
   selectedNode,
   handleConfigChange,
+  canEdit,
 }: {
   selectedNode: CustomNode;
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   handleConfigChange: (key: string, value: any) => void;
+  canEdit: boolean;
 }) => {
   switch (selectedNode.type) {
     case 'wifiConnect': {
@@ -1257,7 +1276,7 @@ const NodeSetupForm = ({
                 variant="outline"
                 size="sm"
                 onClick={() => scanNetworks()}
-                disabled={isScanning}
+                disabled={isScanning || !canEdit}
               >
                 <RefreshCw
                   className={`h-4 w-4 mr-2 ${isScanning ? 'animate-spin' : ''}`}
@@ -1346,6 +1365,7 @@ const NodeSetupForm = ({
               }
               onChange={(e) => handleConfigChange('paramsRaw', e.target.value)}
               onBlur={(e) => {
+                if (!canEdit) return;
                 try {
                   const params = JSON.parse(e.target.value);
                   handleConfigChange('params', params);
@@ -1696,6 +1716,7 @@ const NodeSetupForm = ({
               }
               onChange={(e) => handleConfigChange('headersRaw', e.target.value)}
               onBlur={(e) => {
+                if (!canEdit) return;
                 try {
                   const headers = JSON.parse(e.target.value);
                   handleConfigChange('headers', headers);
@@ -1721,6 +1742,7 @@ const NodeSetupForm = ({
               }
               onChange={(e) => handleConfigChange('bodyRaw', e.target.value)}
               onBlur={(e) => {
+                if (!canEdit) return;
                 try {
                   const body = JSON.parse(e.target.value);
                   handleConfigChange('body', body);
@@ -1971,7 +1993,7 @@ const PreviewPanel = ({ action }: { action: DataMatrixAction | null }) => {
 };
 
 // Flow Builder Component
-const FlowBuilder = () => {
+const FlowBuilder = ({ canEdit }: { canEdit: boolean }) => {
   const {
     nodes,
     edges,
@@ -2018,13 +2040,18 @@ const FlowBuilder = () => {
   );
 
   // Drag and drop handlers for React Flow
-  const onDragOver = useCallback((event: React.DragEvent) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-  }, []);
+  const onDragOver = useCallback(
+    (event: React.DragEvent) => {
+      if (!canEdit) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+    },
+    [canEdit],
+  );
 
   const onDrop = useCallback(
     (event: React.DragEvent) => {
+      if (!canEdit) return;
       event.preventDefault();
 
       // Check if we have a valid reactFlowInstance
@@ -2063,10 +2090,11 @@ const FlowBuilder = () => {
       // Add the new node to the flow
       setNodes((nds) => nds.concat(newNode));
     },
-    [reactFlowInstance, setNodes],
+    [canEdit, reactFlowInstance, setNodes],
   );
 
   const onDragStart = (event: DragStartEvent) => {
+    if (!canEdit) return;
     const { active } = event;
     const dragType = active.data.current?.type as string;
     setActiveDragType(dragType);
@@ -2075,6 +2103,7 @@ const FlowBuilder = () => {
 
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   const onDragMove = (event: any) => {
+    if (!canEdit) return;
     if (!reactFlowInstance) return;
 
     const position = reactFlowInstance.screenToFlowPosition({
@@ -2086,6 +2115,7 @@ const FlowBuilder = () => {
   };
 
   const onDragEnd = (event: DragEndEvent) => {
+    if (!canEdit) return;
     const { active, over } = event;
     setActiveDragType(null);
     setIsDraggingNode(false);
@@ -2120,11 +2150,12 @@ const FlowBuilder = () => {
 
   const onUpdateNode = useCallback(
     (id: string, data: BaseNodeData) => {
+      if (!canEdit) return;
       setNodes((nds) =>
         nds.map((node) => (node.id === id ? { ...node, data } : node)),
       );
     },
-    [setNodes],
+    [canEdit, setNodes],
   );
 
   // Generate preview action from nodes and edges
@@ -2206,6 +2237,7 @@ const FlowBuilder = () => {
   // Import functionality to load DataMatrixAction object
   const importFlow = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
+      if (!canEdit) return;
       const file = event.target.files?.[0];
       if (!file) return;
 
@@ -2222,18 +2254,19 @@ const FlowBuilder = () => {
       };
       reader.readAsText(file);
     },
-    [],
+    [canEdit],
   );
 
   // Auto-layout functionality
   const onLayout = useCallback(() => {
+    if (!canEdit) return;
     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
       nodes,
       edges,
     );
     setNodes(layoutedNodes);
     setEdges(layoutedEdges);
-  }, [nodes, edges, setNodes, setEdges]);
+  }, [canEdit, nodes, edges, setNodes, setEdges]);
 
   // Workflow runner functionality
   const [isRunning, setIsRunning] = useState(false);
@@ -2337,9 +2370,10 @@ const FlowBuilder = () => {
 
   // Toggle workflow lock
   const toggleLock = useCallback(() => {
+    if (!canEdit) return;
     setIsLocked((prev) => !prev);
     toast.info(`Workflow ${isLocked ? 'unlocked' : 'locked'}`);
-  }, [isLocked]);
+  }, [canEdit, isLocked]);
 
   // Function to calculate helper lines for node alignment
   // const calculateHelperLines = useCallback((nodeId: string, position: { x: number, y: number }) => {
@@ -2396,16 +2430,16 @@ const FlowBuilder = () => {
     <div className="w-full h-[700px] flex border rounded-lg overflow-hidden bg-background [&_.react-flow__attribution]:hidden">
       {/* Left sidebar - Node library */}
       <div className="w-64 border-r bg-background">
-        <NodeLibrary onAddNode={onAddNode} />
+        <NodeLibrary onAddNode={onAddNode} canEdit={canEdit} />
       </div>
 
       {/* Main flow area */}
       <div className="flex-1 relative" ref={reactFlowWrapper}>
         <DndContext
           sensors={sensors}
-          onDragStart={onDragStart}
-          onDragMove={onDragMove}
-          onDragEnd={onDragEnd}
+          onDragStart={canEdit ? onDragStart : undefined}
+          onDragMove={canEdit ? onDragMove : undefined}
+          onDragEnd={canEdit ? onDragEnd : undefined}
         >
           <DragOverlay>
             {activeDragType && (
@@ -2429,9 +2463,9 @@ const FlowBuilder = () => {
         <ReactFlow
           nodes={nodes}
           edges={edges}
-          onNodesChange={isLocked ? undefined : onNodesChange}
-          onEdgesChange={isLocked ? undefined : onEdgesChange}
-          onConnect={isLocked ? undefined : onConnect}
+          onNodesChange={isLocked || !canEdit ? undefined : onNodesChange}
+          onEdgesChange={isLocked || !canEdit ? undefined : onEdgesChange}
+          onConnect={isLocked || !canEdit ? undefined : onConnect}
           onNodeClick={(_, node) => {
             setSelectedNodeId(node.id);
             setIsDrawerOpen(true);
@@ -2441,11 +2475,11 @@ const FlowBuilder = () => {
           fitView
           className="react-flow-theme-dark bg-background"
           id="flow-canvas"
-          nodesDraggable={!isLocked}
-          nodesConnectable={!isLocked}
-          elementsSelectable={!isLocked}
-          onDrop={onDrop}
-          onDragOver={onDragOver}
+          nodesDraggable={!isLocked && canEdit}
+          nodesConnectable={!isLocked && canEdit}
+          elementsSelectable={true}
+          onDrop={canEdit ? onDrop : undefined}
+          onDragOver={canEdit ? onDragOver : undefined}
         >
           <svg role="img" aria-label="Flow Builder">
             <defs>
@@ -2496,6 +2530,7 @@ const FlowBuilder = () => {
                       size="icon"
                       className="rounded-none border-0 border-b last:border-b-0"
                       onClick={onLayout}
+                      disabled={!canEdit}
                     >
                       <svg
                         role="img"
@@ -2574,6 +2609,7 @@ const FlowBuilder = () => {
                       onClick={() =>
                         document.getElementById('import-flow')?.click()
                       }
+                      disabled={!canEdit}
                     >
                       <Upload className="h-4 w-4" />
                       {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
@@ -2583,6 +2619,7 @@ const FlowBuilder = () => {
                         accept=".json"
                         className="hidden"
                         onChange={importFlow}
+                        disabled={!canEdit}
                       />
                     </Button>
                   </TooltipTrigger>
@@ -2602,6 +2639,7 @@ const FlowBuilder = () => {
                         setEdges([]);
                         setSelectedNodeId(null);
                       }}
+                      disabled={!canEdit}
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -2637,6 +2675,7 @@ const FlowBuilder = () => {
                       size="icon"
                       className="rounded-none border-0 border-b last:border-b-0"
                       onClick={toggleLock}
+                      disabled={!canEdit}
                     >
                       {isLocked ? (
                         <Lock className="h-4 w-4" />
@@ -2677,6 +2716,7 @@ const FlowBuilder = () => {
               <NodeSetupPanel
                 selectedNode={selectedNode}
                 onUpdateNode={onUpdateNode}
+                canEdit={canEdit}
               />
             ) : (
               <PreviewPanel action={previewAction} />
@@ -2689,12 +2729,12 @@ const FlowBuilder = () => {
 };
 
 // Main component wrapper
-export function VisualFlowBuilder() {
+export function VisualFlowBuilder({ canEdit = true }: { canEdit?: boolean }) {
   return (
     <div className="w-full">
       <ReactFlowProvider>
-        <FlowProvider>
-          <FlowBuilder />
+        <FlowProvider canEdit={canEdit}>
+          <FlowBuilder canEdit={canEdit} />
         </FlowProvider>
       </ReactFlowProvider>
     </div>

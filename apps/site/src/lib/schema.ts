@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import React from 'react';
 import { z } from 'zod';
+import { PermissionGate } from '@/components/permission-gate/permission-gate';
+import { useFeaturePermissions } from '@/components/permission-gate/use-feature-permissions';
 import { fieldConfig } from '@/components/ui/autoform';
 import { dataMatrixActionSchema } from './datamatrix';
 import type {
@@ -68,6 +70,29 @@ const BlazorLedgerManagement = React.lazy(
 const StockBookManagement = React.lazy(
   () => import('@/components/ui/admin/stock-book-management'),
 );
+
+type AdminComponentProps = {
+  slug: string;
+};
+
+function withSchemaPermission(
+  feature: string,
+  Component: React.ComponentType<AdminComponentProps>,
+  action: 'read' | 'create' | 'update' | 'delete' = 'read',
+) {
+  const Wrapped: React.FC<AdminComponentProps> = (props) => {
+    const permissions = useFeaturePermissions(feature);
+    if (!permissions.canRead) return null;
+
+    return React.createElement(
+      PermissionGate,
+      { feature, action },
+      React.createElement(Component, { ...props, permissions }),
+    );
+  };
+  Wrapped.displayName = `WithSchemaPermission(${feature}:${action})`;
+  return Wrapped;
+}
 
 function getPermissions() {
   return ['product'] as readonly [string, ...string[]];
@@ -130,6 +155,8 @@ export const businessMemberSchema = z.object({
   userId: z.string(),
   joinedAt: z.number().optional(),
 });
+
+export type BusinessMember = NonNullable<Business['members']>[string];
 
 export const businessInvitationSchema = z.object({
   role: z.enum(['owner', 'staff']),
@@ -290,7 +317,7 @@ export const featureSchema = createSchema({
       return [
         {
           name: 'Cards',
-          component: MenuManagement,
+          component: withSchemaPermission('product', MenuManagement),
         },
       ];
     },
@@ -304,7 +331,7 @@ export const featureSchema = createSchema({
       return [
         {
           name: 'Suppliers & Customers',
-          component: PartyManagement,
+          component: withSchemaPermission('party', PartyManagement),
         },
       ];
     },
@@ -335,11 +362,11 @@ export const featureSchema = createSchema({
       return [
         {
           name: 'Invoices by Parties',
-          component: InvoiceManagement,
+          component: withSchemaPermission('invoice', InvoiceManagement),
         },
         {
           name: 'Ledger',
-          component: BlazorLedgerManagement,
+          component: withSchemaPermission('invoice', BlazorLedgerManagement),
         },
       ];
     },
@@ -365,7 +392,7 @@ export const featureSchema = createSchema({
       return [
         {
           name: 'Stock Book',
-          component: StockBookManagement,
+          component: withSchemaPermission('stockBook', StockBookManagement),
         },
       ];
     },
@@ -379,7 +406,7 @@ export const featureSchema = createSchema({
       return [
         {
           name: 'Board',
-          component: OrderKanban,
+          component: withSchemaPermission('order', OrderKanban),
         },
       ];
     },
@@ -393,7 +420,7 @@ export const featureSchema = createSchema({
       return [
         {
           name: 'Menu Items',
-          component: MenuManagement,
+          component: withSchemaPermission('menuItem', MenuManagement),
         },
       ];
     },
@@ -467,7 +494,7 @@ export const featureSchema = createSchema({
       return [
         {
           name: 'Trip Tracking',
-          component: TripManagement,
+          component: withSchemaPermission('trip', TripManagement),
         },
       ];
     },

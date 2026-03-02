@@ -98,7 +98,8 @@ function isTripTableTab(
   return tab.schema === 'trip';
 }
 
-const TripManagement: AdminComponent = ({ slug }) => {
+const TripManagement: AdminComponent = ({ slug, permissions }) => {
+  const canUpdate = permissions?.canUpdate ?? true;
   const { business } = useBusiness();
   const businessConfig = useBusinessConfig({ slug });
   const tripTableTab =
@@ -146,7 +147,10 @@ const TripManagement: AdminComponent = ({ slug }) => {
     for (const line of trip.products ?? []) {
       const productId = getLineProductId(line);
       if (!productId) continue;
-      const bucketKey = makeBucketKey(productId, getLinePartyId(line, productsMap));
+      const bucketKey = makeBucketKey(
+        productId,
+        getLinePartyId(line, productsMap),
+      );
       const bucketCount = (countersByBucket.get(bucketKey) ?? 0) + 1;
       countersByBucket.set(bucketKey, bucketCount);
 
@@ -290,6 +294,7 @@ const TripManagement: AdminComponent = ({ slug }) => {
                           <DialogTrigger asChild>
                             <Button
                               variant="outline"
+                              disabled={!canUpdate}
                               onClick={() => handleMarkReturn(trip)}
                             >
                               Mark Return
@@ -323,7 +328,8 @@ const TripManagement: AdminComponent = ({ slug }) => {
                                     {getLinePartyId(line, productsMap)
                                       ? (partiesMap.get(
                                           getLinePartyId(line, productsMap),
-                                        )?.name ?? getLinePartyId(line, productsMap))
+                                        )?.name ??
+                                        getLinePartyId(line, productsMap))
                                       : 'Unassigned'}
                                   </div>
                                   <div className="text-center">
@@ -348,6 +354,7 @@ const TripManagement: AdminComponent = ({ slug }) => {
                               <Button
                                 type="button"
                                 className="w-full"
+                                disabled={!canUpdate}
                                 onClick={handleSubmitReturn}
                               >
                                 Save Return

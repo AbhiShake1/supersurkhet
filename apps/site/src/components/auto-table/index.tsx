@@ -1,40 +1,17 @@
-import { applyFilters } from '@/lib/filter';
-import type { DataTableRowAction, FilterVariant } from '@/types/data-table';
-import * as React from 'react';
-
-import { DataTable } from '@/components/data-table';
-import { useDataTable } from '@/hooks/use-data-table';
-
-import { AddRowDialog } from '@/components/auto-admin/add-row-dialog';
-import { AutoFormWithoutLabel } from '@/components/ui/autoform';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import * as Editable from '@/components/ui/editable';
-import { api } from '@/lib/api';
-import { appSchema } from '@/lib/schema';
-import { applySorting } from '@/lib/sort';
-import { getSchemaDerivations } from '@/lib/zod/with-derivations';
-import {
+  getNestedZodShape,
+  getSchema,
+  getShape,
   type NestedSchema,
   type NestedSchemaType,
   type SchemaKeys,
   type UpdaterParams,
-  getNestedZodShape,
-  getSchema,
-  getShape,
   useDelete,
   useGet,
   useUpdate,
 } from '@gta/react-hooks';
 import { DropdownMenuItem } from '@radix-ui/react-dropdown-menu';
-import { useQuery, type MutationFunctionContext } from '@tanstack/react-query';
+import { type MutationFunctionContext, useQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import type { CellContext, ColumnDef } from '@tanstack/react-table';
 import type { GunMessagePut } from 'gun';
@@ -46,7 +23,28 @@ import {
   Ellipsis,
   Text,
 } from 'lucide-react';
-import { z, ZodEffects } from 'zod';
+import * as React from 'react';
+import { ZodEffects, z } from 'zod';
+import { AddRowDialog } from '@/components/auto-admin/add-row-dialog';
+import { DataTable } from '@/components/data-table';
+import { AutoFormWithoutLabel } from '@/components/ui/autoform';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import * as Editable from '@/components/ui/editable';
+import { useDataTable } from '@/hooks/use-data-table';
+import { api } from '@/lib/api';
+import { applyFilters } from '@/lib/filter';
+import { appSchema } from '@/lib/schema';
+import { applySorting } from '@/lib/sort';
+import { getSchemaDerivations } from '@/lib/zod/with-derivations';
+import type { DataTableRowAction, FilterVariant } from '@/types/data-table';
 import { AutoPreview } from '../auto-preview';
 import { DataTableAdvancedToolbar } from '../data-table/data-table-advanced-toolbar';
 import { DataTableColumnHeader } from '../data-table/data-table-column-header';
@@ -55,11 +53,11 @@ import { DataTableSortList } from '../data-table/data-table-sort-list';
 import { DeleteRowDialog } from '../data-table/delete-row-dialog';
 import { EditRowDialog } from '../data-table/edit-row-dialog';
 import SkeletonTableOneWrapper from '../mvpblocks/skeleton-table-1';
-import { BadgeMarquee } from '../ui/badge-marquee';
 import type { DeriveFn, FieldConfigCustomData } from '../ui/autoform';
-import { applyDerivedValuesToRow, getDeriveFn } from './derive-row';
-import { AutoTableActionBar } from './auto-table-action-bar';
 import { parseSchema, type ZodObjectOrWrapped } from '../ui/autoform/zod';
+import { BadgeMarquee } from '../ui/badge-marquee';
+import { AutoTableActionBar } from './auto-table-action-bar';
+import { applyDerivedValuesToRow, getDeriveFn } from './derive-row';
 
 type AggregationType =
   | 'sum'
@@ -120,28 +118,31 @@ export type AutoTableProps<T extends SchemaKeys> = {
     context: MutationFunctionContext,
   ) => unknown;
   readOnly?: boolean;
+  canCreate?: boolean;
+  canUpdate?: boolean;
+  canDelete?: boolean;
   treatSlugAsAbsolute?: boolean;
   actions?: (
     ctx: CellContext<NestedSchemaType<T>, unknown>,
   ) => Promise<React.ReactNode>;
 } & (
-    | {
+  | {
       schema: T;
     }
-    | {
+  | {
       // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       parsedSchema: z.ZodObject<any>;
     }
-  ) &
+) &
   (
     | {
-      slug: string;
-      data?: undefined;
-    }
+        slug: string;
+        data?: undefined;
+      }
     | {
-      data: NestedSchemaType<T>[];
-      slug?: undefined;
-    }
+        data: NestedSchemaType<T>[];
+        slug?: undefined;
+      }
   );
 
 export function AutoTable<T extends SchemaKeys>({
@@ -160,6 +161,10 @@ export function AutoTable<T extends SchemaKeys>({
   defaultPageSize = 10,
   ...props
 }: AutoTableProps<T>) {
+  const canCreate = !props.readOnly && (props.canCreate ?? true);
+  const canUpdate = !props.readOnly && (props.canUpdate ?? true);
+  const canDelete = !props.readOnly && (props.canDelete ?? true);
+
   const schemaName = 'schema' in props ? props.schema : ('' as SchemaKeys);
   const _schema = (() => {
     if ('parsedSchema' in props) {
@@ -268,7 +273,8 @@ export function AutoTable<T extends SchemaKeys>({
     setRowAction,
     derivedFieldKeys,
     previewOverrides: props.previewOverrides,
-    readOnly: props.readOnly,
+    canUpdate,
+    canDelete,
     actions: props.actions,
   });
 
@@ -310,8 +316,13 @@ export function AutoTable<T extends SchemaKeys>({
 
   return (
     <div className="py-6 space-y-4 flex flex-col items-end">
-      {!props.readOnly && (
-        <AddRowDialog<T> schema={schemaName} slug={slug} {...props} buttonLabel={`Add new ${title ?? ''}`} />
+      {canCreate && (
+        <AddRowDialog<T>
+          schema={schemaName}
+          slug={slug}
+          {...props}
+          buttonLabel={`Add new ${title ?? ''}`}
+        />
       )}
       <DataTable
         table={table}
@@ -319,7 +330,7 @@ export function AutoTable<T extends SchemaKeys>({
           <AutoTableActionBar
             table={table}
             onDelete={onDelete}
-            readOnly={props.readOnly}
+            readOnly={!canDelete}
           />
         }
         className={className}
@@ -347,7 +358,7 @@ export function AutoTable<T extends SchemaKeys>({
              <DataTableSortList table={table} align="end" />
            </DataTableToolbar> */}
       </DataTable>
-      {!props.readOnly && (
+      {canDelete && (
         <DeleteRowDialog
           open={rowAction?.variant === 'delete'}
           onOpenChange={() => setRowAction(null)}
@@ -360,7 +371,7 @@ export function AutoTable<T extends SchemaKeys>({
           }}
         />
       )}
-      {!props.readOnly && (
+      {canUpdate && (
         <EditRowDialog
           open={rowAction?.variant === 'update'}
           onOpenChange={() => setRowAction(null)}
@@ -388,7 +399,8 @@ interface GetAutoTableColumnsProps<T extends SchemaKeys, S> {
   actions?: (
     ctx: CellContext<NestedSchemaType<T>, unknown>,
   ) => Promise<React.ReactNode>;
-  readOnly?: boolean;
+  canUpdate: boolean;
+  canDelete: boolean;
   derivedFieldKeys: Set<string>;
   previewOverrides?: PreviewOverrides<T>;
 }
@@ -400,7 +412,8 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
   derivedFieldKeys,
   previewOverrides,
   actions,
-  readOnly,
+  canUpdate,
+  canDelete,
 }: GetAutoTableColumnsProps<T, S>): EnhancedColumnDef<NestedSchemaType<T>>[] {
   'use memo';
   const columns: EnhancedColumnDef<NestedSchemaType<T>>[] = [
@@ -431,9 +444,9 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
     },
   ];
 
-  const { data: users } = api.user.useGet()
+  const { data: users } = api.user.useGet();
 
-  const usersById = new Map(users?.map(u => [u._?.soul, u]))
+  const usersById = new Map(users?.map((u) => [u._?.soul, u]));
 
   const parsedSchema = parseSchema(getSchema(schema));
 
@@ -460,18 +473,18 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
           table.options.meta?.updateData(row.id, value);
         }
 
-        if (field.key === "created_by" && typeof value === "string") {
+        if (field.key === 'created_by' && typeof value === 'string') {
           return (
             <AutoPreview
               field={field}
               key={field.key}
-              value={usersById?.get(value?.substring(1))?.name ?? "-"}
+              value={usersById?.get(value?.substring(1))?.name ?? '-'}
               baseSchema={schema.shape[field.key]}
             />
-          )
+          );
         }
 
-        if (readOnly || derivedFieldKeys.has(key)) {
+        if (!canUpdate || derivedFieldKeys.has(key)) {
           return (
             <AutoPreview
               field={field}
@@ -539,7 +552,7 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
     columns.push(column);
   }
 
-  if (!readOnly || actions)
+  if (canUpdate || canDelete || actions)
     columns.push({
       id: 'actions',
       cell: function Cell(props) {
@@ -565,7 +578,7 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
-              {!readOnly && (
+              {canUpdate && (
                 <>
                   <DropdownMenuItem
                     onSelect={() => setRowAction({ row, variant: 'update' })}
@@ -575,7 +588,7 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
                   <DropdownMenuSeparator />
                 </>
               )}
-              {!readOnly && (
+              {canDelete && (
                 <DropdownMenuItem
                   onSelect={() => setRowAction({ row, variant: 'delete' })}
                 >
@@ -633,12 +646,12 @@ export function AddDataSuggestions({
       Object.fromEntries(
         othersData.map((d) => [
           d?.title ||
-          d?.name ||
-          d?.label ||
-          d?.text ||
-          d?.displayName ||
-          d?.heading ||
-          '',
+            d?.name ||
+            d?.label ||
+            d?.text ||
+            d?.displayName ||
+            d?.heading ||
+            '',
           d,
         ]),
       ),

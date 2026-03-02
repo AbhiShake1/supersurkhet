@@ -1,17 +1,19 @@
-import _UIBuilder from '@/components/ui/ui-builder';
-import { primitiveComponentDefinitions } from '@/lib/ui-builder/registry/primitive-component-definitions';
-import { complexComponentDefinitions } from '@/lib/ui-builder/registry/complex-component-definitions';
-import { api } from '@/lib/api';
-import { lazy, memo, useMemo } from 'react';
-import type { LayerChangeHandler } from './ui/ui-builder/types';
-import _ from 'lodash';
-import { Spinner } from './ui/spinner';
-import { NotFound } from './ui/not-found';
-import { ContextDataStore } from '@/lib/ui-builder/context/context-data-store';
-import type { Business } from '@/lib/schema';
-import { useProfile } from '@/hooks/use-profile';
-import { useAuth } from './auth-provider';
 import { useSearch } from '@tanstack/react-router';
+import _ from 'lodash';
+import { lazy, memo, useMemo } from 'react';
+import _UIBuilder from '@/components/ui/ui-builder';
+import { useProfile } from '@/hooks/use-profile';
+import { api } from '@/lib/api';
+import type { Business } from '@/lib/schema';
+import { ContextDataStore } from '@/lib/ui-builder/context/context-data-store';
+import { complexComponentDefinitions } from '@/lib/ui-builder/registry/complex-component-definitions';
+import { primitiveComponentDefinitions } from '@/lib/ui-builder/registry/primitive-component-definitions';
+import { useAuth } from './auth-provider';
+import { useFeaturePermissions } from './permission-gate/use-feature-permissions';
+import { NotFound } from './ui/not-found';
+import { Spinner } from './ui/spinner';
+import type { LayerChangeHandler } from './ui/ui-builder/types';
+import { Unauthorized } from './ui/unauthorized';
 
 const LayerRenderer = lazy(
   () => import('@/components/ui/ui-builder/layer-renderer'),
@@ -77,6 +79,11 @@ function useContextData({ business }: UseContextDataProps) {
 }
 
 export function CustomUiBuilderPage({ slug }: { slug: string }) {
+  const permissions = useFeaturePermissions('business');
+  const canRead = permissions.canRead;
+  const canEdit =
+    permissions.canCreate || permissions.canUpdate || permissions.canDelete;
+
   const { mutate: upsert } = api.business.useUpdate();
   const { data: _data, isLoading } = api.business.useGet({
     keys: [slug],
@@ -98,6 +105,16 @@ export function CustomUiBuilderPage({ slug }: { slug: string }) {
 
   // Create dynamic context data based on actual business data if available
   const { contextData } = useContextData({ business: data });
+
+  if (!canRead) {
+    return (
+      <Unauthorized description="You do not have permission to access UI builder." />
+    );
+  }
+
+  if (!canEdit) {
+    return <CustomUiRendererPage slug={slug} />;
+  }
 
   return (
     <ContextDataStore contextData={contextData}>

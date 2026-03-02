@@ -1,11 +1,12 @@
-import {
-  AutoKanban,
-  type AutoAdminTabInput,
-} from '@/components/auto-admin';
-import type { AdminComponent } from '.';
-import type { Order } from '@/lib/schema';
-import { api } from '@/lib/api';
+import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { type AutoAdminTabInput, AutoKanban } from '@/components/auto-admin';
+import { AddRowDialog } from '@/components/auto-admin/add-row-dialog';
+import { useBusinessConfig } from '@/config/business-config';
+import { useBusiness } from '@/contexts/business-context';
+import { api } from '@/lib/api';
+import { formatCurrency } from '@/lib/intl';
+import type { Order } from '@/lib/schema';
 import { cn, soulToId } from '@/lib/utils';
 import {
   Credenza,
@@ -15,12 +16,8 @@ import {
   CredenzaHeader,
   CredenzaTitle,
 } from '../credenza';
-import { AddRowDialog } from '@/components/auto-admin/add-row-dialog';
-import { Plus } from 'lucide-react';
-import { formatCurrency } from '@/lib/intl';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip';
-import { useBusiness } from '@/contexts/business-context';
-import { useBusinessConfig } from '@/config/business-config';
+import type { AdminComponent } from '.';
 
 function isOrderTableTab(
   tab: AutoAdminTabInput | undefined,
@@ -29,33 +26,38 @@ function isOrderTableTab(
   return tab.schema === 'order';
 }
 
-const OrderKanban: AdminComponent = ({ slug }) => {
+const OrderKanban: AdminComponent = ({ slug, permissions }) => {
   const { business } = useBusiness();
   const businessConfig = useBusinessConfig({ slug });
-  const orderTableTab = businessConfig[business.businessType]?.find(isOrderTableTab);
+  const orderTableTab =
+    businessConfig[business.businessType]?.find(isOrderTableTab);
+  const canCreate = permissions?.canCreate ?? true;
+  const canUpdate = permissions?.canUpdate ?? true;
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <AddRowDialog
-          schema="order"
-          slug={slug}
-          extender={orderTableTab?.extender}
-          onCreate={orderTableTab?.onCreate}
-          readOnly={orderTableTab?.readOnly}
-          className={orderTableTab?.className}
-          buttonLabel="Add New Order"
-          buttonIcon={<Plus className="h-4 w-4" />}
-        />
-      </div>
+      {canCreate && (
+        <div className="flex justify-end">
+          <AddRowDialog
+            schema="order"
+            slug={slug}
+            extender={orderTableTab?.extender}
+            onCreate={orderTableTab?.onCreate}
+            readOnly={orderTableTab?.readOnly}
+            className={orderTableTab?.className}
+            buttonLabel="Add New Order"
+            buttonIcon={<Plus className="h-4 w-4" />}
+          />
+        </div>
+      )}
       <AutoKanban
         slug={slug}
         cardBuilder={(order) => <OrderCard order={order} slug={slug} />}
         groupKey="orderStatus"
         schema="order"
+        canUpdate={canUpdate}
         isItemLocked={(order) =>
-          order.orderStatus === 'done' ||
-          order.orderStatus === 'cancelled'
+          order.orderStatus === 'done' || order.orderStatus === 'cancelled'
         }
         onUpdate={orderTableTab?.onUpdate}
       />

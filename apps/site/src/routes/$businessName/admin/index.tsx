@@ -1,14 +1,17 @@
+import { createFileRoute } from '@tanstack/react-router';
+import { Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { AutoAdmin } from '@/components/auto-admin';
 import { useLoginPrompt } from '@/components/login-prompt-provider';
 import { NotFound } from '@/components/ui/not-found';
+import { Unauthorized } from '@/components/ui/unauthorized';
 import { useBusinessConfig } from '@/config/business-config';
 import { BusinessProvider } from '@/contexts/business-context';
 import { api } from '@/lib/api';
+import { canAccessBusiness } from '@/lib/permissions/business-permissions';
 import type { BusinessType } from '@/lib/schema';
-import { createFileRoute } from '@tanstack/react-router';
-import { Loader2 } from 'lucide-react';
-import { useEffect } from 'react';
+import { getSoulFromUnknown } from '@/lib/utils';
 
 export const Route = createFileRoute('/$businessName/admin/')({
   component: () => {
@@ -41,9 +44,16 @@ export const Route = createFileRoute('/$businessName/admin/')({
     if (!user) return null;
 
     const business = allBusinesses?.[0];
+    const userSoul = getSoulFromUnknown(user);
 
     if (!business?.basePath) {
       return <NotFound />;
+    }
+
+    if (!canAccessBusiness({ business, user, userSoul })) {
+      return (
+        <Unauthorized description="You are not a member of this organization." />
+      );
     }
 
     return (

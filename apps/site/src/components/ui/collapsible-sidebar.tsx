@@ -11,10 +11,16 @@ import {
 } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
+import { useBusinessSafe } from '@/contexts/business-context';
 import { useDialog } from '@/contexts/dialog-context';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useProfile } from '@/hooks/use-profile';
+import {
+  canAccessBusiness,
+  canPerformFeatureAction,
+} from '@/lib/permissions/business-permissions';
 import { appSchema } from '@/lib/schema';
+import { getSoulFromUnknown } from '@/lib/utils';
 import { useAuth } from '../auth-provider';
 import type { PossibleTabConfig } from '../auto-admin';
 import { ThemeToggle } from '../theme/theme-toggle';
@@ -232,7 +238,26 @@ const TitleSection: React.FC<{
 }> = ({ open, businessName, slug, tabs }) => {
   const { openDialog } = useDialog();
   const { logout, isAuthenticated } = useAuth();
+  const businessContext = useBusinessSafe();
   const user = useProfile();
+  const userSoul = getSoulFromUnknown(user);
+  const business = businessContext?.business;
+  const canManageBusiness =
+    canAccessBusiness({ business, user, userSoul }) &&
+    (canPerformFeatureAction({
+      business,
+      user,
+      userSoul,
+      feature: 'organizationMember',
+      action: 'read',
+    }) ||
+      canPerformFeatureAction({
+        business,
+        user,
+        userSoul,
+        feature: 'organizationInvitation',
+        action: 'read',
+      }));
 
   if (!isAuthenticated) return null;
 
@@ -299,7 +324,7 @@ const TitleSection: React.FC<{
             <ThemeToggle />
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          {slug && (
+          {slug && canManageBusiness && (
             <>
               <DropdownMenuItem
                 className="gap-2"

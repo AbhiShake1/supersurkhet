@@ -1,42 +1,22 @@
+import MonacoEditor from '@monaco-editor/react';
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { useState, useRef, useCallback, useEffect } from 'react';
 import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle,
-} from '@/components/ui/resizable';
-import { Button } from '@/components/ui/button';
-import {
-  Smartphone,
-  Tablet,
-  Monitor,
-  Maximize,
-  X,
-  Search,
-  Terminal,
+  Code,
   Eye,
   EyeOff,
+  Maximize,
   MessageSquare,
   MessageSquareX,
-  Code,
+  Monitor,
+  Search,
+  Smartphone,
+  Tablet,
+  Terminal,
+  X,
 } from 'lucide-react';
-import { CopyPromptButton } from '@/components/ui/ui-builder/copy-prompt-button';
-import { zodToJsonSchema } from '@/lib/zod/zod-to-json-schema';
-import { primitiveComponentDefinitions } from '@/lib/ui-builder/registry/primitive-component-definitions';
-import { complexComponentDefinitions } from '@/lib/ui-builder/registry/complex-component-definitions';
-import MonacoEditor from '@monaco-editor/react';
-import LayerRenderer from '@/components/ui/ui-builder/layer-renderer';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { api } from '@/lib/api';
-import { Spinner } from '@/components/ui/spinner';
-import { uiBuilderLayerSchema } from '@/lib/schemas/ui-builder-schema';
-import { ThemeToggle } from '@/components/theme/theme-toggle';
-import { useContextData } from '@/lib/ui-builder/context/context-data-store';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { z } from 'zod';
+import { useAuth } from '@/components/auth-provider';
 // import { useChat } from '@ai-sdk/react';
 // import {
 //   Conversation,
@@ -88,7 +68,33 @@ import { useContextData } from '@/lib/ui-builder/context/context-data-store';
 // import { createServerFn } from '@tanstack/react-start';
 // import { getBuilderChat } from '@/server-functions/ai';
 import { useLoginPrompt } from '@/components/login-prompt-provider';
-import { useAuth } from '@/components/auth-provider';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
+import { Button } from '@/components/ui/button';
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@/components/ui/resizable';
+import { Spinner } from '@/components/ui/spinner';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { CopyPromptButton } from '@/components/ui/ui-builder/copy-prompt-button';
+import LayerRenderer from '@/components/ui/ui-builder/layer-renderer';
+import { Unauthorized } from '@/components/ui/unauthorized';
+import { api } from '@/lib/api';
+import {
+  canAccessBusiness,
+  canPerformFeatureAction,
+} from '@/lib/permissions/business-permissions';
+import { uiBuilderLayerSchema } from '@/lib/schemas/ui-builder-schema';
+import { useContextData } from '@/lib/ui-builder/context/context-data-store';
+import { complexComponentDefinitions } from '@/lib/ui-builder/registry/complex-component-definitions';
+import { primitiveComponentDefinitions } from '@/lib/ui-builder/registry/primitive-component-definitions';
+import { getSoulFromUnknown } from '@/lib/utils';
+import { zodToJsonSchema } from '@/lib/zod/zod-to-json-schema';
 
 const componentRegistry = {
   ...primitiveComponentDefinitions,
@@ -108,15 +114,52 @@ export const Route = createFileRoute('/$businessName/admin/editor')({
 
 function EditorComponent() {
   const { businessName } = Route.useParams();
+  const { isAuthenticated, user, isLoading: isAuthLoading } = useAuth();
   const { data: business, isLoading } = api.business.useGet({
     keys: [businessName],
     single: true,
   });
 
   const _business = business?.[0];
+  const userSoul = getSoulFromUnknown(user);
+  const canAccess = canAccessBusiness({
+    business: _business,
+    user,
+    userSoul,
+  });
+  const canReadBusiness = canPerformFeatureAction({
+    business: _business,
+    user,
+    userSoul,
+    feature: 'business',
+    action: 'read',
+  });
+  const canEditBusiness =
+    canPerformFeatureAction({
+      business: _business,
+      user,
+      userSoul,
+      feature: 'business',
+      action: 'create',
+    }) ||
+    canPerformFeatureAction({
+      business: _business,
+      user,
+      userSoul,
+      feature: 'business',
+      action: 'update',
+    }) ||
+    canPerformFeatureAction({
+      business: _business,
+      user,
+      userSoul,
+      feature: 'business',
+      action: 'delete',
+    });
   const code = _business?.uiBuilder?.layers ?? '';
   const { mutate: update } = api.business.useUpdate();
   function setCode(newCode: string) {
+    if (!canEditBusiness) return;
     try {
       // pre-save validations so there is no bad commit
       const parsed = JSON.parse(newCode);
@@ -552,17 +595,27 @@ Provide the complete UI configuration in JSON format as your response. Do not in
   }, [monacoInstance]);
 
   const { promptLogin, closeLoginPrompt } = useLoginPrompt();
-  const { isAuthenticated, user } = useAuth();
 
   useEffect(() => {
-    if (!isAuthenticated && !isLoading)
+    if (!isAuthenticated && !isLoading && !isAuthLoading)
       promptLogin({ dismissible: false, showBackgroundContent: false });
     else closeLoginPrompt();
-  }, [isAuthenticated, isLoading, closeLoginPrompt, promptLogin]);
+  }, [
+    isAuthenticated,
+    isLoading,
+    isAuthLoading,
+    closeLoginPrompt,
+    promptLogin,
+  ]);
 
-  if (isLoading) return <Spinner />;
+  if (isLoading || isAuthLoading) return <Spinner />;
 
   if (!user) return null;
+  if (!canAccess || !canReadBusiness) {
+    return (
+      <Unauthorized description="You are not authorized to access this editor." />
+    );
+  }
 
   const currentLayers = _business?.uiBuilder?.layers;
   function tryParse(str: string) {
@@ -752,6 +805,7 @@ Provide the complete UI configuration in JSON format as your response. Do not in
                           suggestOnTriggerCharacters: true,
                           acceptSuggestionOnCommitCharacter: true,
                           acceptSuggestionOnEnter: 'on',
+                          readOnly: !canEditBusiness,
                         }}
                       />
                     </div>
@@ -1129,6 +1183,7 @@ Provide the complete UI configuration in JSON format as your response. Do not in
                       acceptSuggestionOnEnter: 'on',
                       // Add custom snippets
                       snippetSuggestions: 'top',
+                      readOnly: !canEditBusiness,
                     }}
                   />
                 </div>

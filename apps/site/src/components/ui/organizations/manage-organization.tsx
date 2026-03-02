@@ -9,7 +9,7 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { useAuth } from '@/components/auth-provider';
@@ -21,11 +21,16 @@ import { Input } from '@/components/ui/input';
 import InvitationEmail from '@/emails/invitation-template';
 import { sendMail } from '@/emails/send-mail';
 import { api } from '@/lib/api';
+import {
+  canAccessBusiness,
+  canPerformFeatureAction,
+} from '@/lib/permissions/business-permissions';
 import type { BusinessInvitation, BusinessMember } from '@/lib/schema';
-import { cn } from '@/lib/utils';
+import { cn, getSoulFromUnknown } from '@/lib/utils';
 import { AutoFormSubmit } from '../auto-form';
 import { AutoForm, fieldConfig } from '../autoform';
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
+import { Unauthorized } from '../unauthorized';
 
 type Invitation = BusinessInvitation;
 type Member = BusinessMember;
@@ -46,12 +51,41 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
     single: true,
   });
   const business = businesses?.[0];
+  const userSoul = getSoulFromUnknown(user);
+  const canManageBusiness = canAccessBusiness({
+    business,
+    user,
+    userSoul,
+  });
+  const updateBusinessMutation = api.business.useUpdate();
+
+  const canReadMembers = canPerformFeatureAction({
+    business,
+    user,
+    userSoul,
+    feature: 'organizationMember',
+    action: 'read',
+  });
+  const canInviteMembers = canPerformFeatureAction({
+    business,
+    user,
+    userSoul,
+    feature: 'organizationInvitation',
+    action: 'create',
+  });
+  const canReadInvitations = canPerformFeatureAction({
+    business,
+    user,
+    userSoul,
+    feature: 'organizationInvitation',
+    action: 'read',
+  });
+
   const invitationCount = business?.invitations
     ? Object.values(business.invitations).filter(
-        (inv) => typeof inv === 'object' && !!inv.email,
-      ).length
+      (inv) => typeof inv === 'object' && !!inv?.email,
+    ).length
     : 0;
-  const updateBusinessMutation = api.business.useUpdate();
 
   // Handle inviting a new member
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
@@ -125,16 +159,43 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
     // setMembers(prevMembers => prevMembers.filter(member => member.id !== memberId));
   };
 
-  const navigationItems = [
-    { id: 'members', label: 'Members', icon: Users, count: members.length },
-    {
-      id: 'invitations',
-      label: 'Invitations',
-      icon: Mail,
-      count: invitationCount,
-    },
-    { id: 'billing', label: 'Billing', icon: CreditCard, count: null },
-  ];
+  const navigationItems = useMemo(
+    () => [
+      ...(canReadMembers
+        ? [
+          {
+            id: 'members',
+            label: 'Members',
+            icon: Users,
+            count: members.length,
+          },
+        ]
+        : []),
+      ...(canReadInvitations
+        ? [
+          {
+            id: 'invitations',
+            label: 'Invitations',
+            icon: Mail,
+            count: invitationCount,
+          },
+        ]
+        : []),
+      { id: 'billing', label: 'Billing', icon: CreditCard, count: null },
+    ],
+    [canReadMembers, members.length, canReadInvitations, invitationCount],
+  );
+
+  useEffect(() => {
+    if (navigationItems.some((item) => item.id === activeTab)) return;
+    setActiveTab(navigationItems[0]?.id ?? 'billing');
+  }, [activeTab, navigationItems]);
+
+  if (!canManageBusiness || (!canReadMembers && !canReadInvitations)) {
+    return (
+      <Unauthorized description="You are not authorized to manage this business." />
+    );
+  }
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col bg-gradient-to-b from-muted/20 to-background">
@@ -202,6 +263,7 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
             onRemoveMember={handleRemoveMember}
             tabs={tabs}
             slug={slug}
+            canInviteMembers={canInviteMembers}
           />
         )}
         {activeTab === 'invitations' && (
@@ -241,6 +303,7 @@ const MembersTab = ({
   onRemoveMember,
   tabs,
   slug,
+  canInviteMembers,
 }: {
   members: Member[];
   searchTerm: string;
@@ -253,6 +316,7 @@ const MembersTab = ({
   onRemoveMember: (id: string) => void;
   tabs: PossibleTabConfig[];
   slug: string;
+  canInviteMembers: boolean;
 }) => {
   return (
     <div className="space-y-5">
@@ -267,6 +331,7 @@ const MembersTab = ({
         />
         <div className="flex items-center gap-2">
           <Button
+            disabled={!canInviteMembers}
             onClick={() => setShowInviteForm(!showInviteForm)}
             className="w-full gap-2 sm:min-w-44 sm:w-auto"
           >
@@ -276,7 +341,7 @@ const MembersTab = ({
         </div>
       </div>
 
-      {showInviteForm && (
+      {showInviteForm && canInviteMembers && (
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 sm:p-5">
           <div className="mb-4 flex items-center gap-2">
             <div className="rounded-lg bg-primary/10 p-1.5 text-primary">
@@ -558,6 +623,6 @@ function useOrgInvitations(slug: string) {
   const { data } = api.business.useGet({ keys: [slug], single: true });
   if (!data?.[0]?.invitations) return [];
   return Object.values(data?.[0]?.invitations).filter(
-    (inv) => typeof inv === 'object' && !!inv.email,
+    (inv) => typeof inv === 'object' && !!inv?.email,
   );
 }

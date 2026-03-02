@@ -1,3 +1,8 @@
+import { Zap } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { useFeaturePermissions } from '@/components/permission-gate/use-feature-permissions';
+import { VisualFlowBuilder } from '@/components/qr/visual-flow-builder';
 import {
   Card,
   CardContent,
@@ -5,19 +10,26 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Unauthorized } from '@/components/ui/unauthorized';
 import {
   type DataMatrixAction,
   dataMatrixActionSchema,
 } from '@/lib/datamatrix';
 import { ActionExecutor } from '@/lib/datamatrix/action-executor';
-import { Zap } from 'lucide-react';
-import { useState } from 'react';
-import { toast } from 'sonner';
-
-import { VisualFlowBuilder } from '@/components/qr/visual-flow-builder';
 
 // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
 export function QRCodePage({ slug }: { slug: string }) {
+  const dataMatrixPermissions = useFeaturePermissions('dataMatrixAction');
+  const qrFlowPermissions = useFeaturePermissions('qrFlowConfig');
+  const canRead = dataMatrixPermissions.canRead || qrFlowPermissions.canRead;
+  const canEdit =
+    dataMatrixPermissions.canCreate ||
+    dataMatrixPermissions.canUpdate ||
+    dataMatrixPermissions.canDelete ||
+    qrFlowPermissions.canCreate ||
+    qrFlowPermissions.canUpdate ||
+    qrFlowPermissions.canDelete;
+
   const [_sampleAction] = useState<DataMatrixAction>(() => {
     return dataMatrixActionSchema.parse({
       version: '1.0',
@@ -55,6 +67,12 @@ export function QRCodePage({ slug }: { slug: string }) {
     });
   };
 
+  if (!canRead) {
+    return (
+      <Unauthorized description="You do not have permission to access QR management." />
+    );
+  }
+
   return (
     <div className="w-full items-center flex justify-center">
       <div className="container py-8">
@@ -69,7 +87,7 @@ export function QRCodePage({ slug }: { slug: string }) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <VisualFlowBuilder />
+            <VisualFlowBuilder canEdit={canEdit} />
           </CardContent>
         </Card>
       </div>

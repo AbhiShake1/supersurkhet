@@ -1,6 +1,21 @@
 'use client';
 
+import { format } from 'date-fns';
+import {
+  AlertCircle,
+  Building,
+  CreditCard,
+  Loader2,
+  Phone,
+  Search,
+  User,
+  UserPlus,
+  Users,
+} from 'lucide-react';
 import { useState } from 'react';
+import { AutoTable } from '@/components/auto-table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -8,37 +23,31 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Search,
-  Users,
-  Phone,
-  User,
-  UserPlus,
-  Building,
-  CreditCard,
-  Loader2,
-  AlertCircle,
-} from 'lucide-react';
-import type { AdminComponent } from '.';
 import { api } from '@/lib/api';
-import { format } from 'date-fns';
-import { AutoTable } from '@/components/auto-table';
 import type { Party } from '@/lib/schema';
+import type { AdminComponent } from '.';
 
 interface PartyManagementProps {
   slug: string;
+  permissions?: {
+    canRead: boolean;
+    canCreate: boolean;
+    canUpdate: boolean;
+    canDelete: boolean;
+  };
 }
 
-export const PartyManagement: AdminComponent = ({ slug }) => {
-  return <_PartyManagement slug={slug} />;
+export const PartyManagement: AdminComponent = ({ slug, permissions }) => {
+  return <_PartyManagement slug={slug} permissions={permissions} />;
 };
 export default PartyManagement;
 
-function _PartyManagement({ slug }: PartyManagementProps) {
+function _PartyManagement({ slug, permissions }: PartyManagementProps) {
+  const canCreate = permissions?.canCreate ?? true;
+  const canUpdate = permissions?.canUpdate ?? true;
+  const canDelete = permissions?.canDelete ?? true;
   const [searchQuery, setSearchQuery] = useState('');
   const {
     data: parties = [],
@@ -154,6 +163,7 @@ function _PartyManagement({ slug }: PartyManagementProps) {
         </div>
         <Button
           className="w-full sm:w-auto"
+          disabled={!canCreate}
           onClick={() => {
             // Add party functionality would go here
           }}
@@ -248,7 +258,13 @@ function _PartyManagement({ slug }: PartyManagementProps) {
         </TabsList>
 
         <TabsContent value="table" className="space-y-4">
-          <AutoTable schema="party" slug={slug} />
+          <AutoTable
+            schema="party"
+            slug={slug}
+            canCreate={canCreate}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
+          />
         </TabsContent>
 
         <TabsContent value="cards" className="space-y-4">
@@ -266,7 +282,7 @@ function _PartyManagement({ slug }: PartyManagementProps) {
               <p className="text-gray-500 dark:text-gray-400 mb-4">
                 Try adjusting your search or add a new party
               </p>
-              <Button>
+              <Button disabled={!canCreate}>
                 <UserPlus className="w-4 h-4 mr-2" />
                 Add First Party
               </Button>

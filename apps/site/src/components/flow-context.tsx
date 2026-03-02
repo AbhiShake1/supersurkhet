@@ -1,14 +1,18 @@
+import type { Edge } from '@xyflow/react';
+import {
+  addEdge,
+  useEdgesState,
+  useNodesState,
+  useReactFlow,
+} from '@xyflow/react';
 import {
   createContext,
-  useContext,
   useCallback,
-  useState,
+  useContext,
   useEffect,
+  useState,
 } from 'react';
-import { useNodesState, useEdgesState, useReactFlow } from '@xyflow/react';
 import type { CustomNode, NodeType } from '@/components/qr/visual-flow-builder';
-import type { Edge } from '@xyflow/react';
-import { addEdge } from '@xyflow/react';
 import { getNodeLabelAndDescription } from '@/components/qr/visual-flow-builder';
 
 // Define node library item type (without icon for serialization)
@@ -22,6 +26,7 @@ type NodeLibraryItemType = {
 interface FlowContextType {
   nodes: CustomNode[];
   edges: Edge[];
+  canEdit: boolean;
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   onNodesChange: (changes: any) => void;
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
@@ -59,7 +64,13 @@ interface FlowContextType {
 
 const FlowContext = createContext<FlowContextType | undefined>(undefined);
 
-export function FlowProvider({ children }: { children: React.ReactNode }) {
+export function FlowProvider({
+  children,
+  canEdit = true,
+}: {
+  children: React.ReactNode;
+  canEdit?: boolean;
+}) {
   const [nodes, setNodes, onNodesChange] = useNodesState<CustomNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const reactFlowInstance = useReactFlow();
@@ -230,6 +241,7 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
 
   const onAddNode = useCallback(
     (type: NodeType) => {
+      if (!canEdit) return;
       if (!reactFlowInstance) return;
 
       const { label, description } = getNodeLabelAndDescription(type);
@@ -247,7 +259,7 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
       };
       setNodes((nds) => nds.concat(newNode));
     },
-    [setNodes, reactFlowInstance],
+    [canEdit, setNodes, reactFlowInstance],
   );
 
   const onAddNodeAtHandle = useCallback(
@@ -257,6 +269,7 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
       handleType: 'target' | 'source',
       nodeType: NodeType,
     ) => {
+      if (!canEdit) return;
       if (!reactFlowInstance) return;
 
       // Get fixed label and description for the new node
@@ -285,7 +298,7 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
           source: nodeId,
           target: newNodeId,
           type: 'default',
-          data: { onAddNode: onAddNodeToEdge },
+          data: { onAddNode: onAddNode },
           markerEnd: {
             type: 'arrow',
             color: '#94a3b8',
@@ -310,12 +323,12 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
       setNodes((nds) => [...nds, newNode]);
       setEdges((eds) => [...eds, newEdge]);
     },
-    // biome-ignore lint/correctness/noInvalidUseBeforeDeclaration: lint debt cleanup
-    [reactFlowInstance, setNodes, setEdges, onAddNode, onAddNodeToEdge],
+    [canEdit, reactFlowInstance, setNodes, setEdges, onAddNode],
   );
 
   const onAddNodeToEdge = useCallback(
     (edgeId: string, nodeType: string) => {
+      if (!canEdit) return;
       // Get current edges from React Flow instance
       const currentEdges = reactFlowInstance?.getEdges() || [];
       const edge = currentEdges.find((e) => e.id === edgeId);
@@ -374,12 +387,13 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
         return [...updatedEdges, newEdge1, newEdge2];
       });
     },
-    [reactFlowInstance, setNodes, setEdges, onAddNode],
+    [canEdit, reactFlowInstance, setNodes, setEdges, onAddNode],
   );
 
   const onConnect = useCallback(
     // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     (params: any) => {
+      if (!canEdit) return;
       const newEdge = {
         ...params,
         type: 'default',
@@ -391,7 +405,7 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
       };
       setEdges((eds) => addEdge(newEdge, eds));
     },
-    [setEdges, onAddNode],
+    [canEdit, setEdges, onAddNode],
   );
 
   // Helper function to check if a handle is connected to another node
@@ -427,6 +441,7 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
       value={{
         nodes,
         edges,
+        canEdit,
         onNodesChange,
         onEdgesChange,
         setNodes,

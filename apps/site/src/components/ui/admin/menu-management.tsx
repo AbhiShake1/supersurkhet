@@ -1,6 +1,20 @@
 'use client';
 
+import _ from 'lodash';
+import {
+  DollarSign,
+  Edit,
+  Eye,
+  Package,
+  Plus,
+  Search,
+  Star,
+  Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -8,36 +22,31 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Plus,
-  Search,
-  Edit,
-  Trash2,
-  Eye,
-  DollarSign,
-  Package,
-  Star,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import type { AdminComponent } from '.';
 import { api } from '@/lib/api';
-import _ from 'lodash';
+import type { AdminComponent } from '.';
 
 interface MenuManagementProps {
   onAddItem: () => void;
+  permissions?: {
+    canRead: boolean;
+    canCreate: boolean;
+    canUpdate: boolean;
+    canDelete: boolean;
+  };
 }
 
-const MenuManagement: AdminComponent = () => {
-  return <_MenuManagement onAddItem={() => { }} />;
+const MenuManagement: AdminComponent = ({ permissions }) => {
+  return <_MenuManagement onAddItem={() => {}} permissions={permissions} />;
 };
 export default MenuManagement;
 
-function _MenuManagement({ onAddItem }: MenuManagementProps) {
+function _MenuManagement({ onAddItem, permissions }: MenuManagementProps) {
+  const canCreate = permissions?.canCreate ?? true;
+  const canUpdate = permissions?.canUpdate ?? true;
+  const canDelete = permissions?.canDelete ?? true;
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const { data: items = [] } = api.menuItem.useGet({ keys: [] });
@@ -65,6 +74,7 @@ function _MenuManagement({ onAddItem }: MenuManagementProps) {
   });
 
   const toggleAvailability = (itemId: string, isActive: boolean) => {
+    if (!canUpdate) return;
     update({ id: itemId, isActive });
     // setItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, available: !item.available } : item)))
     const item = items.find((i) => i._?.soul === itemId);
@@ -72,6 +82,7 @@ function _MenuManagement({ onAddItem }: MenuManagementProps) {
   };
 
   const deleteItem = (itemId: string) => {
+    if (!canDelete) return;
     const item = items.find((i) => i._?.soul === itemId);
     // setItems((prev) => prev.filter((item) => item.id !== itemId))
     toast.success(`${item?.name} removed from menu`);
@@ -89,7 +100,11 @@ function _MenuManagement({ onAddItem }: MenuManagementProps) {
             Manage your restaurant's menu items and categories
           </p>
         </div>
-        <Button onClick={onAddItem} className="w-full sm:w-auto">
+        <Button
+          onClick={onAddItem}
+          className="w-full sm:w-auto"
+          disabled={!canCreate}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Add Menu Item
         </Button>
@@ -156,7 +171,7 @@ function _MenuManagement({ onAddItem }: MenuManagementProps) {
                   Rs.{' '}
                   {(
                     items.reduce((sum, item) => sum + item.price, 0) /
-                    items.length || 0
+                      items.length || 0
                   ).toFixed(2)}
                 </p>
               </div>
@@ -241,6 +256,7 @@ function _MenuManagement({ onAddItem }: MenuManagementProps) {
                       <div className="flex items-center gap-2">
                         <Switch
                           checked={item.isActive}
+                          disabled={!canUpdate}
                           onCheckedChange={() =>
                             toggleAvailability(
                               item._?.soul ?? '',
@@ -254,12 +270,13 @@ function _MenuManagement({ onAddItem }: MenuManagementProps) {
                       </div>
 
                       <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" disabled={!canUpdate}>
                           <Edit className="w-4 h-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
+                          disabled={!canDelete}
                           onClick={() => deleteItem(item._?.soul ?? '')}
                           className="text-red-600 hover:text-red-700"
                         >
@@ -281,7 +298,7 @@ function _MenuManagement({ onAddItem }: MenuManagementProps) {
                 <p className="text-gray-500 dark:text-gray-400 mb-4">
                   Try adjusting your search or add a new menu item
                 </p>
-                <Button onClick={onAddItem}>
+                <Button onClick={onAddItem} disabled={!canCreate}>
                   <Plus className="w-4 h-4 mr-2" />
                   Add First Item
                 </Button>

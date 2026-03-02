@@ -107,11 +107,25 @@ type OpeningClosingPartyLedger = {
   items: OpeningClosingPartyItem[];
 };
 
-export const StockBookManagement: AdminComponent = ({ slug }) => {
-  return <_StockBookManagement slug={slug} />;
+export const StockBookManagement: AdminComponent = ({ slug, permissions }) => {
+  return <_StockBookManagement slug={slug} permissions={permissions} />;
 };
 
-function _StockBookManagement({ slug }: StockBookManagementProps) {
+function _StockBookManagement({
+  slug,
+  permissions,
+}: StockBookManagementProps & {
+  permissions?: {
+    canRead: boolean;
+    canCreate: boolean;
+    canUpdate: boolean;
+    canDelete: boolean;
+  };
+}) {
+  const canCreate = permissions?.canCreate ?? true;
+  const canDelete = permissions?.canDelete ?? true;
+  const canUpdate = permissions?.canUpdate ?? true;
+  const canRunFiscalClose = canCreate && canDelete && canUpdate;
   const [search, setSearch] = useState('');
   const [selectedCounterpartyId, setSelectedCounterpartyId] = useState<
     string | null
@@ -603,6 +617,7 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
   }, [currentFiscalYear, fiscalYears, normalized]);
 
   useEffect(() => {
+    if (!canRunFiscalClose) return;
     if (!pendingFiscalCloseYears.length) return;
     const runKey = `${slug}:${pendingFiscalCloseYears.join(',')}:${normalized.length}`;
     if (autoCloseRunRef.current === runKey) return;
@@ -670,6 +685,7 @@ function _StockBookManagement({ slug }: StockBookManagementProps) {
       isCancelled = true;
     };
   }, [
+    canRunFiscalClose,
     createStockBookMutation,
     deleteStockBookMutation,
     normalized,

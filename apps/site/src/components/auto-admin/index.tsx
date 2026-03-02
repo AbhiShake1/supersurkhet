@@ -1,7 +1,12 @@
-import type { NestedSchemaType, SchemaKeys, UpdaterParams } from '@gta/react-hooks';
+import type {
+  NestedSchemaType,
+  SchemaKeys,
+  UpdaterParams,
+} from '@gta/react-hooks';
 import { getNestedZodShape } from '@gta/react-hooks';
-import { useQuery, type MutationFunctionContext } from '@tanstack/react-query';
+import type { MutationFunctionContext } from '@tanstack/react-query';
 import { useLocation } from '@tanstack/react-router';
+import type { GunMessagePut } from 'gun';
 import _ from 'lodash';
 import {
   BarChart3,
@@ -12,15 +17,24 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { ZodEffects } from 'zod';
+import { useAuth } from '@/components/auth-provider';
 import CollapsibleSidebar from '@/components/ui/collapsible-sidebar';
 import * as Kanban from '@/components/ui/kanban';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { api } from '@/lib/api';
+import {
+  canAccessBusiness,
+  canAccessFeature,
+  canPerformFeatureAction,
+  isBusinessPrivilegedUser,
+  type PermissionAction,
+} from '@/lib/permissions/business-permissions';
 import { appSchema } from '@/lib/schema';
 import { cn, getSoulFromUnknown } from '@/lib/utils';
 import { AdminDashboard } from '../admin-dashboard';
 import { AutoTable, type AutoTableProps } from '../auto-table';
 import { LanguageSelector } from '../language-selector';
+import { PermissionGate } from '../permission-gate/permission-gate';
 import { QRCodePage } from '../qr-code-page';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -28,8 +42,8 @@ import Card from '../ui/minimal-card';
 import { NotFound } from '../ui/not-found';
 import { Skeleton } from '../ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Unauthorized } from '../ui/unauthorized';
 import { CustomUiBuilderPage } from '../ui-builder';
-import type { GunMessagePut } from 'gun';
 
 export interface AutoAdminProps {
   tabs: AutoAdminTabInput[];
@@ -42,6 +56,10 @@ export type PossibleTabConfig = {
 export type AutoTableTab<K extends SchemaKeys = SchemaKeys> = {
   group?: string;
   title: string;
+  permissionFeatures?: Array<{
+    feature: string;
+    actions?: PermissionAction[];
+  }>;
 } & (
   | {
       children: ReactNode;
@@ -60,11 +78,19 @@ export type AutoTableTabInput<K extends SchemaKeys = SchemaKeys> =
       group?: string;
       icon?: LucideIcon;
       children: ReactNode;
+      permissionFeatures?: Array<{
+        feature: string;
+        actions?: PermissionAction[];
+      }>;
     }
   | (AutoTableProps<K extends SchemaKeys ? K : never> & {
       title?: string;
       group?: string;
       icon?: LucideIcon;
+      permissionFeatures?: Array<{
+        feature: string;
+        actions?: PermissionAction[];
+      }>;
     });
 
 type AutoTableItem = AutoTableProps<SchemaKeys>;
@@ -102,19 +128,30 @@ function resolveTabMetadata(tab: AutoAdminTabInput): PossibleTabConfig {
     };
   }
 
-  const schemaMeta = appSchema[tab.schema];
-  return {
+  const schemaKey = tab.schema as SchemaKeys;
+  const schemaMeta = appSchema[schemaKey];
+  const permissionFeatures = tab.permissionFeatures ?? [
+    {
+      feature: String(tab.schema),
+      actions: ['read', 'create', 'update', 'delete'],
+    },
+  ];
+  const resolved = {
     ...tab,
-    title: tab.title ?? schemaMeta.title ?? toTitleCase(tab.schema),
+    title: tab.title ?? schemaMeta.title ?? toTitleCase(String(tab.schema)),
     group: tab.group ?? schemaMeta.group,
     icon: 'icon' in tab && tab.icon ? tab.icon : schemaMeta.icon,
+    permissionFeatures,
   };
+  return resolved as unknown as PossibleTabConfig;
 }
 
 export function AutoAdmin({ tabs }: AutoAdminProps) {
   'use memo';
+  const { user } = useAuth();
   const { search, pathname: currentPathname } = useLocation();
   const [basePath] = currentPathname.split('/').filter((i) => !!i.length);
+  const userSoul = getSoulFromUnknown(user);
 
   const { data: allBusinesses = [] } = api.business.useGet({
     keys: [basePath],
@@ -122,28 +159,122 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
   });
   const business = allBusinesses[0];
 
+  if (!business?.basePath) {
+    return <NotFound />;
+  }
+
+  const hasAccess = canAccessBusiness({ business, user, userSoul });
+  if (!hasAccess) {
+    return (
+      <Unauthorized description="You are not authorized to view this admin panel." />
+    );
+  }
+
+  const isPrivileged = isBusinessPrivilegedUser({ business, user, userSoul });
+  const configuredTabs = tabs.map(resolveTabMetadata);
+  function canAccessTab(tab: PossibleTabConfig) {
+    if (isPrivileged) return true;
+    const permissionFeatures = tab.permissionFeatures ?? [];
+    if (!permissionFeatures.length) return false;
+    return permissionFeatures.some(({ feature }) =>
+      canAccessFeature({
+        business,
+        user,
+        userSoul,
+        feature,
+      }),
+    );
+  }
+
+  const authorizedConfiguredTabs = configuredTabs.filter((tab) => {
+    return canAccessTab(tab);
+  });
+
   const tabsWithHome: PossibleTabConfig[] = [
-    {
-      title: 'Dashboard',
-      icon: BarChart3,
-      children: (
-        <AdminDashboard slug={basePath} businessType={business.businessType} />
-      ),
-    },
-    ...tabs.map(resolveTabMetadata),
-    {
+    ...(isPrivileged
+      ? [
+          {
+            title: 'Dashboard',
+            icon: BarChart3,
+            children: (
+              <AdminDashboard
+                slug={basePath}
+                businessType={business.businessType}
+              />
+            ),
+          } as PossibleTabConfig,
+        ]
+      : []),
+    ...authorizedConfiguredTabs,
+    ...(canAccessTab({
       title: 'QR Management',
       icon: QrCodeIcon,
       children: <QRCodePage slug={basePath} />,
       group: 'System Configuration',
-    },
-    {
+      permissionFeatures: [
+        {
+          feature: 'dataMatrixAction',
+          actions: ['read', 'create', 'update', 'delete'],
+        },
+        {
+          feature: 'qrFlowConfig',
+          actions: ['read', 'create', 'update', 'delete'],
+        },
+      ],
+    })
+      ? [
+          {
+            title: 'QR Management',
+            icon: QrCodeIcon,
+            children: <QRCodePage slug={basePath} />,
+            group: 'System Configuration',
+            permissionFeatures: [
+              {
+                feature: 'dataMatrixAction',
+                actions: ['read', 'create', 'update', 'delete'],
+              },
+              {
+                feature: 'qrFlowConfig',
+                actions: ['read', 'create', 'update', 'delete'],
+              },
+            ],
+          } as PossibleTabConfig,
+        ]
+      : []),
+    ...(canAccessTab({
       title: 'Website UI',
       icon: Sigma,
       children: <CustomUiBuilderPage slug={basePath} />,
       group: 'System Configuration',
-    },
+      permissionFeatures: [
+        {
+          feature: 'business',
+          actions: ['read', 'create', 'update', 'delete'],
+        },
+      ],
+    })
+      ? [
+          {
+            title: 'Website UI',
+            icon: Sigma,
+            children: <CustomUiBuilderPage slug={basePath} />,
+            group: 'System Configuration',
+            permissionFeatures: [
+              {
+                feature: 'business',
+                actions: ['read', 'create', 'update', 'delete'],
+              },
+            ],
+          } as PossibleTabConfig,
+        ]
+      : []),
   ];
+
+  if (!tabsWithHome.length) {
+    return (
+      <Unauthorized description="No authorized modules are available for your account." />
+    );
+  }
 
   // @ts-expect-error
   const tab = (search.tab as string) ?? tabsWithHome[0].title;
@@ -151,21 +282,69 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
   const currentItem =
     tabsWithHome.find((t) => t.title === tab) ?? tabsWithHome?.[0];
 
-  function getComponents() {
-    if (!!currentItem && 'schema' in currentItem) {
-      const currentSchema = appSchema[currentItem.schema as SchemaKeys];
-      if ('components' in currentSchema) {
-        return currentSchema.components() ?? [];
-      }
-    }
-    return []
-  }
-
-  const components = getComponents()
-
   if (!currentItem) {
     return <NotFound />;
   }
+
+  function getCurrentPermissions() {
+    if (!('schema' in currentItem)) {
+      return {
+        canCreate: isPrivileged,
+        canUpdate: isPrivileged,
+        canDelete: isPrivileged,
+      };
+    }
+
+    const feature = String(currentItem.schema);
+    return {
+      canCreate: canPerformFeatureAction({
+        business,
+        user,
+        userSoul,
+        feature,
+        action: 'create',
+      }),
+      canUpdate: canPerformFeatureAction({
+        business,
+        user,
+        userSoul,
+        feature,
+        action: 'update',
+      }),
+      canDelete: canPerformFeatureAction({
+        business,
+        user,
+        userSoul,
+        feature,
+        action: 'delete',
+      }),
+    };
+  }
+
+  function getComponents() {
+    if ('schema' in currentItem) {
+      const feature = String(currentItem.schema);
+      if (
+        !canAccessFeature({
+          business,
+          user,
+          userSoul,
+          feature,
+        })
+      ) {
+        return [];
+      }
+
+      const currentSchema = appSchema[currentItem.schema as SchemaKeys];
+      if ('components' in currentSchema) {
+        return currentSchema.components?.() ?? [];
+      }
+    }
+    return [];
+  }
+
+  const components = getComponents();
+  const currentPermissions = getCurrentPermissions();
 
   const currentTableItem = isRenderableAutoTableTab(currentItem)
     ? normalizeTableTab(currentItem, basePath)
@@ -199,10 +378,22 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
           {'children' in currentItem ? (
             currentItem.children
           ) : 'parsedSchema' in currentItem && currentTableItem ? (
-            <AutoTable<SchemaKeys> {...currentTableItem} key={tab} />
+            <AutoTable<SchemaKeys>
+              {...currentTableItem}
+              key={tab}
+              canCreate={currentPermissions.canCreate}
+              canUpdate={currentPermissions.canUpdate}
+              canDelete={currentPermissions.canDelete}
+            />
           ) : !components?.length ? (
             currentTableItem ? (
-              <AutoTable<SchemaKeys> {...currentTableItem} key={tab} />
+              <AutoTable<SchemaKeys>
+                {...currentTableItem}
+                key={tab}
+                canCreate={currentPermissions.canCreate}
+                canUpdate={currentPermissions.canUpdate}
+                canDelete={currentPermissions.canDelete}
+              />
             ) : null
           ) : (
             <Tabs
@@ -229,7 +420,13 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
                 <Card className="border rounded-lg shadow-sm overflow-hidden">
                   <div className="p-0.5 sm:p-4">
                     {currentTableItem ? (
-                      <AutoTable<SchemaKeys> {...currentTableItem} key={tab} />
+                      <AutoTable<SchemaKeys>
+                        {...currentTableItem}
+                        key={tab}
+                        canCreate={currentPermissions.canCreate}
+                        canUpdate={currentPermissions.canUpdate}
+                        canDelete={currentPermissions.canDelete}
+                      />
                     ) : null}
                   </div>
                 </Card>
@@ -242,7 +439,11 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
                 >
                   <Card className="border rounded-lg shadow-sm overflow-hidden">
                     <div className="p-0.5 sm:p-4">
-                      <Component slug={business.basePath} />
+                      {'schema' in currentItem ? (
+                        <PermissionGate feature={String(currentItem.schema)}>
+                          <Component slug={business.basePath} />
+                        </PermissionGate>
+                      ) : null}
                     </div>
                   </Card>
                 </TabsContent>
@@ -260,6 +461,7 @@ export type AutoKanbanProps<K extends SchemaKeys> = {
   groupKey: keyof NestedSchemaType<K>;
   cardBuilder: (data: NestedSchemaType<K>) => ReactNode;
   schema: K;
+  canUpdate?: boolean;
   isItemLocked?: (item: NestedSchemaType<K>) => boolean;
   onUpdate?: (
     data: GunMessagePut,
@@ -343,6 +545,7 @@ export function AutoKanban<K extends SchemaKeys>({
   schema: schemaName,
   groupKey,
   cardBuilder,
+  canUpdate = true,
   isItemLocked,
   onUpdate,
 }: AutoKanbanProps<K>) {
@@ -387,6 +590,7 @@ export function AutoKanban<K extends SchemaKeys>({
       loading={isLoading}
       value={columns}
       onValueChange={(columns) => {
+        if (!canUpdate) return;
         for (const [status, orders] of Object.entries(columns)) {
           for (const order of orders) {
             const soul = getSoulFromUnknown(order);
@@ -397,7 +601,6 @@ export function AutoKanban<K extends SchemaKeys>({
           }
         }
       }}
-      // @ts-expect-error
       getItemValue={(item) => getSoulFromUnknown(item) ?? ''}
     >
       <Kanban.Board className="grid auto-rows-fr grid-cols-3">
@@ -407,6 +610,7 @@ export function AutoKanban<K extends SchemaKeys>({
             value={status}
             orders={columns?.[status] ?? []}
             cardBuilder={cardBuilder}
+            canUpdate={canUpdate}
             isItemLocked={isItemLocked}
           />
         ))}
@@ -460,6 +664,7 @@ interface KanbanColumnProps<K extends SchemaKeys>
   extends Omit<React.ComponentProps<typeof Kanban.Column>, 'children'> {
   orders: NestedSchemaType<K>[];
   cardBuilder: AutoKanbanProps<K>['cardBuilder'];
+  canUpdate: boolean;
   isItemLocked?: AutoKanbanProps<K>['isItemLocked'];
 }
 
@@ -467,6 +672,7 @@ function KanbanColumn<K extends SchemaKeys>({
   value,
   orders,
   cardBuilder,
+  canUpdate,
   isItemLocked,
   ...props
 }: KanbanColumnProps<K>) {
@@ -504,7 +710,7 @@ function KanbanColumn<K extends SchemaKeys>({
                 key={getSoulFromUnknown(order)}
                 order={order}
                 cardBuilder={cardBuilder}
-                asHandle={!(isItemLocked?.(order) ?? false)}
+                asHandle={canUpdate && !(isItemLocked?.(order) ?? false)}
               />
             ))}
       </div>
