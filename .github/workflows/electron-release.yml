@@ -29,16 +29,6 @@ jobs:
         os: [windows-latest, macos-latest, ubuntu-latest]
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      CSC_LINK: ${{ secrets.CSC_LINK }}
-      CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-      APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
-      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-      APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
-      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-      APPLE_ID: ${{ secrets.APPLE_ID }}
-      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-      WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
-      WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
 
     steps:
       - name: Checkout
@@ -63,24 +53,24 @@ jobs:
         shell: bash
         run: |
           cd apps/electron
-          pnpm run build -- --win nsis --publish never
+          pnpm exec tsc
+          CSC_IDENTITY_AUTO_DISCOVERY=false WIN_CSC_LINK= WIN_CSC_KEY_PASSWORD= pnpm exec electron-builder --win nsis --publish never
 
       - name: Build macOS artifacts
         if: matrix.os == 'macos-latest'
         shell: bash
         run: |
           cd apps/electron
-          if [[ -z "${CSC_LINK:-}" ]]; then
-            export CSC_IDENTITY_AUTO_DISCOVERY=false
-          fi
-          pnpm run build -- --mac dmg zip --publish never
+          pnpm exec tsc
+          CSC_IDENTITY_AUTO_DISCOVERY=false pnpm exec electron-builder --mac dmg zip --publish never
 
       - name: Build Linux artifacts
         if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
           cd apps/electron
-          pnpm run build -- --linux AppImage deb --publish never
+          pnpm exec tsc
+          pnpm exec electron-builder --linux AppImage deb --publish never
 
       - name: Upload Windows release assets
         if: matrix.os == 'windows-latest'
@@ -120,14 +110,14 @@ jobs:
             apps/electron/release/SuperSurkhet-linux-x64.deb
 
       - name: Build Microsoft Store package (appx)
-        if: matrix.os == 'windows-latest' && env.WIN_CSC_LINK != ''
+        if: matrix.os == 'windows-latest' && secrets.WIN_CSC_LINK != ''
         shell: bash
         run: |
           cd apps/electron
           pnpm exec electron-builder --win appx --publish never
 
       - name: Build Mac App Store package (mas)
-        if: matrix.os == 'macos-latest' && env.APPLE_TEAM_ID != ''
+        if: matrix.os == 'macos-latest' && secrets.APPLE_TEAM_ID != ''
         shell: bash
         run: |
           cd apps/electron
