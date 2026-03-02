@@ -59,44 +59,53 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Validate Expo auth token
+        id: validate_mobile_secrets
         shell: bash
         run: |
           if [[ -z "${EXPO_TOKEN:-}" ]]; then
-            echo "EXPO_TOKEN is missing. Add it in repository secrets." >&2
-            exit 1
+            echo "can_release=false" >> "$GITHUB_OUTPUT"
+            echo "EXPO_TOKEN is missing. Skipping mobile store build/submit."
+            exit 0
           fi
           if [[ -z "${EXPO_APPLE_ID:-}" || -z "${EXPO_ASC_APP_ID:-}" || -z "${EXPO_APPLE_TEAM_ID:-}" ]]; then
-            echo "Missing iOS submit secrets. Add EXPO_APPLE_ID, EXPO_ASC_APP_ID, and EXPO_APPLE_TEAM_ID." >&2
-            exit 1
+            echo "can_release=false" >> "$GITHUB_OUTPUT"
+            echo "Missing iOS submit secrets. Skipping mobile store build/submit."
+            exit 0
           fi
+          echo "can_release=true" >> "$GITHUB_OUTPUT"
 
       - name: Setup Expo and EAS CLI
+        if: steps.validate_mobile_secrets.outputs.can_release == 'true'
         uses: expo/expo-github-action@v8
         with:
           token: ${{ secrets.EXPO_TOKEN }}
           eas-version: latest
 
       - name: Materialize Play Store service account key
+        if: steps.validate_mobile_secrets.outputs.can_release == 'true'
         shell: bash
         env:
           EXPO_GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.EXPO_GOOGLE_SERVICE_ACCOUNT_KEY }}
         run: |
           mkdir -p apps/surkhet/.secrets
           if [[ -z "${EXPO_GOOGLE_SERVICE_ACCOUNT_KEY:-}" ]]; then
-            echo "EXPO_GOOGLE_SERVICE_ACCOUNT_KEY is missing. Add it for Play Store auto-submit." >&2
-            exit 1
+            echo "EXPO_GOOGLE_SERVICE_ACCOUNT_KEY is missing. Skipping mobile store build/submit."
+            exit 0
           fi
           printf '%s' "$EXPO_GOOGLE_SERVICE_ACCOUNT_KEY" > apps/surkhet/.secrets/google-service-account.json
 
       - name: Show release version
+        if: steps.validate_mobile_secrets.outputs.can_release == 'true'
         run: |
           echo "Releasing mobile version: ${{ needs.detect-version-bump.outputs.current_version }}"
 
       - name: Build and submit Android
+        if: steps.validate_mobile_secrets.outputs.can_release == 'true'
         working-directory: apps/surkhet
         run: pnpm dlx eas-cli build --platform android --profile production --non-interactive --auto-submit
 
       - name: Build and submit iOS
+        if: steps.validate_mobile_secrets.outputs.can_release == 'true'
         working-directory: apps/surkhet
         run: pnpm dlx eas-cli build --platform ios --profile production --non-interactive --auto-submit
 
@@ -135,25 +144,31 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Validate Expo auth token
+        id: validate_apk_token
         shell: bash
         run: |
           if [[ -z "${EXPO_TOKEN:-}" ]]; then
-            echo "EXPO_TOKEN is missing. Add it in repository secrets." >&2
-            exit 1
+            echo "can_build=false" >> "$GITHUB_OUTPUT"
+            echo "EXPO_TOKEN is missing. Skipping APK release upload."
+            exit 0
           fi
+          echo "can_build=true" >> "$GITHUB_OUTPUT"
 
       - name: Setup Expo and EAS CLI
+        if: steps.validate_apk_token.outputs.can_build == 'true'
         uses: expo/expo-github-action@v8
         with:
           token: ${{ secrets.EXPO_TOKEN }}
           eas-version: latest
 
       - name: Build Android APK (preview profile)
+        if: steps.validate_apk_token.outputs.can_build == 'true'
         working-directory: apps/surkhet
         run: |
           pnpm dlx eas-cli build --platform android --profile preview --non-interactive --wait --json > eas-android-build.json
 
       - name: Download APK artifact from EAS
+        if: steps.validate_apk_token.outputs.can_build == 'true'
         shell: bash
         run: |
           mkdir -p apps/surkhet/release
@@ -162,6 +177,7 @@ jobs:
           curl -L \"$APK_URL\" -o apps/surkhet/release/SuperSurkhet-android.apk
 
       - name: Upload Android APK to GitHub Release
+        if: steps.validate_apk_token.outputs.can_build == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}

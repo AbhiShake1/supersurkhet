@@ -108,28 +108,3 @@ jobs:
           files: |
             apps/electron/release/SuperSurkhet-linux-x64.AppImage
             apps/electron/release/SuperSurkhet-linux-x64.deb
-
-      - name: Build Microsoft Store package (appx)
-        if: matrix.os == 'windows-latest' && secrets.WIN_CSC_LINK != ''
-        shell: bash
-        run: |
-          cd apps/electron
-          pnpm exec electron-builder --win appx --publish never
-
-      - name: Build Mac App Store package (mas)
-        if: matrix.os == 'macos-latest' && secrets.APPLE_TEAM_ID != ''
-        shell: bash
-        run: |
-          cd apps/electron
-          pnpm exec electron-builder --mac mas --publish never
-
-      - name: Upload store packages
-        if: matrix.os == 'windows-latest' || matrix.os == 'macos-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: desktop-store-packages-${{ matrix.os }}-${{ github.ref_name }}
-          path: |
-            apps/electron/release/*.appx
-            apps/electron/release/*.msix
-            apps/electron/release/*.pkg
-          if-no-files-found: ignore
