@@ -1,5 +1,5 @@
-import { Logo } from '@/components/logo';
 import { Link } from '@tanstack/react-router';
+import { Logo } from '@/components/logo';
 
 const links = [
   {
@@ -32,20 +32,37 @@ export default function FooterSection() {
   return (
     <footer className="py-16 md:py-32">
       <div className="mx-auto max-w-5xl px-6">
-        <Link to="/" aria-label="go home" className="mx-auto block size-fit">
+        <button
+          type="button"
+          aria-label="go home"
+          className="mx-auto block size-fit"
+          onClick={(event) => {
+            if (typeof window === 'undefined') return;
+            if (window.location.pathname !== '/') {
+              window.location.assign('/#hero');
+              return;
+            }
+            event.preventDefault();
+            window.location.hash = 'hero';
+            document.getElementById('hero')?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start',
+            });
+          }}
+        >
           <Logo />
-        </Link>
+        </button>
 
         <div className="my-8 flex flex-wrap justify-center gap-6 text-sm">
           {links.map((link, index) => (
-            <Link
+            <a
               // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
               key={index}
-              to={link.href}
+              href={link.href}
               className="text-muted-foreground hover:text-primary block duration-150"
             >
               <span>{link.title}</span>
-            </Link>
+            </a>
           ))}
         </div>
         <div className="my-8 flex flex-wrap justify-center gap-6 text-sm">

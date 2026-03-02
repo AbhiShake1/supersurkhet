@@ -1,4 +1,3 @@
-import { Link } from '@tanstack/react-router';
 import { Menu, X } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
@@ -40,13 +39,26 @@ export const Header = ({ children }: React.PropsWithChildren) => {
         >
           <div className="relative flex flex-wrap items-center justify-between gap-6 py-3 lg:gap-0 lg:py-4">
             <div className="flex w-full justify-between lg:w-auto">
-              <Link
-                to="/"
+              <button
+                type="button"
                 aria-label="home"
                 className="flex items-center space-x-2"
+                onClick={(event) => {
+                  if (typeof window === 'undefined') return;
+                  if (window.location.pathname !== '/') {
+                    window.location.assign('/#hero');
+                    return;
+                  }
+                  event.preventDefault();
+                  window.location.hash = 'hero';
+                  document.getElementById('hero')?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start',
+                  });
+                }}
               >
                 <Logo />
-              </Link>
+              </button>
 
               <button
                 type="button"
@@ -67,12 +79,12 @@ export const Header = ({ children }: React.PropsWithChildren) => {
                   {menuItems.map((item, index) => (
                     // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                     <li key={index}>
-                      <Link
-                        to={item.href}
+                      <a
+                        href={item.href}
                         className="text-muted-foreground hover:text-accent-foreground block duration-150"
                       >
                         <span>{item.name}</span>
-                      </Link>
+                      </a>
                     </li>
                   ))}
                 </ul>
@@ -100,12 +112,12 @@ export const HeroHeader = () => {
           {menuItems.map((item, index) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
             <li key={index}>
-              <Link
-                to={item.href}
+              <a
+                href={item.href}
                 className="text-muted-foreground hover:text-accent-foreground block duration-150"
               >
                 <span>{item.name}</span>
-              </Link>
+              </a>
             </li>
           ))}
         </ul>
