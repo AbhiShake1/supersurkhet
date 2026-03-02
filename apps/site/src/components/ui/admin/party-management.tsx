@@ -13,9 +13,9 @@ import {
   Users,
 } from 'lucide-react';
 import { useState } from 'react';
+import { AddRowDialog } from '@/components/auto-admin/add-row-dialog';
 import { AutoTable } from '@/components/auto-table';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -161,16 +161,13 @@ function _PartyManagement({ slug, permissions }: PartyManagementProps) {
             Manage suppliers, customers, and other business parties
           </p>
         </div>
-        <Button
-          className="w-full sm:w-auto"
-          disabled={!canCreate}
-          onClick={() => {
-            // Add party functionality would go here
-          }}
-        >
-          <UserPlus className="w-4 h-4 mr-2" />
-          Add Party
-        </Button>
+        <AddRowDialog
+          schema="party"
+          slug={slug}
+          readOnly={!canCreate}
+          buttonLabel="Add Party"
+          buttonIcon={<UserPlus className="w-4 h-4 mr-2" />}
+        />
       </div>
 
       {/* Stats */}
@@ -282,10 +279,13 @@ function _PartyManagement({ slug, permissions }: PartyManagementProps) {
               <p className="text-gray-500 dark:text-gray-400 mb-4">
                 Try adjusting your search or add a new party
               </p>
-              <Button disabled={!canCreate}>
-                <UserPlus className="w-4 h-4 mr-2" />
-                Add First Party
-              </Button>
+              <AddRowDialog
+                schema="party"
+                slug={slug}
+                readOnly={!canCreate}
+                buttonLabel="Add First Party"
+                buttonIcon={<UserPlus className="w-4 h-4 mr-2" />}
+              />
             </div>
           )}
         </TabsContent>

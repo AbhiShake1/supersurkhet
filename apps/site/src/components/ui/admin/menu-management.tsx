@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { AddRowDialog } from '@/components/auto-admin/add-row-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -29,7 +30,7 @@ import { api } from '@/lib/api';
 import type { AdminComponent } from '.';
 
 interface MenuManagementProps {
-  onAddItem: () => void;
+  slug: string;
   permissions?: {
     canRead: boolean;
     canCreate: boolean;
@@ -38,19 +39,20 @@ interface MenuManagementProps {
   };
 }
 
-const MenuManagement: AdminComponent = ({ permissions }) => {
-  return <_MenuManagement onAddItem={() => {}} permissions={permissions} />;
+const MenuManagement: AdminComponent = ({ slug, permissions }) => {
+  return <_MenuManagement slug={slug} permissions={permissions} />;
 };
 export default MenuManagement;
 
-function _MenuManagement({ onAddItem, permissions }: MenuManagementProps) {
+function _MenuManagement({ slug, permissions }: MenuManagementProps) {
   const canCreate = permissions?.canCreate ?? true;
   const canUpdate = permissions?.canUpdate ?? true;
   const canDelete = permissions?.canDelete ?? true;
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const { data: items = [] } = api.menuItem.useGet({ keys: [] });
-  const { mutate: update } = api.menuItem.useUpdate({ keys: [] });
+  const { data: items = [] } = api.menuItem.useGet({ keys: [slug] });
+  const { mutate: update } = api.menuItem.useUpdate({ keys: [slug] });
+  const { mutate: remove } = api.menuItem.useDelete({ keys: [slug] });
 
   const groups = _.groupBy(items, 'category');
 
@@ -84,7 +86,7 @@ function _MenuManagement({ onAddItem, permissions }: MenuManagementProps) {
   const deleteItem = (itemId: string) => {
     if (!canDelete) return;
     const item = items.find((i) => i._?.soul === itemId);
-    // setItems((prev) => prev.filter((item) => item.id !== itemId))
+    remove({ id: itemId });
     toast.success(`${item?.name} removed from menu`);
   };
 
@@ -100,14 +102,13 @@ function _MenuManagement({ onAddItem, permissions }: MenuManagementProps) {
             Manage your restaurant's menu items and categories
           </p>
         </div>
-        <Button
-          onClick={onAddItem}
-          className="w-full sm:w-auto"
-          disabled={!canCreate}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Menu Item
-        </Button>
+        <AddRowDialog
+          schema="menuItem"
+          slug={slug}
+          readOnly={!canCreate}
+          buttonLabel="Add Menu Item"
+          buttonIcon={<Plus className="w-4 h-4 mr-2" />}
+        />
       </div>
 
       {/* Stats */}
@@ -298,10 +299,13 @@ function _MenuManagement({ onAddItem, permissions }: MenuManagementProps) {
                 <p className="text-gray-500 dark:text-gray-400 mb-4">
                   Try adjusting your search or add a new menu item
                 </p>
-                <Button onClick={onAddItem} disabled={!canCreate}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add First Item
-                </Button>
+                <AddRowDialog
+                  schema="menuItem"
+                  slug={slug}
+                  readOnly={!canCreate}
+                  buttonLabel="Add First Item"
+                  buttonIcon={<Plus className="w-4 h-4 mr-2" />}
+                />
               </div>
             )}
           </TabsContent>
