@@ -1,5 +1,8 @@
 appId: com.supersurkhet.desktop
 productName: SuperSurkhet
+compression: maximum
+electronLanguages:
+  - en-US
 directories:
   output: release
 files:
@@ -29,6 +32,7 @@ appx:
   identityName: com.supersurkhet.desktop
 
 mac:
+  identity: null
   category: public.app-category.utilities
   target:
     - target: dmg
@@ -44,6 +48,7 @@ mas:
   category: public.app-category.utilities
 
 linux:
+  maintainer: SuperSurkhet Team <dev@surkhet.app>
   target:
     - target: AppImage
       arch:

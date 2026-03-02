@@ -4,6 +4,7 @@ import { lazy } from 'react';
 const Features = lazy(() => import('@/components/features-3'));
 const FooterSection = lazy(() => import('@/components/footer'));
 const HeroSection = lazy(() => import('@/components/hero-section'));
+const DownloadSection = lazy(() => import('@/components/download-section'));
 const AboutUs1 = lazy(() => import('@/components/mvpblocks/about-us-1'));
 const CongestedPricing = lazy(() => import('@/components/pricing'));
 const StatsSection = lazy(() => import('@/components/stats-4'));
@@ -28,6 +29,7 @@ function Home() {
         title="Community-First Pricing"
       />
       <TeamSection />
+      <DownloadSection />
       <FooterSection />
     </>
   );

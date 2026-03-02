@@ -7,11 +7,18 @@
 	"scripts": {
 		"dev": "tsc && electron .",
 		"build": "tsc && electron-builder",
+		"build:unsigned:win": "CSC_IDENTITY_AUTO_DISCOVERY=false tsc && electron-builder --win --publish never",
+		"build:unsigned:mac": "CSC_IDENTITY_AUTO_DISCOVERY=false tsc && electron-builder --mac --publish never",
+		"build:unsigned:linux": "CSC_IDENTITY_AUTO_DISCOVERY=false tsc && electron-builder --linux --publish never",
 		"start": "electron .",
 		"typecheck": "tsc --noEmit"
 	},
 	"keywords": [],
-	"author": "SuperSurkhet Team",
+	"author": {
+		"name": "SuperSurkhet Team",
+		"email": "dev@surkhet.app"
+	},
+	"homepage": "https://github.com/AbhiShake1/supersurkhet",
 	"license": "MIT",
 	"dependencies": {
 		"electron-store": "^8.1.0",

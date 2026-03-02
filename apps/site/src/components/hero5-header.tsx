@@ -1,8 +1,8 @@
-import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 import { Menu, X } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
+import { cn } from '@/lib/utils';
 import { Logo } from './logo';
 import { UserAvatarDropdown } from './user/user-avatar-dropdown';
 
@@ -11,6 +11,7 @@ const menuItems = [
   { name: 'Solution', href: '#solution' },
   { name: 'Pricing', href: '#pricing' },
   { name: 'About', href: '#about' },
+  { name: 'Downloads', href: '#downloads' },
 ];
 
 export const Header = ({ children }: React.PropsWithChildren) => {
