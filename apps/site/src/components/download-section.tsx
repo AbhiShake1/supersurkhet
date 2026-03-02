@@ -1,4 +1,10 @@
-import { AppWindow, Download, HardDriveDownload, Laptop } from 'lucide-react';
+import {
+  AppWindow,
+  Download,
+  HardDriveDownload,
+  Laptop,
+  Smartphone,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,7 +17,7 @@ import {
 } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
-type PlatformId = 'windows' | 'macos' | 'linux';
+type PlatformId = 'windows' | 'macos' | 'linux' | 'android' | 'ios';
 
 type DownloadAsset = {
   available: boolean;
@@ -69,6 +75,26 @@ const fallbackManifest: DownloadManifest = {
       updatedAt: new Date().toISOString(),
       url: 'https://github.com/AbhiShake1/supersurkhet/releases/latest/download/SuperSurkhet-linux-x64.deb',
     },
+    {
+      available: true,
+      fileName: 'Latest release asset',
+      label: 'Android (APK)',
+      notes: 'Open latest release assets',
+      platform: 'android',
+      sizeBytes: 0,
+      updatedAt: new Date().toISOString(),
+      url: 'https://github.com/AbhiShake1/supersurkhet/releases/latest',
+    },
+    {
+      available: false,
+      fileName: '',
+      label: 'iOS (Coming soon)',
+      notes: 'iOS direct install is not enabled yet',
+      platform: 'ios',
+      sizeBytes: 0,
+      updatedAt: new Date().toISOString(),
+      url: '',
+    },
   ],
 };
 
@@ -99,9 +125,27 @@ const platformMeta: Record<
     subtitle: 'Linux desktop package',
     title: 'Linux',
   },
+  android: {
+    accent: 'from-green-500/14 to-emerald-500/8',
+    icon: Smartphone,
+    subtitle: 'Android phone installer',
+    title: 'Android',
+  },
+  ios: {
+    accent: 'from-zinc-500/14 to-slate-500/8',
+    icon: AppWindow,
+    subtitle: 'Coming soon',
+    title: 'iOS',
+  },
 };
 
-const platformOrder: PlatformId[] = ['windows', 'macos', 'linux'];
+const platformOrder: PlatformId[] = [
+  'windows',
+  'macos',
+  'linux',
+  'android',
+  'ios',
+];
 
 function detectPlatform(): PlatformId | null {
   if (typeof window === 'undefined') return null;
@@ -115,6 +159,10 @@ function detectPlatform(): PlatformId | null {
   const ua =
     `${nav.userAgentData?.platform ?? ''} ${navigator.userAgent}`.toLowerCase();
 
+  if (ua.includes('android')) return 'android';
+  if (ua.includes('iphone') || ua.includes('ipad') || ua.includes('ios')) {
+    return 'ios';
+  }
   if (ua.includes('win')) return 'windows';
   if (ua.includes('mac')) return 'macos';
   if (ua.includes('linux') || ua.includes('x11')) return 'linux';
@@ -184,18 +232,13 @@ export default function DownloadSection() {
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_18%_14%,rgba(14,165,233,0.14),transparent_42%),radial-gradient(circle_at_80%_24%,rgba(16,185,129,0.12),transparent_45%),radial-gradient(circle_at_50%_92%,rgba(245,158,11,0.09),transparent_45%)]" />
       <div className="mx-auto max-w-6xl px-6">
         <div className="mb-14 text-center">
-          <p className="mb-3 font-medium font-mono text-[11px] tracking-[0.22em] text-muted-foreground uppercase">
-            SuperSurkhet Desktop
-          </p>
           <h2 className="font-serif text-5xl leading-none tracking-tight sm:text-6xl md:text-7xl">
             Downloads
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-pretty text-base text-muted-foreground md:text-lg">
-            Direct installers for Windows, macOS, and Linux. We auto-detect your
-            platform and prioritize the best download.
-          </p>
-          <p className="mt-3 font-medium text-sm text-muted-foreground">
-            Current release: v{manifest.sourceVersion}
+            Download the latest SuperSurkhet build for desktop and mobile. We
+            detect your platform and prioritize the best available package from
+            GitHub Releases.
           </p>
         </div>
 
@@ -221,7 +264,7 @@ export default function DownloadSection() {
           </div>
         )}
 
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
           {platformOrder.map((platformId) => {
             const item = manifest.targets.find(
               (target) => target.platform === platformId,

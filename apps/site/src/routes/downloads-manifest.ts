@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 
-type PlatformId = 'windows' | 'macos' | 'linux';
+type PlatformId = 'windows' | 'macos' | 'linux' | 'android' | 'ios';
 
 type DownloadAsset = {
   available: boolean;
@@ -79,6 +79,26 @@ function fallbackManifest(): DownloadManifest {
         sizeBytes: 0,
         updatedAt: nowIso(),
         url: RELEASES_LATEST_URL,
+      },
+      {
+        available: true,
+        fileName: 'Latest release asset',
+        label: 'Android (APK)',
+        notes: 'Open latest release assets',
+        platform: 'android',
+        sizeBytes: 0,
+        updatedAt: nowIso(),
+        url: RELEASES_LATEST_URL,
+      },
+      {
+        available: false,
+        fileName: '',
+        label: 'iOS (Coming soon)',
+        notes: 'iOS direct install is not enabled yet',
+        platform: 'ios',
+        sizeBytes: 0,
+        updatedAt: nowIso(),
+        url: '',
       },
     ],
   };
@@ -184,6 +204,13 @@ async function fetchLatestReleaseViaHtml(): Promise<DownloadManifest> {
     /\.AppImage$/i,
   ]);
 
+  const androidAsset = pickAsset(assets, [
+    /supersurkhet-android.*\.apk$/i,
+    /android.*\.apk$/i,
+    /\.apk$/i,
+    /\.aab$/i,
+  ]);
+
   return {
     generatedAt: nowIso(),
     product: 'SuperSurkhet',
@@ -203,6 +230,22 @@ async function fetchLatestReleaseViaHtml(): Promise<DownloadManifest> {
         'Linux (DEB/AppImage)',
         'Unsigned Linux build',
       ),
+      mapAsset(
+        androidAsset,
+        'android',
+        'Android (APK/AAB)',
+        'Installable Android build',
+      ),
+      {
+        available: false,
+        fileName: '',
+        label: 'iOS (Coming soon)',
+        notes: 'iOS direct install is not enabled yet',
+        platform: 'ios',
+        sizeBytes: 0,
+        updatedAt: nowIso(),
+        url: '',
+      },
     ],
   };
 }
@@ -248,6 +291,13 @@ async function fetchLatestReleaseManifest(): Promise<DownloadManifest> {
     /\.AppImage$/i,
   ]);
 
+  const androidAsset = pickAsset(assets, [
+    /supersurkhet-android.*\.apk$/i,
+    /android.*\.apk$/i,
+    /\.apk$/i,
+    /\.aab$/i,
+  ]);
+
   return {
     generatedAt: nowIso(),
     product: 'SuperSurkhet',
@@ -269,6 +319,22 @@ async function fetchLatestReleaseManifest(): Promise<DownloadManifest> {
         'Linux (DEB/AppImage)',
         'Unsigned Linux build',
       ),
+      mapAsset(
+        androidAsset,
+        'android',
+        'Android (APK/AAB)',
+        'Installable Android build',
+      ),
+      {
+        available: false,
+        fileName: '',
+        label: 'iOS (Coming soon)',
+        notes: 'iOS direct install is not enabled yet',
+        platform: 'ios',
+        sizeBytes: 0,
+        updatedAt: nowIso(),
+        url: '',
+      },
     ],
   };
 }

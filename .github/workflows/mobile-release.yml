@@ -6,6 +6,9 @@ on:
       - "surkhet-v*"
       - "v*"
 
+permissions:
+  contents: write
+
 jobs:
   detect-version-bump:
     runs-on: ubuntu-latest
@@ -108,3 +111,67 @@ jobs:
           echo "Skipping mobile release. Version unchanged in apps/surkhet/package.json"
           echo "Current: ${{ needs.detect-version-bump.outputs.current_version }}"
           echo "Previous: ${{ needs.detect-version-bump.outputs.previous_version }}"
+
+  build-android-apk-for-github-release:
+    runs-on: ubuntu-latest
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure release exists for this tag
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate Expo auth token
+        shell: bash
+        run: |
+          if [[ -z "${EXPO_TOKEN:-}" ]]; then
+            echo "EXPO_TOKEN is missing. Add it in repository secrets." >&2
+            exit 1
+          fi
+
+      - name: Setup Expo and EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          token: ${{ secrets.EXPO_TOKEN }}
+          eas-version: latest
+
+      - name: Build Android APK (preview profile)
+        working-directory: apps/surkhet
+        run: |
+          pnpm dlx eas-cli build --platform android --profile preview --non-interactive --wait --json > eas-android-build.json
+
+      - name: Download APK artifact from EAS
+        shell: bash
+        run: |
+          mkdir -p apps/surkhet/release
+          APK_URL=$(node -e "const fs=require('fs');const payload=JSON.parse(fs.readFileSync('apps/surkhet/eas-android-build.json','utf8'));const build=Array.isArray(payload)?payload[0]:payload;const url=build?.artifacts?.buildUrl || build?.artifacts?.applicationArchiveUrl || ''; if(!url){console.error('No Android APK URL found in EAS build output'); process.exit(1);} console.log(url);")
+          echo "Downloading APK from: $APK_URL"
+          curl -L \"$APK_URL\" -o apps/surkhet/release/SuperSurkhet-android.apk
+
+      - name: Upload Android APK to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          overwrite_files: true
+          fail_on_unmatched_files: true
+          files: |
+            apps/surkhet/release/SuperSurkhet-android.apk
