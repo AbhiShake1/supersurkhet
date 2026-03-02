@@ -52,33 +52,33 @@ function fallbackManifest(): DownloadManifest {
     targets: [
       {
         available: true,
-        fileName: 'SuperSurkhet-windows-x64-setup.exe',
+        fileName: 'Latest release asset',
         label: 'Windows x64 (Installer)',
-        notes: 'Unsigned NSIS installer',
+        notes: 'Open latest release assets',
         platform: 'windows',
         sizeBytes: 0,
         updatedAt: nowIso(),
-        url: `${RELEASES_LATEST_URL}/download/SuperSurkhet-windows-x64-setup.exe`,
+        url: RELEASES_LATEST_URL,
       },
       {
         available: true,
-        fileName: 'SuperSurkhet-macos-arm64.dmg',
+        fileName: 'Latest release asset',
         label: 'macOS (DMG)',
-        notes: 'Unsigned macOS build',
+        notes: 'Open latest release assets',
         platform: 'macos',
         sizeBytes: 0,
         updatedAt: nowIso(),
-        url: `${RELEASES_LATEST_URL}/download/SuperSurkhet-macos-arm64.dmg`,
+        url: RELEASES_LATEST_URL,
       },
       {
         available: true,
-        fileName: 'SuperSurkhet-linux-x64.deb',
+        fileName: 'Latest release asset',
         label: 'Linux (DEB)',
-        notes: 'Unsigned Linux build',
+        notes: 'Open latest release assets',
         platform: 'linux',
         sizeBytes: 0,
         updatedAt: nowIso(),
-        url: `${RELEASES_LATEST_URL}/download/SuperSurkhet-linux-x64.deb`,
+        url: RELEASES_LATEST_URL,
       },
     ],
   };
@@ -126,10 +126,93 @@ function mapAsset(
   };
 }
 
+async function fetchLatestReleaseViaHtml(): Promise<DownloadManifest> {
+  const response = await fetch(RELEASES_LATEST_URL, {
+    headers: {
+      'User-Agent': 'supersurkhet-site',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`GitHub latest release page failed (${response.status})`);
+  }
+
+  const html = await response.text();
+  const matches = html.match(
+    /\/AbhiShake1\/supersurkhet\/releases\/download\/[^"'\s<>]+/g,
+  );
+
+  if (!matches?.length) {
+    throw new Error('No release assets found in latest release page HTML');
+  }
+
+  const dedupedUrls = [...new Set(matches)]
+    .map((relativeUrl) => `https://github.com${relativeUrl}`)
+    .filter((url) => !url.endsWith('.blockmap') && !url.endsWith('.yml'));
+
+  const assets: GithubReleaseAsset[] = dedupedUrls.map((url) => {
+    const name = decodeURIComponent(url.split('/').at(-1) ?? '');
+    return {
+      browser_download_url: url,
+      name,
+      size: 0,
+      updated_at: nowIso(),
+    };
+  });
+
+  const windowsAsset = pickAsset(assets, [
+    /supersurkhet-windows-x64-setup\.exe$/i,
+    /supersurkhet[- ]setup[- ]\d+\.\d+\.\d+\.exe$/i,
+    /windows.*setup.*\.exe$/i,
+    /setup.*\.exe$/i,
+  ]);
+
+  const macAsset = pickAsset(assets, [
+    /supersurkhet-macos-arm64\.dmg$/i,
+    /supersurkhet-\d+\.\d+\.\d+-arm64\.dmg$/i,
+    /supersurkhet-\d+\.\d+\.\d+-(arm64-)?mac\.zip$/i,
+    /macos.*\.dmg$/i,
+    /\.dmg$/i,
+  ]);
+
+  const linuxAsset = pickAsset(assets, [
+    /supersurkhet-linux-x64\.deb$/i,
+    /supersurkhet-desktop_\d+\.\d+\.\d+_amd64\.deb$/i,
+    /supersurkhet-\d+\.\d+\.\d+\.deb$/i,
+    /linux.*\.deb$/i,
+    /\.deb$/i,
+    /\.AppImage$/i,
+  ]);
+
+  return {
+    generatedAt: nowIso(),
+    product: 'SuperSurkhet',
+    releaseDir: RELEASES_LATEST_URL,
+    sourceVersion: 'latest',
+    targets: [
+      mapAsset(
+        windowsAsset,
+        'windows',
+        'Windows x64 (Installer)',
+        'Unsigned NSIS installer',
+      ),
+      mapAsset(macAsset, 'macos', 'macOS (DMG)', 'Unsigned macOS build'),
+      mapAsset(
+        linuxAsset,
+        'linux',
+        'Linux (DEB/AppImage)',
+        'Unsigned Linux build',
+      ),
+    ],
+  };
+}
+
 async function fetchLatestReleaseManifest(): Promise<DownloadManifest> {
   const response = await fetch(GITHUB_LATEST_API, {
     headers: {
       Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'supersurkhet-site',
     },
   });
 
@@ -142,6 +225,7 @@ async function fetchLatestReleaseManifest(): Promise<DownloadManifest> {
 
   const windowsAsset = pickAsset(assets, [
     /supersurkhet-windows-x64-setup\.exe$/i,
+    /supersurkhet[- ]setup[- ]\d+\.\d+\.\d+\.exe$/i,
     /windows.*setup.*\.exe$/i,
     /setup.*\.exe$/i,
   ]);
@@ -149,12 +233,16 @@ async function fetchLatestReleaseManifest(): Promise<DownloadManifest> {
   const macAsset = pickAsset(assets, [
     /supersurkhet-macos-arm64\.dmg$/i,
     /supersurkhet-macos-x64\.dmg$/i,
+    /supersurkhet-\d+\.\d+\.\d+-arm64\.dmg$/i,
+    /supersurkhet-\d+\.\d+\.\d+-x64\.dmg$/i,
     /macos.*\.dmg$/i,
     /\.dmg$/i,
   ]);
 
   const linuxAsset = pickAsset(assets, [
     /supersurkhet-linux-x64\.deb$/i,
+    /supersurkhet-desktop_\d+\.\d+\.\d+_amd64\.deb$/i,
+    /supersurkhet-\d+\.\d+\.\d+\.deb$/i,
     /linux.*\.deb$/i,
     /\.deb$/i,
     /\.AppImage$/i,
@@ -198,11 +286,21 @@ export const Route = createFileRoute('/downloads-manifest')({
             },
           });
         } catch {
-          return Response.json(fallbackManifest(), {
-            headers: {
-              'Cache-Control': 'public, max-age=60, s-maxage=60',
-            },
-          });
+          try {
+            const manifest = await fetchLatestReleaseViaHtml();
+            return Response.json(manifest, {
+              headers: {
+                'Cache-Control':
+                  'public, max-age=120, s-maxage=120, stale-while-revalidate=300',
+              },
+            });
+          } catch {
+            return Response.json(fallbackManifest(), {
+              headers: {
+                'Cache-Control': 'public, max-age=60, s-maxage=60',
+              },
+            });
+          }
         }
       },
     },
