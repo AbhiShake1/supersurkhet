@@ -3,39 +3,26 @@ name: Desktop Release
 on:
   push:
     tags:
-      - "desktop-v*"
-      - "v*"
+      - 'desktop-v*'
+      - 'v*'
 
 permissions:
   contents: write
 
 jobs:
-  detect-version-bump:
+  create-release:
     runs-on: ubuntu-latest
-    outputs:
-      version_changed: ${{ steps.version.outputs.version_changed }}
-      current_version: ${{ steps.version.outputs.current_version }}
-      previous_version: ${{ steps.version.outputs.previous_version }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Ensure release exists for this tag
+        uses: softprops/action-gh-release@v2
         with:
-          fetch-depth: 2
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
 
-      - name: Detect desktop version change
-        id: version
-        shell: bash
-        run: |
-          result="$(./scripts/ci/check-version-bump.sh apps/electron/package.json)"
-          echo "$result"
-          echo "$result" >> "$GITHUB_OUTPUT"
-
-  release:
-    name: Build & Release (${{ matrix.os }})
+  build-and-upload:
+    name: Build & Upload (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    needs: detect-version-bump
-    if: |
-      needs.detect-version-bump.outputs.version_changed == 'true'
+    needs: create-release
     strategy:
       fail-fast: false
       matrix:
@@ -52,6 +39,7 @@ jobs:
       APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
       WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
       WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -70,20 +58,66 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build and publish desktop artifacts
+      - name: Build Windows artifacts
+        if: matrix.os == 'windows-latest'
         shell: bash
         run: |
           cd apps/electron
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            pnpm run build -- --win nsis --publish always
-          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            if [[ -z "${CSC_LINK:-}" ]]; then
-              export CSC_IDENTITY_AUTO_DISCOVERY=false
-            fi
-            pnpm run build -- --mac dmg zip --publish always
-          else
-            pnpm run build -- --linux AppImage deb rpm snap --publish always
+          pnpm run build -- --win nsis --publish never
+
+      - name: Build macOS artifacts
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: |
+          cd apps/electron
+          if [[ -z "${CSC_LINK:-}" ]]; then
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
           fi
+          pnpm run build -- --mac dmg zip --publish never
+
+      - name: Build Linux artifacts
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          cd apps/electron
+          pnpm run build -- --linux AppImage deb --publish never
+
+      - name: Upload Windows release assets
+        if: matrix.os == 'windows-latest'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          fail_on_unmatched_files: true
+          overwrite_files: true
+          files: |
+            apps/electron/release/SuperSurkhet-windows-x64-setup.exe
+            apps/electron/release/SuperSurkhet-windows-x64-setup.exe.blockmap
+            apps/electron/release/latest.yml
+
+      - name: Upload macOS release assets
+        if: matrix.os == 'macos-latest'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          fail_on_unmatched_files: true
+          overwrite_files: true
+          files: |
+            apps/electron/release/SuperSurkhet-macos-arm64.dmg
+            apps/electron/release/SuperSurkhet-macos-x64.dmg
+            apps/electron/release/SuperSurkhet-macos-arm64.zip
+            apps/electron/release/SuperSurkhet-macos-x64.zip
+            apps/electron/release/latest-mac.yml
+
+      - name: Upload Linux release assets
+        if: matrix.os == 'ubuntu-latest'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          fail_on_unmatched_files: true
+          overwrite_files: true
+          files: |
+            apps/electron/release/SuperSurkhet-linux-x64.AppImage
+            apps/electron/release/SuperSurkhet-linux-x64.deb
 
       - name: Build Microsoft Store package (appx)
         if: matrix.os == 'windows-latest' && env.WIN_CSC_LINK != ''
@@ -103,21 +137,9 @@ jobs:
         if: matrix.os == 'windows-latest' || matrix.os == 'macos-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: desktop-store-packages-${{ matrix.os }}-${{ needs.detect-version-bump.outputs.current_version }}
+          name: desktop-store-packages-${{ matrix.os }}-${{ github.ref_name }}
           path: |
             apps/electron/release/*.appx
             apps/electron/release/*.msix
             apps/electron/release/*.pkg
           if-no-files-found: ignore
-
-  no-release:
-    runs-on: ubuntu-latest
-    needs: detect-version-bump
-    if: |
-      needs.detect-version-bump.outputs.version_changed != 'true'
-    steps:
-      - name: Skip release
-        run: |
-          echo "Skipping desktop release. Version unchanged in apps/electron/package.json"
-          echo "Current: ${{ needs.detect-version-bump.outputs.current_version }}"
-          echo "Previous: ${{ needs.detect-version-bump.outputs.previous_version }}"

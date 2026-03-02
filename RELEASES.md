@@ -1,11 +1,11 @@
 # Release and Store Deployment
 
-This repository now ships through version-gated GitHub Actions workflows:
+This repository now ships through GitHub Actions release workflows:
 
 - Mobile (`apps/surkhet`): `.github/workflows/mobile-release.yml`
 - Desktop (`apps/electron`): `.github/workflows/electron-release.yml`
 
-Both workflows run on pushes to `main` only when the target app's `package.json` `version` changes.
+Desktop releases are tag-driven and published to GitHub Releases.
 
 ## 1) Mobile (Expo -> Play Store + App Store)
 
@@ -29,16 +29,20 @@ Both workflows run on pushes to `main` only when the target app's `package.json`
 ## 2) Desktop (Electron -> GitHub Releases + Store packages)
 
 ### Workflow trigger
-- Bump `apps/electron/package.json` `version`.
-- Push to `main`.
+- Create and push a tag matching `v*` or `desktop-v*`.
+- Example: `git tag v1.0.2 && git push origin v1.0.2`
 
 ### What is produced
 - macOS: `dmg`, `zip`
 - Windows: `nsis`
-- Linux: `AppImage`, `deb`, `rpm`, `snap`
+- Linux: `AppImage`, `deb`
 - Optional store packages when signing secrets are present:
   - Windows Store candidate: `appx`
   - Mac App Store candidate: `mas`
+
+### Website download links
+- The website resolves downloads from the latest GitHub Release via `/downloads-manifest`.
+- Stable asset names are used so `releases/latest/download/*` links always point to the newest tagged release.
 
 ### Required GitHub secrets (optional for signed/store packages)
 - `CSC_LINK`
@@ -60,6 +64,7 @@ Both workflows run on pushes to `main` only when the target app's `package.json`
   - Snap Store: publish `snap` from a Snapcraft account.
   - Flathub: requires a dedicated Flatpak manifest/repo flow (not part of Electron Builder output).
 
-## 4) Force run without version bump
+## 4) Re-run a failed desktop release
 
-Use `workflow_dispatch` on either workflow and set `force_release=true`.
+- Re-run the failed GitHub Actions workflow for the same tag.
+- Assets are uploaded with overwrite enabled.

@@ -15,6 +15,7 @@ publish:
   repo: supersurkhet
 
 win:
+  artifactName: SuperSurkhet-windows-${arch}-setup.${ext}
   target:
     - target: nsis
       arch:
@@ -32,6 +33,7 @@ appx:
   identityName: com.supersurkhet.desktop
 
 mac:
+  artifactName: SuperSurkhet-macos-${arch}.${ext}
   identity: null
   category: public.app-category.utilities
   target:
@@ -48,6 +50,7 @@ mas:
   category: public.app-category.utilities
 
 linux:
+  artifactName: SuperSurkhet-linux-${arch}.${ext}
   maintainer: SuperSurkhet Team <dev@surkhet.app>
   target:
     - target: AppImage

@@ -36,38 +36,38 @@ type DownloadManifest = {
 const fallbackManifest: DownloadManifest = {
   generatedAt: new Date().toISOString(),
   product: 'SuperSurkhet',
-  releaseDir: '/downloads',
+  releaseDir: 'https://github.com/AbhiShake1/supersurkhet/releases/latest',
   sourceVersion: 'latest',
   targets: [
     {
       available: true,
-      fileName: 'SuperSurkhet-1.0.1-windows-x64-setup.exe',
+      fileName: 'SuperSurkhet-windows-x64-setup.exe',
       label: 'Windows x64 (Installer)',
       notes: 'Unsigned build',
       platform: 'windows',
       sizeBytes: 0,
       updatedAt: new Date().toISOString(),
-      url: '/downloads/SuperSurkhet-1.0.1-windows-x64-setup.exe',
+      url: 'https://github.com/AbhiShake1/supersurkhet/releases/latest/download/SuperSurkhet-windows-x64-setup.exe',
     },
     {
-      available: false,
-      fileName: '',
-      label: 'macOS (DMG/ZIP)',
-      notes: 'Build and sync pending',
+      available: true,
+      fileName: 'SuperSurkhet-macos-arm64.dmg',
+      label: 'macOS (DMG)',
+      notes: 'Unsigned build',
       platform: 'macos',
       sizeBytes: 0,
       updatedAt: new Date().toISOString(),
-      url: '',
+      url: 'https://github.com/AbhiShake1/supersurkhet/releases/latest/download/SuperSurkhet-macos-arm64.dmg',
     },
     {
-      available: false,
-      fileName: '',
-      label: 'Linux (AppImage/DEB/RPM)',
-      notes: 'Build and sync pending',
+      available: true,
+      fileName: 'SuperSurkhet-linux-x64.deb',
+      label: 'Linux (DEB)',
+      notes: 'Unsigned build',
       platform: 'linux',
       sizeBytes: 0,
       updatedAt: new Date().toISOString(),
-      url: '',
+      url: 'https://github.com/AbhiShake1/supersurkhet/releases/latest/download/SuperSurkhet-linux-x64.deb',
     },
   ],
 };
@@ -96,7 +96,7 @@ const platformMeta: Record<
   linux: {
     accent: 'from-amber-500/14 to-orange-500/8',
     icon: HardDriveDownload,
-    subtitle: 'AppImage package for fast install',
+    subtitle: 'Linux desktop package',
     title: 'Linux',
   },
 };
@@ -142,7 +142,7 @@ export default function DownloadSection() {
     setCurrentPlatform(detectPlatform());
 
     let cancelled = false;
-    fetch('/downloads/manifest.json', { cache: 'no-store' })
+    fetch('/downloads-manifest', { cache: 'no-store' })
       .then((response) => {
         if (!response.ok) {
           throw new Error(`Could not load manifest (${response.status})`);
