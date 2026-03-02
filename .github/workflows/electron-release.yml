@@ -38,7 +38,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          package-manager-cache: false
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -106,5 +105,5 @@ jobs:
           fail_on_unmatched_files: true
           overwrite_files: true
           files: |
-            apps/electron/release/SuperSurkhet-linux-x64.AppImage
-            apps/electron/release/SuperSurkhet-linux-x64.deb
+            apps/electron/release/SuperSurkhet-linux-*.AppImage
+            apps/electron/release/SuperSurkhet-linux-*.deb
