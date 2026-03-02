@@ -7,7 +7,7 @@ import { fileURLToPath, URL } from 'node:url';
 
 import tailwindcss from '@tailwindcss/vite';
 import { nitro } from 'nitro/vite';
-import { zodTypegen } from './scripts/vite/zod-typegen';
+import { zodTypegen } from '@supersurkhet/zod-typegen-vite';
 
 const config = defineConfig({
   build: {

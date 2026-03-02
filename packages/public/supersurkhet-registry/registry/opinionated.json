@@ -1,0 +1,18 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "supersurkhet-opinionated",
+  "type": "registry:block",
+  "description": "Installs base primitives plus opinionated admin/table/permission/kanban scaffolds.",
+  "dependencies": [
+    "@supersurkhet/core"
+  ],
+  "registryDependencies": [
+    "supersurkhet-base"
+  ],
+  "files": [
+    { "path": "templates/admin.tsx", "type": "registry:file", "target": "src/components/admin/index.tsx" },
+    { "path": "templates/table.tsx", "type": "registry:file", "target": "src/components/admin/table.tsx" },
+    { "path": "templates/permissions.ts", "type": "registry:file", "target": "src/lib/permissions.ts" },
+    { "path": "templates/kanban.tsx", "type": "registry:file", "target": "src/components/admin/kanban.tsx" }
+  ]
+}

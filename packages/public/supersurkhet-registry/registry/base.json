@@ -1,0 +1,16 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "supersurkhet-base",
+  "type": "registry:block",
+  "description": "Installs schema-driven db/api objects and CRUD hooks sourced from your local schema.ts.",
+  "dependencies": [
+    "@supersurkhet/core"
+  ],
+  "files": [
+    {
+      "path": "templates/schema.ts",
+      "type": "registry:file",
+      "target": "src/lib/schema.ts"
+    }
+  ]
+}
