@@ -29,7 +29,7 @@ type Props = React.ComponentPropsWithRef<'canvas'> & {
   children?: ReactNode;
 };
 
-export type ConfettiRef = Api | null;
+type ConfettiRef = Api | null;
 
 const ConfettiContext = createContext<Api>({} as Api);
 

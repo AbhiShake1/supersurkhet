@@ -27,7 +27,7 @@ import { cn } from '@/lib/utils';
 /**
  * TabsContentConfig defines the structure for the content of the page config panel tabs.
  */
-export interface TabsContentConfig {
+interface TabsContentConfig {
   layers: { title: string; content: React.ReactNode };
   appearance?: { title: string; content: React.ReactNode };
 }
@@ -46,7 +46,7 @@ interface PanelConfig {
 /**
  * UIBuilderProps defines the props for the UIBuilder component with enhanced type safety.
  */
-export interface UIBuilderProps<
+interface UIBuilderProps<
   TRegistry extends ComponentRegistry = ComponentRegistry,
 > {
   initialLayers?: ComponentLayer[];
@@ -293,7 +293,7 @@ function MainLayout({ panelConfig }: { panelConfig: PanelConfig }) {
  * @param {TabsContentConfig} props.tabsContent - The content for the tabs.
  * @returns {JSX.Element} The page config panel with tabs.
  */
-export function PageConfigPanel({
+function PageConfigPanel({
   className,
   tabsContent,
 }: {
@@ -328,7 +328,7 @@ export function PageConfigPanel({
  * @param {boolean} editVariables - Whether to allow editing variables.
  * @returns {TabsContentConfig} The default tabs content configuration.
  */
-export function defaultConfigTabsContent() {
+function defaultConfigTabsContent() {
   return {
     layers: { title: 'Layers', content: <LayersPanel /> },
     appearance: {
@@ -348,7 +348,7 @@ export function defaultConfigTabsContent() {
  *
  * @returns {JSX.Element} The loading skeleton.
  */
-export function LoadingSkeleton() {
+function LoadingSkeleton() {
   return (
     <div
       data-testid="loading-skeleton"
@@ -370,7 +370,7 @@ export function LoadingSkeleton() {
  * @param {TabsContentConfig} tabsContent - The content for the page config panel tabs.
  * @returns {PanelConfig} The default panel configuration.
  */
-export const getDefaultPanelConfigValues = (tabsContent: TabsContentConfig) => {
+const getDefaultPanelConfigValues = (tabsContent: TabsContentConfig) => {
   return {
     navBar: <NavBar />,
     pageConfigPanel: (

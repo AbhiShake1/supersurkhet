@@ -1,6 +1,6 @@
 export const AUTO_SCROLL_THRESHOLD = 50; // Distance in pixels from edge to trigger auto-scroll
-export const MIN_SCROLL_SPEED = 5; // Minimum scroll speed in pixels per frame
-export const MAX_SCROLL_SPEED = 25; // Maximum scroll speed in pixels per frame
+const MIN_SCROLL_SPEED = 5; // Minimum scroll speed in pixels per frame
+const MAX_SCROLL_SPEED = 25; // Maximum scroll speed in pixels per frame
 
 // Auto-scroll state interface
 export interface AutoScrollState {

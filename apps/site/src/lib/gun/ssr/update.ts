@@ -19,7 +19,7 @@ function omitMeta<T>(obj: T): T {
   });
 }
 
-export function omitEmptyObject<T>(value: T): T {
+function omitEmptyObject<T>(value: T): T {
   if (Array.isArray(value)) {
     return value
       .map(omitEmptyObject)

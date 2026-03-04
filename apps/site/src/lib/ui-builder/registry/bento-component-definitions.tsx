@@ -72,7 +72,7 @@ export const bentoComponentDefinitions: ComponentRegistry = {
     from: '@/components/ui/bento-grid',
     fieldOverrides: {
       ...commonFieldOverrides(),
-      Icon: (layer) => iconNameFieldOverrides(layer), // For icon field
+      Icon: (layer) => iconNameFieldOverrides(layer, { propName: 'Icon' }), // For icon field
     },
     defaultChildren: [
       {

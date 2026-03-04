@@ -17,7 +17,6 @@ import 'gun/lib/then';
 import 'gun/lib/unset';
 import './gun/rindexed';
 import type { IGunInstance } from 'gun/types';
-import type z from 'zod';
 // import createBullet from "./bullet";
 
 const GUN = Gun; //.scope(GUN_PREFIX)

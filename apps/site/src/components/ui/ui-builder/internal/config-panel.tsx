@@ -159,5 +159,3 @@ const PageLayerForm: React.FC<PageLayerFormProps> = ({
     </AutoForm>
   );
 };
-
-export default PageLayerForm;

@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import type { FieldWrapperProps } from './FieldWrapper';
 import { useState, useEffect } from 'react';
 
-export interface PhoneFieldProps extends FieldWrapperProps {
+interface PhoneFieldProps extends FieldWrapperProps {
   placeholder?: string;
   className?: string;
   country?: string;

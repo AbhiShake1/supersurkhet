@@ -53,7 +53,7 @@ export function getBaseType(schema: z.ZodAny): string {
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export function getDefaultValueInZodStack(schema: z.ZodAny): any {
+function getDefaultValueInZodStack(schema: z.ZodAny): any {
   const typedSchema = schema as unknown as z.ZodDefault<
     z.ZodNumber | z.ZodString
   >;

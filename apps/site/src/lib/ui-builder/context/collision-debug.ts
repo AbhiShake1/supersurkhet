@@ -13,7 +13,7 @@ const debugElements: Record<
 let timeout: NodeJS.Timeout;
 
 // Main debug function for collision visualization
-export const collisionDebug = (
+const collisionDebug = (
   pointerCoordinates: Coordinates,
   adjustedPointerCoordinates: Coordinates,
   droppableRects: Map<
@@ -271,7 +271,7 @@ export const collisionDebug = (
 };
 
 // Utility function to clear all debug elements
-export const clearDebugElements = () => {
+const clearDebugElements = () => {
   Object.entries(debugElements).forEach(([id, { svg }]) => {
     svg.remove();
     delete debugElements[id];
@@ -279,7 +279,7 @@ export const clearDebugElements = () => {
 };
 
 // Utility function to toggle debug mode
-export const toggleCollisionDebug = () => {
+const toggleCollisionDebug = () => {
   DEBUG = !DEBUG;
   console.log(`🎯 Collision Debug ${DEBUG ? 'ENABLED' : 'DISABLED'}`);
   if (!DEBUG) {
@@ -289,14 +289,14 @@ export const toggleCollisionDebug = () => {
 };
 
 // Utility function to enable debug mode
-export const enableCollisionDebug = () => {
+const enableCollisionDebug = () => {
   DEBUG = true;
   console.log('🎯 Collision Debug ENABLED');
   return DEBUG;
 };
 
 // Utility function to disable debug mode
-export const disableCollisionDebug = () => {
+const disableCollisionDebug = () => {
   DEBUG = false;
   clearDebugElements();
   console.log('🎯 Collision Debug DISABLED');

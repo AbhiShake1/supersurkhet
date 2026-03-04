@@ -1,18 +1,20 @@
 import { useSearch } from '@tanstack/react-router';
 import _ from 'lodash';
-import { lazy, memo, useMemo } from 'react';
+import { lazy, memo, useEffect, useMemo, useState } from 'react';
 import _UIBuilder from '@/components/ui/ui-builder';
 import { useProfile } from '@/hooks/use-profile';
 import { api } from '@/lib/api';
 import type { Business } from '@/lib/schema';
 import { ContextDataStore } from '@/lib/ui-builder/context/context-data-store';
-import { complexComponentDefinitions } from '@/lib/ui-builder/registry/complex-component-definitions';
-import { primitiveComponentDefinitions } from '@/lib/ui-builder/registry/primitive-component-definitions';
+import { loadComponentRegistry } from '@/lib/ui-builder/registry/load-component-registry';
 import { useAuth } from './auth-provider';
 import { useFeaturePermissions } from './permission-gate/use-feature-permissions';
 import { NotFound } from './ui/not-found';
 import { Spinner } from './ui/spinner';
-import type { LayerChangeHandler } from './ui/ui-builder/types';
+import type {
+  ComponentRegistry,
+  LayerChangeHandler,
+} from './ui/ui-builder/types';
 import { Unauthorized } from './ui/unauthorized';
 
 const LayerRenderer = lazy(
@@ -28,10 +30,30 @@ const UIBuilder = memo(_UIBuilder, (prevProps, nextProps) => {
   //   && _.isEqual(prevProps.initialLayers, nextProps.initialLayers)
 });
 
-const componentRegistry = {
-  ...primitiveComponentDefinitions, // div, span, img, etc.
-  ...complexComponentDefinitions, // Button, Badge, Card, etc.
-};
+function useComponentRegistry() {
+  const [componentRegistry, setComponentRegistry] =
+    useState<ComponentRegistry | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    loadComponentRegistry()
+      .then((registry) => {
+        if (isMounted) setComponentRegistry(registry);
+      })
+      .catch((error) => {
+        console.error(
+          '[ui-builder] failed to load component registry dynamically',
+          error,
+        );
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  return componentRegistry;
+}
 
 // recursively omit #
 function omitMeta<T>(obj: T): T {
@@ -83,6 +105,7 @@ export function CustomUiBuilderPage({ slug }: { slug: string }) {
   const canRead = permissions.canRead;
   const canEdit =
     permissions.canCreate || permissions.canUpdate || permissions.canDelete;
+  const componentRegistry = useComponentRegistry();
 
   const { mutate: upsert } = api.business.useUpdate();
   const { data: _data, isLoading } = api.business.useGet({
@@ -116,6 +139,8 @@ export function CustomUiBuilderPage({ slug }: { slug: string }) {
     return <CustomUiRendererPage slug={slug} />;
   }
 
+  if (!componentRegistry) return <Spinner />;
+
   return (
     <ContextDataStore contextData={contextData}>
       <UIBuilder
@@ -134,6 +159,7 @@ export function CustomUiRendererPage({ slug }: { slug: string }) {
   'use memo';
   const search = useSearch({ from: '__root__' });
   const page = search?.p;
+  const componentRegistry = useComponentRegistry();
   const { data: _business, isLoading } = api.business.useGet({
     keys: [slug],
     single: true,
@@ -158,7 +184,7 @@ export function CustomUiRendererPage({ slug }: { slug: string }) {
   // Create context data for rendering - using business data if available
   const { contextData, isLoading: _isLoading } = useContextData({ business });
 
-  if (isLoading || _isLoading) return <Spinner />;
+  if (isLoading || _isLoading || !componentRegistry) return <Spinner />;
 
   if (!business?.uiBuilder?.layers) return <NotFound />;
 

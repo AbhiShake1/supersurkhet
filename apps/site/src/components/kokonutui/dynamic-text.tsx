@@ -14,7 +14,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import z from 'zod';
 
-export const DynamicTextGreetingSchema = z.object({
+const DynamicTextGreetingSchema = z.object({
   text: z.string().optional(),
   language: z.string().optional(),
 });
@@ -25,7 +25,7 @@ export const DynamicTextSchema = z.object({
   greetings: z.array(DynamicTextGreetingSchema).optional(),
 });
 
-export type DynamicTextProps = z.infer<typeof DynamicTextSchema>;
+type DynamicTextProps = z.infer<typeof DynamicTextSchema>;
 
 const DynamicText = ({
   greetings = [

@@ -11,7 +11,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { AutoFormFieldProps } from '../react';
 
-export interface UnitFieldProps extends AutoFormFieldProps {
+interface UnitFieldProps extends AutoFormFieldProps {
   placeholder?: string;
   className?: string;
   description?: string;

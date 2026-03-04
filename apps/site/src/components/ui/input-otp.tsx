@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { OTPInput, OTPInputContext } from 'input-otp';
-import { MinusIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
@@ -64,15 +63,4 @@ function InputOTPSlot({
   );
 }
 
-function InputOTPSeparator({ ...props }: React.ComponentProps<'div'>) {
-  return (
-    // biome-ignore lint/a11y/useFocusableInteractive: lint debt cleanup
-    // biome-ignore lint/a11y/useSemanticElements: lint debt cleanup
-    // biome-ignore lint/a11y/useAriaPropsForRole: lint debt cleanup
-    <div data-slot="input-otp-separator" role="separator" {...props}>
-      <MinusIcon />
-    </div>
-  );
-}
-
-export { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator };
+export { InputOTP, InputOTPGroup, InputOTPSlot };

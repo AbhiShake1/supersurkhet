@@ -17,7 +17,7 @@ import { api } from '@/lib/api';
 import { Skeleton } from './ui/skeleton';
 import { BusinessAccessGate } from './permission-gate/business-access-gate';
 
-export interface BusinessListProps
+interface BusinessListProps
   extends React.ComponentPropsWithoutRef<typeof ScrollArea> {}
 
 export function BusinessList(props: BusinessListProps) {

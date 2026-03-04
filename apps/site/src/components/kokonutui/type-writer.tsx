@@ -14,7 +14,7 @@ import { motion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import z from 'zod';
 
-export const TypewriterSequenceSchema = z.object({
+const TypewriterSequenceSchema = z.object({
   text: z.string().optional(),
   deleteAfter: z.boolean().optional(),
   pauseAfter: z.number().optional(),
@@ -31,8 +31,8 @@ export const TypewriterTitleSchema = z.object({
   naturalVariance: z.boolean().optional(),
 });
 
-export type TypewriterSequence = z.infer<typeof TypewriterSequenceSchema>;
-export type TypewriterTitleProps = z.infer<typeof TypewriterTitleSchema>;
+type TypewriterSequence = z.infer<typeof TypewriterSequenceSchema>;
+type TypewriterTitleProps = z.infer<typeof TypewriterTitleSchema>;
 
 const DEFAULT_SEQUENCES: TypewriterSequence[] = [
   { text: 'Typewriter', deleteAfter: true },

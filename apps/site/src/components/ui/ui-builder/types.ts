@@ -71,20 +71,4 @@ export type LayerChangeHandler<
 ) => void;
 
 // Helper types for extracting component props from registry
-export type ExtractComponentProps<
-  TRegistry extends ComponentRegistry,
-  TComponentName extends keyof TRegistry,
-> = TRegistry[TComponentName] extends RegistryEntry<
-  ReactComponentType<infer TProps>
->
-  ? TProps
-  : never;
-
 // Type-safe layer change handler with registry awareness
-export type TypedLayerChangeHandler<TRegistry extends ComponentRegistry> = (
-  layers: Array<
-    ComponentLayer & {
-      type: keyof TRegistry;
-    }
-  >,
-) => void;

@@ -5,7 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
-export interface LinkEditorProps extends React.HTMLAttributes<HTMLDivElement> {
+interface LinkEditorProps extends React.HTMLAttributes<HTMLDivElement> {
   defaultUrl?: string;
   defaultText?: string;
   defaultIsNewTab?: boolean;
@@ -84,5 +84,3 @@ export const LinkEditBlock = React.forwardRef<HTMLDivElement, LinkEditorProps>(
 );
 
 LinkEditBlock.displayName = 'LinkEditBlock';
-
-export default LinkEditBlock;

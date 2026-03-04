@@ -85,7 +85,7 @@ export type ConfigItem = {
   multiple?: boolean;
 };
 
-export type ConfigType = {
+type ConfigType = {
   [key: string]: ConfigItem;
 };
 export const CONFIG: ConfigType = {

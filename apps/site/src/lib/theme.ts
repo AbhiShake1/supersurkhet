@@ -99,7 +99,7 @@ export const themeStylePropsSchema = z.object({
   spacing: z.string().optional(),
 });
 
-export const themeStylesSchema = z.object({
+const themeStylesSchema = z.object({
   light: themeStylePropsSchema,
   dark: themeStylePropsSchema,
 });
@@ -107,32 +107,15 @@ export const themeStylesSchema = z.object({
 export type ThemeStyleProps = z.infer<typeof themeStylePropsSchema>;
 // export type ThemeStyles = z.infer<typeof themeStylesSchema>;
 
-export const themeStylePropsSchemaWithoutSpacing = themeStylePropsSchema.omit({
+const themeStylePropsSchemaWithoutSpacing = themeStylePropsSchema.omit({
   spacing: true,
 });
 
-export const themeStylesSchemaWithoutSpacing = z.object({
+const themeStylesSchemaWithoutSpacing = z.object({
   light: themeStylePropsSchemaWithoutSpacing,
   dark: themeStylePropsSchemaWithoutSpacing,
 });
-
-export type ThemeStylesWithoutSpacing = z.infer<
-  typeof themeStylesSchemaWithoutSpacing
->;
-
-export interface ThemeEditorPreviewProps {
-  styles: ThemeStyles;
-  currentMode: 'light' | 'dark';
-}
-
-export interface ThemeEditorControlsProps {
-  styles: ThemeStyles;
-  currentMode: 'light' | 'dark';
-  onChange: (styles: ThemeStyles) => void;
-  themePromise: Promise<Theme | null>;
-}
-
-export type ThemePreset = {
+type ThemePreset = {
   source?: 'SAVED' | 'BUILT_IN';
   createdAt?: string;
   label?: string;
@@ -146,9 +129,6 @@ const theme = z.object({
   name: z.string(),
   styles: z.record(z.string(), themeStylesSchema),
 });
-
-export type Theme = z.infer<typeof theme>;
-
 export const defaultPresets: Record<string, ThemePreset> = {
   'modern-minimal': {
     label: 'Modern Minimal',

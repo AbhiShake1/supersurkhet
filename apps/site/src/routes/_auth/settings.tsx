@@ -32,8 +32,7 @@ function RouteComponent() {
   const { auth } = useRouteContext({ from: '/_auth' });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
-  const { register, handleSubmit, reset, setValue } = useForm({
+  const { register, handleSubmit, reset } = useForm({
     defaultValues: {
       emailNotifications: true,
       smsNotifications: false,

@@ -20,7 +20,7 @@ export const ScrollTextSchema = z.object({
   className: z.string().optional(),
 });
 
-export type ScrollTextProps = z.infer<typeof ScrollTextSchema>;
+type ScrollTextProps = z.infer<typeof ScrollTextSchema>;
 
 export default function ScrollText({
   texts = [

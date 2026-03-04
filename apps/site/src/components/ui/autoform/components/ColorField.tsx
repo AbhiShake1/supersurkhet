@@ -3,7 +3,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import type { FieldWrapperProps } from './FieldWrapper';
 
-export interface ColorFieldProps extends FieldWrapperProps {
+interface ColorFieldProps extends FieldWrapperProps {
   placeholder?: string;
   className?: string;
 }

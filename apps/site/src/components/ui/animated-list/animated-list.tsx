@@ -19,8 +19,6 @@ export const AnimatedListSchema = z.object({
   delay: z.number().default(1000),
 });
 
-export type AnimatedListPropsSchema = z.infer<typeof AnimatedListSchema>;
-
 export function AnimatedListItem({ children }: { children: React.ReactNode }) {
   const animations: MotionProps = {
     initial: { scale: 0, opacity: 0 },
@@ -36,7 +34,7 @@ export function AnimatedListItem({ children }: { children: React.ReactNode }) {
   );
 }
 
-export interface AnimatedListProps extends ComponentPropsWithoutRef<'div'> {
+interface AnimatedListProps extends ComponentPropsWithoutRef<'div'> {
   children: React.ReactNode;
   delay?: number;
 }

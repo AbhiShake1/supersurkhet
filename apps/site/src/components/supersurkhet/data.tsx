@@ -239,4 +239,4 @@ const SingleData = React.forwardRef<HTMLDivElement, DataProps>(
 );
 SingleData.displayName = 'SingleData';
 
-export { DataDetail, DataList, DataProvider, SingleData, useData, type Data };
+export { DataDetail, DataList, SingleData };

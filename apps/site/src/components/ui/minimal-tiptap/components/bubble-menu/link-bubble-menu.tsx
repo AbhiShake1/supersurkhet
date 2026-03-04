@@ -1,90 +1,10 @@
-import * as React from 'react';
-import type { ShouldShowProps } from '../../types';
 import type { Editor } from '@tiptap/react';
 
 interface LinkBubbleMenuProps {
   editor: Editor;
 }
 
-interface LinkAttributes {
-  href: string;
-  target: string;
-}
-
-export const LinkBubbleMenu: React.FC<LinkBubbleMenuProps> = ({ editor }) => {
-  const [_showEdit, setShowEdit] = React.useState(false);
-  const [_linkAttrs, setLinkAttrs] = React.useState<LinkAttributes>({
-    href: '',
-    target: '',
-  });
-  const [_selectedText, setSelectedText] = React.useState('');
-
-  const updateLinkState = React.useCallback(() => {
-    const { from, to } = editor.state.selection;
-    const { href, target } = editor.getAttributes('link');
-    const text = editor.state.doc.textBetween(from, to, ' ');
-
-    setLinkAttrs({ href, target });
-    setSelectedText(text);
-  }, [editor]);
-
-  const _shouldShow = React.useCallback(
-    ({ editor, from, to }: ShouldShowProps) => {
-      if (from === to) {
-        return false;
-      }
-      const { href } = editor.getAttributes('link');
-
-      if (!editor.isActive('link') || !editor.isEditable) {
-        return false;
-      }
-
-      if (href) {
-        updateLinkState();
-        return true;
-      }
-      return false;
-    },
-    [updateLinkState],
-  );
-
-  const _handleEdit = React.useCallback(() => {
-    setShowEdit(true);
-  }, []);
-
-  const _onSetLink = React.useCallback(
-    (url: string, text?: string, openInNewTab?: boolean) => {
-      editor
-        .chain()
-        .focus()
-        .extendMarkRange('link')
-        .insertContent({
-          type: 'text',
-          text: text || url,
-          marks: [
-            {
-              type: 'link',
-              attrs: {
-                href: url,
-                target: openInNewTab ? '_blank' : '',
-              },
-            },
-          ],
-        })
-        .setLink({ href: url, target: openInNewTab ? '_blank' : '' })
-        .run();
-      setShowEdit(false);
-      updateLinkState();
-    },
-    [editor, updateLinkState],
-  );
-
-  const _onUnsetLink = React.useCallback(() => {
-    editor.chain().focus().extendMarkRange('link').unsetLink().run();
-    setShowEdit(false);
-    updateLinkState();
-  }, [editor, updateLinkState]);
-
+export const LinkBubbleMenu = ({ editor: _editor }: LinkBubbleMenuProps) => {
   // TODO: add back
   return null;
   // return (

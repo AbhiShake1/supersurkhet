@@ -407,7 +407,6 @@ ProductBadge.displayName = 'ProductBadge';
 
 export {
   ProductList,
-  ProductProvider,
   SingleProduct,
   ProductImage,
   ProductTitle,
@@ -416,6 +415,4 @@ export {
   ProductActions,
   ProductBadge,
   ProductDetail,
-  type Product,
-  useProduct,
 };

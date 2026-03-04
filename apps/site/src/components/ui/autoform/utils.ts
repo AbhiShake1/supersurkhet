@@ -131,7 +131,7 @@ export function withSourceCustomData<K extends SchemaKeys>(
   return data;
 }
 
-export function buildZodFieldConfig<
+function buildZodFieldConfig<
   FieldTypes = string,
   CustomData = Record<string, any>,
 >(): (

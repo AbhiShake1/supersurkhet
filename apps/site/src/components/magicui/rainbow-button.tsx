@@ -3,10 +3,6 @@ import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import React from 'react';
 
-// biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
-interface RainbowButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
-
 const rainbowButtonVariants = cva(
   cn(
     'relative cursor-pointer group transition-all animate-rainbow',
@@ -60,4 +56,4 @@ const RainbowButton = React.forwardRef<HTMLButtonElement, RainbowButtonProps>(
 
 RainbowButton.displayName = 'RainbowButton';
 
-export { RainbowButton, rainbowButtonVariants, type RainbowButtonProps };
+export { RainbowButton };

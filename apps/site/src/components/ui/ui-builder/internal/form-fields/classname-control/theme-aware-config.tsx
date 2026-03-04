@@ -11,7 +11,7 @@ import { ThemeAwareDropdownOption } from '@/components/ui/ui-builder/internal/fo
 import { DropdownOption } from '@/components/ui/ui-builder/internal/form-fields/classname-control/toggle-group';
 
 // Create theme-aware color dropdown items (for shadcn theme colors)
-export function createThemeAwareColorDropdown(
+function createThemeAwareColorDropdown(
   colorClasses: readonly string[],
   classPrefix: string,
   bgPrefix: string,
@@ -32,7 +32,7 @@ export function createThemeAwareColorDropdown(
 }
 
 // Create regular color dropdown items (for standard Tailwind colors)
-export function createRegularColorDropdown(
+function createRegularColorDropdown(
   colorClasses: readonly string[],
   classPrefix: string,
   bgPrefix: string,
@@ -49,7 +49,7 @@ export function createRegularColorDropdown(
 }
 
 // Combine theme-aware and regular colors for a complete dropdown
-export function createCombinedColorDropdown(
+function createCombinedColorDropdown(
   shadcnClasses: readonly string[],
   tailwindClasses: readonly string[],
   classPrefix: string,

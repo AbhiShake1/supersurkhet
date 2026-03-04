@@ -4,7 +4,7 @@ import type { appSchema } from '@/lib/schema';
 import { GUN_PREFIX } from '../utils/mergeKeys';
 import _ from 'lodash';
 
-export type ParseOptions = {
+type ParseOptions = {
   key: SchemaKeys;
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   shape: z.ZodObject<any> | z.ZodEffects<any>;
@@ -28,14 +28,6 @@ function _parse<P extends ParseOptions>(
   if (!head?.length || !innerSchema) return parser(schema, obj);
 
   return _parse(tail.join('/') as P['key'], obj, innerSchema, parser);
-}
-
-export function parseNestedZodShape<P extends ParseOptions>(
-  key: P['key'],
-  obj: P['obj'],
-  baseSchema: P['shape'],
-) {
-  return _parse(key, obj, baseSchema, (shape, o) => getShape(shape).parse(o));
 }
 
 type UnwrapObject<S> = S extends z.ZodEffects<
@@ -66,22 +58,6 @@ export function getShape<S extends ObjectLike>(schema: S) {
   return getSchema(schema).shape;
 }
 
-export function parseNestedZodType<P extends ParseOptions>(
-  key: P['key'],
-  obj: P['obj'],
-  baseSchema: P['shape'],
-  { isPartial = false } = {},
-) {
-  if (key.startsWith(GUN_PREFIX)) {
-    key = key.slice(GUN_PREFIX.length + 1) as SchemaKeys;
-  }
-  // schema.shape.business.shape.restaurant.shape.menu._def.innerType.parse([])
-  // return _parse(key, obj, (shape, o) => shape._def.innerType.parse(o))
-  return _parse(key, obj, baseSchema, (shape, o) =>
-    (isPartial ? getShape(shape).partial() : getShape(shape)).parse(o),
-  );
-}
-
 export function getNestedZodShape<P extends ParseOptions>(
   key: P['key'],
   schema: P['shape'],
@@ -99,7 +75,7 @@ export function getNestedZodShape<P extends ParseOptions>(
 
 type AppSchemaRawShape = typeof appSchema.rawShape;
 
-export interface TransformerParserOptions {
+interface TransformerParserOptions {
   /** The description of this parser for better readability in the future */
   description: string;
   fn: (
@@ -291,11 +267,11 @@ const defaultTransformerRequestParsers: TransformerParserOptions[] = [
   },
 ];
 
-export function getTransformerResponseParsers(): TransformerParserOptions[] {
+function getTransformerResponseParsers(): TransformerParserOptions[] {
   return [...defaultTransformerResponseParsers];
 }
 
-export function getTransformerRequestParsers(): TransformerParserOptions[] {
+function getTransformerRequestParsers(): TransformerParserOptions[] {
   return [...defaultTransformerRequestParsers];
 }
 

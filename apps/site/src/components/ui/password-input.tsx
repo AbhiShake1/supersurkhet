@@ -1,4 +1,4 @@
-export interface PasswordInputProps
+interface PasswordInputProps
   extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   description?: string;

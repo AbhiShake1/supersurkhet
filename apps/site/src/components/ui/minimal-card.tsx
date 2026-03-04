@@ -107,13 +107,4 @@ const MinimalCardFooter = React.forwardRef<
 ));
 MinimalCardFooter.displayName = 'MinimalCardFooter';
 
-export {
-  MinimalCard,
-  MinimalCardImage,
-  MinimalCardTitle,
-  MinimalCardDescription,
-  MinimalCardContent,
-  MinimalCardFooter,
-};
-
 export default MinimalCard;

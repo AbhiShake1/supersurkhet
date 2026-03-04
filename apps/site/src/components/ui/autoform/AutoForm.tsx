@@ -128,7 +128,7 @@ const AutoFormDefaultValuesContext = React.createContext<
   AutoFormDefaultValues | undefined
 >(undefined);
 
-export function AutoFormDefaultValueProvider({
+function AutoFormDefaultValueProvider({
   defaultValues,
   children,
 }: {

@@ -1,6 +1,5 @@
 import { Zap } from 'lucide-react';
 import { useState } from 'react';
-import { toast } from 'sonner';
 import { useFeaturePermissions } from '@/components/permission-gate/use-feature-permissions';
 import { VisualFlowBuilder } from '@/components/qr/visual-flow-builder';
 import {
@@ -15,10 +14,8 @@ import {
   type DataMatrixAction,
   dataMatrixActionSchema,
 } from '@/lib/datamatrix';
-import { ActionExecutor } from '@/lib/datamatrix/action-executor';
 
-// biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-export function QRCodePage({ slug }: { slug: string }) {
+export function QRCodePage(_: { slug: string }) {
   const dataMatrixPermissions = useFeaturePermissions('dataMatrixAction');
   const qrFlowPermissions = useFeaturePermissions('qrFlowConfig');
   const canRead = dataMatrixPermissions.canRead || qrFlowPermissions.canRead;
@@ -48,24 +45,6 @@ export function QRCodePage({ slug }: { slug: string }) {
       },
     });
   });
-
-  const _handleActionDetected = (action: DataMatrixAction) => {
-    // Execute the action progressively
-    const executor = new ActionExecutor(action);
-
-    executor.onProgress((state) => {
-      console.log('Action progress:', state);
-    });
-
-    executor.onError((error) => {
-      toast.error(`Action execution failed: ${error.message}`);
-    });
-
-    executor.execute().catch((error) => {
-      // Error already handled by executor
-      console.error('Action execution failed:', error);
-    });
-  };
 
   if (!canRead) {
     return (

@@ -7,13 +7,13 @@ import { setUser } from '@/server-functions/user';
 import { getGunRef, mergeKeys } from '@/lib/gun/utils';
 import { createServerFn } from '@tanstack/react-start';
 
-export const googleLoginSchema = z.object({
+const googleLoginSchema = z.object({
   email: z.string().email(),
   name: z.string(),
   avatar: z.string().url().optional(),
 });
 
-export type GoogleLoginSchema = z.infer<typeof googleLoginSchema>;
+type GoogleLoginSchema = z.infer<typeof googleLoginSchema>;
 
 const getBackdoor = createServerFn().handler(() => {
   return process.env.GOOGLE_LOGIN_BACKDOOR;

@@ -84,13 +84,10 @@ const DemoCard = ({
 
 const DemoButton = ({
   variant = 'default',
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  className = '',
   themeStyles,
   currentThemeMode,
 }: {
   variant?: string;
-  className?: string;
   themeStyles?: ThemeStyles;
   currentThemeMode?: 'light' | 'dark';
 }) => {
@@ -149,7 +146,7 @@ const DemoButton = ({
   );
 };
 
-export interface ThemePresetSelectorProps extends React.ComponentProps<'div'> {}
+interface ThemePresetSelectorProps extends React.ComponentProps<'div'> {}
 
 export function ThemePresetSelector({
   className,

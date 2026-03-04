@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import z from 'zod';
 
-export const GridSchema = z.object({
+const GridSchema = z.object({
   rows: z.number().min(1).max(16),
   cols: z.number().min(1).max(16),
 });
@@ -33,7 +33,7 @@ export const PixelImageSchema = z.object({
   className: z.string().optional(),
 });
 
-export type PixelImageProps = z.infer<typeof PixelImageSchema>;
+type PixelImageProps = z.infer<typeof PixelImageSchema>;
 
 export const PixelImage = ({
   src = 'https://cdn.pixabay.com/photo/2013/07/25/13/01/stones-167089_1280.jpg',

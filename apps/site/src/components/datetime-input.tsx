@@ -494,7 +494,7 @@ function safeSetSelection(
   });
 }
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export function useEventCallback<T extends (...args: any[]) => any>(
+function useEventCallback<T extends (...args: any[]) => any>(
   fn: T,
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   deps: any[],
@@ -510,5 +510,5 @@ export function useEventCallback<T extends (...args: any[]) => any>(
   }, deps);
 }
 
-export const useIsomorphicLayoutEffect =
+const useIsomorphicLayoutEffect =
   typeof document !== 'undefined' ? useLayoutEffect : useEffect;

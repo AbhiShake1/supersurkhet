@@ -545,19 +545,7 @@ function SortableOverlay(props: SortableOverlayProps) {
   );
 }
 
-const Root = Sortable;
-const Content = SortableContent;
-const Item = SortableItem;
-const ItemHandle = SortableItemHandle;
-const Overlay = SortableOverlay;
-
 export {
-  Root,
-  Content,
-  Item,
-  ItemHandle,
-  Overlay,
-  //
   Sortable,
   SortableContent,
   SortableItem,

@@ -18,6 +18,3 @@ export const uiBuilderSchema = z
     layers: zStringified(uiBuilderLayerSchema.array()).optional(),
   })
   .extend(table);
-
-export type UiBuilderSchema = z.infer<typeof uiBuilderSchema>;
-export type UiBuilderLayer = z.infer<typeof uiBuilderLayerSchema>;

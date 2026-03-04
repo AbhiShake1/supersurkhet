@@ -4,7 +4,7 @@ import type { ForwardRefExoticComponent, RefAttributes } from 'react';
 import type z from 'zod';
 import type { AdminComponent } from '@/components/ui/admin';
 
-export type DefaultSchemaType = z.ZodObject<any> | z.ZodEffects<any>;
+export type DefaultSchemaType = z.ZodTypeAny;
 
 export interface GTAAppConfig {
   schema: {
@@ -24,10 +24,18 @@ export interface GTAAppConfig {
   };
 }
 
-export type ExtractZodSchema<T extends CreatedSchema<SchemaShape<any>>> =
-  z.ZodObject<{
-    -readonly [K in keyof T['rawShape']]: T['rawShape'][K]['schema'];
-  }>;
+type SchemaContainer = {
+  rawShape: Record<string, { schema: z.ZodTypeAny }>;
+};
+
+export type ExtractZodSchema<T extends SchemaContainer> =
+  z.ZodObject<
+    {
+      -readonly [K in keyof T['rawShape']]: T['rawShape'][K]['schema'];
+    },
+    'strip',
+    z.ZodTypeAny
+  >;
 
 export type SchemaShape<T extends GTAAppConfig['schema']> = {
   [key in keyof T]: T[key]['schema'];
@@ -35,7 +43,7 @@ export type SchemaShape<T extends GTAAppConfig['schema']> = {
 
 export type CreatedSchema<T extends GTAAppConfig['schema']> = T & {
   rawShape: T;
-  schemaShape: z.ZodObject<SchemaShape<T>>;
+  schemaShape: z.ZodObject<SchemaShape<T>, 'strip', z.ZodTypeAny>;
   extend<const TOtherSchema extends GTAAppConfig['schema']>(
     otherSchema: TOtherSchema,
   ): CreatedSchema<T & TOtherSchema>;

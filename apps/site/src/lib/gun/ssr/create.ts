@@ -4,7 +4,7 @@ import type { NestedSchemaType, SchemaKeys } from '..';
 import { mergeOptionsWithDefaults } from '../options';
 import type { GunMessagePut } from 'gun';
 
-export function omitEmptyObject<T>(value: T): T {
+function omitEmptyObject<T>(value: T): T {
   if (Array.isArray(value)) {
     return value
       .map(omitEmptyObject)

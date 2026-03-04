@@ -47,7 +47,7 @@ export const visitLayer = (
  * @param visitor - A function that takes a layer and returns a modified layer.
  * @returns The modified layer after applying the visitor function to ReactNode props.
  */
-export const visitLayerReactNodeProps = (
+const visitLayerReactNodeProps = (
   layer: ComponentLayer,
   visitor: (
     layer: ComponentLayer,
@@ -137,7 +137,7 @@ export const countLayers = (layers: ComponentLayer[] | string): number => {
  * @param layer - The layer to count in ReactNode props
  * @returns Number of layers in ReactNode props
  */
-export const countLayersInReactNodeProps = (layer: ComponentLayer): number => {
+const countLayersInReactNodeProps = (layer: ComponentLayer): number => {
   let count = 0;
   const props = layer.props || {};
 
@@ -292,7 +292,7 @@ export const findAllParentLayersRecursive = (
  * @param layerId - The ID to search for
  * @returns true if the layer exists in ReactNode props
  */
-export const hasLayerInReactNodeProps = (
+const hasLayerInReactNodeProps = (
   layer: ComponentLayer,
   layerId: string,
 ): boolean => {
@@ -438,7 +438,7 @@ export const hasLayerChildren = (
  * @param layer The layer to check
  * @returns true if any prop contains component layers
  */
-export const hasLayerReactNodeProps = (layer: ComponentLayer): boolean => {
+const hasLayerReactNodeProps = (layer: ComponentLayer): boolean => {
   const props = layer.props || {};
   for (const [_key, value] of Object.entries(props)) {
     // Check if this prop contains a component layer
@@ -576,8 +576,6 @@ export const moveLayer = (
   let layerToMove: ComponentLayer | null = null;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let sourceParentId: string | null = null;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  let _sourcePosition = -1;
   let sourceParentType: 'children' | 'prop' | 'propArray' = 'children';
   let sourcePropName: string | null = null;
 
@@ -591,7 +589,6 @@ export const moveLayer = (
       if (layer.id === sourceLayerId) {
         layerToMove = layer;
         sourceParentId = parentId;
-        _sourcePosition = i;
         sourceParentType = 'children';
         return true;
       }
@@ -620,7 +617,6 @@ export const moveLayer = (
                 sourceParentId = layer.id;
                 sourcePropName = propName;
                 sourceParentType = 'propArray';
-                _sourcePosition = index;
                 return true;
               }
             }
@@ -719,127 +715,6 @@ export const canLayerAcceptChildren = (
 
   return hasChildrenField && hasLayerChildren(layer);
 };
-
-/**
- * Adds a layer to a specific ReactNode prop instead of the children array
- *
- * @param layers - The array of root layers (pages)
- * @param newLayer - The layer to add
- * @param parentId - The ID of the parent layer
- * @param propName - The name of the prop to add the layer to
- * @returns The updated layers array with the new layer added to the specified prop
- */
-export const addLayerToProp = (
-  layers: ComponentLayer[],
-  newLayer: ComponentLayer,
-  parentId: string,
-  propName: string,
-): ComponentLayer[] => {
-  return layers.map((page) =>
-    visitLayer(page, null, (layer) => {
-      if (layer.id === parentId) {
-        // Update the specific prop with the new layer
-        const updatedProps = { ...layer.props };
-        updatedProps[propName] = newLayer;
-        return { ...layer, props: updatedProps };
-      }
-      return layer;
-    }),
-  );
-};
-
-/**
- * Adds a layer to a specific array ReactNode prop
- *
- * @param layers - The array of root layers (pages)
- * @param newLayer - The layer to add
- * @param parentId - The ID of the parent layer
- * @param propName - The name of the prop to add the layer to
- * @param position - The position in the array to add the layer (defaults to end)
- * @returns The updated layers array with the new layer added to the specified prop array
- */
-export const addLayerToPropArray = (
-  layers: ComponentLayer[],
-  newLayer: ComponentLayer,
-  parentId: string,
-  propName: string,
-  position?: number,
-): ComponentLayer[] => {
-  return layers.map((page) =>
-    visitLayer(page, null, (layer) => {
-      if (layer.id === parentId) {
-        // Update the specific prop array with the new layer
-        const updatedProps = { ...layer.props };
-        let currentArray = updatedProps[propName];
-        if (!Array.isArray(currentArray)) {
-          currentArray = [];
-        }
-
-        if (position !== undefined) {
-          if (position < 0) {
-            currentArray = [newLayer, ...currentArray];
-          } else if (position >= currentArray.length) {
-            currentArray = [...currentArray, newLayer];
-          } else {
-            currentArray = [
-              ...currentArray.slice(0, position),
-              newLayer,
-              ...currentArray.slice(position),
-            ];
-          }
-        } else {
-          currentArray = [...currentArray, newLayer];
-        }
-
-        updatedProps[propName] = currentArray;
-        return { ...layer, props: updatedProps };
-      }
-      return layer;
-    }),
-  );
-};
-
-/**
- * Removes a layer from a specific ReactNode prop
- *
- * @param layers - The array of root layers (pages)
- * @param layerId - The ID of the layer to remove
- * @param parentId - The ID of the parent layer containing the prop
- * @param propName - The name of the prop to remove the layer from
- * @returns The updated layers array with the layer removed from the specified prop
- */
-export const removeLayerFromProp = (
-  layers: ComponentLayer[],
-  layerId: string,
-  parentId: string,
-  propName: string,
-): ComponentLayer[] => {
-  return layers.map((page) =>
-    visitLayer(page, null, (layer) => {
-      if (layer.id === parentId) {
-        // Remove the specific layer from the specified prop
-        const updatedProps = { ...layer.props };
-        const propValue = updatedProps[propName];
-
-        if (isComponentLayer(propValue) && propValue.id === layerId) {
-          // Direct match - set to undefined or remove the property
-          updatedProps[propName] = undefined;
-        } else if (Array.isArray(propValue)) {
-          // Array of component layers - filter out the matching layer
-          const filteredArray = propValue.filter(
-            (layer) => layer.id !== layerId,
-          );
-          updatedProps[propName] =
-            filteredArray.length > 0 ? filteredArray : undefined;
-        }
-
-        return { ...layer, props: updatedProps };
-      }
-      return layer;
-    }),
-  );
-};
-
 /**
  * Finds a layer within ReactNode props of a parent layer
  *
@@ -847,7 +722,7 @@ export const removeLayerFromProp = (
  * @param layerId - The ID of the layer to find
  * @returns The found layer or undefined
  */
-export const findLayerInReactNodeProps = (
+const findLayerInReactNodeProps = (
   layer: ComponentLayer,
   layerId: string,
 ): ComponentLayer | undefined => {

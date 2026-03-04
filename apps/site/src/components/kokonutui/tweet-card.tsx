@@ -13,7 +13,7 @@ import { Link } from '@tanstack/react-router';
  * @github: https://github.com/kokonut-labs/kokonutui
  */
 
-export const ReplySchema = z.object({
+const ReplySchema = z.object({
   authorName: z.string().optional(),
   authorHandle: z.string().optional(),
   authorImage: z.string().optional(),
@@ -27,10 +27,7 @@ export const TweetCardSchema = ReplySchema.extend({
   content: z.string().array().optional(),
   link: z.string().optional(),
 });
-
-export type ReplyProps = z.infer<typeof ReplySchema>;
-
-export type TweetCardProps = z.infer<typeof TweetCardSchema>;
+type TweetCardProps = z.infer<typeof TweetCardSchema>;
 
 export default function TweetCard({
   authorName = 'Dorian',

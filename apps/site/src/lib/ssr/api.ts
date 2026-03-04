@@ -7,7 +7,7 @@ import { update as ssrUpdate } from '../gun/ssr/update';
 import { appSchema, transformSchema } from '../schema';
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-function createDb<const T extends z.ZodObject<any>>(schema: T) {
+function createDb<const T extends z.AnyZodObject>(schema: T) {
   return (
     Object.keys(schema.shape)
       .map((k) => {
@@ -36,4 +36,4 @@ function createDb<const T extends z.ZodObject<any>>(schema: T) {
   );
 }
 
-export const db = createDb(transformSchema(appSchema));
+export const db = createDb(transformSchema(appSchema) as unknown as z.AnyZodObject);

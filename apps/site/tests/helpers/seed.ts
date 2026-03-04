@@ -7,7 +7,7 @@ const __dirname = path.dirname(__filename);
 const dataDir = path.resolve(__dirname, "..", ".data");
 const businessDataPath = path.join(dataDir, "business.json");
 
-export type BusinessSeed = {
+type BusinessSeed = {
   slug: string;
   name: string;
 };
@@ -29,5 +29,3 @@ export function readBusinessSeed(): BusinessSeed {
 export function toSlug(name: string) {
   return name.toLowerCase().replace(/\s+/g, "-");
 }
-
-export const businessSeedFile = businessDataPath;

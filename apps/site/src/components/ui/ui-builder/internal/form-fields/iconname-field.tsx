@@ -9,7 +9,7 @@ import {
 import MultipleSelector, {
   type Option,
 } from '@/components/ui/ui-builder/internal/components/multi-select';
-import { iconNames } from '@/components/ui/ui-builder/components/icon';
+import { iconNames as lucideIconNames } from '@/components/ui/ui-builder/components/icon';
 
 const EMPTY_OPTIONS: Option[] = [];
 
@@ -19,6 +19,7 @@ interface IconNameFieldProps {
   isRequired?: boolean;
   value: string;
   onChange: (value: string) => void;
+  iconOptions?: readonly string[];
 }
 
 const IconNameField: React.FC<IconNameFieldProps> = ({
@@ -27,10 +28,16 @@ const IconNameField: React.FC<IconNameFieldProps> = ({
   description,
   label,
   isRequired,
+  iconOptions,
 }) => {
+  const availableIcons = useMemo(
+    () => (iconOptions?.length ? [...iconOptions] : [...lucideIconNames]),
+    [iconOptions],
+  );
+
   const searchNames = useCallback(async (value: string): Promise<Option[]> => {
     return new Promise((resolve) => {
-      const res = iconNames.filter((option) =>
+      const res = availableIcons.filter((option) =>
         option.toLowerCase().includes(value.toLowerCase()),
       );
       resolve(
@@ -40,7 +47,7 @@ const IconNameField: React.FC<IconNameFieldProps> = ({
         })),
       );
     });
-  }, []);
+  }, [availableIcons]);
 
   const handleChange = useCallback(
     (values: Option[]) => {

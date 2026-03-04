@@ -7,13 +7,11 @@ import {
   useState,
   useLayoutEffect,
   useMemo,
-  useContext,
 } from 'react';
 import { useTransformEffect } from 'react-zoom-pan-pinch';
 import type { ComponentLayer } from '@/components/ui/ui-builder/types';
 import { LayerMenu } from '@/components/ui/ui-builder/internal/components/layer-menu';
 import { DragHandle as ComponentDragHandle } from '@/components/ui/ui-builder/internal/dnd/drag-handle';
-import { DragHandleContext } from '@/components/ui/ui-builder/internal/canvas/resizable-wrapper';
 import { useDndContext } from '@/lib/ui-builder/context/dnd-context';
 import { cn } from '@/lib/utils';
 import {
@@ -190,7 +188,7 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({
   );
 };
 
-export interface MeasureRangeProps {
+interface MeasureRangeProps {
   /** Called after every size/position change. */
   onChange?: (
     rect: DOMRectReadOnly & { bottom: number; right: number },
@@ -204,7 +202,7 @@ const MIN_SIZE = 5;
 
 const MIN_CHANGE_THRESHOLD = 0;
 
-export const MeasureRange: React.FC<MeasureRangeProps> = ({
+const MeasureRange: React.FC<MeasureRangeProps> = ({
   onChange,
   children,
   debug = false,
@@ -218,10 +216,6 @@ export const MeasureRange: React.FC<MeasureRangeProps> = ({
   const lastMeasurementRef = useRef<DOMRectReadOnly | null>(null);
   const elementsRef = useRef<Element[]>([]);
   const transformUpdatePendingRef = useRef(false);
-
-  // Get dragging context to respond to ResizableWrapper changes
-  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
-  const { dragging } = useContext(DragHandleContext);
 
   // Get iframe context if we're running inside an AutoFrame
   const frameContext = useFrame();

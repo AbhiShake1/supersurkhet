@@ -5,7 +5,7 @@ import { ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { FieldWrapperProps } from './FieldWrapper';
 
-export interface UrlFieldProps extends FieldWrapperProps {
+interface UrlFieldProps extends FieldWrapperProps {
   placeholder?: string;
   className?: string;
   showPreviewButton?: boolean;

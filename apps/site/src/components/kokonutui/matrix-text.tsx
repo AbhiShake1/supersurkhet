@@ -29,7 +29,7 @@ export const MatrixTextSchema = z.object({
   letterInterval: z.number().optional(),
 });
 
-export type MatrixTextProps = z.infer<typeof MatrixTextSchema>;
+type MatrixTextProps = z.infer<typeof MatrixTextSchema>;
 
 const MatrixText = ({
   text = 'HelloWorld!',

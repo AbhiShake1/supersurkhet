@@ -15,34 +15,6 @@ interface languageMap {
   [key: string]: string | undefined;
 }
 
-export const programmingLanguages: languageMap = {
-  javascript: '.js',
-  python: '.py',
-  java: '.java',
-  c: '.c',
-  cpp: '.cpp',
-  'c++': '.cpp',
-  'c#': '.cs',
-  ruby: '.rb',
-  php: '.php',
-  swift: '.swift',
-  'objective-c': '.m',
-  kotlin: '.kt',
-  typescript: '.ts',
-  go: '.go',
-  perl: '.pl',
-  rust: '.rs',
-  scala: '.scala',
-  haskell: '.hs',
-  lua: '.lua',
-  shell: '.sh',
-  sql: '.sql',
-  html: '.html',
-  css: '.css',
-  tsx: '.tsx',
-  // add more file extensions here
-};
-
 export const CodeBlock = memo(function CodeBlock({
   language,
   value,

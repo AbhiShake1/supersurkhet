@@ -556,6 +556,7 @@ function keys<T extends Record<string, any>>(obj: T): Array<keyof T> {
 }
 
 const iconNames = keys(icons) as [IconName, ...IconName[]];
+export const animatedIconNames = iconNames;
 
 const AnimatedIconSchema = z.object({
   name: z.enum(iconNames).default('wifi'),

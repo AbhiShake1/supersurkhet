@@ -330,7 +330,7 @@ const CopyHostStyles = ({
   return <>{children}</>;
 };
 
-export type AutoFrameProps = {
+type AutoFrameProps = {
   children: ReactNode;
   className: string;
   debug?: boolean;
@@ -346,7 +346,7 @@ type AutoFrameContext = {
   window?: Window;
 };
 
-export const autoFrameContext = createContext<AutoFrameContext>({});
+const autoFrameContext = createContext<AutoFrameContext>({});
 
 export const useFrame = () => useContext(autoFrameContext);
 

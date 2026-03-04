@@ -49,10 +49,6 @@ import {
   ShimmerButton,
   ShimmerButtonSchema,
 } from '@/components/ui/shimmer-button';
-import {
-  AnimatedIcon,
-  AnimatedIconSchema,
-} from '@/components/animate-ui/icons/AnimatedIcon';
 import { framerMotionComponentDefinitions } from './framer-motion-component-definitions';
 import {
   RatingInteraction,
@@ -68,6 +64,7 @@ import { carouzelComponentDefinitions } from './carouzel-component-definitions';
 import { svgsComponentDefinitions } from '@/components/ui/svgs/component-definition';
 import { modalComponentDefinitions } from './modal-component-definitions';
 import { magicuiComponentDefinitions } from '@/components/magicui/component-definitions';
+import { animateUiComponentDefinitions } from '@/components/animate-ui/component-definitions';
 import { productOnboardingComponentDefinitions } from './product-onboarding-card-definitions';
 import { threeDCardComponentDefinitions } from './3d-card-component-definitions';
 import { ratingComponentDefinitions } from './rating-component-definitions';
@@ -75,6 +72,7 @@ import { imgCarouselComponentDefinitions } from '@/components/imgcarousel/compon
 import { offerComponentDefinitions } from './offer-component-definitions';
 import { bentoComponentDefinitions } from './bento-component-definitions';
 import { animatedListComponentDefinitions } from '@/components/ui/animated-list/component-definitions';
+import { minimalTiptapComponentDefinitions } from '@/components/ui/minimal-tiptap/component-definitions';
 
 export const complexComponentDefinitions: ComponentRegistry = {
   ...framerMotionComponentDefinitions,
@@ -260,6 +258,8 @@ export const complexComponentDefinitions: ComponentRegistry = {
 
   ...magicuiComponentDefinitions,
 
+  ...animateUiComponentDefinitions,
+
   ...kokonutuiComponentDefinitions,
 
   // security
@@ -409,14 +409,6 @@ export const complexComponentDefinitions: ComponentRegistry = {
 
   ...modalComponentDefinitions,
 
-  AnimatedIcon: {
-    component: AnimatedIcon,
-    schema: AnimatedIconSchema,
-    from: '@/components/animate-ui/icons/AnimatedIcon',
-    fieldOverrides: commonFieldOverrides(),
-    defaultChildren: [],
-  },
-
   ...svgsComponentDefinitions,
 
   EmojiRating: {
@@ -431,4 +423,6 @@ export const complexComponentDefinitions: ComponentRegistry = {
 
   // Carousel components
   ...carouzelComponentDefinitions,
+
+  ...minimalTiptapComponentDefinitions,
 };

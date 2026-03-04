@@ -3,7 +3,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import * as LucideIcons from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type LucideIconName = keyof typeof LucideIcons;
+type LucideIconName = keyof typeof LucideIcons;
 type LucideIconComponent = React.ComponentType<React.SVGProps<SVGSVGElement>>;
 
 const iconVariants = cva('inline-flex', {
@@ -41,7 +41,7 @@ const iconVariants = cva('inline-flex', {
   },
 });
 
-export interface IconProps
+interface IconProps
   extends Omit<React.HTMLAttributes<SVGElement>, 'color'>,
     VariantProps<typeof iconVariants> {
   iconName: LucideIconName;
@@ -76,4 +76,4 @@ export const iconNames = Object.keys(LucideIcons)
   )
   .map((key) => key as LucideIconName) as [LucideIconName, ...LucideIconName[]];
 
-export { Icon, iconVariants };
+export { Icon };

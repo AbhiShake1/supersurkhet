@@ -16,7 +16,7 @@ export const ShimmerButtonSchema = z.object({
   children: z.any().optional(),
 });
 
-export type ShimmerButtonProps = z.infer<typeof ShimmerButtonSchema> &
+type ShimmerButtonProps = z.infer<typeof ShimmerButtonSchema> &
   ComponentPropsWithoutRef<'button'>;
 
 export const ShimmerButton = React.forwardRef<

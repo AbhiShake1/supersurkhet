@@ -7,7 +7,7 @@ export const RatingInteractionSchema = z.object({
   className: z.string().optional(),
 });
 
-export type RatingInteractionProps = z.infer<typeof RatingInteractionSchema>;
+type RatingInteractionProps = z.infer<typeof RatingInteractionSchema>;
 
 const ratingData = [
   {
@@ -55,7 +55,6 @@ export function RatingInteraction({
   };
 
   const displayRating = hoverRating || rating;
-  const _activeData = displayRating > 0 ? ratingData[displayRating - 1] : null;
 
   return (
     <div className={cn('flex flex-col items-center gap-6', className)}>
@@ -64,7 +63,6 @@ export function RatingInteraction({
         {ratingData.map((item, i) => {
           const value = i + 1;
           const isActive = value <= displayRating;
-          const _isExact = value === displayRating;
 
           return (
             // biome-ignore lint/a11y/useButtonType: lint debt cleanup

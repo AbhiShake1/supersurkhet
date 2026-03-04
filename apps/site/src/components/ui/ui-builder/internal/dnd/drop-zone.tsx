@@ -81,57 +81,6 @@ function getLayoutType(
   return 'block';
 }
 
-export const DropZone: React.FC<DropZoneProps> = ({
-  parentId,
-  position,
-  isActive = false,
-  className,
-  children,
-}) => {
-  const { isOver, setNodeRef } = useDroppable({
-    id: `${parentId}-${position}`,
-    data: {
-      type: 'drop-zone',
-      parentId,
-      position,
-    },
-  });
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={cn('relative', className)}
-      data-testid={`drop-zone-${parentId}-${position}`}
-    >
-      {/* Drop indicator */}
-      {isActive && (
-        <div
-          className={cn(
-            'absolute inset-0 pointer-events-none transition-all duration-200',
-            isOver ? DROP_ZONE_ACTIVE_BG : DROP_ZONE_INACTIVE_BG,
-          )}
-        />
-      )}
-
-      {/* Placeholder for empty drop zones */}
-      {isActive && !children && (
-        <div
-          className={cn(
-            'h-8 transition-all duration-200',
-            isOver ? DROP_ZONE_ACTIVE_BG : DROP_ZONE_INACTIVE_BG,
-          )}
-        >
-          <div className="flex items-center justify-center h-full text-xs text-blue-600 font-medium">
-            Drop here
-          </div>
-        </div>
-      )}
-
-      {children}
-    </div>
-  );
-};
-
 interface DropPlaceholderProps {
   parentId: string;
   position: number;

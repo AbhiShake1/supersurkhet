@@ -34,7 +34,7 @@ export const ProductOnboardingCardSchema = z.object({
   disableAnimation: z.boolean().optional(),
 });
 
-export type ProductOnboardingCardProps = z.infer<
+type ProductOnboardingCardProps = z.infer<
   typeof ProductOnboardingCardSchema
 >;
 

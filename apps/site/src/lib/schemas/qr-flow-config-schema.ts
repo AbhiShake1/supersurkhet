@@ -5,7 +5,7 @@ import { table, withLabel } from './listings';
 const nodeConfigSchema = z.record(z.string(), z.any());
 
 // Schema for a single node
-export const customNodeSchema = z.object({
+const customNodeSchema = z.object({
   id: z.string(),
   type: z.string(),
   position: z.object({

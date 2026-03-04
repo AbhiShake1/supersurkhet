@@ -22,7 +22,7 @@ export const CardBottomImageSchema = z.object({
   className: z.string().optional(),
 });
 
-export type CardBottomImageDemoProps = z.infer<typeof CardBottomImageSchema>;
+type CardBottomImageDemoProps = z.infer<typeof CardBottomImageSchema>;
 
 const CardBottomImage = ({
   title = 'Fluid Gradient Flow',

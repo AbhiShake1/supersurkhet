@@ -1,6 +1,6 @@
 import type { PossibleTabConfig } from '@/components/auto-admin';
 
-export interface PermissionAction {
+interface PermissionAction {
   feature: string;
   action: string;
 }

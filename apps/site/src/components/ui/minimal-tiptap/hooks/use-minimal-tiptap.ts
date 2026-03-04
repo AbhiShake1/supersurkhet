@@ -214,5 +214,3 @@ export const useMinimalTiptapEditor = ({
 
   return editor;
 };
-
-export default useMinimalTiptapEditor;

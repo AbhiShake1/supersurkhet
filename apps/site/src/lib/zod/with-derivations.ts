@@ -217,11 +217,6 @@ export function runDeriveWithRuntimeFormValues<T>(
   }
 }
 
-export function isDerivedField(schema: z.ZodTypeAny, fieldName: string): boolean {
-  const derivations = getSchemaDerivations(schema);
-  return fieldName in derivations;
-}
-
 type AddDerivedOutput<
   TOutput,
   K extends string,
@@ -292,5 +287,3 @@ declare module 'zod' {
     >;
   }
 }
-
-export {};

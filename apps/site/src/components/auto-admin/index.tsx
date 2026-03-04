@@ -45,7 +45,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Unauthorized } from '../ui/unauthorized';
 import { CustomUiBuilderPage } from '../ui-builder';
 
-export interface AutoAdminProps {
+interface AutoAdminProps {
   tabs: AutoAdminTabInput[];
 }
 
@@ -456,7 +456,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
   );
 }
 
-export type AutoKanbanProps<K extends SchemaKeys> = {
+type AutoKanbanProps<K extends SchemaKeys> = {
   slug: string;
   groupKey: keyof NestedSchemaType<K>;
   cardBuilder: (data: NestedSchemaType<K>) => ReactNode;

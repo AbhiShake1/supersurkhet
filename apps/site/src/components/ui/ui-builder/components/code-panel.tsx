@@ -1,12 +1,10 @@
 import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
 import type { ComponentLayer } from '../types';
-import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
 import { CodeBlock } from '@/components/ui/ui-builder/components/codeblock';
 import { cn } from '@/lib/utils';
 import { useMemo } from 'react';
 
 export function CodePanel({ className }: { className?: string }) {
-  const _componentRegistry = useEditorStore((state) => state.registry);
   const selectedPageId = useLayerStore((state) => state.selectedPageId);
   const findLayerById = useLayerStore((state) => state.findLayerById);
 

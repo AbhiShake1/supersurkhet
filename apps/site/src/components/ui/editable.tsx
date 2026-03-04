@@ -704,33 +704,17 @@ EditableSubmit.displayName = SUBMIT_NAME;
 
 const Editable = EditableRoot;
 const Root = EditableRoot;
-const Label = EditableLabel;
 const Area = EditableArea;
 const Preview = EditablePreview;
 const Input = EditableInput;
-const Trigger = EditableTrigger;
-const Toolbar = EditableToolbar;
-const Cancel = EditableCancel;
-const Submit = EditableSubmit;
 
 export {
   Editable,
-  EditableLabel,
-  EditableArea,
   EditablePreview,
   EditableInput,
-  EditableToolbar,
-  EditableCancel,
-  EditableSubmit,
-  EditableTrigger,
   //
   Root,
-  Label,
   Area,
   Preview,
-  Input,
-  Toolbar,
-  Cancel,
-  Submit,
-  Trigger,
+  Input
 };

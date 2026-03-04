@@ -195,7 +195,7 @@ export const ResizableWrapper: React.FC<ResizableWrapperProps> = ({
 };
 
 // Context to track if a drag handle is active
-export const DragHandleContext = createContext<{
+const DragHandleContext = createContext<{
   dragging: boolean;
   setDragging: (v: boolean) => void;
 }>({ dragging: false, setDragging: () => {} });

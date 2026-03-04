@@ -9,11 +9,6 @@ const FeatureItemSchema = z.object({
   icon: z.string().default('Zap'), // Using string instead of React.ElementType for UI builder compatibility
 });
 
-// biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
-interface FeatureItem extends z.infer<typeof FeatureItemSchema> {
-  icon: React.ElementType; // Original type
-}
-
 export const FeaturesSchema = z.object({
   title: z.string().default('Built to cover your needs'),
   subtitle: z
@@ -44,7 +39,7 @@ export const FeaturesSchema = z.object({
   className: z.string().optional(),
 });
 
-export type FeaturesProps = z.infer<typeof FeaturesSchema>;
+type FeaturesProps = z.infer<typeof FeaturesSchema>;
 
 // Map icon names to components
 const iconMap: Record<string, React.ElementType> = {

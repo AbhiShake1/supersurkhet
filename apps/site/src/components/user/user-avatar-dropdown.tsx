@@ -10,7 +10,7 @@ import { useRouteContext, Link } from '@tanstack/react-router';
 import { useAuth } from '../auth-provider';
 import { cn } from '@/lib/utils';
 
-export interface UserAvatarDropdownProps
+interface UserAvatarDropdownProps
   extends React.ComponentProps<'button'> {
   button: {
     className?: string;

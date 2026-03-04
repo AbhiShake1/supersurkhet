@@ -54,7 +54,7 @@ import {
 } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-export type CalendarProps = Omit<
+type CalendarProps = Omit<
   React.ComponentProps<typeof DayPicker>,
   'mode'
 >;
@@ -62,7 +62,7 @@ export type CalendarProps = Omit<
 const AM_VALUE = 0;
 const PM_VALUE = 1;
 
-export type DateTimePickerProps = {
+type DateTimePickerProps = {
   /**
    * The modality of the popover. When set to true, interaction with outside elements will be disabled and only popover content will be visible to screen readers.
    * If you want to use the datetime picker inside a dialog, you should set this to true.
@@ -133,7 +133,7 @@ export type DateTimePickerProps = {
   renderTrigger?: (props: DateTimeRenderTriggerProps) => React.ReactNode;
 };
 
-export type DateTimeRenderTriggerProps = {
+type DateTimeRenderTriggerProps = {
   value: Date | undefined;
   open: boolean;
   timezone?: string;

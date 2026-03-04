@@ -19,7 +19,7 @@ interface ModalContextType {
 
 const ModalContext = createContext<ModalContextType | undefined>(undefined);
 
-export const ModalProviderSchema = z.object({
+const ModalProviderSchema = z.object({
   children: z.any(),
 });
 
@@ -46,15 +46,8 @@ export const ModalFooterSchema = z.object({
   children: z.any(),
   className: z.string().optional(),
 });
-
-export type ModalProviderProps = z.infer<typeof ModalProviderSchema>;
-export type ModalProps = z.infer<typeof ModalSchema>;
-export type ModalTriggerProps = z.infer<typeof ModalTriggerSchema>;
-export type ModalBodyProps = z.infer<typeof ModalBodySchema>;
-export type ModalContentProps = z.infer<typeof ModalContentSchema>;
-export type ModalFooterProps = z.infer<typeof ModalFooterSchema>;
-
-export const ModalProvider = ({ children }: { children: ReactNode }) => {
+type ModalContentProps = z.infer<typeof ModalContentSchema>;
+const ModalProvider = ({ children }: { children: ReactNode }) => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -64,7 +57,7 @@ export const ModalProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useModal = () => {
+const useModal = () => {
   const context = useContext(ModalContext);
   if (!context) {
     throw new Error('useModal must be used within a ModalProvider');
@@ -259,7 +252,7 @@ const CloseIcon = () => {
 
 // Hook to detect clicks outside of a component.
 // Add it in a separate file, I've added here for simplicity
-export const useOutsideClick = (
+const useOutsideClick = (
   ref: React.RefObject<HTMLDivElement>,
   // biome-ignore lint/complexity/noBannedTypes: lint debt cleanup
   callback: Function,

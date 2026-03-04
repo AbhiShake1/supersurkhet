@@ -18,13 +18,13 @@ import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { z } from 'zod';
 
 //Schemas
-export const BaseCarouselItem = z.object({
+const BaseCarouselItem = z.object({
   id: z.union([z.string(), z.number()]),
   imageSrc: z.string().url(),
   href: z.string().url(),
 });
 
-export const CarouselFieldRegistry = z
+const CarouselFieldRegistry = z
   .object({
     videoSrc: z.string().url().optional(),
     imageAlt: z.string().optional(),
@@ -79,7 +79,7 @@ export const CarouselItem = BaseCarouselItem.merge(
   CarouselFieldRegistry,
 ).extend({ videoSrc: z.string().url().optional() });
 
-export type CarouselItemType = z.infer<typeof CarouselItem>;
+type CarouselItemType = z.infer<typeof CarouselItem>;
 
 // Mock Data
 export const mockCarouselItems: CarouselItemType[] = [
@@ -167,7 +167,7 @@ const defaultItem: CarouselItemType = {
 };
 
 //CarouselItemComponent
-export interface CarouselItemProps
+interface CarouselItemProps
   extends React.HTMLAttributes<HTMLAnchorElement> {
   item?: CarouselItemType;
   variant?: 'default' | 'compact' | 'expanded';
@@ -175,7 +175,7 @@ export interface CarouselItemProps
   onItemClick?: (item: CarouselItemType) => void;
 }
 
-export const CarouselItemComponent = React.forwardRef<
+const CarouselItemComponent = React.forwardRef<
   HTMLAnchorElement,
   CarouselItemProps
 >(
@@ -363,7 +363,7 @@ export const CarouselItemComponent = React.forwardRef<
 CarouselItemComponent.displayName = 'CarouselItem';
 
 //CarouselCard
-export interface CarouselCardProps
+interface CarouselCardProps
   extends React.HTMLAttributes<HTMLAnchorElement> {
   item?: CarouselItemType;
   variant?: 'default' | 'compact' | 'expanded';
@@ -390,7 +390,7 @@ export const CarouselCard = React.forwardRef<
 CarouselCard.displayName = 'CarouselCard';
 
 // Carousel
-export interface CarouselProps extends React.HTMLAttributes<HTMLDivElement> {
+interface CarouselProps extends React.HTMLAttributes<HTMLDivElement> {
   items?: CarouselItemType[];
   children?: React.ReactNode;
   defaultChildren?: boolean | CarouselItemType[];
@@ -403,7 +403,7 @@ export interface CarouselProps extends React.HTMLAttributes<HTMLDivElement> {
   onItemClick?: (item: CarouselItemType) => void;
 }
 
-export const Carousel = React.forwardRef<HTMLDivElement, CarouselProps>(
+const Carousel = React.forwardRef<HTMLDivElement, CarouselProps>(
   (
     {
       items,
@@ -570,7 +570,7 @@ export const Carousel = React.forwardRef<HTMLDivElement, CarouselProps>(
 Carousel.displayName = 'Carousel';
 
 //EnhancedCarousel
-export interface EnhancedCarouselProps extends CarouselProps {
+interface EnhancedCarouselProps extends CarouselProps {
   showFilters?: boolean;
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   onFilterChange?: (filters: any) => void;

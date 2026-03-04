@@ -2245,7 +2245,7 @@ const FlowBuilder = ({ canEdit }: { canEdit: boolean }) => {
       reader.onload = (e) => {
         try {
           const content = e.target?.result as string;
-          const _parsed = JSON.parse(content);
+          JSON.parse(content);
           // In a real implementation, this would parse the flow and set nodes/edges
           toast.success('Flow imported successfully');
         } catch (_error) {

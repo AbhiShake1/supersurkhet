@@ -99,8 +99,6 @@ interface BusinessCreationFormProps {
 export function BusinessCreationForm({
   step,
   form,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  isSubmitting,
   createdBusiness,
 }: BusinessCreationFormProps) {
   if (step === 3) {

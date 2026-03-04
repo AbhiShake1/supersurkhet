@@ -45,7 +45,7 @@ function hasLegacyFeatureKey(permissions: PermissionMap, feature: string) {
   return permissions[feature] === true;
 }
 
-export function getBusinessMember(
+function getBusinessMember(
   business: Business | undefined,
   userSoul: string | undefined,
 ) {

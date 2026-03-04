@@ -3,7 +3,7 @@ import { Handle, type HandleProps } from '@xyflow/react';
 
 import { cn } from '@/lib/utils';
 
-export type BaseHandleProps = HandleProps & {
+type BaseHandleProps = HandleProps & {
   onDrop?: (event: React.DragEvent) => void;
   onDragOver?: (event: React.DragEvent) => void;
   onDragLeave?: (event: React.DragEvent) => void;

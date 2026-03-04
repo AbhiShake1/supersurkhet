@@ -74,7 +74,7 @@ export const RatingSchema = z.object({
   customEmptyIcon: z.string().optional(),
 });
 
-export type RatingProps = z.infer<typeof RatingSchema>;
+type RatingProps = z.infer<typeof RatingSchema>;
 
 interface Props extends Partial<RatingProps> {}
 

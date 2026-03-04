@@ -70,9 +70,3 @@ export function isPrimitiveComponent(
 }
 
 //Checking of component type, checked via from property, if defined and not null then its a complex component like <Button/>, <Badge/>, etc
-export function isCustomComponent(
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  component: RegistryEntry<ReactComponentType<any>>,
-): boolean {
-  return component.from !== undefined && component.from !== null;
-}

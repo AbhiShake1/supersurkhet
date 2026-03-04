@@ -8,9 +8,6 @@ import {
   createRootRouteWithContext,
 } from '@tanstack/react-router';
 import { NuqsAdapter } from 'nuqs/adapters/tanstack-router';
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
-import { TanStackDevtools } from '@tanstack/react-devtools';
-import TanStackQueryDevtools from '../integrations/tanstack-query/devtools';
 import appCss from '../styles.css?url';
 import { NotFound } from '@/components/ui/not-found';
 import { ErrorComponent } from '@/components/ui/error';
@@ -49,7 +46,7 @@ import { UserLoading } from '@/components/ui/user-loading';
 
 setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
 
-export interface UserProfile {
+interface UserProfile {
   avatar: string;
   email: string;
   isActive: boolean;

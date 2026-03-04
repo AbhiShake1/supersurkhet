@@ -37,7 +37,7 @@ type AnyAutoTableTab = {
   [K in SchemaKeys]: AutoAdminTabInput;
 }[SchemaKeys];
 
-export type BusinessConfigReturn = {
+type BusinessConfigReturn = {
   [B in BusinessType]?: AnyAutoTableTab[];
 };
 

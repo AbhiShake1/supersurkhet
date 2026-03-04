@@ -653,9 +653,6 @@ export const saleSchema = z
         path: ['paidAmount'],
       });
   })
-
-export type Sale = z.infer<typeof saleSchema>;
-
 export const orderSchema = z
   .object({
     customerId: z
@@ -919,9 +916,6 @@ export const stockImportSchema = z
       });
   })
   .describe('Purchase');
-
-export type StockImport = z.infer<typeof stockImportSchema>;
-
 export const stockBookSchema = z
   .object({
     entryDate: z
@@ -1012,9 +1006,6 @@ export const stockBookSchema = z
     fiscalYear: z.string().optional().describe('Fiscal Year'),
   })
   .extend(table);
-
-export type StockBook = z.infer<typeof stockBookSchema>;
-
 export const partySchema = z
   .object({
     name: z.string().min(1).describe('Name of the party'),

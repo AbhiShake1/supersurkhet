@@ -103,14 +103,3 @@ export interface AutoFormContextType {
   uiComponents: AutoFormUIComponents;
   formComponents: AutoFormFieldComponents;
 }
-
-export type FieldConfig<
-  FieldTypes = string,
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  CustomData = Record<string, any>,
-> = BaseFieldConfig<
-  ReactNode,
-  FieldTypes,
-  React.ComponentType<FieldWrapperProps>,
-  CustomData
->;

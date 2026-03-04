@@ -4,7 +4,7 @@ import { Star } from 'lucide-react';
 import type { FieldWrapperProps } from './FieldWrapper';
 import { useState } from 'react';
 
-export interface RatingFieldProps extends FieldWrapperProps {
+interface RatingFieldProps extends FieldWrapperProps {
   max?: number;
   className?: string;
   allowHalf?: boolean;
@@ -18,8 +18,6 @@ export function RatingField({
   className,
   max = 5,
   allowHalf = false,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  ...props
 }: RatingFieldProps) {
   const [hoverRating, setHoverRating] = useState(0);
   const [currentRating, setCurrentRating] = useState(Number(field.value) || 0);

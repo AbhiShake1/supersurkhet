@@ -2,9 +2,9 @@ import { getNextFiscalYear } from './nepali-fiscal';
 
 export const UNASSIGNED_STOCK_BUCKET = '__UNASSIGNED__';
 
-export type StockBucketKey = string;
+type StockBucketKey = string;
 
-export type StockBookAggregationEntry = {
+type StockBookAggregationEntry = {
   _?: { soul?: string };
   entryDate?: string;
   fiscalYear?: string;
@@ -18,12 +18,12 @@ export type StockBookAggregationEntry = {
   originPartyId?: string;
 };
 
-export type StockAggregation = {
+type StockAggregation = {
   productTotalAvailable: Record<string, number>;
   productPartyAvailable: Record<string, Record<StockBucketKey, number>>;
 };
 
-export type StockOpeningClosingRow = {
+type StockOpeningClosingRow = {
   key: string;
   productId: string;
   partyId: string;
@@ -31,7 +31,7 @@ export type StockOpeningClosingRow = {
   closingQty: number;
 };
 
-export type StockOpeningClosingSnapshot = {
+type StockOpeningClosingSnapshot = {
   startDate: Date;
   endDate: Date;
   openingTotalQty: number;
@@ -199,7 +199,7 @@ export function buildStockOpeningClosingSnapshot({
   };
 }
 
-export type FiscalCloseRow = {
+type FiscalCloseRow = {
   entryDate: string;
   transactionType: 'stock';
   movementType: 'closing' | 'opening';

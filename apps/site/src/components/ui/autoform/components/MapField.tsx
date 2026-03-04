@@ -40,12 +40,9 @@ const MapClickHandler: React.FC<{
 export const MapField: React.FC<AutoFormFieldProps> = ({
   inputProps,
   error,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  id,
   value,
 }) => {
-  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
-  const { key, onChange, ...props } = inputProps;
+  const { onChange } = inputProps;
 
   // Parse the value from the form state - expecting a stringified array like "[28.597,81.634]"
   const [coordinates, setCoordinates] = useState<GpsCoordinate>([

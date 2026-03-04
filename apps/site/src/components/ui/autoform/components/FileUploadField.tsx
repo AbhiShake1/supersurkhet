@@ -6,7 +6,7 @@ import { Upload, X, FileText, Image as ImageIcon, File } from 'lucide-react';
 import type { FieldWrapperProps } from './FieldWrapper';
 import { useState, useRef } from 'react';
 
-export interface FileUploadFieldProps extends FieldWrapperProps {
+interface FileUploadFieldProps extends FieldWrapperProps {
   placeholder?: string;
   className?: string;
   accept?: string;

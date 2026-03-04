@@ -10,11 +10,11 @@ import {
 } from 'motion/react';
 import { memo } from 'react';
 
-export type PresetType = 'blur' | 'fade-in-blur' | 'scale' | 'fade' | 'slide';
+type PresetType = 'blur' | 'fade-in-blur' | 'scale' | 'fade' | 'slide';
 
-export type PerType = 'word' | 'char' | 'line';
+type PerType = 'word' | 'char' | 'line';
 
-export type TextEffectProps = {
+type TextEffectProps = {
   children: string;
   per?: PerType;
   as?: keyof React.JSX.IntrinsicElements;

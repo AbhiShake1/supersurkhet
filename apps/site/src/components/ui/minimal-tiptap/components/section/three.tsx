@@ -215,5 +215,3 @@ export const SectionThree: React.FC<SectionThreeProps> = ({
 };
 
 SectionThree.displayName = 'SectionThree';
-
-export default SectionThree;

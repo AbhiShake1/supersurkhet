@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import type { FieldWrapperProps } from './FieldWrapper';
 import { useState, useRef } from 'react';
 
-export interface EditorFieldProps extends FieldWrapperProps {
+interface EditorFieldProps extends FieldWrapperProps {
   placeholder?: string;
   className?: string;
   rows?: number;

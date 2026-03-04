@@ -254,8 +254,6 @@ function FacetedItem(props: FacetedItemProps) {
   );
 }
 
-const FacetedSeparator = CommandSeparator;
-
 export {
   Faceted,
   FacetedBadgeList,
@@ -265,6 +263,5 @@ export {
   FacetedInput,
   FacetedItem,
   FacetedList,
-  FacetedSeparator,
   FacetedTrigger,
 };

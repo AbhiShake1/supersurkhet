@@ -38,12 +38,12 @@ export const ImageUploadField: React.FC<AutoFormFieldProps> = ({
   );
 };
 
-export interface ImageUploadItemProps
+interface ImageUploadItemProps
   extends Omit<ComponentProps<'input'>, 'defaultValue' | 'value'>,
     UseImageUploadProps,
     Pick<AutoFormFieldProps, 'control' | 'path'> {}
 
-export function ImageUploadItem({
+function ImageUploadItem({
   className,
   control,
   path,

@@ -6,7 +6,7 @@ interface InvitationEmailProps {
   invitationUrl: string;
 }
 
-export const InvitationEmail = ({
+const InvitationEmail = ({
   inviterName,
   businessName,
   inviteeEmail,

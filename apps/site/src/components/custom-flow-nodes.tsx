@@ -97,10 +97,8 @@ type LoopNodeData = {
 };
 
 // Diamond-shaped node for conditions
-export const ConditionNode = ({
+const ConditionNode = ({
   data,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  id,
 }: NodeProps<Node<ConditionNodeData>>) => {
   return (
     <NodeStatusIndicator status={data.status}>
@@ -191,8 +189,7 @@ type IO_NodeData = {
 };
 
 // Parallelogram node for input/output
-// biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-export const IO_Node = ({ data, id }: NodeProps<Node<IO_NodeData>>) => {
+const IO_Node = ({ data }: NodeProps<Node<IO_NodeData>>) => {
   return (
     <NodeStatusIndicator status={data.status}>
       <div
@@ -250,7 +247,7 @@ type ProcessNodeData = {
 };
 
 // Rectangle node for process
-export const ProcessNode = ({ data, id }: NodeProps<Node<ProcessNodeData>>) => {
+const ProcessNode = ({ data, id }: NodeProps<Node<ProcessNodeData>>) => {
   return (
     <NodeStatusIndicator status={data.status}>
       <BaseNode className="w-48 bg-purple-500/20 dark:bg-purple-600/20 backdrop-blur-sm border border-purple-500/30 dark:border-purple-600/30 text-purple-900 dark:text-purple-100 shadow-sm">
@@ -301,10 +298,8 @@ type PredefinedProcessNodeData = {
 };
 
 // Rounded rectangle node for predefined process
-export const PredefinedProcessNode = ({
+const PredefinedProcessNode = ({
   data,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  id,
 }: NodeProps<Node<PredefinedProcessNodeData>>) => {
   return (
     <NodeStatusIndicator status={data.status}>
@@ -360,10 +355,8 @@ type DocumentNodeData = {
 };
 
 // Document node (rectangle with wavy bottom)
-export const DocumentNode = ({
+const DocumentNode = ({
   data,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  id,
 }: NodeProps<Node<DocumentNodeData>>) => {
   return (
     <NodeStatusIndicator status={data.status}>
@@ -419,8 +412,7 @@ export const DocumentNode = ({
 };
 
 // Loop node (hexagon)
-// biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-export const LoopNode = ({ data, id }: NodeProps<Node<LoopNodeData>>) => {
+const LoopNode = ({ data }: NodeProps<Node<LoopNodeData>>) => {
   return (
     <NodeStatusIndicator status={data.status}>
       <div

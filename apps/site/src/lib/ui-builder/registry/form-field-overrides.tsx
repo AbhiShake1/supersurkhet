@@ -71,7 +71,13 @@ export const childrenFieldOverrides: FieldConfigFunction<{
   };
 };
 
-export const iconNameFieldOverrides: FieldConfigFunction = (layer) => {
+export const iconNameFieldOverrides: FieldConfigFunction<{
+  propName?: string;
+  iconOptions?: readonly string[];
+}> = (layer, options) => {
+  const propName = options?.propName ?? 'iconName';
+  const value = String(layer.props?.[propName] ?? '');
+
   return {
     fieldType: ({
       label,
@@ -82,8 +88,9 @@ export const iconNameFieldOverrides: FieldConfigFunction = (layer) => {
       <IconNameField
         label={label}
         isRequired={isRequired}
-        value={layer.props.iconName}
+        value={value}
         onChange={field.onChange}
+        iconOptions={options?.iconOptions}
         {...fieldProps}
       />
     ),
@@ -158,6 +165,46 @@ export const childrenAsTipTapFieldOverrides: FieldConfigFunction = (layer) => {
   };
 };
 
+export const propAsTipTapFieldOverrides: FieldConfigFunction<{
+  propName: string;
+}> = (layer, options) => {
+  const propName = options?.propName;
+  const value = propName ? String(layer.props?.[propName] ?? '') : '';
+
+  return {
+    fieldType: ({
+      label,
+      isRequired,
+      fieldConfigItem,
+      field,
+      fieldProps,
+    }: AutoFormInputComponentProps) => (
+      <FormFieldWrapper
+        label={label}
+        isRequired={isRequired}
+        fieldConfigItem={fieldConfigItem}
+      >
+        <MinimalTiptapEditor
+          immediatelyRender={false}
+          output="markdown"
+          editable={true}
+          value={value}
+          editorClassName="focus:outline-none px-4 py-2 h-full"
+          // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
+          onChange={(content) => {
+            if (typeof content === 'string') {
+              field.onChange(content);
+            } else {
+              console.warn('Tiptap content is not a string');
+            }
+          }}
+          {...fieldProps}
+        />
+      </FormFieldWrapper>
+    ),
+  };
+};
+
 // Memoized common field overrides to avoid recreating objects
 const memoizedCommonFieldOverrides = new Map<
   boolean,
@@ -179,37 +226,7 @@ export const commonFieldOverrides = (allowBinding = false) => {
   return overrides;
 };
 
-export const textInputFieldOverrides = () => {
-  return {
-    fieldType: ({
-      label,
-      isRequired,
-      fieldConfigItem,
-      field,
-      fieldProps,
-    }: AutoFormInputComponentProps) => {
-      // Try to get context data from the context store
-      const contextData = useLayerStore((state) => state.getSelectedContext());
-
-      return (
-        <FormFieldWrapper
-          label={label}
-          isRequired={isRequired}
-          fieldConfigItem={fieldConfigItem}
-        >
-          <MentionInput
-            value={field.value as string}
-            onChange={field.onChange}
-            contextData={contextData}
-            {...fieldProps}
-          />
-        </FormFieldWrapper>
-      );
-    },
-  };
-};
-
-export function FormFieldWrapper({
+function FormFieldWrapper({
   label,
   isRequired,
   fieldConfigItem,
@@ -241,8 +258,6 @@ export const tablePickerFieldOverrides = (_layer: ComponentLayer) => {
       isRequired,
       field,
       fieldConfigItem,
-      // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-      zodItem,
       fieldProps,
     }: AutoFormInputComponentProps) => {
       const { business } = useBusiness();

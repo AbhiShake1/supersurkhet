@@ -366,8 +366,6 @@ function SortableBusinessIcon({
   business,
   iconSize,
   addRecentlyUsedApp,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  isAllApps = false,
   targetApp,
   activeItem,
 }: SortableBusinessIconProps) {
@@ -377,8 +375,6 @@ function SortableBusinessIcon({
     setNodeRef,
     transform,
     transition,
-    // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
-    isDragging,
   } = useSortable({
     id: business._?.soul || '',
     data: {
@@ -530,11 +526,7 @@ function SortableFolderIconComponent({
   folder,
   businesses,
   iconSize,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  isAllApps = false,
   onUpdateFolder,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  onDeleteFolder,
   addRecentlyUsedApp,
 }: FolderIconComponentProps) {
   const { attributes, listeners, setNodeRef, transform, transition } =
@@ -561,10 +553,6 @@ function SortableFolderIconComponent({
   );
 
   const previewApps = folderApps.slice(0, 4);
-
-  function _noopSortingStrategy() {
-    return null;
-  }
 
   return (
     <div

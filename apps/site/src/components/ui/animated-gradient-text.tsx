@@ -10,7 +10,7 @@ export const AnimatedGradientTextSchema = z.object({
   colorTo: z.string().default('#9c40ff'),
 });
 
-export type AnimatedGradientTextProps = z.infer<
+type AnimatedGradientTextProps = z.infer<
   typeof AnimatedGradientTextSchema
 >;
 

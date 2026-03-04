@@ -15,7 +15,7 @@ interface CardProps {
   showGridLines?: boolean;
 }
 
-export const VARIANTS = {
+const VARIANTS = {
   emerald: {
     accent: 'rose-500',
     gradient: 'from-rose-500/20 to-rose-500/0',
@@ -89,8 +89,6 @@ export function CardHoverEffect({
   glowEffect = false,
   hoverScale = 1.02,
   interactive = true,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  showGridLines = true,
 }: CardProps) {
   const variantConfig = VARIANTS[variant];
   const sizeConfig = SIZES[size];

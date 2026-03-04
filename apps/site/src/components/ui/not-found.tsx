@@ -8,7 +8,7 @@ interface NotFoundProps {
   description?: string;
 }
 
-export function Illustration(props: React.ComponentPropsWithoutRef<'svg'>) {
+function Illustration(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
     // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 362 145" {...props}>

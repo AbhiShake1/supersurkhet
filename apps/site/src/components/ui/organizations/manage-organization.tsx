@@ -424,10 +424,6 @@ const MembersTab = ({
 // Member Row Component
 const MemberRow = ({
   member: { userId, role, permissions, joinedAt },
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  onUpdatePermissions,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  onRemoveMember,
   searchTerm,
 }: {
   member: Member;

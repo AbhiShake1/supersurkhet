@@ -77,7 +77,7 @@ interface LayersTreeProps {
   duplicateLayer: (layerId: string) => void;
 }
 
-export const LayersTree: React.FC<LayersTreeProps> = React.memo(
+const LayersTree: React.FC<LayersTreeProps> = React.memo(
   ({
     className,
     layers,

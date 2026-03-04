@@ -26,7 +26,7 @@ export type BillRenderContext<TFormValues extends FieldValues> = {
   form: UseFormReturn<TFormValues>;
 };
 
-export type BillSummaryFieldConfig<TFormValues> = {
+type BillSummaryFieldConfig<TFormValues> = {
   key: keyof TFormValues & string;
   label?: string;
   format?: (

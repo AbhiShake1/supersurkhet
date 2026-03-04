@@ -40,7 +40,7 @@ type PartyLedger = {
   entries: LedgerEntry[];
 };
 
-export const BlazorLedgerManagement: AdminComponent = ({ slug }) => {
+const BlazorLedgerManagement: AdminComponent = ({ slug }) => {
   return <_BlazorLedgerManagement slug={slug} />;
 };
 

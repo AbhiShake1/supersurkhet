@@ -1942,7 +1942,7 @@ export const TAILWIND_GAP_CLASSES = [
   'gap-96',
 ];
 
-export const TAILWIND_CLASSES = [
+const TAILWIND_CLASSES = [
   // MARK: Layout
 
   /* Aspect Ratio */

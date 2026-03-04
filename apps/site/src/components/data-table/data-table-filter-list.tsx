@@ -10,7 +10,6 @@ import {
 import { parseAsStringEnum, useQueryState } from 'nuqs';
 import * as React from 'react';
 
-import { useSearch } from '@tanstack/react-router';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -110,7 +109,6 @@ export function DataTableFilterList<TData>({
   const descriptionId = React.useId();
   const [open, setOpen] = React.useState(false);
   const addButtonRef = React.useRef<HTMLButtonElement>(null);
-  const _search = useSearch({ from: '__root__' });
 
   const columns = React.useMemo(() => {
     return table

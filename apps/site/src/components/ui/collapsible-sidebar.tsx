@@ -50,7 +50,7 @@ function getTabIcon(tab: PossibleTabConfig): LucideIcon {
   return Menu;
 }
 
-export interface CollapsibleSidebarProps {
+interface CollapsibleSidebarProps {
   businessName?: string;
   slug?: string;
   tabs: PossibleTabConfig[];

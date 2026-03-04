@@ -12,7 +12,6 @@ import {
   createId,
   countLayers,
   duplicateWithNewIdsAndName,
-  findAllParentLayersRecursive,
   createComponentLayer,
   moveLayer,
 } from '@/lib/ui-builder/store/layer-utils';
@@ -26,7 +25,7 @@ const DEFAULT_PAGE_PROPS = {
   className: 'h-screen p-4 flex flex-col gap-2 bg-background overflow-y-scroll',
 };
 
-export interface LayerStore {
+interface LayerStore {
   pages: ComponentLayer[];
   selectedLayerId: string | null;
   selectedPageId: string;
@@ -425,4 +424,4 @@ const useLayerStore = create(
   ),
 );
 
-export { useLayerStore, countLayers, findAllParentLayersRecursive };
+export { useLayerStore, countLayers };

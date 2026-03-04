@@ -50,7 +50,7 @@ import {
   CredenzaTrigger,
 } from '../ui/credenza';
 
-export type AddRowDialogProps<T extends SchemaKeys> = Pick<
+type AddRowDialogProps<T extends SchemaKeys> = Pick<
   AutoTableProps<T>,
   'slug' | 'extender' | 'onCreate' | 'readOnly' | 'className'
 > & {
@@ -301,7 +301,7 @@ function AddRowImportMenu({
   );
 }
 
-export interface AddDataSuggestionsProps {
+interface AddDataSuggestionsProps {
   slug: string;
   schemaName: SchemaKeys;
   onSelected: (item: SuggestionItem) => void;
@@ -311,7 +311,7 @@ type SuggestionItem = Record<string, unknown> & {
   business: string | undefined;
 };
 
-export function AddDataSuggestions({
+function AddDataSuggestions({
   schemaName,
   slug,
   onSelected,

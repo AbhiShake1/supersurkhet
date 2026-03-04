@@ -10,7 +10,7 @@ export type UseGunOptions = Readonly<{
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 type AnyFunction = (...args: any[]) => any;
 
-export type GunHookMessenger = {
+type GunHookMessenger = {
   _options: UseGunOptions;
 };
 
@@ -20,12 +20,6 @@ type WithoutMessenger<F extends AnyFunction> = F extends (
 ) => infer R
   ? (...args: P) => R
   : F;
-
-export type UseGunHook<F extends AnyFunction> = WithoutMessenger<F> &
-  GunHookMessenger & {
-    withOptions(options: Partial<UseGunOptions>): WithoutMessenger<F>;
-  };
-
 // biome-ignore lint/complexity/noBannedTypes: lint debt cleanup
 type MessengerFunction<F extends Function> = (messenger: GunHookMessenger) => F;
 

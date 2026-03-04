@@ -20,6 +20,7 @@ import React from 'react';
 import { z } from 'zod';
 import { PermissionGate } from '@/components/permission-gate/permission-gate';
 import { useFeaturePermissions } from '@/components/permission-gate/use-feature-permissions';
+import type { AdminComponentProps } from '@/components/ui/admin';
 import { fieldConfig } from '@/components/ui/autoform';
 import { dataMatrixActionSchema } from './datamatrix';
 import type {
@@ -70,10 +71,6 @@ const BlazorLedgerManagement = React.lazy(
 const StockBookManagement = React.lazy(
   () => import('@/components/ui/admin/stock-book-management'),
 );
-
-type AdminComponentProps = {
-  slug: string;
-};
 
 function withSchemaPermission(
   feature: string,
@@ -265,13 +262,13 @@ function createSchema<const TSchema extends GTAAppConfigShape['schema']>(
     },
     merge<
       const TOtherSchema extends CreatedSchema<GTAAppConfigShape['schema']>,
-    >(this, otherSchema: TOtherSchema) {
+    >(this: CreatedSchema<TSchema>, otherSchema: TOtherSchema) {
       return createSchema({
         ...this.rawShape,
         ...otherSchema.rawShape,
       }) as CreatedSchema<TSchema & TOtherSchema['rawShape']>;
     },
-  };
+  } as unknown as CreatedSchema<TSchema>;
 }
 
 export const coreSchema = createSchema({
@@ -528,7 +525,7 @@ export function transformSchema<const TSchema extends BaseAppSchemaType>(
         value.schema,
       ]),
     ),
-  ) as AppSchemaType;
+  ) as unknown as AppSchemaType;
 }
 
 export default appSchema;

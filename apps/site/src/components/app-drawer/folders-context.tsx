@@ -3,7 +3,7 @@ import { api } from '@/lib/api';
 import type { NestedSchemaType } from '@gta/react-hooks';
 import { createContext, useContext, useMemo } from 'react';
 
-export type Folder = NestedSchemaType<'folder'>;
+type Folder = NestedSchemaType<'folder'>;
 
 interface FoldersContextType {
   folders: Folder[];

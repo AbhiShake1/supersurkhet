@@ -16,7 +16,7 @@ interface ContextDataReturn {
   context: ContextData;
 }
 
-export function makeSerializable(
+function makeSerializable(
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   obj: Record<string, any>,
   maxDepth = 3,
@@ -65,7 +65,7 @@ export function makeSerializable(
   return clean(obj, 1) as Record<string, any>;
 }
 
-export const ContextDataStoreContext = createContext<
+const ContextDataStoreContext = createContext<
   ContextDataReturn | undefined
 >(undefined);
 

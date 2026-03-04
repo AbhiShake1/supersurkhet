@@ -85,4 +85,4 @@ function useComposedRefs<T>(...refs: PossibleRef<T>[]): React.RefCallback<T> {
   return React.useCallback(composeRefs(...refs), refs);
 }
 
-export { composeEventHandlers, composeRefs, useComposedRefs };
+export { composeEventHandlers, useComposedRefs };

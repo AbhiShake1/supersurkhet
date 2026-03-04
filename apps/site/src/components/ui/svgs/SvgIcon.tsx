@@ -163,5 +163,4 @@ const SvgIconSchema = z.object({
     .optional(),
 });
 
-export { SvgIcon, type IconName, SvgIconSchema };
-export type { IconProps };
+export { SvgIcon, SvgIconSchema };

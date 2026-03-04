@@ -42,7 +42,7 @@ interface InvoiceManagementProps {
   slug: string;
 }
 
-export const InvoiceManagement: AdminComponent = ({ slug }) => {
+const InvoiceManagement: AdminComponent = ({ slug }) => {
   return <_InvoiceManagement slug={slug} />;
 };
 

@@ -48,7 +48,7 @@ const flexboxVariants = cva('flex', {
   },
 });
 
-export interface FlexboxProps
+interface FlexboxProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof flexboxVariants> {}
 
@@ -67,4 +67,4 @@ const Flexbox = React.forwardRef<HTMLDivElement, FlexboxProps>(
 );
 Flexbox.displayName = 'Flexbox';
 
-export { Flexbox, flexboxVariants };
+export { Flexbox };

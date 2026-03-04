@@ -1,4 +1,4 @@
-export interface SkeletonTableProps {
+interface SkeletonTableProps {
   rowCount?: number;
   columnCount?: number;
   showTopBar?: boolean;
@@ -21,17 +21,17 @@ interface ShimmerTableProps {
   columnWidthArray?: string[];
 }
 
-export const ShimmerComponent: React.FC<ShimmerComponentProps> = ({
+const ShimmerComponent: React.FC<ShimmerComponentProps> = ({
   className = '',
 }) => {
   return <div className={`animate-pulse rounded bg-gray-500 ${className}`} />;
 };
 
-export const ErrorMessage: React.FC<{ message: string }> = ({ message }) => {
+const ErrorMessage: React.FC<{ message: string }> = ({ message }) => {
   return <h3 className="text-center text-red-400">{message}</h3>;
 };
 
-export const ShimmerTable: React.FC<ShimmerTableProps> = ({
+const ShimmerTable: React.FC<ShimmerTableProps> = ({
   rowCount = 5,
   columnCount = 5,
   renderHeading,

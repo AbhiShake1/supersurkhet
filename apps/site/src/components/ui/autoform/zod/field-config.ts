@@ -2,7 +2,7 @@ import { type RefinementEffect, z } from "zod";
 import type { FieldConfig } from "@autoform/core";
 import { ZOD_FIELD_CONFIG_SYMBOL } from "../utils";
 
-export type SuperRefineFunction = () => unknown;
+type SuperRefineFunction = () => unknown;
 
 export function fieldConfig<
   AdditionalRenderable = null,

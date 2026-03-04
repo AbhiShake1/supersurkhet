@@ -2,7 +2,7 @@
 import { Children, useMemo, type ReactNode } from 'react';
 import { motion, type Variants } from 'motion/react';
 
-export type PresetType =
+type PresetType =
   | 'fade'
   | 'slide'
   | 'scale'
@@ -14,7 +14,7 @@ export type PresetType =
   | 'rotate'
   | 'swing';
 
-export type AnimatedGroupProps = {
+type AnimatedGroupProps = {
   children: ReactNode;
   className?: string;
   variants?: {

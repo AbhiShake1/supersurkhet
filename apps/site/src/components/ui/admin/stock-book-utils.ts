@@ -21,7 +21,7 @@ type CounterpartyEntity = {
   panNumber?: string;
 };
 
-export type StockBookLedgerEntry = {
+type StockBookLedgerEntry = {
   counterpartyId?: string;
   date?: string;
   particulars: string;
@@ -32,7 +32,7 @@ export type StockBookLedgerEntry = {
   totalAmount?: number;
 };
 
-export type StockBookCounterpartyLedger = {
+type StockBookCounterpartyLedger = {
   id: string;
   name: string;
   group: 'Purchase Party' | 'Sale Party' | 'Mixed' | undefined;

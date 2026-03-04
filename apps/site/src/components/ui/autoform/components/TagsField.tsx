@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import type { FieldWrapperProps } from './FieldWrapper';
 import { useState, useRef, useEffect } from 'react';
 
-export interface TagsFieldProps extends FieldWrapperProps {
+interface TagsFieldProps extends FieldWrapperProps {
   placeholder?: string;
   className?: string;
   maxTags?: number;
@@ -20,8 +20,6 @@ export function TagsField({
   className,
   placeholder = 'Add a tag...',
   maxTags,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  ...props
 }: TagsFieldProps) {
   const [inputValue, setInputValue] = useState('');
   const [tags, setTags] = useState<string[]>(

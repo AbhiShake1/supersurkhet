@@ -39,7 +39,7 @@ interface PartyManagementProps {
   };
 }
 
-export const PartyManagement: AdminComponent = ({ slug, permissions }) => {
+const PartyManagement: AdminComponent = ({ slug, permissions }) => {
   return <_PartyManagement slug={slug} permissions={permissions} />;
 };
 export default PartyManagement;
@@ -56,10 +56,6 @@ function _PartyManagement({ slug, permissions }: PartyManagementProps) {
   } = api.party.useGet({
     keys: [slug],
   });
-
-  const _createMutation = api.party.useCreate();
-  const _updateMutation = api.party.useUpdate();
-  const _deleteMutation = api.party.useDelete();
 
   if (isLoading) {
     return (

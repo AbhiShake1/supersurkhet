@@ -129,7 +129,7 @@ export interface EditorConfig {
   contextData?: Record<string, any>;
 }
 
-export interface RenderLayerProps {
+interface RenderLayerProps {
   layer: ComponentLayer;
   componentRegistry: ComponentRegistry;
   editorConfig?: EditorConfig;

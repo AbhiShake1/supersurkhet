@@ -5,7 +5,7 @@ import { BakeryDatamatrix } from '@barcode-bakery/barcode-react/datamatrix';
 import { toDataURL } from 'qrcode';
 import { forwardRef, useState, useEffect } from 'react';
 
-export interface DataMatrixCodeProps {
+interface DataMatrixCodeProps {
   value: DataMatrixAction | string;
   className?: string;
   size?: number;

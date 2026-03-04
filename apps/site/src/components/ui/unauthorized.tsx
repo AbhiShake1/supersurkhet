@@ -7,7 +7,7 @@ interface UnauthorizedProps {
   description?: string;
 }
 
-export function Illustration(props: React.ComponentPropsWithoutRef<'svg'>) {
+function Illustration(props: React.ComponentPropsWithoutRef<'svg'>) {
   return <Lock {...props} />;
 }
 

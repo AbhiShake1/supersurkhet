@@ -21,7 +21,7 @@ export const SlicedTextSchema = z.object({
   splitSpacing: z.number().optional(),
 });
 
-export type SlicedTextProps = z.infer<typeof SlicedTextSchema>;
+type SlicedTextProps = z.infer<typeof SlicedTextSchema>;
 
 const SlicedText: React.FC<SlicedTextProps> = ({
   text = 'Sliced Text',

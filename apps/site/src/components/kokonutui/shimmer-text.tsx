@@ -19,7 +19,7 @@ export const ShimmerTextSchema = z.object({
   className: z.string().optional(),
 });
 
-export type ShimmerTextProps = z.infer<typeof ShimmerTextSchema>;
+type ShimmerTextProps = z.infer<typeof ShimmerTextSchema>;
 
 export default function ShimmerText({
   text = 'Text Shimmer',

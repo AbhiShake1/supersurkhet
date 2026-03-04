@@ -1,5 +1,5 @@
 import type { FieldConfig } from "@autoform/core";
-import { z } from "zod/v3";
+import { z } from "zod";
 
 export function inferFieldType(
   schema: z.ZodTypeAny,

@@ -102,15 +102,10 @@ type Options<T extends SchemaKeys> = UseQueryOptions<
   UseGetBuilder<T>
 >;
 
-export type UseGetOptions<T extends SchemaKeys> = Omit<
+type UseGetOptions<T extends SchemaKeys> = Omit<
   Options<T>,
   'queryFn'
 > & {
   key: T;
 };
-
-export type UseGetOptionsShort = Omit<UseGetOptions<SchemaKeys>, 'key'> & {
-  key?: string;
-};
-
 export type UseGet = typeof useGet;

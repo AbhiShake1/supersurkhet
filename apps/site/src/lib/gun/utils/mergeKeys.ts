@@ -14,12 +14,6 @@ export function mergeKeys<T extends string>(key: T, ...restKeys: string[]) {
   return `${GUN_PREFIX}${nonNamespacedKey}`;
 }
 
-export function trimKey(key: string) {
-  const lastIndexOfPrefix = key.lastIndexOf(GUN_PREFIX);
-  if (lastIndexOfPrefix === -1) return key;
-  return key.slice(lastIndexOfPrefix + GUN_PREFIX.length);
-}
-
 export function getGunRef(key: string) {
   // const gunRef = gun.get(key);
   const [head, ...tail] = key.split('/');

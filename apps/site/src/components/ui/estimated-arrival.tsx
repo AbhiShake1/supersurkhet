@@ -9,7 +9,7 @@ export const EstimatedDateBadgeSchema = z.object({
   deliveryType: z.string().optional(),
 });
 
-export type EstimatedDateBadgeProps = z.infer<typeof EstimatedDateBadgeSchema>;
+type EstimatedDateBadgeProps = z.infer<typeof EstimatedDateBadgeSchema>;
 
 const EstimatedDateBadge: React.FC<EstimatedDateBadgeProps> = ({
   estimatedDate = 'September 28',

@@ -39,7 +39,7 @@ export const table = {
 
 // #region Generalized Listing Schemas (The "Things")
 
-export const baseListingSchema = z
+const baseListingSchema = z
   .object({
     title: z.string().min(1).describe('Product Name'),
     purchasePartyId: z

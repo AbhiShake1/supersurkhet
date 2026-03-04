@@ -21,7 +21,7 @@ export const BentoCardSchema = z.object({
   cta: z.string(),
 });
 
-export type BentoCardProps = z.infer<typeof BentoCardSchema> &
+type BentoCardProps = z.infer<typeof BentoCardSchema> &
   ComponentPropsWithoutRef<'div'>;
 
 const BentoGrid = ({ children, className, ...props }: BentoCardProps) => {

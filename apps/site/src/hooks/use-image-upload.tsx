@@ -11,7 +11,7 @@ function toBase64(file: File): Promise<string> {
   });
 }
 
-export async function uploadImageToNetwork(file: File): Promise<string> {
+async function uploadImageToNetwork(file: File): Promise<string> {
   return toBase64(file);
 }
 

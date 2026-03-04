@@ -1,9 +1,12 @@
 import { useMemo } from 'react';
 import { api } from '@/lib/api';
 import { calculateFiscalYear } from '@/lib/nepali-fiscal';
-import type { Sale, StockImport } from '@/lib/schemas/sales';
+import type { InferredTable } from '@/lib/schemas/core/types';
 import { aggregateStockBookEntries } from '@/lib/stock-book-aggregation';
 import { lineTotal, toFiniteNumber } from './business-analytics-number-utils';
+
+type Sale = InferredTable<'sale'>;
+type StockImport = InferredTable<'stockImport'>;
 
 const saleTotal = (sale: Sale) =>
   sale.items?.reduce((sum, i) => sum + lineTotal(i.quantity, i.unitPrice), 0) ??
@@ -405,5 +408,3 @@ function filterByPeriod<
     return dateField ? new Date(dateField) >= startDate : true;
   });
 }
-
-export { calculateFiscalYear };

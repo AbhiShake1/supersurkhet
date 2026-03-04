@@ -1,7 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 import { readBusinessSeed } from "./seed";
 
-export function formatTestId(path: string[]) {
+function formatTestId(path: string[]) {
   return path.join("__").replace(/[^a-zA-Z0-9_-]/g, "_");
 }
 

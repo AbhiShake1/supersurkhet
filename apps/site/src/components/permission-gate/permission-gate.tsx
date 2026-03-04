@@ -8,7 +8,7 @@ import {
 } from '@/lib/permissions/business-permissions';
 import { getSoulFromUnknown } from '@/lib/utils';
 
-export interface PermissionGateProps {
+interface PermissionGateProps {
   feature: string;
   action?: PermissionAction;
   fallback?: React.ReactNode;

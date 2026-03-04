@@ -28,7 +28,7 @@ export const SwooshTextSchema = z.object({
     .optional(),
 });
 
-export type SwooshTextProps = z.infer<typeof SwooshTextSchema>;
+type SwooshTextProps = z.infer<typeof SwooshTextSchema>;
 
 export default function SwooshText({
   text = 'Hover Me',

@@ -14,7 +14,7 @@ import {
   Terminal,
   X,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { z } from 'zod';
 import { useAuth } from '@/components/auth-provider';
 // import { useChat } from '@ai-sdk/react';
@@ -83,6 +83,7 @@ import {
 } from '@/components/ui/tooltip';
 import { CopyPromptButton } from '@/components/ui/ui-builder/copy-prompt-button';
 import LayerRenderer from '@/components/ui/ui-builder/layer-renderer';
+import type { ComponentRegistry } from '@/components/ui/ui-builder/types';
 import { Unauthorized } from '@/components/ui/unauthorized';
 import { api } from '@/lib/api';
 import {
@@ -91,15 +92,9 @@ import {
 } from '@/lib/permissions/business-permissions';
 import { uiBuilderLayerSchema } from '@/lib/schemas/ui-builder-schema';
 import { useContextData } from '@/lib/ui-builder/context/context-data-store';
-import { complexComponentDefinitions } from '@/lib/ui-builder/registry/complex-component-definitions';
-import { primitiveComponentDefinitions } from '@/lib/ui-builder/registry/primitive-component-definitions';
+import { loadComponentRegistry } from '@/lib/ui-builder/registry/load-component-registry';
 import { getSoulFromUnknown } from '@/lib/utils';
 import { zodToJsonSchema } from '@/lib/zod/zod-to-json-schema';
-
-const componentRegistry = {
-  ...primitiveComponentDefinitions,
-  ...complexComponentDefinitions,
-};
 
 export const Route = createFileRoute('/$businessName/admin/editor')({
   validateSearch: z.object({
@@ -179,7 +174,30 @@ function EditorComponent() {
   const [selectedPreviewMode, setSelectedPreviewMode] = useState<
     'mobile' | 'tablet' | 'desktop' | 'responsive'
   >(previewMode);
+  const [componentRegistry, setComponentRegistry] = useState<ComponentRegistry>(
+    {},
+  );
   const initialContextData = useContextData();
+  const isComponentRegistryReady = Object.keys(componentRegistry).length > 0;
+
+  useEffect(() => {
+    let isMounted = true;
+
+    loadComponentRegistry()
+      .then((registry) => {
+        if (isMounted) setComponentRegistry(registry);
+      })
+      .catch((error) => {
+        console.error(
+          '[ui-builder editor] failed to load component registry dynamically',
+          error,
+        );
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // AI Chat related states and logic
   const [_input, _setInput] = useState('');
@@ -187,53 +205,53 @@ function EditorComponent() {
 
   // Define a schema for our UI builder based on the Zod schema from ui-builder-schema.ts
   // Converting Zod schema to JSON schema format for Monaco Editor
-  const rootSchema = {
-    $defs: {
-      UiBuilderComponent: {
-        type: 'object',
-        properties: {
-          id: {
-            type: 'string',
-            description: 'Unique identifier for the component',
+  const rootSchema = useMemo(
+    () => ({
+      $defs: {
+        UiBuilderComponent: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              description: 'Unique identifier for the component',
+            },
+            name: {
+              type: 'string',
+              description:
+                'Component name for identification (use same as type if not specified)',
+            },
+            type: {
+              type: 'string',
+              description: 'Component type based on registry',
+              enum: Object.keys(componentRegistry),
+            },
+            props: {
+              type: 'object',
+              description:
+                'Component properties and attributes (always include even if empty)',
+              additionalProperties: true,
+            },
+            children: {
+              anyOf: [
+                { type: 'string', description: 'Child as string' },
+                {
+                  type: 'array',
+                  description:
+                    'Array of children - each can be a string or nested components',
+                  items: { $ref: '#/$defs/UiBuilderComponent' },
+                },
+              ],
+            },
           },
-          name: {
-            type: 'string',
-            description:
-              'Component name for identification (use same as type if not specified)',
-          },
-          type: {
-            type: 'string',
-            description: 'Component type based on registry',
-            enum: Object.keys({
-              ...primitiveComponentDefinitions,
-              ...complexComponentDefinitions,
-            }),
-          },
-          props: {
-            type: 'object',
-            description:
-              'Component properties and attributes (always include even if empty)',
-            additionalProperties: true,
-          },
-          children: {
-            anyOf: [
-              { type: 'string', description: 'Child as string' },
-              {
-                type: 'array',
-                description:
-                  'Array of children - each can be a string or nested components',
-                items: { $ref: '#/$defs/UiBuilderComponent' },
-              },
-            ],
-          },
+          required: ['id', 'type', 'name', 'props', 'children'],
         },
-        required: ['id', 'type', 'name', 'props', 'children'],
       },
-    },
-    type: 'array',
-    description: 'Array of UI builder components/pages',
-    items: { $ref: '#/$defs/UiBuilderComponent' },
-  };
+      type: 'array',
+      description: 'Array of UI builder components/pages',
+      items: { $ref: '#/$defs/UiBuilderComponent' },
+    }),
+    [componentRegistry],
+  );
 
   // Generate comprehensive system prompt for AI
   function generateSystemPrompt() {
@@ -608,7 +626,8 @@ Provide the complete UI configuration in JSON format as your response. Do not in
     promptLogin,
   ]);
 
-  if (isLoading || isAuthLoading) return <Spinner />;
+  if (isLoading || isAuthLoading || !isComponentRegistryReady)
+    return <Spinner />;
 
   if (!user) return null;
   if (!canAccess || !canReadBusiness) {

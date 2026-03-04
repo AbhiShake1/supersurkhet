@@ -12,13 +12,6 @@ export function isNonNullable<T>(v: T): v is NonNullable<T> {
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export function recordToList<R extends Record<string, any>>(record: R) {
-  return Object.entries(record)
-    .filter(([, v]) => typeof v !== 'string')
-    .map(([soul, v]) => ({ ...v, _: { ...v._, soul } })) as Array<
-      R[string] & { _: { soul: string } }
-    >;
-}
 
 export function soulToId(soul?: string | null) {
   if (!soul) return '';
@@ -54,8 +47,3 @@ export function getAppIcon(business: Business): string | null {
 }
 
 // Function to get Lucide icon based on business type
-export function getBusinessTypeIcon(_businessType: string): LucideIcon | null {
-  // For now, return null - we can implement specific icons later
-  // This would map business types to specific Lucide icons
-  return null;
-}

@@ -67,7 +67,7 @@ export const sliderSchema = z
   })
   .catchall(z.unknown());
 
-export type SliderProps = z.infer<typeof sliderSchema>;
+type SliderProps = z.infer<typeof sliderSchema>;
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 const validateSliderProps = (props: any): SliderPrimitive.SliderProps => {

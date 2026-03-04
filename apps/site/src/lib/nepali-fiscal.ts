@@ -1,16 +1,14 @@
 import NepaliDate from 'nepali-datetime';
 
-export const NEPALI_FISCAL_START_MONTH_INDEX = 3; // Shrawan
-export const NEPALI_FISCAL_END_MONTH_INDEX = 2; // Asar
-
+const NEPALI_FISCAL_START_MONTH_INDEX = 3; // Shrawan
 type DateLike = Date | string | number;
 
-export type ParsedFiscalYear = {
+type ParsedFiscalYear = {
   startBsYear: number;
   endBsYear: number;
 };
 
-export type FiscalYearDateRange = {
+type FiscalYearDateRange = {
   fiscalYear: string;
   startBsYear: number;
   endBsYear: number;
@@ -147,9 +145,4 @@ export function getFiscalYearDateRange(
     nextFiscalYear: formatFiscalYearFromStartYear(parsed.startBsYear + 1),
     nextFiscalYearStartDate,
   };
-}
-
-export function getCurrentFiscalYearDateRange(input?: DateLike) {
-  const fiscalYear = calculateFiscalYear(input);
-  return getFiscalYearDateRange(fiscalYear);
 }

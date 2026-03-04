@@ -147,7 +147,7 @@ export function inferLineTotalField(
   return last?.key;
 }
 
-export function toSafeNumber(value: unknown): number {
+function toSafeNumber(value: unknown): number {
   const numeric = Number(value ?? 0);
   return Number.isFinite(numeric) ? numeric : 0;
 }

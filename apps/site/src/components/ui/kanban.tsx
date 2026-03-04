@@ -1121,23 +1121,13 @@ const Board = KanbanBoard;
 const Column = KanbanColumn;
 const ColumnHandle = KanbanColumnHandle;
 const Item = KanbanItem;
-const ItemHandle = KanbanItemHandle;
 const Overlay = KanbanOverlay;
 
 export {
-  Kanban,
-  KanbanBoard,
-  KanbanColumn,
-  KanbanColumnHandle,
-  KanbanItem,
-  KanbanItemHandle,
-  KanbanOverlay,
-  //
   Root,
   Board,
   Column,
   ColumnHandle,
   Item,
-  ItemHandle,
   Overlay,
 };

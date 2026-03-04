@@ -1,11 +1,11 @@
 import React from 'react';
 import type { Business } from '@/lib/schema';
 
-export type BusinessContextReturn = {
+type BusinessContextReturn = {
   business: Business;
 };
 
-export const BusinessContext = React.createContext<
+const BusinessContext = React.createContext<
   BusinessContextReturn | undefined
 >(undefined);
 

@@ -92,13 +92,6 @@ const nodeTypes = [
   },
 ];
 
-export type CustomEdgeData = {
-  onAddNode?: (edgeId: string, nodeType: string) => void;
-  isAddButtonHidden?: boolean;
-  label?: string;
-  description?: string;
-};
-
 export function CustomEdge({
   id,
   sourceX,

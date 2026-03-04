@@ -101,5 +101,3 @@ export const MinimalTiptapEditor = React.forwardRef<
 });
 
 MinimalTiptapEditor.displayName = 'MinimalTiptapEditor';
-
-export default MinimalTiptapEditor;

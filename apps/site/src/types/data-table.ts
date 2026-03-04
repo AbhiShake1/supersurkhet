@@ -14,7 +14,7 @@ declare module '@tanstack/react-table' {
   }
 }
 
-export interface Option {
+interface Option {
   label: string;
   value: string;
   count?: number;

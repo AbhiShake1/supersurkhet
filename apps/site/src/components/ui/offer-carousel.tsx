@@ -18,7 +18,7 @@ export const OfferCardSchema = z.object({
   href: z.string().optional(),
 });
 
-export type Offer = z.infer<typeof OfferCardSchema>;
+type Offer = z.infer<typeof OfferCardSchema>;
 
 // Props for the OfferCard component
 type OfferCardProps = Offer;
@@ -126,7 +126,7 @@ export const OfferCarouselSchema = z.object({
 });
 
 // Props for the OfferCarousel component
-export type OfferCarouselProps = React.HTMLAttributes<HTMLDivElement> &
+type OfferCarouselProps = React.HTMLAttributes<HTMLDivElement> &
   z.infer<typeof OfferCarouselSchema>;
 
 const defaultOffers: Offer[] = [

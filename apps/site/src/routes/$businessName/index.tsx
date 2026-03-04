@@ -4,14 +4,9 @@ import { BusinessProvider } from '@/contexts/business-context';
 import { api } from '@/lib/api';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Loader2, MapPin, Shield } from 'lucide-react';
-import { lazy } from 'react';
 import { BusinessAccessGate } from '@/components/permission-gate/business-access-gate';
 import { Button } from '@/components/ui/button';
 import { BusinessLocationMap } from '@/components/business-location-map';
-
-const _GenericClientPage = lazy(
-  () => import('@/components/pages/generic/generic-client-page'),
-);
 
 export const Route = createFileRoute('/$businessName/')({
   component: () => {

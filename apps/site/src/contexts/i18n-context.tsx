@@ -94,13 +94,3 @@ export const useI18n = (): I18nContextType => {
 };
 
 // Higher-order component for class components
-export const withI18n = <P extends object>(
-  Component: React.ComponentType<P & I18nContextType>,
-): React.FC<Omit<P, keyof I18nContextType>> => {
-  return (props: Omit<P, keyof I18nContextType>) => (
-    <I18nContext.Consumer>
-      {/** biome-ignore lint/style/noNonNullAssertion: lint debt cleanup */}
-      {(context) => <Component {...(props as P)} {...context!} />}
-    </I18nContext.Consumer>
-  );
-};

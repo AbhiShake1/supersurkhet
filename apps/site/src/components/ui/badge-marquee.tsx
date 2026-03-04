@@ -172,7 +172,7 @@ export function BadgeMarquee<T>({
     </>
   );
 }
-export function SearchBar({ onSearch }: { onSearch: (query: string) => void }) {
+function SearchBar({ onSearch }: { onSearch: (query: string) => void }) {
   const [searchQuery, setSearchQuery] = React.useState('');
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {

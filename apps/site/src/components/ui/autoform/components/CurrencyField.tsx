@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import type { FieldWrapperProps } from './FieldWrapper';
 import { useState, useEffect } from 'react';
 
-export interface CurrencyFieldProps extends FieldWrapperProps {
+interface CurrencyFieldProps extends FieldWrapperProps {
   placeholder?: string;
   className?: string;
   currency?: string;

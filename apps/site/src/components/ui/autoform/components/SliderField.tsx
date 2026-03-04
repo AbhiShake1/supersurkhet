@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import type { FieldWrapperProps } from './FieldWrapper';
 
-export interface SliderFieldProps extends FieldWrapperProps {
+interface SliderFieldProps extends FieldWrapperProps {
   min?: number;
   max?: number;
   step?: number;

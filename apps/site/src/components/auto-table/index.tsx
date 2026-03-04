@@ -622,50 +622,6 @@ function useAllData(tableName: SchemaKeys) {
   return { data, ...rest };
 }
 
-export interface AddDataSuggestionsProps {
-  slug: string;
-  schemaName: SchemaKeys;
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  onSelected: (item: any) => void;
-}
-
-export function AddDataSuggestions({
-  schemaName,
-  slug,
-  onSelected,
-}: AddDataSuggestionsProps) {
-  const { data, isLoading } = useAllData(schemaName);
-
-  if (isLoading) return 'loading suggestions...';
-
-  function getTeansformedData() {
-    if (!data?.length) return [];
-    const othersData = data.filter((d) => d?.business !== slug);
-
-    const uniqueData = Object.values(
-      Object.fromEntries(
-        othersData.map((d) => [
-          d?.title ||
-            d?.name ||
-            d?.label ||
-            d?.text ||
-            d?.displayName ||
-            d?.heading ||
-            '',
-          d,
-        ]),
-      ),
-    );
-    return uniqueData;
-  }
-
-  const transformedData = getTeansformedData();
-
-  if (!transformedData?.length) return null;
-
-  return <BadgeMarquee items={transformedData} onSelected={onSelected} />;
-}
-
 // Helper function to determine filter variant based on field type
 function getFilterVariant(field: z.ZodTypeAny): FilterVariant {
   if (field instanceof z.ZodString) return 'text';

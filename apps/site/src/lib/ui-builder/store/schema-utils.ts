@@ -68,23 +68,6 @@ function getDefaultValue(schema: ZodTypeAny, fieldName: string): any {
 }
 
 /**
- * Patches the given Zod object schema by transforming unions of literals to enums,
- * coercing number and date types, and adding an optional `className` property.
- *
- * @param schema - The original Zod object schema to be patched.
- * @returns A new Zod object schema with the specified transformations applied.
- */
-
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export function patchSchema(schema: ZodObject<any>): ZodObject<any> {
-  const schemaWithFixedEnums = transformUnionToEnum(schema);
-  const schemaWithCoercedTypes = addCoerceToNumberAndDate(schemaWithFixedEnums);
-  const schemaWithCommon = addCommon(schemaWithCoercedTypes);
-
-  return schemaWithCommon;
-}
-
-/**
  * Extends the given Zod object schema by adding an optional `className` property.
  *
  * @param schema - The original Zod object schema.

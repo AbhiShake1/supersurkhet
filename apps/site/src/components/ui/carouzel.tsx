@@ -12,7 +12,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import z from 'zod';
 import type { ReactNode } from '@tanstack/react-router';
 
-export const CarouzelContextSchema = z.object({
+const CarouzelContextSchema = z.object({
   index: z.number(),
   setIndex: z.function().args(z.number()).returns(z.void()),
 
@@ -22,7 +22,7 @@ export const CarouzelContextSchema = z.object({
   disableDrag: z.boolean(),
 });
 
-export type CarouzelContextType = z.infer<typeof CarouzelContextSchema>;
+type CarouzelContextType = z.infer<typeof CarouzelContextSchema>;
 
 const CarouzelContext = createContext<CarouzelContextType | undefined>(
   undefined,
@@ -36,14 +36,14 @@ function useCarouzel() {
   return context;
 }
 
-export const CarouzelProviderSchema = z.object({
+const CarouzelProviderSchema = z.object({
   children: z.custom<ReactNode>(),
   initialIndex: z.number().optional(),
   onIndexChange: z.function().args(z.number()).returns(z.void()).optional(),
   disableDrag: z.boolean().optional(),
 });
 
-export type CarouzelProviderProps = z.infer<typeof CarouzelProviderSchema>;
+type CarouzelProviderProps = z.infer<typeof CarouzelProviderSchema>;
 
 function CarouzelProvider({
   children,
@@ -87,7 +87,7 @@ export const CarouzelSchema = z.object({
   disableDrag: z.boolean().optional(),
 });
 
-export type CarouzelProps = z.infer<typeof CarouzelSchema>;
+type CarouzelProps = z.infer<typeof CarouzelSchema>;
 
 function Carouzel({
   children,
@@ -132,7 +132,7 @@ export const CarouzelNavigationSchema = z.object({
   alwaysShow: z.boolean().optional(),
 });
 
-export type CarouzelNavigationProps = z.infer<typeof CarouzelNavigationSchema>;
+type CarouzelNavigationProps = z.infer<typeof CarouzelNavigationSchema>;
 
 function CarouzelNavigation({
   className,
@@ -202,55 +202,17 @@ function CarouzelNavigation({
   );
 }
 
-export const CarouzelIndicatorSchema = z.object({
+const CarouzelIndicatorSchema = z.object({
   className: z.string().optional(),
   classNameButton: z.string().optional(),
 });
-
-export type CarouzelIndicatorProps = z.infer<typeof CarouzelIndicatorSchema>;
-
-function CarouzelIndicator({
-  className,
-  classNameButton,
-}: CarouzelIndicatorProps) {
-  const { index, itemsCount, setIndex } = useCarouzel();
-
-  return (
-    <div
-      className={cn(
-        'absolute bottom-0 z-10 flex w-full items-center justify-center',
-        className,
-      )}
-    >
-      <div className="flex space-x-2">
-        {Array.from({ length: itemsCount }, (_, i) => (
-          <button
-            // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-            key={i}
-            type="button"
-            aria-label={`Go to slide ${i + 1}`}
-            onClick={() => setIndex(i)}
-            className={cn(
-              'h-2 w-2 rounded-full transition-opacity duration-300',
-              index === i
-                ? 'bg-zinc-950 dark:bg-zinc-50'
-                : 'bg-zinc-900/50 dark:bg-zinc-100/50',
-              classNameButton,
-            )}
-          />
-        ))}
-      </div>{' '}
-    </div>
-  );
-}
-
 export const CarouzelContentSchema = z.object({
   children: z.custom<ReactNode>(),
   className: z.string().optional(),
   transition: z.custom<Transition>().optional(),
 });
 
-export type CarouzelContentProps = z.infer<typeof CarouzelContentSchema>;
+type CarouzelContentProps = z.infer<typeof CarouzelContentSchema>;
 
 function CarouzelContent({
   children,
@@ -350,7 +312,7 @@ export const CarouzelItemShema = z.object({
   innerClassName: z.string().optional(),
 });
 
-export type CarouzelItemProps = z.infer<typeof CarouzelItemShema>;
+type CarouzelItemProps = z.infer<typeof CarouzelItemShema>;
 
 function CarouzelItem({ children, className }: CarouzelItemProps) {
   return (
@@ -369,8 +331,5 @@ export {
   Carouzel,
   CarouzelContent,
   CarouzelNavigation,
-  CarouzelIndicator,
   CarouzelItem,
-  useCarouzel,
-  CarouzelProvider,
 };

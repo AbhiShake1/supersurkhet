@@ -107,7 +107,7 @@ type OpeningClosingPartyLedger = {
   items: OpeningClosingPartyItem[];
 };
 
-export const StockBookManagement: AdminComponent = ({ slug, permissions }) => {
+const StockBookManagement: AdminComponent = ({ slug, permissions }) => {
   return <_StockBookManagement slug={slug} permissions={permissions} />;
 };
 

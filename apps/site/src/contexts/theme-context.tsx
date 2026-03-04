@@ -22,7 +22,7 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export const setAppTheme = createServerFn()
+const setAppTheme = createServerFn()
   .inputValidator(z.string().nullable())
   .handler(({ data }) => {
     if (!data) return deleteCookie('app-theme');
@@ -33,7 +33,7 @@ export const getAppTheme = createServerFn().handler(async () => {
   return getCookie('app-theme');
 });
 
-export const setAppThemeData = createServerFn()
+const setAppThemeData = createServerFn()
   .inputValidator(z.custom<ThemeStyles>())
   .handler(({ data }) => {
     return setCookie('app-theme-data', JSON.stringify(data));
@@ -45,7 +45,7 @@ export const getAppThemeData = createServerFn().handler(async () => {
   return JSON.parse(theme) as ThemeStyles;
 });
 
-export const setAppDarkMode = createServerFn()
+const setAppDarkMode = createServerFn()
   .inputValidator(z.boolean())
   .handler(({ data }) => {
     return setCookie('app-dark-mode', data.toString());
@@ -55,7 +55,7 @@ export const getAppDarkMode = createServerFn().handler(async () => {
   return getCookie('app-dark-mode');
 });
 
-export function applyTheme(
+function applyTheme(
   theme: ThemeStyles,
   isDarkMode: boolean,
   currentThemeName: string | null,

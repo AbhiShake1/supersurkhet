@@ -75,7 +75,7 @@ export const BaseNodeContent = forwardRef<
 ));
 BaseNodeContent.displayName = 'BaseNodeContent';
 
-export const BaseNodeFooter = forwardRef<
+const BaseNodeFooter = forwardRef<
   HTMLDivElement,
   HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (

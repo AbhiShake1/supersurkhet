@@ -5,15 +5,15 @@ import { cn } from '@/lib/utils';
 
 export type NodeStatus = 'loading' | 'success' | 'error' | 'initial';
 
-export type NodeStatusVariant = 'overlay' | 'border';
+type NodeStatusVariant = 'overlay' | 'border';
 
-export type NodeStatusIndicatorProps = {
+type NodeStatusIndicatorProps = {
   status?: NodeStatus;
   variant?: NodeStatusVariant;
   children: ReactNode;
 };
 
-export const SpinnerLoadingIndicator = ({
+const SpinnerLoadingIndicator = ({
   children,
 }: {
   children: ReactNode;
@@ -32,7 +32,7 @@ export const SpinnerLoadingIndicator = ({
   );
 };
 
-export const BorderLoadingIndicator = ({
+const BorderLoadingIndicator = ({
   children,
 }: {
   children: ReactNode;

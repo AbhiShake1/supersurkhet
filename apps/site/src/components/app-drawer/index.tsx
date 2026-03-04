@@ -19,7 +19,7 @@ import { useRecentlyUsedApps } from './recently-used-apps-context';
 import { useFolders } from './folders-context';
 import { AppDrawerSettings } from './settings';
 
-export interface AppDrawerProps
+interface AppDrawerProps
   extends React.ComponentPropsWithoutRef<typeof ScrollArea> {}
 
 export function AppDrawer(props: AppDrawerProps) {

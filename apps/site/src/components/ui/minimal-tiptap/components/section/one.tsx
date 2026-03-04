@@ -147,5 +147,3 @@ export const SectionOne: React.FC<SectionOneProps> = React.memo(
 );
 
 SectionOne.displayName = 'SectionOne';
-
-export default SectionOne;
