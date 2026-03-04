@@ -38,15 +38,15 @@ describe('business-config derived contracts', () => {
     }
   });
 
-  it('keeps payment status as a derived schema field for all payment flows', () => {
+  it('keeps payment status as a derived schema field for invoice and order flows', () => {
     const content = getRetailSchemaContent();
     const matches = content.match(/withDerivation\('paymentStatus'/g) ?? [];
 
-    // sale + order + stockImport (+ invoice)
-    expect(matches.length).toBeGreaterThanOrEqual(3);
+    // invoice + order
+    expect(matches.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('keeps paymentStatus hard-derived while paidAmount is soft-derived for all payment flows', () => {
+  it('keeps paymentStatus hard-derived while paidAmount is soft-derived for invoice and order flows', () => {
     const content = getRetailSchemaContent();
 
     const paymentStatusDerivations =
@@ -54,8 +54,8 @@ describe('business-config derived contracts', () => {
     const paidAmountDerivations =
       content.match(/withDerivation\('paidAmount'/g) ?? [];
 
-    expect(paymentStatusDerivations.length).toBeGreaterThanOrEqual(3);
-    expect(paidAmountDerivations.length).toBeGreaterThanOrEqual(3);
+    expect(paymentStatusDerivations.length).toBeGreaterThanOrEqual(2);
+    expect(paidAmountDerivations.length).toBeGreaterThanOrEqual(2);
 
     expect(content).not.toContain(
       'function refreshPaidAmount(form: UseFormReturn)',

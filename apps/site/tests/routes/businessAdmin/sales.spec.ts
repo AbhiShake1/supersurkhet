@@ -7,7 +7,7 @@ import {
 } from "../../helpers/admin";
 
 test.describe("Business Admin - Sales", () => {
-  test("updates payment status based on paid amount", async ({ page }) => {
+  test("auto-calculates item totals", async ({ page }) => {
     const productName = `E2E Sale Product ${Date.now()}`;
     const partyName = `E2E Sale Party ${Date.now()}`;
     const customerName = `E2E Sale Customer ${Date.now()}`;
@@ -62,16 +62,6 @@ test.describe("Business Admin - Sales", () => {
     await expect(
       page.getByTestId(inputTestId(["items", "0", "totalAmount"])),
     ).toHaveValue("120");
-
-    await page.getByTestId(inputTestId(["paidAmount"])).fill("60");
-    await expect(
-      page.getByTestId(inputTestId(["paymentStatus"])),
-    ).toHaveValue(/partial/i);
-
-    await page.getByTestId(inputTestId(["paidAmount"])).fill("120");
-    await expect(
-      page.getByTestId(inputTestId(["paymentStatus"])),
-    ).toHaveValue(/paid/i);
 
     await page.getByRole("button", { name: /^Save$/i }).click();
     await expect(page.getByText(customerName)).toBeVisible();

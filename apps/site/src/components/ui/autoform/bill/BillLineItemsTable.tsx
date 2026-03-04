@@ -1,25 +1,35 @@
 import type { ParsedField } from '@autoform/core';
-import { Plus, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { useFieldArray, useFormContext } from 'react-hook-form';
+import { useFieldArray, useFormContext, useWatch } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { FieldWrapperWithoutLabel } from '../components/FieldWrapper';
 import { AutoFormField } from '../react/AutoFormField';
 import type { NormalizedBillColumn } from './bill-types';
 import { getColumnTextAlignClass, getLineItemFieldByKey } from './bill-utils';
 
+const AUTO_SEED_ROW_COUNT = 5;
+
 type LineItemColumn = {
   column: NormalizedBillColumn;
   field: ParsedField;
 };
+
+function hasMeaningfulValue(value: unknown): boolean {
+  if (value === null || value === undefined) return false;
+  if (typeof value === 'string') return value.trim().length > 0;
+  if (typeof value === 'number') return Number.isFinite(value) && value !== 0;
+  if (typeof value === 'boolean') return true;
+  if (Array.isArray(value)) return value.some(hasMeaningfulValue);
+  if (typeof value === 'object') {
+    return Object.values(value as Record<string, unknown>).some(
+      hasMeaningfulValue,
+    );
+  }
+  return true;
+}
 
 function getFocusableElement(cell: HTMLElement | null): HTMLElement | null {
   if (!cell) return null;
@@ -33,15 +43,22 @@ export function BillLineItemsTable({
   lineItemObjectField,
   columns,
   minRows,
+  fillHeight = false,
 }: {
   lineItemsField: string;
   lineItemObjectField: ParsedField;
   columns: NormalizedBillColumn[];
   minRows: number;
+  fillHeight?: boolean;
 }) {
   const { control } = useFormContext();
   const tableRef = useRef<HTMLTableElement | null>(null);
+  const hasSeededRowsRef = useRef(false);
   const { fields, append, remove } = useFieldArray({
+    control,
+    name: lineItemsField,
+  });
+  const watchedLineItems = useWatch({
     control,
     name: lineItemsField,
   });
@@ -55,19 +72,23 @@ export function BillLineItemsTable({
       .filter((entry): entry is LineItemColumn => Boolean(entry));
   }, [columns, lineItemObjectField]);
 
-  const editableColumnIndexes = useMemo(() => {
-    return resolvedColumns
-      .map((entry, index) => {
-        if (entry.column.readOnly) return null;
-        const inputProps = entry.field.fieldConfig?.inputProps;
-        const isReadOnly = Boolean(
-          inputProps?.readOnly || inputProps?.disabled,
-        );
-        const isHidden = Boolean(inputProps?.hidden);
-        return !isReadOnly && !isHidden ? index : null;
-      })
-      .filter((index): index is number => index !== null);
+  const editableColumns = useMemo(() => {
+    return resolvedColumns.flatMap((entry, index) => {
+      if (entry.column.readOnly) return [];
+      const inputProps = entry.field.fieldConfig?.inputProps;
+      const isReadOnly = Boolean(inputProps?.readOnly || inputProps?.disabled);
+      const isHidden = Boolean(inputProps?.hidden);
+      return !isReadOnly && !isHidden ? [{ key: entry.field.key, index }] : [];
+    });
   }, [resolvedColumns]);
+  const editableColumnIndexes = useMemo(
+    () => editableColumns.map((column) => column.index),
+    [editableColumns],
+  );
+  const editableColumnKeys = useMemo(
+    () => editableColumns.map((column) => column.key),
+    [editableColumns],
+  );
 
   const focusCell = useCallback((rowIndex: number, columnIndex: number) => {
     const cell = tableRef.current?.querySelector<HTMLElement>(
@@ -78,12 +99,33 @@ export function BillLineItemsTable({
   }, []);
 
   useEffect(() => {
-    const missingRows = minRows - fields.length;
-    if (missingRows <= 0) return;
-    for (let index = 0; index < missingRows; index += 1) {
-      append({});
+    if (hasSeededRowsRef.current) return;
+    const initialRows = Math.max(minRows, AUTO_SEED_ROW_COUNT);
+    const missingRows = initialRows - fields.length;
+    if (missingRows <= 0) {
+      hasSeededRowsRef.current = true;
+      return;
     }
+    append(Array.from({ length: missingRows }, () => ({})));
+    hasSeededRowsRef.current = true;
   }, [append, fields.length, minRows]);
+
+  useEffect(() => {
+    if (!Array.isArray(watchedLineItems) || watchedLineItems.length === 0)
+      return;
+    const targetEmptyRows = Math.max(minRows, AUTO_SEED_ROW_COUNT);
+    const emptyRows = watchedLineItems.reduce((count, row) => {
+      if (!row || typeof row !== 'object') return count + 1;
+      const record = row as Record<string, unknown>;
+      const hasValue = editableColumnKeys.some((key) =>
+        hasMeaningfulValue(record[key]),
+      );
+      return hasValue ? count : count + 1;
+    }, 0);
+    const missingEmptyRows = targetEmptyRows - emptyRows;
+    if (missingEmptyRows <= 0) return;
+    append(Array.from({ length: missingEmptyRows }, () => ({})));
+  }, [append, editableColumnKeys, minRows, watchedLineItems]);
 
   const appendRow = useCallback(() => {
     append({});
@@ -148,9 +190,12 @@ export function BillLineItemsTable({
   }
 
   return (
-    <div className="space-y-3">
+    <div className={cn('space-y-3', fillHeight && 'h-full min-h-0')}>
       <div
-        className="min-w-0 overflow-x-auto rounded-md border"
+        className={cn(
+          'min-w-0 overflow-auto rounded-md border',
+          fillHeight ? 'h-full min-h-[240px]' : 'max-h-[60vh]',
+        )}
         data-testid="af-bill-table"
       >
         <table
@@ -166,8 +211,8 @@ export function BillLineItemsTable({
             ))}
             <col style={{ width: '72px' }} />
           </colgroup>
-          <thead>
-            <tr className="bg-muted/50">
+          <thead className="sticky top-0 z-10 bg-muted/95 backdrop-blur supports-[backdrop-filter]:bg-muted/80">
+            <tr>
               {resolvedColumns.map((entry, index) => (
                 <th
                   key={entry.column.key}
@@ -262,27 +307,6 @@ export function BillLineItemsTable({
             ))}
           </tbody>
         </table>
-      </div>
-
-      <div className="flex justify-end">
-        <TooltipProvider delayDuration={150}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={appendRow}
-                data-testid={`af-add-${lineItemsField}`}
-                aria-label="Add row"
-                title="Add row"
-              >
-                <Plus className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="left">Add Row</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
       </div>
     </div>
   );

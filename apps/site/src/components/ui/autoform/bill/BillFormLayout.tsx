@@ -189,112 +189,121 @@ export function BillFormLayout({
   }
 
   return (
-    <div className="space-y-4">
-      {headerFields.length > 0 && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {headerFields.map((field) => (
-            <AutoFormField
-              key={`bill-header-${field.key}`}
-              field={field}
-              path={[field.key]}
-            />
-          ))}
-        </div>
-      )}
-
-      {normalized.header?.(renderCtx)}
-
-      <BillLineItemsTable
-        lineItemsField={normalized.lineItemsField}
-        lineItemObjectField={resolvedSchema.lineItemObjectField}
-        columns={normalized.columns}
-        minRows={normalized.minRows}
-      />
-
-      <BillTotalsBar
-        lineItemsField={normalized.lineItemsField}
-        grandTotalField={normalized.grandTotalField}
-        lineTotalField={normalized.lineTotalField}
-        lineItemObjectField={resolvedSchema.lineItemObjectField}
-        columns={normalized.columns}
-      />
-
-      {detailFields.length > 0 && (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          {detailFields.map((field) => (
-            <div
-              key={`bill-detail-${field.key}`}
-              className={getDetailFieldSpanClass(field)}
-            >
-              <AutoFormField field={field} path={[field.key]} />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {resolvedArraySections.map((section) => (
-        <section
-          key={`bill-array-section-${section.field}`}
-          className="space-y-3 rounded-md border bg-muted/10 p-3"
-        >
-          {(section.title || section.summaryFields.length > 0) && (
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              {section.title ? (
-                <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
-                  {section.title}
-                </h3>
-              ) : (
-                <div />
-              )}
-              {section.summaryFields.length > 0 && (
-                <div className="flex flex-wrap items-center gap-3 text-sm">
-                  {section.summaryFields.map((summaryField) => {
-                    const summaryValue = valuesRecord[summaryField.key];
-                    const content = summaryField.format
-                      ? summaryField.format(summaryValue, renderCtx)
-                      : formatSummaryValue(summaryValue);
-                    return (
-                      <span
-                        key={`bill-array-summary-${section.field}-${summaryField.key}`}
-                        className="text-muted-foreground"
-                      >
-                        {summaryField.label}:{' '}
-                        <span className="font-medium text-foreground">
-                          {content}
-                        </span>
-                      </span>
-                    );
-                  })}
-                </div>
-              )}
+    <div className="min-w-0 h-full min-h-0 overflow-x-hidden">
+      <div className="flex h-full min-h-0 flex-col gap-4">
+        <div className="shrink-0 space-y-4">
+          {headerFields.length > 0 && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {headerFields.map((field) => (
+                <AutoFormField
+                  key={`bill-header-${field.key}`}
+                  field={field}
+                  path={[field.key]}
+                />
+              ))}
             </div>
           )}
-          <BillLineItemsTable
-            lineItemsField={section.field}
-            lineItemObjectField={section.rowObjectField}
-            columns={section.columns}
-            minRows={section.minRows}
-          />
-        </section>
-      ))}
 
-      {footerFields.length > 0 && (
-        <div className="grid grid-cols-1 gap-3 rounded-md border bg-muted/5 p-3 md:grid-cols-2">
-          {footerFields.map((field) => (
-            <div
-              key={`bill-footer-field-${field.key}`}
-              className={getDetailFieldSpanClass(field)}
-            >
-              <AutoFormField field={field} path={[field.key]} />
-            </div>
-          ))}
+          {normalized.header?.(renderCtx)}
         </div>
-      )}
 
-      {normalized.footer?.(renderCtx)}
+        <div className="min-h-0 flex-1">
+          <BillLineItemsTable
+            lineItemsField={normalized.lineItemsField}
+            lineItemObjectField={resolvedSchema.lineItemObjectField}
+            columns={normalized.columns}
+            minRows={normalized.minRows}
+            fillHeight
+          />
+        </div>
 
-      {withSubmit ? submitButton : null}
-      {children}
+        <div className="shrink-0 space-y-4">
+          <BillTotalsBar
+            lineItemsField={normalized.lineItemsField}
+            grandTotalField={normalized.grandTotalField}
+            lineTotalField={normalized.lineTotalField}
+            lineItemObjectField={resolvedSchema.lineItemObjectField}
+            columns={normalized.columns}
+          />
+
+          {detailFields.length > 0 && (
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {detailFields.map((field) => (
+                <div
+                  key={`bill-detail-${field.key}`}
+                  className={getDetailFieldSpanClass(field)}
+                >
+                  <AutoFormField field={field} path={[field.key]} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {resolvedArraySections.map((section) => (
+            <section
+              key={`bill-array-section-${section.field}`}
+              className="space-y-3 rounded-md border bg-muted/10 p-3"
+            >
+              {(section.title || section.summaryFields.length > 0) && (
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  {section.title ? (
+                    <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
+                      {section.title}
+                    </h3>
+                  ) : (
+                    <div />
+                  )}
+                  {section.summaryFields.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-3 text-sm">
+                      {section.summaryFields.map((summaryField) => {
+                        const summaryValue = valuesRecord[summaryField.key];
+                        const content = summaryField.format
+                          ? summaryField.format(summaryValue, renderCtx)
+                          : formatSummaryValue(summaryValue);
+                        return (
+                          <span
+                            key={`bill-array-summary-${section.field}-${summaryField.key}`}
+                            className="text-muted-foreground"
+                          >
+                            {summaryField.label}:{' '}
+                            <span className="font-medium text-foreground">
+                              {content}
+                            </span>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+              <BillLineItemsTable
+                lineItemsField={section.field}
+                lineItemObjectField={section.rowObjectField}
+                columns={section.columns}
+                minRows={section.minRows}
+              />
+            </section>
+          ))}
+
+          {footerFields.length > 0 && (
+            <div className="grid grid-cols-1 gap-3 rounded-md border bg-muted/5 p-3 md:grid-cols-2">
+              {footerFields.map((field) => (
+                <div
+                  key={`bill-footer-field-${field.key}`}
+                  className={getDetailFieldSpanClass(field)}
+                >
+                  <AutoFormField field={field} path={[field.key]} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {normalized.footer?.(renderCtx)}
+
+          {withSubmit ? submitButton : null}
+          {children}
+        </div>
+      </div>
     </div>
   );
 }

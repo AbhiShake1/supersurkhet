@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { api } from '@/lib/api';
-import { calculateFiscalYear } from '@/lib/nepali-fiscal';
 import type { InferredTable } from '@/lib/schemas/core/types';
 import { aggregateStockBookEntries } from '@/lib/stock-book-aggregation';
 import { lineTotal, toFiniteNumber } from './business-analytics-number-utils';
@@ -59,7 +58,7 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
     () =>
       filteredSales.reduce((sum, sale) => {
         const total = saleTotal(sale);
-        const due = total - toFiniteNumber(sale.paidAmount);
+        const due = total;
         return due > 0 ? sum + due : sum;
       }, 0),
     [filteredSales],
@@ -69,7 +68,7 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
     () =>
       filteredStockImports.reduce((sum, imp) => {
         const total = importTotal(imp);
-        const due = total - toFiniteNumber(imp.paidAmount);
+        const due = total;
         return due > 0 ? sum + due : sum;
       }, 0),
     [filteredStockImports],
@@ -82,18 +81,18 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
         // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         .filter((sale: any) => {
           const total = saleTotal(sale);
-          const due = total - toFiniteNumber(sale.paidAmount);
+          const due = total;
           return due > 0;
         })
         // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         .map((sale: any) => {
           const total = saleTotal(sale);
-          const due = total - toFiniteNumber(sale.paidAmount);
+          const due = total;
           return {
             id: sale._?.soul || '',
             customer: sale.customerName || 'Walk-in Customer',
             totalAmount: total,
-            paidAmount: toFiniteNumber(sale.paidAmount),
+            paidAmount: 0,
             dueAmount: due,
             date:
               sale.saleDate ||
@@ -117,18 +116,18 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
     return filteredStockImports
       .filter((imp) => {
         const total = importTotal(imp);
-        const due = total - toFiniteNumber(imp.paidAmount);
+        const due = total;
         return due > 0;
       })
       .map((imp) => {
         const total = importTotal(imp);
-        const due = total - toFiniteNumber(imp.paidAmount);
+        const due = total;
         const party = partiesBySoul.get(imp.party);
         return {
           id: imp._?.soul || '',
           supplier: party?.name || imp.party,
           totalAmount: total,
-          paidAmount: toFiniteNumber(imp.paidAmount),
+          paidAmount: 0,
           dueAmount: due,
           date:
             imp.importDate ||
@@ -204,20 +203,8 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
 
   // Payment Methods Breakdown
   const paymentMethods = useMemo(() => {
-    const methods = filteredSales.reduce(
-      (acc, sale) => {
-        const method = sale.paymentMethod || 'cash';
-        acc[method] = (acc[method] || 0) + saleTotal(sale);
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-
-    return Object.entries(methods).map(([method, amount]) => ({
-      method,
-      amount,
-    }));
-  }, [filteredSales]);
+    return [] as Array<{ method: string; amount: number }>;
+  }, []);
 
   // Current Inventory Levels
   const currentInventory = useMemo(() => {
@@ -306,8 +293,8 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
         id: sale._?.soul || '',
         customer: sale.customerName || 'Walk-in Customer',
         totalAmount: total,
-        paidAmount: toFiniteNumber(sale.paidAmount),
-        dueAmount: total - toFiniteNumber(sale.paidAmount),
+        paidAmount: 0,
+        dueAmount: total,
         date:
           sale.saleDate ||
           (sale.timestamp ? new Date(sale.timestamp).toISOString() : ''),

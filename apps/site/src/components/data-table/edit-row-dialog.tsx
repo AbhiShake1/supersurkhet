@@ -12,6 +12,8 @@ import {
   CredenzaHeader,
   CredenzaTitle,
 } from '@/components/ui/credenza';
+import { cn } from '@/lib/utils';
+import { getSchemaBillConfig } from '@/lib/zod/with-bill';
 
 interface EditRowDialogProps<T, S> {
   open: boolean;
@@ -31,6 +33,8 @@ export function EditRowDialog<T, S extends ZodObject<any>>({
   onSubmit,
   showTrigger: _showTrigger = false,
 }: EditRowDialogProps<T, S>) {
+  const isBillSchema = Boolean(getSchemaBillConfig(schema as never));
+
   return (
     <Credenza open={open} onOpenChange={onOpenChange}>
       <CredenzaContent
@@ -42,9 +46,17 @@ export function EditRowDialog<T, S extends ZodObject<any>>({
           <CredenzaDescription>Edit details</CredenzaDescription>
         </CredenzaHeader>
         <CredenzaBody asChild>
-          <div className="h-full min-h-0 w-full overflow-y-auto pr-1">
+          <div
+            className={cn(
+              'h-full min-h-0 w-full pr-1',
+              isBillSchema ? 'overflow-hidden' : 'overflow-y-auto',
+            )}
+          >
             <AutoForm
-              formProps={{ id: 'edit-row-form' }}
+              formProps={{
+                id: 'edit-row-form',
+                className: isBillSchema ? 'h-full min-h-0' : undefined,
+              }}
               schema={schema}
               defaultValues={data || {}}
               onSubmit={(values, _form) => {

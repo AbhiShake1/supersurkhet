@@ -11,19 +11,25 @@ describe('AutoForm bill mode contracts', () => {
     const content = readSource('components/ui/autoform/react/AutoForm.tsx');
 
     expect(content).toContain('getSchemaBillConfig(schemaSource as never)');
+    expect(content).toContain('resolveBillRowPruneRules');
+    expect(content).toContain('pruneEmptyBillRows');
     expect(content).toContain('<BillFormLayout');
     expect(content).toContain('parsedSchema.fields.map((field) => (');
   });
 
-  it('line items table keeps stable test ids and field-array behavior', () => {
+  it('line items table keeps stable test ids and auto row growth behavior', () => {
     const content = readSource(
       'components/ui/autoform/bill/BillLineItemsTable.tsx',
     );
 
     expect(content).toContain('useFieldArray');
+    expect(content).toContain('useWatch');
+    expect(content).toContain('AUTO_SEED_ROW_COUNT = 5');
     expect(content).toContain('data-testid="af-bill-table"');
     expect(content).toContain(`data-testid={\`af-bill-row-\${rowIndex}\`}`);
-    expect(content).toContain(`data-testid={\`af-add-\${lineItemsField}\`}`);
+    expect(content).not.toContain(
+      `data-testid={\`af-add-\${lineItemsField}\`}`,
+    );
     expect(content).toContain('onKeyDownCapture');
   });
 

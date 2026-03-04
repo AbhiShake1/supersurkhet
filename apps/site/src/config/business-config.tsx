@@ -1305,11 +1305,6 @@ export function useBusinessConfig({
               (sum, item) => sum + item.quantity * item.unitPrice,
               0,
             ) ?? 0;
-          const payments = normalizePaymentsWithFallback(
-            variables.payments,
-            variables.paidAmount,
-          );
-          const paidAmount = getPaidAmountFromPayments(payments);
 
           void db.invoice.create(slug)({
             ...(createdId ? { id: createdId } : {}),
@@ -1320,12 +1315,6 @@ export function useBusinessConfig({
             subTotal: totalAmount,
             tax: 0,
             totalAmount,
-            payments,
-            paidAmount,
-            paymentStatus: getPaymentStatusFromTotals({
-              paidAmount,
-              totalAmount,
-            }),
             fiscalYear: calculateFiscalYear(),
           });
 
@@ -1349,11 +1338,6 @@ export function useBusinessConfig({
             stockImport;
           const items = currentStockImport?.items ?? variables.items;
           const totalAmount = getTotalAmount(items);
-          const payments = normalizePaymentsWithFallback(
-            currentStockImport?.payments ?? variables.payments,
-            currentStockImport?.paidAmount ?? variables.paidAmount,
-          );
-          const paidAmount = getPaidAmountFromPayments(payments);
 
           db.invoice.update(slug)({
             id: variables.id,
@@ -1365,12 +1349,6 @@ export function useBusinessConfig({
             ),
             subTotal: totalAmount,
             tax: 0,
-            payments,
-            paidAmount,
-            paymentStatus: getPaymentStatusFromTotals({
-              paidAmount,
-              totalAmount,
-            }),
           });
 
           await clearStockBookEntriesBySource('stockImport', variables.id);
@@ -1430,11 +1408,6 @@ export function useBusinessConfig({
               (sum, item) => sum + item.quantity * item.unitPrice,
               0,
             ) ?? 0;
-          const payments = normalizePaymentsWithFallback(
-            variables.payments,
-            variables.paidAmount,
-          );
-          const paidAmount = getPaidAmountFromPayments(payments);
 
           await createStockBookEntriesFromItems({
             sourceTable: 'sale',
@@ -1459,12 +1432,6 @@ export function useBusinessConfig({
             subTotal: totalAmount,
             tax: 0,
             totalAmount,
-            payments,
-            paidAmount,
-            paymentStatus: getPaymentStatusFromTotals({
-              paidAmount,
-              totalAmount,
-            }),
             fiscalYear: calculateFiscalYear(),
           });
         },
@@ -1479,11 +1446,6 @@ export function useBusinessConfig({
             contextLabel: 'sale',
           });
           const totalAmount = getTotalAmount(items);
-          const payments = normalizePaymentsWithFallback(
-            currentSale?.payments ?? variables.payments,
-            currentSale?.paidAmount ?? variables.paidAmount,
-          );
-          const paidAmount = getPaidAmountFromPayments(payments);
 
           await clearStockBookEntriesBySource('sale', variables.id);
           await createStockBookEntriesFromItems({
@@ -1509,12 +1471,6 @@ export function useBusinessConfig({
             ),
             subTotal: totalAmount,
             tax: 0,
-            payments,
-            paidAmount,
-            paymentStatus: getPaymentStatusFromTotals({
-              paidAmount,
-              totalAmount,
-            }),
           });
         },
         async onDelete(_, id) {

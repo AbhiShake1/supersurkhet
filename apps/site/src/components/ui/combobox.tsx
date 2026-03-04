@@ -120,6 +120,7 @@ export function Combobox({
                   <CommandItem
                     key={option.value}
                     value={option.label}
+                    className="group/item"
                     onSelect={() => {
                       onValueChange(option.value === value ? '' : option.value);
                       setOpen(false);
@@ -137,7 +138,7 @@ export function Combobox({
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="ml-auto size-7 shrink-0"
+                        className="ml-auto size-7 shrink-0 opacity-0 pointer-events-none transition-opacity group-hover/item:opacity-100 group-hover/item:pointer-events-auto group-focus-within/item:opacity-100 group-focus-within/item:pointer-events-auto group-aria-selected/item:opacity-100 group-aria-selected/item:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto"
                         onMouseDown={(event) => {
                           event.preventDefault();
                           event.stopPropagation();

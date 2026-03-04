@@ -47,7 +47,7 @@ export function BillTotalsBar({
   ]);
 
   return (
-    <div className="sticky bottom-0 z-10 border bg-background px-4 py-3 shadow-sm">
+    <div className="border bg-background px-4 py-3 shadow-sm">
       <div
         className="flex items-center justify-end gap-2"
         data-testid="af-bill-total"

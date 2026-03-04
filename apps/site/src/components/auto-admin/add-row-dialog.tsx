@@ -35,7 +35,8 @@ import {
   validateDataAgainstSchema,
 } from '@/lib/import';
 import { appSchema } from '@/lib/schema';
-import { getSoulFromUnknown } from '@/lib/utils';
+import { cn, getSoulFromUnknown } from '@/lib/utils';
+import { getSchemaBillConfig } from '@/lib/zod/with-bill';
 import type { AutoTableProps } from '../auto-table';
 import type { ZodObjectOrWrapped } from '../ui/auto-form/utils';
 import { BadgeMarquee } from '../ui/badge-marquee';
@@ -98,6 +99,7 @@ export function AddRowDialog<T extends SchemaKeys>({
     return schema;
   }
   const finalSchema = getFinalSchema();
+  const isBillSchema = Boolean(getSchemaBillConfig(finalSchema as never));
   const finalSchemaObject =
     finalSchema instanceof ZodEffects ? finalSchema.innerType() : finalSchema;
   type SchemaRecord = Omit<NestedSchemaType<T>, '_'> & {
@@ -204,7 +206,12 @@ export function AddRowDialog<T extends SchemaKeys>({
               </CredenzaDescription>
             </CredenzaHeader>
             <CredenzaBody asChild>
-              <div className="h-full min-h-0 w-full overflow-y-auto pr-1">
+              <div
+                className={cn(
+                  'h-full min-h-0 w-full pr-1',
+                  isBillSchema ? 'overflow-hidden' : 'overflow-y-auto',
+                )}
+              >
                 <AutoForm
                   values={formValues}
                   schema={finalSchema}
@@ -216,7 +223,10 @@ export function AddRowDialog<T extends SchemaKeys>({
                     }) as SchemaRecord;
                     createMutation.mutate(payload);
                   }}
-                  formProps={{ id: 'auto-table-add-form' }}
+                  formProps={{
+                    id: 'auto-table-add-form',
+                    className: isBillSchema ? 'h-full min-h-0' : undefined,
+                  }}
                 />
               </div>
             </CredenzaBody>

@@ -7,7 +7,7 @@ import {
 } from "../../helpers/admin";
 
 test.describe("Business Admin - Stock Imports", () => {
-  test("auto-calculates totals and payment status", async ({ page }) => {
+  test("auto-calculates item totals", async ({ page }) => {
     const productName = `E2E Stock Product ${Date.now()}`;
     const partyName = `E2E Party ${Date.now()}`;
 
@@ -49,13 +49,6 @@ test.describe("Business Admin - Stock Imports", () => {
     await expect(
       page.getByTestId(inputTestId(["items", "0", "totalAmount"])),
     ).toHaveValue("200");
-
-    await expect(page.getByTestId(inputTestId(["paidAmount"]))).toHaveValue(
-      "200",
-    );
-    await expect(
-      page.getByTestId(inputTestId(["paymentStatus"])),
-    ).toHaveValue(/paid/i);
 
     await page.getByRole("button", { name: /^Save$/i }).click();
     await expect(page.getByText(partyName)).toBeVisible();
