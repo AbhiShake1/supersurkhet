@@ -27,15 +27,15 @@ const billPaymentsSectionColumns: Array<{
   width: string;
   align?: 'left' | 'center' | 'right';
 }> = [
-  { key: 'paidAt', label: 'Paid At', width: '1.6fr' },
-  { key: 'paidAmount', label: 'Paid Amount', width: '1.25fr', align: 'right' },
-  { key: 'paymentMethod', label: 'Method', width: '1.25fr' },
-  {
-    key: 'bankVoucherNumber',
-    label: 'Bank Voucher #',
-    width: '1.5fr',
-  },
-];
+    { key: 'paidAt', label: 'Paid At', width: '1.6fr' },
+    { key: 'paidAmount', label: 'Paid Amount', width: '1.25fr', align: 'right' },
+    { key: 'paymentMethod', label: 'Method', width: '1.25fr' },
+    {
+      key: 'bankVoucherNumber',
+      label: 'Bank Voucher #',
+      width: '1.5fr',
+    },
+  ];
 
 const paymentRowSchema = z
   .object({
@@ -68,7 +68,7 @@ const paymentRowSchema = z
                 | undefined;
               const shouldShowBankVoucher = Boolean(
                 payment?.paymentMethod &&
-                  methodsRequiringBankVoucher.has(payment.paymentMethod),
+                methodsRequiringBankVoucher.has(payment.paymentMethod),
               );
               return {
                 inputProps: {
@@ -130,8 +130,8 @@ function getSoftDerivedUnitValue({
   const explicitUnitRaw = row?.unit;
   const explicitUnit =
     explicitUnitRaw === null ||
-    explicitUnitRaw === undefined ||
-    explicitUnitRaw === ''
+      explicitUnitRaw === undefined ||
+      explicitUnitRaw === ''
       ? null
       : String(explicitUnitRaw);
 
@@ -326,7 +326,7 @@ function createDerivedSalesItemTotalAmountFieldFromFormValues(
             );
             const unitPrice = Number(
               (row as { unitPrice?: number | null } | undefined)?.unitPrice ??
-                0,
+              0,
             );
             return {
               value: quantity * unitPrice,
@@ -375,7 +375,7 @@ function createSoftDerivedUnitPriceField({
 }) {
   return z
     .number({ coerce: true })
-    .describe('Unit Price')
+    .describe('Rate')
     .superRefine(
       fieldConfig({
         fieldType: 'number',
@@ -534,7 +534,7 @@ export const salesItemSchema = z
           fieldType: 'number',
         }),
       ),
-    unitPrice: z.number({ coerce: true }).positive().describe('Unit Price'),
+    unitPrice: z.number({ coerce: true }).positive().describe('Rate'),
     totalAmount: z.number({ coerce: true }).describe('Total Amount'),
   })
   .withDerivation('totalAmount', ({ formValues }) =>
@@ -609,10 +609,10 @@ export const saleSchema = z
       { key: 'product', label: 'Product', width: '2.5fr' },
       { key: 'quantity', label: 'Quantity', width: '1fr', align: 'right' },
       { key: 'unit', label: 'Unit', width: '1fr', align: 'center' },
-      { key: 'unitPrice', label: 'Unit Price', width: '1.5fr', align: 'right' },
+      { key: 'unitPrice', label: 'Rate', width: '1.5fr', align: 'right' },
       {
         key: 'totalAmount',
-        label: 'Line Total',
+        label: 'Amount',
         width: '1.5fr',
         align: 'right',
         readOnly: true,
@@ -719,10 +719,10 @@ export const orderSchema = z
       { key: 'product', label: 'Product', width: '2.5fr' },
       { key: 'quantity', label: 'Quantity', width: '1fr', align: 'right' },
       { key: 'unit', label: 'Unit', width: '1fr', align: 'center' },
-      { key: 'unitPrice', label: 'Unit Price', width: '1.5fr', align: 'right' },
+      { key: 'unitPrice', label: 'Rate', width: '1.5fr', align: 'right' },
       {
         key: 'totalAmount',
-        label: 'Line Total',
+        label: 'Amount',
         width: '1.5fr',
         align: 'right',
         readOnly: true,
@@ -794,13 +794,13 @@ export const stockImportSchema = z
                           purchasePartyId?: unknown;
                         }
                       ).partyId ??
-                        (
-                          sourceRow as {
-                            partyId?: unknown;
-                            purchasePartyId?: unknown;
-                          }
-                        ).purchasePartyId ??
-                        '',
+                      (
+                        sourceRow as {
+                          partyId?: unknown;
+                          purchasePartyId?: unknown;
+                        }
+                      ).purchasePartyId ??
+                      '',
                     );
                     return productPartyId === selectedPartyId;
                   },
@@ -859,10 +859,10 @@ export const stockImportSchema = z
       { key: 'product', label: 'Product', width: '2.5fr' },
       { key: 'quantity', label: 'Quantity', width: '1fr', align: 'right' },
       { key: 'unit', label: 'Unit', width: '1fr', align: 'center' },
-      { key: 'unitPrice', label: 'Unit Price', width: '1.5fr', align: 'right' },
+      { key: 'unitPrice', label: 'Rate', width: '1.5fr', align: 'right' },
       {
         key: 'totalAmount',
-        label: 'Line Total',
+        label: 'Amount',
         width: '1.5fr',
         align: 'right',
         readOnly: true,
@@ -1110,7 +1110,7 @@ export const invoiceSchema = z
       { key: 'rate', label: 'Rate', width: '1.5fr', align: 'right' },
       {
         key: 'total',
-        label: 'Line Total',
+        label: 'Amount',
         width: '1.5fr',
         align: 'right',
         readOnly: true,
