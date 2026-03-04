@@ -9,6 +9,7 @@ import { getGunRef, getNestedZodShape, mergeKeys } from '../utils';
 import { decrypt } from '../utils/sea';
 import { createGunHook } from './useGunHook';
 import { attachSouls, type GetBuilder as UseGetBuilder } from '../ssr/get';
+import { useEffect, useMemo } from 'react';
 
 export type { UseGetBuilder };
 
@@ -17,8 +18,8 @@ export const useGet = createGunHook((messenger) => {
     key:
       | T
       | (UseGetBuilder<T> & {
-          key: T;
-        }),
+        key: T;
+      }),
     ...restKeys: string[]
   ): UseQueryResult<NestedSchemaType<T>[] | undefined, Error> => {
     const queryClient = useQueryClient();
@@ -26,21 +27,28 @@ export const useGet = createGunHook((messenger) => {
     const k = typeof key === 'string' ? key : key.key;
     const queryKey = ['get', key, ...restKeys];
     const schema = getNestedZodShape(k, messenger._options.schema);
+    const _keys = mergeKeys(k, ...restKeys) as T;
+    const keys =
+      typeof key !== 'string' && key.separator?.length
+        ? _keys.replaceAll('/', key.separator)
+        : _keys;
+
+    const node = useMemo(() => {
+      return typeof key !== 'string' && key.treatSlugAsAbsolute
+        ? messenger._options.gun.get(keys)
+        : getGunRef(keys);
+    }, [keys, key])
+
+    useEffect(() => {
+      return () => {
+        // node.off()
+      }
+    }, [node])
+
     return useQuery({
       ...(typeof key !== 'string' && key.queryOptions),
       queryKey,
       queryFn: async () => {
-        const _keys = mergeKeys(k, ...restKeys) as T;
-        const keys =
-          typeof key !== 'string' && key.separator?.length
-            ? _keys.replaceAll('/', key.separator)
-            : _keys;
-
-        const node =
-          typeof key !== 'string' && key.treatSlugAsAbsolute
-            ? messenger._options.gun.get(keys)
-            : getGunRef(keys);
-
         // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         async function transform(fullData: any) {
           if (!fullData || typeof fullData !== 'object') return;
