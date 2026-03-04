@@ -238,6 +238,23 @@ export function AutoTable<T extends SchemaKeys>({
   const filters = search.filters;
   // @ts-expect-error
   const sorting = search.sort;
+  const currentTab =
+    typeof search === 'object' && search !== null && 'tab' in search
+      ? (search as { tab?: unknown }).tab
+      : undefined;
+  const columnVisibilityStorageKey = React.useMemo(() => {
+    const slugScope =
+      typeof slug === 'string' && slug.length > 0 ? slug : 'global';
+    const schemaScope =
+      typeof schemaName === 'string' && schemaName.length > 0
+        ? schemaName
+        : 'custom';
+    const tabScope =
+      typeof currentTab === 'string' && currentTab.length > 0
+        ? currentTab
+        : 'default';
+    return `autotable:column-visibility:${slugScope}:${schemaScope}:${tabScope}`;
+  }, [currentTab, schemaName, slug]);
   function getFiltered() {
     if (filters) {
       return applyFilters(dataWithDerived, filters);
@@ -310,6 +327,7 @@ export function AutoTable<T extends SchemaKeys>({
       '',
     shallow: false,
     clearOnDefault: true,
+    columnVisibilityStorageKey,
   });
 
   if (isLoading) return <SkeletonTableOneWrapper bodyClassName="px-0" />;

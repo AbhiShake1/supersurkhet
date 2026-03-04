@@ -46,20 +46,13 @@ const baseListingSchema = z
       .string()
       .min(1, { message: 'Purchase party is required.' })
       .describe('Purchase Party')
-      .superRefine(
-        fieldConfig({
-          fieldType: 'select',
-          customData: {
-            sources: [
-              {
-                table: 'party',
-                displayKey: 'name',
-              },
-            ],
-          },
-        }),
-      ),
+      .references('party', { displayKeys: ['name', 'panNumber'] }),
     hsCode: z.string().min(1).describe('HS Code'),
+    openingStock: z
+      .number({ coerce: true })
+      .min(0)
+      .default(0)
+      .describe('Opening Stock'),
     unit: z
       .string()
       .optional()
@@ -70,7 +63,7 @@ const baseListingSchema = z
       .number({ coerce: true })
       .positive()
       .optional()
-      .describe('Default Selling Price')
+      .describe('Rate')
       .superRefine(fieldConfig({ label: 'Default Selling Price' })),
     barcode: z.string().optional().describe('Barcode'),
     reorderLevel: z
@@ -101,6 +94,29 @@ const baseListingSchema = z
       .optional(),
     isFeatured: z.boolean({ coerce: true }).optional(),
     isActive: z.boolean({ coerce: true }).default(true),
+  })
+  .withDerivation('sellingPrice', ({ formValues }) => {
+    return z
+      .number({ coerce: true })
+      .positive()
+      .optional()
+      .describe('Rate')
+      .superRefine(
+        fieldConfig({
+          label: 'Rate',
+          customData: {
+            derive() {
+              const costPrice = Number(formValues.costPrice ?? 0);
+              if (!Number.isFinite(costPrice) || costPrice <= 0) {
+                return { value: undefined };
+              }
+              return {
+                value: costPrice + (10 / 100) * costPrice,
+              };
+            },
+          },
+        }),
+      );
   })
   .extend(table);
 

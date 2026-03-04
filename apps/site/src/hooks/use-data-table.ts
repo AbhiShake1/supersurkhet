@@ -2,13 +2,6 @@
 
 import {
   type ColumnFiltersState,
-  type PaginationState,
-  type RowSelectionState,
-  type SortingState,
-  type TableOptions,
-  type TableState,
-  type Updater,
-  type VisibilityState,
   getCoreRowModel,
   getFacetedMinMaxValues,
   getFacetedRowModel,
@@ -16,14 +9,21 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  type PaginationState,
+  type RowSelectionState,
+  type SortingState,
+  type TableOptions,
+  type TableState,
+  type Updater,
   useReactTable,
+  type VisibilityState,
 } from '@tanstack/react-table';
 import {
   type Parser,
-  type UseQueryStateOptions,
   parseAsArrayOf,
   parseAsInteger,
   parseAsString,
+  type UseQueryStateOptions,
   useQueryState,
   useQueryStates,
 } from 'nuqs';
@@ -77,6 +77,7 @@ interface UseDataTableProps<TData>
   scroll?: boolean;
   shallow?: boolean;
   startTransition?: React.TransitionStartFunction;
+  columnVisibilityStorageKey?: string;
 }
 
 export function useDataTable<TData>(props: UseDataTableProps<TData>) {
@@ -92,6 +93,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
     enableAdvancedFilter = false,
     scroll = false,
     shallow = true,
+    columnVisibilityStorageKey,
     startTransition,
     ...tableProps
   } = props;
@@ -122,8 +124,65 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>(
     initialState?.rowSelection ?? {},
   );
+  const defaultColumnVisibility = React.useRef<VisibilityState>(
+    initialState?.columnVisibility ?? {},
+  );
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>(initialState?.columnVisibility ?? {});
+    React.useState<VisibilityState>(() => {
+      const fallback = defaultColumnVisibility.current;
+      if (typeof window === 'undefined' || !columnVisibilityStorageKey) {
+        return fallback;
+      }
+
+      try {
+        const stored = window.localStorage.getItem(columnVisibilityStorageKey);
+        if (!stored) return fallback;
+
+        const parsed = JSON.parse(stored);
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+          return fallback;
+        }
+
+        return parsed as VisibilityState;
+      } catch {
+        return fallback;
+      }
+    });
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || !columnVisibilityStorageKey) return;
+
+    try {
+      const stored = window.localStorage.getItem(columnVisibilityStorageKey);
+      if (!stored) {
+        setColumnVisibility(defaultColumnVisibility.current);
+        return;
+      }
+
+      const parsed = JSON.parse(stored);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        setColumnVisibility(defaultColumnVisibility.current);
+        return;
+      }
+
+      setColumnVisibility(parsed as VisibilityState);
+    } catch {
+      setColumnVisibility(defaultColumnVisibility.current);
+    }
+  }, [columnVisibilityStorageKey]);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || !columnVisibilityStorageKey) return;
+
+    try {
+      window.localStorage.setItem(
+        columnVisibilityStorageKey,
+        JSON.stringify(columnVisibility),
+      );
+    } catch {
+      // Ignore storage write failures (private mode/quota exceeded)
+    }
+  }, [columnVisibility, columnVisibilityStorageKey]);
 
   const [page, setPage] = useQueryState(
     PAGE_KEY,

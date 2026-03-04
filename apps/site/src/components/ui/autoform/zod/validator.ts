@@ -1,13 +1,35 @@
 import type { ParsedField, ParsedSchema } from '@autoform/core';
 import { z } from 'zod';
+import { getSchemaReferenceConfig } from '@/lib/zod/with-references';
 import { getDefaultValueInZodStack } from './default-values';
 import { getFieldConfigInZodStack } from './field-config';
 import { inferFieldType } from './field-type-inference';
 import type { ZodObjectOrWrapped } from './types';
 
+function withReferenceInFieldConfig(
+  // biome-ignore lint/suspicious/noExplicitAny: FieldConfig is structurally dynamic.
+  fieldConfig: any,
+  schema: z.ZodTypeAny,
+) {
+  const reference = getSchemaReferenceConfig(schema);
+  if (!reference) return fieldConfig;
+
+  return {
+    ...(fieldConfig ?? {}),
+    fieldType: fieldConfig?.fieldType ?? 'select',
+    customData: {
+      ...(fieldConfig?.customData ?? {}),
+      reference,
+    },
+  };
+}
+
 function parseField(key: string, schema: z.ZodTypeAny): ParsedField {
   const baseSchema = getBaseSchema(schema);
-  const fieldConfig = getFieldConfigInZodStack(schema);
+  const fieldConfig = withReferenceInFieldConfig(
+    getFieldConfigInZodStack(schema),
+    schema,
+  );
   const type = inferFieldType(baseSchema, fieldConfig);
   const defaultValue = getDefaultValueInZodStack(schema);
 

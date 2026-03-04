@@ -4,22 +4,26 @@ import type { UseFormReturn } from 'react-hook-form';
 import type { PossibleTabConfig } from '@/components/auto-admin';
 import { fieldConfig as zodFieldConfig } from '@/components/ui/autoform/zod';
 import type { NestedSchemaType, SchemaKeys } from '@/lib/gun/index';
+import type { SchemaReferenceConfig } from '@/lib/zod/with-references';
 import type { FieldTypes } from './AutoForm';
 import type { FieldWrapperProps } from './react';
 
 export const ZOD_FIELD_CONFIG_SYMBOL = Symbol('GetFieldConfig');
 
-export type DeepNullableRequired<T> = T extends Array<infer U>
-  ? Array<DeepNullableRequired<U> | null> | null
-  : T extends object
-    ? {
-        [K in keyof T]-?: DeepNullableRequired<T[K]> | null;
-      }
-    : T | null;
+export type DeepNullableRequired<T> =
+  T extends Array<infer U>
+    ? Array<DeepNullableRequired<U> | null> | null
+    : T extends object
+      ? {
+          [K in keyof T]-?: DeepNullableRequired<T[K]> | null;
+        }
+      : T | null;
 
 export type SourceConfigFor<K extends SchemaKeys> = {
   table: K;
   key?: string;
+  valueKey?: keyof NestedSchemaType<K>;
+  valueLabels?: Record<string, string>;
   filter?: (ctx: {
     formValues: DeepNullableRequired<Record<string, unknown>>;
     rowPath: string[];
@@ -35,6 +39,12 @@ export type SourceConfigFor<K extends SchemaKeys> = {
       displayKeys: Array<keyof NestedSchemaType<K>>;
       separator: string;
       suffix?: string;
+    }
+  | {
+      displayKey?: never;
+      displayKeys?: never;
+      separator?: never;
+      suffix?: never;
     }
 );
 
@@ -78,8 +88,13 @@ export type DeriveConfig<
 type FieldConfigCustomDataBase = {
   tabs?: PossibleTabConfig[];
   disableWhenValueIn?: string[];
+  reference?: SchemaReferenceConfig;
 } & {
-  onValueChange?: (value: string, path: string[], form: UseFormReturn) => any;
+  onValueChange?: (
+    value: string,
+    path: string[],
+    form: UseFormReturn,
+  ) => unknown;
   // onValueChange?: LogicExprWithContext<{
   //   value: string;
   //   path: string[];
@@ -133,7 +148,7 @@ export function withSourceCustomData<K extends SchemaKeys>(
 
 function buildZodFieldConfig<
   FieldTypes = string,
-  CustomData = Record<string, any>,
+  CustomData = Record<string, unknown>,
 >(): (
   config: FieldConfig<
     ReactNode,

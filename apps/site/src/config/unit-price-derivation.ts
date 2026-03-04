@@ -23,7 +23,7 @@ export function deriveUnitPrice({
     return normalizedBasePrice;
   }
 
-  // UnitField stores packed unit as "unit:pieces" and piece as "piece".
+  // UnitField stores packed units as "unit:itemCount" and piece as "piece".
   if (!selected || selected.includes(':') || selected === packedUnit) {
     return normalizedBasePrice;
   }

@@ -460,6 +460,9 @@ export function AuthForm({
         </div>
         {isSignup ? (
           <AutoForm
+            formProps={{
+              className: "flex flex-col gap-3"
+            }}
             schema={signupSchema}
             onSubmit={(v) => {
               // Create OTP and send email instead of directly creating account
@@ -485,6 +488,9 @@ export function AuthForm({
           </AutoForm>
         ) : (
           <AutoForm
+            formProps={{
+              className: "flex flex-col gap-3"
+            }}
             schema={loginSchema}
             onSubmit={(v) => loginMutation.mutate(v)}
           >

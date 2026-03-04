@@ -12,6 +12,7 @@ import { BillFormLayout } from '../bill';
 import { AutoFormField } from './AutoFormField';
 import { AutoFormProvider } from './context';
 import type { AutoFormProps } from './types';
+import { cn } from '@/lib/utils';
 
 const FIELDS_TO_OMIT = ['_', 'created_by', 'timestamp'];
 
@@ -67,14 +68,14 @@ function getNonBillFieldSpanClass(field: ParsedField): string {
 export function AutoForm<T extends Record<string, any>>({
   schema,
   schemaSource,
-  onSubmit = () => {},
+  onSubmit = () => { },
   defaultValues,
   values,
   children,
   uiComponents,
   formComponents,
   withSubmit = false,
-  onFormInit = () => {},
+  onFormInit = () => { },
   formProps = {},
 }: AutoFormProps<T>) {
   const parsedSchema = omitDefaultFields(parseSchema(schema));
@@ -156,7 +157,7 @@ export function AutoForm<T extends Record<string, any>>({
             </BillFormLayout>
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className={cn("grid grid-cols-1 gap-4 md:grid-cols-2", formProps.className)}>
                 {parsedSchema.fields.map((field) => (
                   <div
                     key={field.key}

@@ -1,7 +1,5 @@
+import { Check, ChevronsUpDown, Pencil, Plus } from 'lucide-react';
 import * as React from 'react';
-import { Check, ChevronsUpDown } from 'lucide-react';
-
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -16,6 +14,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 interface ComboboxOption {
   value: string;
@@ -30,6 +29,12 @@ interface ComboboxProps {
   className?: string;
   disabled?: boolean;
   testId?: string;
+  createOptionLabel?: string;
+  editOptionLabel?: string;
+  canCreateOption?: boolean;
+  canEditOptions?: boolean;
+  onCreateOption?: () => void;
+  onEditOption?: (value: string) => void;
 }
 
 export function Combobox({
@@ -40,6 +45,12 @@ export function Combobox({
   className,
   disabled = false,
   testId,
+  createOptionLabel = 'Add New',
+  editOptionLabel = 'Edit',
+  canCreateOption = false,
+  canEditOptions = false,
+  onCreateOption,
+  onEditOption,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState('');
@@ -58,7 +69,7 @@ export function Combobox({
         if (disabled) return;
         setOpen(nextOpen);
       }}
-      modal
+      modal={false}
     >
       <PopoverTrigger asChild>
         <span
@@ -82,7 +93,7 @@ export function Combobox({
           >
             <span className="truncate">
               {value
-                ? options.find((option) => option.value === value)?.label
+                ? _options.find((option) => option.value === value)?.label
                 : placeholder}
             </span>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -101,34 +112,74 @@ export function Combobox({
               setSearch(v);
             }}
           />
-          <CommandList>
-            <CommandEmpty>No option found.</CommandEmpty>
-            <CommandGroup>
-              {options.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  value={option.label}
-                  onSelect={(currentLabel) => {
-                    const currentValue = options.find(
-                      (o) => o.label === currentLabel,
-                    )?.value;
-                    onValueChange(
-                      currentValue === value ? '' : (currentValue ?? ''),
-                    );
-                    setOpen(false);
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      'mr-2 h-4 w-4',
-                      value === option.value ? 'opacity-100' : 'opacity-0',
-                    )}
-                  />
-                  {option.label}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
+          <div className="max-h-64 overflow-y-auto">
+            <CommandList className="max-h-none overflow-visible">
+              <CommandEmpty>No option found.</CommandEmpty>
+              <CommandGroup>
+                {options.map((option) => (
+                  <CommandItem
+                    key={option.value}
+                    value={option.label}
+                    onSelect={() => {
+                      onValueChange(option.value === value ? '' : option.value);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        'mr-2 h-4 w-4',
+                        value === option.value ? 'opacity-100' : 'opacity-0',
+                      )}
+                    />
+                    <span className="truncate">{option.label}</span>
+                    {canEditOptions && onEditOption ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="ml-auto size-7 shrink-0"
+                        onMouseDown={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                        }}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          setOpen(false);
+                          onEditOption(option.value);
+                        }}
+                        aria-label={`${editOptionLabel} ${option.label}`}
+                      >
+                        <Pencil className="size-3.5" />
+                      </Button>
+                    ) : null}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </div>
+          {canCreateOption && onCreateOption ? (
+            <div className="border-t p-1">
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full justify-start gap-2"
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                }}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setOpen(false);
+                  onCreateOption();
+                }}
+              >
+                <Plus className="size-4" />
+                {createOptionLabel}
+              </Button>
+            </div>
+          ) : null}
         </Command>
       </PopoverContent>
     </Popover>

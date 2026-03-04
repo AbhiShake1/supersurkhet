@@ -1,10 +1,14 @@
-import { fieldConfig, withSourceCustomData } from "@/components/ui/autoform";
-import z from "zod";
-import { table } from "./listings";
-import type { InferredTable } from "./core/types";
-import { isNonNullable } from "../utils";
-import { deriveUnitPrice } from "@/config/unit-price-derivation";
-import { getItemsTotalForPaymentStatus, getPaymentStatusFromTotals } from "@/config/payment-status-derivation";
+import z from 'zod';
+import { fieldConfig, withSourceCustomData } from '@/components/ui/autoform';
+import {
+  getItemsTotalForPaymentStatus,
+  getPaymentStatusFromTotals,
+} from '@/config/payment-status-derivation';
+import { deriveUnitPrice } from '@/config/unit-price-derivation';
+import { UNASSIGNED_STOCK_BUCKET } from '@/lib/stock-book-aggregation';
+import { isNonNullable } from '../utils';
+import type { InferredTable } from './core/types';
+import { table } from './listings';
 
 export type SalesItem = NonNullable<InferredTable<'sale'>['items']>[number];
 type InvoiceItem = NonNullable<InferredTable<'invoice'>['items']>[number];
@@ -23,70 +27,72 @@ const billPaymentsSectionColumns: Array<{
   width: string;
   align?: 'left' | 'center' | 'right';
 }> = [
-    { key: 'paidAt', label: 'Paid At', width: '1.6fr' },
-    { key: 'paidAmount', label: 'Paid Amount', width: '1.25fr', align: 'right' },
-    { key: 'paymentMethod', label: 'Method', width: '1.25fr' },
-    {
-      key: 'bankVoucherNumber',
-      label: 'Bank Voucher #',
-      width: '1.5fr',
-    },
-  ];
+  { key: 'paidAt', label: 'Paid At', width: '1.6fr' },
+  { key: 'paidAmount', label: 'Paid Amount', width: '1.25fr', align: 'right' },
+  { key: 'paymentMethod', label: 'Method', width: '1.25fr' },
+  {
+    key: 'bankVoucherNumber',
+    label: 'Bank Voucher #',
+    width: '1.5fr',
+  },
+];
 
-const paymentRowSchema = z.object({
-  paidAt: z
-    .string()
-    .datetime({ offset: true })
-    .default(() => new Date().toISOString())
-    .describe('Paid At')
-    .superRefine(fieldConfig({ fieldType: 'datetime' })),
-  paidAmount: z
-    .number({ coerce: true })
-    .nonnegative()
-    .describe('Paid Amount')
-    .superRefine(fieldConfig({ fieldType: 'number' })),
-  paymentMethod: z
-    .enum(paymentMethods)
-    .optional()
-    .describe('Payment Method')
-    .superRefine(fieldConfig({ fieldType: 'select' })),
-  bankVoucherNumber: z
-    .string()
-    .optional()
-    .describe('Bank Voucher Number')
-    .superRefine(
-      fieldConfig({
-        customData: {
-          derive: ({ formValues, rowPath }) => {
-            const payment = getValueAtPath(formValues, rowPath) as
-              | { paymentMethod?: string | null }
-              | undefined;
-            const shouldShowBankVoucher = Boolean(
-              payment?.paymentMethod &&
-              methodsRequiringBankVoucher.has(payment.paymentMethod),
-            );
-            return {
-              inputProps: {
-                hidden: !shouldShowBankVoucher,
-                type: shouldShowBankVoucher ? 'text' : 'hidden',
-              },
-            };
+const paymentRowSchema = z
+  .object({
+    paidAt: z
+      .string()
+      .datetime({ offset: true })
+      .default(() => new Date().toISOString())
+      .describe('Paid At')
+      .superRefine(fieldConfig({ fieldType: 'datetime' })),
+    paidAmount: z
+      .number({ coerce: true })
+      .nonnegative()
+      .describe('Paid Amount')
+      .superRefine(fieldConfig({ fieldType: 'number' })),
+    paymentMethod: z
+      .enum(paymentMethods)
+      .optional()
+      .describe('Payment Method')
+      .superRefine(fieldConfig({ fieldType: 'select' })),
+    bankVoucherNumber: z
+      .string()
+      .optional()
+      .describe('Bank Voucher Number')
+      .superRefine(
+        fieldConfig({
+          customData: {
+            derive: ({ formValues, rowPath }) => {
+              const payment = getValueAtPath(formValues, rowPath) as
+                | { paymentMethod?: string | null }
+                | undefined;
+              const shouldShowBankVoucher = Boolean(
+                payment?.paymentMethod &&
+                  methodsRequiringBankVoucher.has(payment.paymentMethod),
+              );
+              return {
+                inputProps: {
+                  hidden: !shouldShowBankVoucher,
+                  type: shouldShowBankVoucher ? 'text' : 'hidden',
+                },
+              };
+            },
           },
-        },
-      }),
-    ),
-}).superRefine((payment, ctx) => {
-  if (!payment.paymentMethod) return;
-  if (!methodsRequiringBankVoucher.has(payment.paymentMethod)) return;
+        }),
+      ),
+  })
+  .superRefine((payment, ctx) => {
+    if (!payment.paymentMethod) return;
+    if (!methodsRequiringBankVoucher.has(payment.paymentMethod)) return;
 
-  if (!payment.bankVoucherNumber?.trim()) {
-    ctx.addIssue({
-      code: 'custom',
-      message: 'Bank voucher number is required for this payment method.',
-      path: ['bankVoucherNumber'],
-    });
-  }
-});
+    if (!payment.bankVoucherNumber?.trim()) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Bank voucher number is required for this payment method.',
+        path: ['bankVoucherNumber'],
+      });
+    }
+  });
 
 function getValueAtPath(input: unknown, path: string[]) {
   return path.reduce<unknown>((acc, key) => {
@@ -123,7 +129,9 @@ function getSoftDerivedUnitValue({
     | undefined;
   const explicitUnitRaw = row?.unit;
   const explicitUnit =
-    explicitUnitRaw === null || explicitUnitRaw === undefined || explicitUnitRaw === ''
+    explicitUnitRaw === null ||
+    explicitUnitRaw === undefined ||
+    explicitUnitRaw === ''
       ? null
       : String(explicitUnitRaw);
 
@@ -138,7 +146,9 @@ function getSoftDerivedUnitValue({
 }
 
 function createDerivedTotalAmountFieldFromFormValues(formValues: {
-  items?: Array<Partial<Pick<SalesItem, 'totalAmount' | 'quantity' | 'unitPrice'>> | null> | null;
+  items?: Array<Partial<
+    Pick<SalesItem, 'totalAmount' | 'quantity' | 'unitPrice'>
+  > | null> | null;
 }) {
   const totalAmountForValidation = () => {
     const items = Array.isArray(formValues.items) ? formValues.items : [];
@@ -167,7 +177,9 @@ function createDerivedTotalAmountFieldFromFormValues(formValues: {
         customData: {
           derive: () => {
             const totalAmount = totalAmountForValidation();
-            const safeTotalAmount = Number.isFinite(totalAmount) ? totalAmount : 0;
+            const safeTotalAmount = Number.isFinite(totalAmount)
+              ? totalAmount
+              : 0;
             return {
               inputProps: {
                 value: safeTotalAmount,
@@ -212,7 +224,9 @@ function createDerivedInvoiceTotalAmountFieldFromFormValues(formValues: {
 }
 
 function createDerivedInvoiceSubTotalFieldFromFormValues(formValues: {
-  items?: Array<Partial<Pick<InvoiceItem, 'quantity' | 'rate' | 'total'>> | null> | null;
+  items?: Array<Partial<
+    Pick<InvoiceItem, 'quantity' | 'rate' | 'total'>
+  > | null> | null;
 }) {
   return z
     .number({ coerce: true })
@@ -229,7 +243,9 @@ function createDerivedInvoiceSubTotalFieldFromFormValues(formValues: {
         },
         customData: {
           derive: () => {
-            const items = Array.isArray(formValues.items) ? formValues.items : [];
+            const items = Array.isArray(formValues.items)
+              ? formValues.items
+              : [];
             const subtotal = items.reduce((sum, item) => {
               if (!item) return sum;
               const explicitTotal = Number(item.total ?? 0);
@@ -309,7 +325,8 @@ function createDerivedSalesItemTotalAmountFieldFromFormValues(
               (row as { quantity?: number | null } | undefined)?.quantity ?? 0,
             );
             const unitPrice = Number(
-              (row as { unitPrice?: number | null } | undefined)?.unitPrice ?? 0,
+              (row as { unitPrice?: number | null } | undefined)?.unitPrice ??
+                0,
             );
             return {
               value: quantity * unitPrice,
@@ -386,7 +403,7 @@ function createSoftDerivedUnitPriceField({
             return {
               inputProps: {
                 value: derivedUnitPrice,
-              }
+              },
             };
           },
         }),
@@ -394,11 +411,9 @@ function createSoftDerivedUnitPriceField({
     );
 }
 
-function createPaidAmountFieldFromFormValues(
-  formValues: {
-    payments?: Array<{ paidAmount?: number | null | string } | null> | null;
-  },
-) {
+function createPaidAmountFieldFromFormValues(formValues: {
+  payments?: Array<{ paidAmount?: number | null | string } | null> | null;
+}) {
   return z
     .number({ coerce: true })
     .default(0)
@@ -414,19 +429,20 @@ function createPaidAmountFieldFromFormValues(
           derive: () => ({
             inputProps: {
               value: getPaidAmountFromFormValues(formValues),
-            }
+            },
           }),
         },
       }),
     );
 }
 
-function createDerivedPaymentStatusFieldFromFormValues(
-  formValues: {
-    items?: Array<{ quantity?: number | null; unitPrice?: number | null } | null> | null;
-    payments?: Array<{ paidAmount?: number | null | string } | null> | null;
-  },
-) {
+function createDerivedPaymentStatusFieldFromFormValues(formValues: {
+  items?: Array<{
+    quantity?: number | null;
+    unitPrice?: number | null;
+  } | null> | null;
+  payments?: Array<{ paidAmount?: number | null | string } | null> | null;
+}) {
   return z
     .string()
     .default('pending')
@@ -439,7 +455,9 @@ function createDerivedPaymentStatusFieldFromFormValues(
         },
         customData: {
           derive: () => {
-            const totalCost = getItemsTotalForPaymentStatus(formValues.items ?? []);
+            const totalCost = getItemsTotalForPaymentStatus(
+              formValues.items ?? [],
+            );
             const paidAmount = getPaidAmountFromFormValues(formValues);
             return {
               inputProps: {
@@ -447,7 +465,7 @@ function createDerivedPaymentStatusFieldFromFormValues(
                   paidAmount,
                   totalAmount: totalCost,
                 }),
-              }
+              },
             };
           },
         },
@@ -504,19 +522,7 @@ export const salesItemSchema = z
     product: z
       .string()
       .describe('Product')
-      .superRefine(
-        fieldConfig({
-          fieldType: 'select',
-          customData: {
-            sources: [
-              {
-                table: 'product',
-                displayKey: 'title',
-              },
-            ],
-          },
-        }),
-      ),
+      .references('product', { displayField: 'title' }),
     unit: createSoftDerivedUnitField(),
     quantity: z
       .number({ coerce: true })
@@ -529,9 +535,7 @@ export const salesItemSchema = z
         }),
       ),
     unitPrice: z.number({ coerce: true }).positive().describe('Unit Price'),
-    totalAmount: z
-      .number({ coerce: true })
-      .describe('Total Amount'),
+    totalAmount: z.number({ coerce: true }).describe('Total Amount'),
   })
   .withDerivation('totalAmount', ({ formValues }) =>
     createDerivedSalesItemTotalAmountFieldFromFormValues(formValues),
@@ -543,19 +547,7 @@ export const saleSchema = z
     customerId: z
       .string()
       .describe('Customer')
-      .superRefine(
-        fieldConfig({
-          fieldType: 'select',
-          customData: {
-            sources: [
-              {
-                table: 'customer',
-                displayKey: 'name',
-              },
-            ],
-          },
-        }),
-      ),
+      .references('customer', { displayKeys: ['name', 'panNumber'] }),
     saleDate: z
       .string()
       // .datetime()
@@ -576,11 +568,11 @@ export const saleSchema = z
       .number({ coerce: true })
       .nonnegative()
       .describe('Total Amount'),
-    payments: z
-      .array(paymentRowSchema)
-      .optional()
-      .describe('Payments'),
-    paidAmount: z.number({ coerce: true }).nonnegative().describe('Paid Amount'),
+    payments: z.array(paymentRowSchema).optional().describe('Payments'),
+    paidAmount: z
+      .number({ coerce: true })
+      .nonnegative()
+      .describe('Paid Amount'),
     paymentStatus: z
       .string()
       .default('pending')
@@ -593,10 +585,7 @@ export const saleSchema = z
           },
         }),
       ),
-    paymentMethod: z
-      .enum(paymentMethods)
-      .optional()
-      .describe('Payment Method'),
+    paymentMethod: z.enum(paymentMethods).optional().describe('Payment Method'),
     notes: z
       .string()
       .optional()
@@ -629,7 +618,12 @@ export const saleSchema = z
         readOnly: true,
       },
     ],
-    hiddenFields: ['totalAmount', 'paidAmount', 'paymentStatus', 'paymentMethod'],
+    hiddenFields: [
+      'totalAmount',
+      'paidAmount',
+      'paymentStatus',
+      'paymentMethod',
+    ],
     footerFields: ['notes'],
     arraySections: [
       {
@@ -652,25 +646,13 @@ export const saleSchema = z
         message: `Paid amount cannot be greater than total cost (${totalCost})`,
         path: ['paidAmount'],
       });
-  })
+  });
 export const orderSchema = z
   .object({
     customerId: z
       .string()
       .describe('Customer')
-      .superRefine(
-        fieldConfig({
-          fieldType: 'select',
-          customData: {
-            sources: [
-              {
-                table: 'customer',
-                displayKey: 'name',
-              },
-            ],
-          },
-        }),
-      ),
+      .references('customer', { displayKeys: ['name', 'panNumber'] }),
     items: salesItemSchema
       .extend({
         unitPrice: createSoftDerivedUnitPriceField({
@@ -684,11 +666,11 @@ export const orderSchema = z
       .number({ coerce: true })
       .nonnegative()
       .describe('Total Amount'),
-    payments: z
-      .array(paymentRowSchema)
-      .optional()
-      .describe('Payments'),
-    paidAmount: z.number({ coerce: true }).nonnegative().describe('Paid Amount'),
+    payments: z.array(paymentRowSchema).optional().describe('Payments'),
+    paidAmount: z
+      .number({ coerce: true })
+      .nonnegative()
+      .describe('Paid Amount'),
     paymentStatus: z
       .string()
       .default('pending')
@@ -713,10 +695,7 @@ export const orderSchema = z
           },
         }),
       ),
-    paymentMethod: z
-      .enum(paymentMethods)
-      .optional()
-      .describe('Payment Method'),
+    paymentMethod: z.enum(paymentMethods).optional().describe('Payment Method'),
     notes: z
       .string()
       .optional()
@@ -749,7 +728,12 @@ export const orderSchema = z
         readOnly: true,
       },
     ],
-    hiddenFields: ['totalAmount', 'paidAmount', 'paymentStatus', 'paymentMethod'],
+    hiddenFields: [
+      'totalAmount',
+      'paidAmount',
+      'paymentStatus',
+      'paymentMethod',
+    ],
     footerFields: ['notes'],
     arraySections: [
       {
@@ -772,25 +756,13 @@ export const orderSchema = z
         message: `Paid amount cannot be greater than total cost (${totalCost})`,
         path: ['paidAmount'],
       });
-  })
+  });
 export const stockImportSchema = z
   .object({
     party: z
       .string()
       .describe('Party')
-      .superRefine(
-        fieldConfig({
-          fieldType: 'select',
-          customData: {
-            sources: [
-              {
-                table: 'party',
-                displayKey: 'name',
-              },
-            ],
-          },
-        }),
-      ),
+      .references('party', { displayKeys: ['name', 'panNumber'] }),
     importDate: z
       .string()
       .datetime({ offset: true })
@@ -802,6 +774,7 @@ export const stockImportSchema = z
         product: z
           .string()
           .describe('Product')
+          .references('product', { displayField: 'title' })
           .superRefine(
             fieldConfig({
               fieldType: 'select',
@@ -815,15 +788,19 @@ export const stockImportSchema = z
                     );
                     if (!selectedPartyId) return true;
                     const productPartyId = String(
-                      (sourceRow as {
-                        partyId?: unknown;
-                        purchasePartyId?: unknown;
-                      }).partyId ??
-                      (sourceRow as {
-                        partyId?: unknown;
-                        purchasePartyId?: unknown;
-                      }).purchasePartyId ??
-                      '',
+                      (
+                        sourceRow as {
+                          partyId?: unknown;
+                          purchasePartyId?: unknown;
+                        }
+                      ).partyId ??
+                        (
+                          sourceRow as {
+                            partyId?: unknown;
+                            purchasePartyId?: unknown;
+                          }
+                        ).purchasePartyId ??
+                        '',
                     );
                     return productPartyId === selectedPartyId;
                   },
@@ -842,11 +819,11 @@ export const stockImportSchema = z
       .number({ coerce: true })
       .nonnegative()
       .describe('Total Amount'),
-    payments: z
-      .array(paymentRowSchema)
-      .optional()
-      .describe('Payments'),
-    paidAmount: z.number({ coerce: true }).nonnegative().describe('Paid Amount'),
+    payments: z.array(paymentRowSchema).optional().describe('Payments'),
+    paidAmount: z
+      .number({ coerce: true })
+      .nonnegative()
+      .describe('Paid Amount'),
     paymentStatus: z
       .string()
       .default('pending')
@@ -948,19 +925,7 @@ export const stockBookSchema = z
     productId: z
       .string()
       .describe('Product')
-      .superRefine(
-        fieldConfig({
-          fieldType: 'select',
-          customData: {
-            sources: [
-              {
-                table: 'product',
-                displayKey: 'title',
-              },
-            ],
-          },
-        }),
-      ),
+      .references('product', { displayField: 'title' }),
     quantityIn: z
       .number({ coerce: true })
       .nonnegative()
@@ -971,10 +936,7 @@ export const stockBookSchema = z
       .nonnegative()
       .default(0)
       .describe('Quantity Out'),
-    quantity: z
-      .number({ coerce: true })
-      .nonnegative()
-      .describe('Quantity'),
+    quantity: z.number({ coerce: true }).nonnegative().describe('Quantity'),
     unitRate: z
       .number({ coerce: true })
       .nonnegative()
@@ -1001,16 +963,32 @@ export const stockBookSchema = z
       .superRefine(fieldConfig({ fieldType: 'select' })),
     sourceId: z.string().optional().describe('Source ID'),
     sourceCode: z.string().optional().describe('Source Code'),
-    counterpartyId: z.string().optional().describe('Counterparty'),
-    originPartyId: z.string().optional().describe('Origin Party'),
+    counterpartyId: z
+      .string()
+      .optional()
+      .describe('Counterparty')
+      .references('party', {
+        displayKeys: ['name', 'panNumber'],
+        fallbacks: [{ table: 'customer', displayKeys: ['name', 'panNumber'] }],
+      }),
+    originPartyId: z
+      .string()
+      .optional()
+      .describe('Origin Party')
+      .references('party', {
+        displayKeys: ['name', 'panNumber'],
+        valueLabels: {
+          [UNASSIGNED_STOCK_BUCKET]: 'Unassigned',
+        },
+      }),
     fiscalYear: z.string().optional().describe('Fiscal Year'),
   })
   .extend(table);
 export const partySchema = z
   .object({
     name: z.string().min(1).describe('Name of the party'),
+    panNumber: z.string().trim().optional().describe('PAN number of the party'),
     address: z.string().optional().describe('Address of the party'),
-    panNumber: z.string().optional().describe('PAN number of the party'),
     phone: z.string().optional().describe('Phone number of the party'),
     creditLimit: z
       .number({ coerce: true })
@@ -1027,40 +1005,53 @@ export const partySchema = z
   })
   .extend(table);
 
-export const customerSchema = partySchema.extend({
-});
+export const customerSchema = partySchema.extend({});
 
 export const invoiceSchema = z
   .object({
     type: z.enum(['purchase', 'sale']),
-    partyId: z.string().describe('Party').optional(),
+    partyId: z
+      .string()
+      .describe('Party')
+      .references('party', {
+        displayKeys: ['name', 'panNumber'],
+        fallbacks: [{ table: 'customer', displayKeys: ['name', 'panNumber'] }],
+      })
+      .optional(),
     issuedAt: z
       .string()
       .datetime({ offset: true })
       .describe('Issued At')
+      .superRefine(fieldConfig({ fieldType: 'datetime' }))
       .optional(),
     dueDate: z
       .string()
       .datetime({ offset: true })
       .describe('Due Date')
+      .superRefine(fieldConfig({ fieldType: 'datetime' }))
       .optional(),
 
     items: z.array(
-      z.object({
-        product: z.string().describe('Product'),
-        quantity: z.number({ coerce: true }).positive(),
-        rate: z.number({ coerce: true }).int().nonnegative(), // paisa
-      }).withDerivation('total', ({ formValues }) =>
-        createDerivedInvoiceItemTotalAmountFieldFromFormValues(formValues),
-      ),
+      z
+        .object({
+          product: z
+            .string()
+            .describe('Product')
+            .references('product', { displayField: 'title' }),
+          quantity: z.number({ coerce: true }).positive(),
+          rate: z.number({ coerce: true }).int().nonnegative(), // paisa
+        })
+        .withDerivation('total', ({ formValues }) =>
+          createDerivedInvoiceItemTotalAmountFieldFromFormValues(formValues),
+        ),
     ),
     subTotal: z.number({ coerce: true }).int().nonnegative(),
     tax: z.number({ coerce: true }).int().nonnegative().default(0),
-    totalAmount: z.number({ coerce: true }).nonnegative().describe('Total Amount'),
-    payments: z
-      .array(paymentRowSchema)
-      .optional()
-      .describe('Payments'),
+    totalAmount: z
+      .number({ coerce: true })
+      .nonnegative()
+      .describe('Total Amount'),
+    payments: z.array(paymentRowSchema).optional().describe('Payments'),
     paidAmount: z
       .number({ coerce: true })
       .nonnegative()
@@ -1084,8 +1075,19 @@ export const invoiceSchema = z
       .optional()
       .describe('Notes')
       .superRefine(fieldConfig({ fieldType: 'richText' })),
-    vehicleId: z.string().describe('Vehicle').optional(),
-    tripId: z.string().describe('Trip').optional(),
+    vehicleId: z
+      .string()
+      .describe('Vehicle')
+      .references('vehicle', { displayField: 'name' })
+      .optional(),
+    tripId: z
+      .string()
+      .describe('Trip')
+      .references('trip', {
+        displayKeys: ['destination', 'dispatchTime', 'returnTime'],
+        separator: ' | ',
+      })
+      .optional(),
   })
   .withDerivation('paidAmount', ({ formValues }) =>
     createPaidAmountFieldFromFormValues(formValues),
@@ -1135,21 +1137,11 @@ export const tripSchema = z
     vehicleId: z
       .string()
       .describe('Vehicle')
-      .superRefine(
-        fieldConfig({
-          fieldType: 'select',
-          customData: {
-            sources: [
-              {
-                table: 'vehicle',
-                displayKeys: ['name', 'licensePlate'],
-                separator: ' (',
-                suffix: ')',
-              },
-            ],
-          },
-        }),
-      ),
+      .references('vehicle', {
+        displayKeys: ['name', 'licensePlate'],
+        separator: ' (',
+        suffix: ')',
+      }),
     dispatchTime: z
       .string()
       .datetime({ offset: true })

@@ -18,10 +18,11 @@ interface UnitFieldProps extends AutoFormFieldProps {
 }
 
 // Regular units that don't need additional configuration
-const REGULAR_UNITS = ['piece', 'dozen', 'litre', 'kg'];
+const REGULAR_UNITS = ['piece', 'dozen', 'kg'];
 
-// Special units that need additional configuration (pieces per unit)
-const SPECIAL_UNITS = ['cartoon'];
+// Special units that need additional configuration (items per pack)
+const SPECIAL_UNITS = ['cartoon', 'bag'];
+const DEFAULT_ITEMS_PER_PACK = '1';
 
 export function UnitField({
   field,
@@ -39,11 +40,11 @@ export function UnitField({
   const configDisabled = field.fieldConfig?.customData
     ?.configDisabled as boolean;
 
-  const [initialSelectedUnit, initialPiecesPerUnit] = value?.split(':') ?? [];
+  const [initialSelectedUnit, initialItemsPerPack] = value?.split(':') ?? [];
   const [_selectedUnit, setSelectedUnit] = useState(initialSelectedUnit);
-  const [_piecesPerUnit, setPiecesPerUnit] = useState(initialPiecesPerUnit);
+  const [_itemsPerPack, setItemsPerPack] = useState(initialItemsPerPack);
   const selectedUnit = _selectedUnit ?? initialSelectedUnit;
-  const piecesPerUnit = _piecesPerUnit ?? initialPiecesPerUnit;
+  const itemsPerPack = _itemsPerPack ?? initialItemsPerPack;
   const fieldName = path.join('.');
   const pathKey = path.join('.');
   const form = useFormContext();
@@ -53,19 +54,34 @@ export function UnitField({
 
   // Sync UI state with external form value updates (e.g. product selection).
   useEffect(() => {
-    const [nextUnit, nextPiecesPerUnit] = value?.split(':') ?? [];
+    const [nextUnit, nextItemsPerPack] = value?.split(':') ?? [];
     if (typeof nextUnit !== 'undefined') setSelectedUnit(nextUnit);
-    if (nextPiecesPerUnit) setPiecesPerUnit(nextPiecesPerUnit);
+    if (nextItemsPerPack) {
+      setItemsPerPack(nextItemsPerPack);
+      return;
+    }
+
+    if (nextUnit && SPECIAL_UNITS.includes(nextUnit)) {
+      setItemsPerPack(DEFAULT_ITEMS_PER_PACK);
+    }
   }, [value]);
 
-  // Update the form value when unit or piecesPerUnit changes
+  // Update the form value when unit or items-per-pack changes.
   useEffect(() => {
     if (!selectedUnit) return;
     // biome-ignore lint/suspicious/noImplicitAnyLet: lint debt cleanup
     let nextValue;
     if (SPECIAL_UNITS.includes(selectedUnit)) {
-      // For special units, store as "unit:piecesPerUnit"
-      nextValue = `${selectedUnit}:${piecesPerUnit}`;
+      // For special units, store as "unit:itemsPerPack".
+      const normalizedItemsPerPack =
+        Number(itemsPerPack) > 0
+          ? String(itemsPerPack)
+          : DEFAULT_ITEMS_PER_PACK;
+
+      if (normalizedItemsPerPack !== itemsPerPack) {
+        setItemsPerPack(normalizedItemsPerPack);
+      }
+      nextValue = `${selectedUnit}:${normalizedItemsPerPack}`;
     } else {
       // For regular units, store as just the unit
       nextValue = selectedUnit;
@@ -83,23 +99,24 @@ export function UnitField({
     });
   }, [
     selectedUnit,
-    piecesPerUnit,
+    itemsPerPack,
     fieldName,
     form,
     onDerivedValueChange,
     pathKey,
   ]);
 
-  const handleUnitChange = (value: string) => {
-    setSelectedUnit(value);
+  const handleUnitChange = (nextUnit: string) => {
+    setSelectedUnit(nextUnit);
+    if (SPECIAL_UNITS.includes(nextUnit) && !itemsPerPack) {
+      setItemsPerPack(DEFAULT_ITEMS_PER_PACK);
+    }
   };
 
-  const handlePiecesPerUnitChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const value = parseInt(e.target.value, 10);
-    if (!Number.isNaN(value) && value > 0) {
-      setPiecesPerUnit(value);
+  const handleItemsPerPackChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const nextItemsPerPack = parseInt(e.target.value, 10);
+    if (!Number.isNaN(nextItemsPerPack) && nextItemsPerPack > 0) {
+      setItemsPerPack(String(nextItemsPerPack));
     }
   };
 
@@ -133,14 +150,14 @@ export function UnitField({
               disabled={configDisabled}
               type="number"
               min="1"
-              value={piecesPerUnit}
-              onChange={handlePiecesPerUnitChange}
-              placeholder="Pieces"
-              className={cn("h-9", className)}
+              value={itemsPerPack ?? ''}
+              onChange={handleItemsPerPackChange}
+              placeholder="Items"
+              className={cn('h-9', className)}
               data-testid={testId ? `${testId}-pieces` : undefined}
             />
             <p className="text-xs text-muted-foreground mt-1">
-              pieces per {selectedUnit}
+              items per {selectedUnit}
             </p>
           </div>
         )}

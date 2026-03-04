@@ -1,4 +1,5 @@
 import type { ParsedField } from '@autoform/core';
+import { useQueries } from '@tanstack/react-query';
 import {
   CheckCircle2,
   ExternalLink,
@@ -11,18 +12,23 @@ import { z } from 'zod';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { useBusinessSafe } from '@/contexts/business-context';
 import { useDrawer } from '@/contexts/dialog-context';
+import { getSchemaReferenceSources } from '@/lib/zod/with-references';
 import { AutoTable } from '../auto-table';
 import type { ZodObjectOrWrapped } from '../ui/auto-form/utils';
 import type { fieldConfig } from '../ui/autoform';
 import { MapPreview } from '../ui/autoform/components/MapPreview';
+import type { FieldConfigCustomData, SourceConfig } from '../ui/autoform/utils';
 import { CredenzaBody } from '../ui/credenza';
 import { Drawer, DrawerContent, DrawerTrigger } from '../ui/drawer';
+
 type FieldType = NonNullable<Parameters<typeof fieldConfig>[0]['fieldType']>;
 
 export type AutoPreviewComponent<T, S extends ParsedField = ParsedField> = FC<{
   value: T;
   schema: S;
+  field: ParsedField;
 }>;
 
 export function AutoPreview<T>({
@@ -38,7 +44,7 @@ export function AutoPreview<T>({
     // @ts-expect-error
     autoPreviewComponents[field.type] ?? autoPreviewComponents.fallback;
 
-  return <Comp value={value} schema={schema} />;
+  return <Comp value={value} schema={schema} field={field} />;
 }
 
 const DatePreview: AutoPreviewComponent<Date> = ({ value }) => {
@@ -92,8 +98,166 @@ const ImagePreview: AutoPreviewComponent<string> = ({ value }) => {
   );
 };
 const NumberPreview: AutoPreviewComponent<number> = ({ value }) => <>{value}</>;
-const SelectPreview: AutoPreviewComponent<string> = ({ value }) => value;
 const StringPreview: AutoPreviewComponent<string> = ({ value }) => <>{value}</>;
+
+function asString(value: unknown) {
+  if (value === null || value === undefined) return '';
+  return String(value);
+}
+
+function getComparableId(value: unknown) {
+  const raw = asString(value);
+  if (!raw) return '';
+  const segments = raw.split('/').filter(Boolean);
+  return segments.at(-1) ?? raw;
+}
+
+function getPathnameBasePath() {
+  if (typeof window === 'undefined') return '';
+  return window.location.pathname.split('/').filter(Boolean).at(0) ?? '';
+}
+
+function getPreviewSources(
+  customData: FieldConfigCustomData | undefined,
+): SourceConfig[] {
+  if (customData?.source) return [customData.source];
+  if (customData?.sources?.length) return customData.sources;
+  return getSchemaReferenceSources(customData?.reference).map(
+    (source) => source as SourceConfig,
+  );
+}
+
+function getStaticValueLabel(
+  sources: SourceConfig[],
+  value: string,
+): string | null {
+  const comparableValue = getComparableId(value);
+  for (const source of sources) {
+    if (!source.valueLabels) continue;
+    const exact = source.valueLabels[value];
+    if (exact) return exact;
+    const comparable =
+      comparableValue && comparableValue !== value
+        ? source.valueLabels[comparableValue]
+        : undefined;
+    if (comparable) return comparable;
+  }
+  return null;
+}
+
+function getOptionsLabel(
+  options: Array<[string, string]> | undefined,
+  value: string,
+): string | null {
+  if (!options?.length || !value) return null;
+  const match = options.find(
+    ([optionValue]) => asString(optionValue) === value,
+  );
+  if (!match) return null;
+  return asString(match[1]);
+}
+
+function getRowLabel(
+  source: SourceConfig,
+  row: Record<string, unknown>,
+  fallback: string,
+) {
+  const staticLabel = source.valueLabels?.[fallback];
+  if (staticLabel) return staticLabel;
+
+  if ('displayKeys' in source && Array.isArray(source.displayKeys)) {
+    const joined = source.displayKeys
+      .map((key) => {
+        const value = row[key as string];
+        return value === null || value === undefined ? '' : String(value);
+      })
+      .join(source.separator ?? ' - ');
+    const finalValue = `${joined}${source.suffix ?? ''}`.trim();
+    return finalValue || fallback;
+  }
+
+  if ('displayKey' in source && source.displayKey) {
+    const value = row[source.displayKey as string];
+    if (value !== null && value !== undefined && value !== '') {
+      return String(value);
+    }
+  }
+
+  for (const key of ['title', 'name', 'label', 'code', 'id']) {
+    const value = row[key];
+    if (value !== null && value !== undefined && value !== '') {
+      return String(value);
+    }
+  }
+
+  return fallback;
+}
+
+const SelectPreview: AutoPreviewComponent<string | number> = ({
+  value,
+  field,
+}) => {
+  const valueAsString = asString(value);
+  const customData = field.fieldConfig?.customData as
+    | FieldConfigCustomData
+    | undefined;
+  const sources = getPreviewSources(customData);
+  const options =
+    customData?.options ??
+    (field.options as Array<[string, string]> | undefined) ??
+    [];
+  const business = useBusinessSafe();
+  const basePath = business?.business?.basePath ?? getPathnameBasePath();
+  const targetId = getComparableId(valueAsString);
+  const sourceQueries = useQueries({
+    queries: sources.map((source) => ({
+      queryKey: ['auto-preview', 'relation', basePath, source.table],
+      enabled: Boolean(valueAsString && source.table && basePath),
+      async queryFn() {
+        if (!source.table || !basePath) return [];
+        const { db } = await import('@/lib/ssr/api');
+        const tableApi = (
+          db as Record<
+            string,
+            { get: (params: { keys: string[] }) => Promise<unknown[]> }
+          >
+        )[source.table];
+        if (!tableApi?.get) return [];
+        return tableApi.get({ keys: [basePath] });
+      },
+    })),
+  });
+
+  if (!valueAsString) return <span className="text-muted-foreground">-</span>;
+
+  for (const [index, source] of sources.entries()) {
+    const sourceRows = sourceQueries[index]?.data ?? [];
+    const sourceValueKey =
+      typeof source.valueKey === 'string' ? source.valueKey : undefined;
+    const matchedRow = sourceRows.find((item) => {
+      if (!item || typeof item !== 'object') return false;
+      const row = item as Record<string, unknown>;
+      const rowValue = sourceValueKey
+        ? asString(row[sourceValueKey])
+        : asString((item as { _?: { soul?: string } })._?.soul);
+      return getComparableId(rowValue) === targetId;
+    });
+
+    if (matchedRow && typeof matchedRow === 'object') {
+      return getRowLabel(
+        source,
+        matchedRow as Record<string, unknown>,
+        valueAsString,
+      );
+    }
+  }
+
+  const staticLabel = getStaticValueLabel(sources, valueAsString);
+  if (staticLabel) return staticLabel;
+
+  const labelFromOptions = getOptionsLabel(options, valueAsString);
+  return labelFromOptions ?? valueAsString;
+};
 const RecordPreview: AutoPreviewComponent<object> = ({ value, schema }) => {
   if (!value) return null;
   if (!('#' in value)) return null;
@@ -235,10 +399,11 @@ const RatingPreview: AutoPreviewComponent<number> = ({ value }) => {
           <Star
             // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
             key={i}
-            className={`h-4 w-4 ${i < Math.floor(value)
+            className={`h-4 w-4 ${
+              i < Math.floor(value)
                 ? 'fill-yellow-400 text-yellow-400'
                 : 'text-gray-300'
-              }`}
+            }`}
           />
         ))}
       </div>
@@ -272,12 +437,12 @@ const TagsPreview: AutoPreviewComponent<string[]> = ({ value }) => {
 const UnitPreview: AutoPreviewComponent<string> = ({ value }) => {
   if (!value) return <span className="text-muted-foreground">-</span>;
 
-  // Check if the value is in the format "unit:piecesPerUnit" (special units)
+  // Check if the value is in the format "unit:itemsPerPack" (packed units)
   if (typeof value === 'string' && value.includes(':')) {
-    const [unit, piecesPerUnit] = value.split(':');
+    const [unit, itemsPerPack] = value.split(':');
     return (
       <span>
-        {unit} ({piecesPerUnit} pieces per {unit})
+        {unit} ({itemsPerPack} items per {unit})
       </span>
     );
   }

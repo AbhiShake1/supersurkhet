@@ -16,8 +16,8 @@ describe('deriveUnitPrice', () => {
     expect(
       deriveUnitPrice({
         basePrice: 1200,
-        productUnit: 'cartoon:12',
-        selectedUnit: 'cartoon:12',
+        productUnit: 'bag:8',
+        selectedUnit: 'bag:8',
       }),
     ).toBe(1200);
   });
@@ -26,18 +26,28 @@ describe('deriveUnitPrice', () => {
     expect(
       deriveUnitPrice({
         basePrice: 1200,
-        productUnit: 'cartoon:12',
+        productUnit: 'bag:8',
         selectedUnit: 'piece',
       }),
-    ).toBe(100);
+    ).toBe(150);
   });
 
   it('falls back to packed-unit price when selected unit is not provided', () => {
     expect(
       deriveUnitPrice({
         basePrice: 1200,
-        productUnit: 'cartoon:12',
+        productUnit: 'bag:8',
       }),
     ).toBe(1200);
+  });
+
+  it('supports legacy cartoon packed units for backwards compatibility', () => {
+    expect(
+      deriveUnitPrice({
+        basePrice: 900,
+        productUnit: 'cartoon:9',
+        selectedUnit: 'piece',
+      }),
+    ).toBe(100);
   });
 });

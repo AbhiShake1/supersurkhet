@@ -45,13 +45,13 @@ type PaymentInput = {
   paidAt?: string | null;
   paidAmount?: number | string | null;
   paymentMethod?:
-  | 'cash'
-  | 'card'
-  | 'bankTransfer'
-  | 'credit'
-  | 'online'
-  | 'check'
-  | null;
+    | 'cash'
+    | 'card'
+    | 'bankTransfer'
+    | 'credit'
+    | 'online'
+    | 'check'
+    | null;
   bankVoucherNumber?: string | null;
 } | null;
 
@@ -257,18 +257,14 @@ export function useBusinessConfig({
 }): BusinessConfigReturn {
   const { openDialog, closeDialog } = useDialog();
   const { data: parties } = api.party.useGet({ keys: [slug] });
-  const { data: vehicles } = api.vehicle.useGet({ keys: [slug] });
   const { data: trips } = api.trip.useGet({ keys: [slug] });
   const { data: products } = api.product.useGet({ keys: [slug] });
-  const { data: customers } = api.customer.useGet({ keys: [slug] });
   const { data: orders } = api.order.useGet({ keys: [slug] });
   const { data: stockImports } = api.stockImport.useGet({ keys: [slug] });
   const { data: sales } = api.sale.useGet({ keys: [slug] });
   const { data: stockBook = [] } = api.stockBook.useGet({ keys: [slug] });
   const partiesBySoul = new Map(parties?.map((p) => [p._?.soul, p]));
-  const vehiclesBySoul = new Map(vehicles?.map((v) => [v._?.soul, v]));
   const tripsBySoul = new Map(trips?.map((t) => [t._?.soul, t]));
-  const customersBySoul = new Map(customers?.map((c) => [c._?.soul, c]));
   const productsBySoul = new Map(products?.map((p) => [p._?.soul, p]));
   const ordersBySoul = new Map(orders?.map((o) => [o._?.soul, o]));
   const stockImportsBySoul = new Map(stockImports?.map((s) => [s._?.soul, s]));
@@ -290,8 +286,9 @@ export function useBusinessConfig({
     );
     const productPartyId = getProductLinkedPartyId(product);
     if (includeParty) {
-      return `${product?.title ?? '-'} | ${productPartyId ? getPartyDisplayName(productPartyId) : '-'
-        } | Available: ${available}`;
+      return `${product?.title ?? '-'} | ${
+        productPartyId ? getPartyDisplayName(productPartyId) : '-'
+      } | Available: ${available}`;
     }
 
     return `${product?.title ?? '-'} - Available: ${available}`;
@@ -306,6 +303,7 @@ export function useBusinessConfig({
       .string()
       .optional()
       .describe('Purchase Party')
+      .references('party', { displayKeys: ['name', 'panNumber'] })
       .superRefine(
         fieldConfig({
           fieldType: 'select',
@@ -339,6 +337,7 @@ export function useBusinessConfig({
       product: z
         .string()
         .describe('Product')
+        .references('product', { displayField: 'title' })
         .superRefine(
           fieldConfig({
             fieldType: 'select',
@@ -360,7 +359,9 @@ export function useBusinessConfig({
                 const rowPath = path.slice(0, -1);
                 const unitPath = [...rowPath, 'unit'].join('.');
                 const unitPricePath = [...rowPath, 'unitPrice'].join('.');
-                const purchasePartyPath = [...rowPath, 'purchasePartyId'].join('.');
+                const purchasePartyPath = [...rowPath, 'purchasePartyId'].join(
+                  '.',
+                );
 
                 const currentUnitRaw = form.getValues(unitPath);
                 const productUnit = String(product.unit ?? '');
@@ -467,24 +468,24 @@ export function useBusinessConfig({
     requireOriginPartyId = false,
   }: {
     sourceTable:
-    | 'product'
-    | 'stockImport'
-    | 'sale'
-    | 'order'
-    | 'trip'
-    | 'manual'
-    | 'fiscalClose';
+      | 'product'
+      | 'stockImport'
+      | 'sale'
+      | 'order'
+      | 'trip'
+      | 'manual'
+      | 'fiscalClose';
     sourceId?: string;
     transactionType: 'purchase' | 'sale' | 'stock';
     movementType:
-    | 'opening'
-    | 'closing'
-    | 'purchase'
-    | 'sale'
-    | 'order'
-    | 'tripDispatch'
-    | 'tripReturn'
-    | 'adjustment';
+      | 'opening'
+      | 'closing'
+      | 'purchase'
+      | 'sale'
+      | 'order'
+      | 'tripDispatch'
+      | 'tripReturn'
+      | 'adjustment';
     direction: 'in' | 'out';
     entryDate?: string;
     items: SalesItem[] | undefined;
@@ -507,7 +508,8 @@ export function useBusinessConfig({
         if (!productId) return acc;
         const productInfo = productsMap.get(productId);
         if (!productInfo?._?.soul) return acc;
-        const originPartyId = resolveItemPurchasePartyId(item, productsMap) || undefined;
+        const originPartyId =
+          resolveItemPurchasePartyId(item, productsMap) || undefined;
         if (requireOriginPartyId && !originPartyId) {
           throw new Error(
             'Missing purchase party allocation for stock out line.',
@@ -591,6 +593,7 @@ export function useBusinessConfig({
         product: z
           .string()
           .describe('Product')
+          .references('product', { displayField: 'title' })
           .superRefine(
             fieldConfig({
               fieldType: 'select',
@@ -606,6 +609,7 @@ export function useBusinessConfig({
           .string()
           .optional()
           .describe('Purchase Party')
+          .references('party', { displayKeys: ['name', 'panNumber'] })
           .superRefine(
             fieldConfig({
               fieldType: 'select',
@@ -698,6 +702,7 @@ export function useBusinessConfig({
       product: z
         .string()
         .describe('Product')
+        .references('product', { displayField: 'title' })
         .superRefine(
           fieldConfig({
             fieldType: 'select',
@@ -733,6 +738,7 @@ export function useBusinessConfig({
         .string()
         .optional()
         .describe('Purchase Party')
+        .references('party', { displayKeys: ['name', 'panNumber'] })
         .superRefine(
           fieldConfig({
             fieldType: 'select',
@@ -970,15 +976,15 @@ export function useBusinessConfig({
   }: {
     tripId: string;
     trip:
-    | {
-      _?: { soul?: string };
-      dispatchTime?: string;
-      returnTime?: string;
-      vehicleId?: string;
-      products?: SalesItem[];
-      returnedProducts?: SalesItem[];
-    }
-    | undefined;
+      | {
+          _?: { soul?: string };
+          dispatchTime?: string;
+          returnTime?: string;
+          vehicleId?: string;
+          products?: SalesItem[];
+          returnedProducts?: SalesItem[];
+        }
+      | undefined;
   }) {
     if (!trip?.returnTime || !trip?.products?.length) return;
 
@@ -1059,10 +1065,10 @@ export function useBusinessConfig({
 
     const products = await db.product.get({ keys: [slug] });
     const productsBySoulFromDb = new Map(
-      products
-        .filter((item) => item?._?.soul)
-        // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
-        .map((item) => [item._?.soul!, item]),
+      products.flatMap((item) => {
+        const soul = item?._?.soul;
+        return soul ? [[soul, item] as const] : [];
+      }),
     );
 
     await createStockBookEntriesFromItems({
@@ -1187,8 +1193,8 @@ export function useBusinessConfig({
       {
         schema: 'product',
         slug,
-        async onCreate() { },
-        async onUpdate() { },
+        async onCreate() {},
+        async onUpdate() {},
         async onDelete(_, id) {
           await clearStockBookEntriesBySource('product', id);
           await clearStockBookEntriesBySource('manual', id);
@@ -1261,20 +1267,6 @@ export function useBusinessConfig({
       {
         schema: 'stockImport',
         slug,
-        previewOverrides: {
-          party: (p) => partiesBySoul.get(p)?.name ?? '-',
-          items: (items) => {
-            const mapped = items?.map((item: SalesItem) => ({
-              ...item,
-              product:
-                productsBySoul.get(resolveSalesItemProductId(item))?.title ??
-                '-',
-            }));
-            if (!mapped) return;
-            mapped['#'] = items?.['#'];
-            return mapped;
-          },
-        },
         extender: (schema) =>
           schema.superRefine((data, ctx) => {
             if (!data?.items?.length) return;
@@ -1402,33 +1394,6 @@ export function useBusinessConfig({
       {
         schema: 'sale',
         slug,
-        previewOverrides: {
-          customerId: (id) =>
-            customersBySoul.get(id)?.name ||
-            customersBySoul.get(id)?.phone ||
-            '-',
-          saleDate: (date) =>
-            date
-              ? new Date(date).toLocaleString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })
-              : '-',
-          items: (items) => {
-            const mapped = items?.map((item: SalesItem) => ({
-              ...item,
-              product:
-                productsBySoul.get(resolveSalesItemProductId(item))?.title ??
-                '-',
-            }));
-            if (!mapped) return;
-            mapped['#'] = items?.['#'];
-            return mapped;
-          },
-        },
         extender: (schema) =>
           schema
             .extend({
@@ -1561,14 +1526,6 @@ export function useBusinessConfig({
         slug,
         readOnly: true,
         previewOverrides: {
-          productId: (id) => productsBySoul.get(id)?.title ?? '-',
-          counterpartyId: (id) =>
-            partiesBySoul.get(id)?.name ||
-            customersBySoul.get(id)?.name ||
-            (typeof id === 'string' ? (id.split('/').at(-1) ?? id) : '-'),
-          originPartyId: (id) =>
-            partiesBySoul.get(id)?.name ||
-            (typeof id === 'string' ? (id.split('/').at(-1) ?? id) : '-'),
           sourceId: (id) =>
             typeof id === 'string' ? (id.split('/').at(-1) ?? id) : '-',
         },
@@ -1597,69 +1554,10 @@ export function useBusinessConfig({
             </DropdownMenuItem>
           );
         },
-        previewOverrides: {
-          partyId: (id) =>
-            partiesBySoul.get(id)?.name || customersBySoul.get(id)?.name || '-',
-          vehicleId: (id) => vehiclesBySoul.get(id)?.name || '-',
-          tripId: (id) => {
-            const trip = tripsBySoul.get(id);
-            if (!trip) return '-';
-            return [
-              trip.destination,
-              [trip.dispatchTime, trip.returnTime].filter(Boolean).join(' - '),
-            ].join(' | ');
-          },
-          issuedAt: (date) =>
-            date
-              ? new Date(date).toLocaleString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })
-              : '-',
-          dueDate: (date) =>
-            date
-              ? new Date(date).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-              })
-              : '-',
-          items: (items) => {
-            const mapped = items?.map((item: SalesItem) => ({
-              ...item,
-              product:
-                productsBySoul.get(resolveSalesItemProductId(item))?.title ??
-                '-',
-            }));
-            if (!mapped) return;
-            mapped['#'] = items?.['#'];
-            return mapped;
-          },
-        },
       },
       {
         schema: 'order',
         slug,
-        previewOverrides: {
-          customerId: (id) =>
-            customersBySoul.get(id)?.name ||
-            customersBySoul.get(id)?.phone ||
-            '-',
-          items: (items) => {
-            const mapped = items?.map((item: SalesItem) => ({
-              ...item,
-              product:
-                productsBySoul.get(resolveSalesItemProductId(item))?.title ??
-                '-',
-            }));
-            if (!mapped) return;
-            mapped['#'] = items?.['#'];
-            return mapped;
-          },
-        },
         extender: (schema) =>
           schema
             .extend({
@@ -1833,35 +1731,6 @@ export function useBusinessConfig({
       {
         schema: 'trip',
         slug,
-        previewOverrides: {
-          vehicleId: (vehicleId) => vehiclesBySoul.get(vehicleId)?.name ?? '-',
-          products: (items) => {
-            const mapped = items?.map((item: SalesItem) => ({
-              ...item,
-              product:
-                productsBySoul.get(resolveSalesItemProductId(item))?.title ??
-                '-',
-              totalAmount:
-                Number(item.quantity || 0) * Number(item.unitPrice || 0),
-            }));
-            if (!mapped) return;
-            mapped['#'] = items?.['#'];
-            return mapped;
-          },
-          returnedProducts: (items) => {
-            const mapped = items?.map((item: SalesItem) => ({
-              ...item,
-              product:
-                productsBySoul.get(resolveSalesItemProductId(item))?.title ??
-                '-',
-              totalAmount:
-                Number(item.quantity || 0) * Number(item.unitPrice || 0),
-            }));
-            if (!mapped) return;
-            mapped['#'] = items?.['#'];
-            return mapped;
-          },
-        },
         extender: (schema) =>
           schema
             .extend({

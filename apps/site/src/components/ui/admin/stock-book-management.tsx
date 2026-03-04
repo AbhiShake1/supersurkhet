@@ -1553,21 +1553,6 @@ function _StockBookManagement({
           slug={slug}
           readOnly
           previewOverrides={{
-            productId: (id) => productsById.get(id)?.title ?? '-',
-            counterpartyId: (id) => {
-              if (typeof id !== 'string' || !id) return '-';
-              return (
-                partiesById.get(id)?.name ||
-                customersById.get(id)?.name ||
-                id.split('/').at(-1) ||
-                id
-              );
-            },
-            originPartyId: (id) => {
-              if (typeof id !== 'string' || !id) return '-';
-              if (id === UNASSIGNED_STOCK_BUCKET) return 'Unassigned';
-              return partiesById.get(id)?.name || id.split('/').at(-1) || id;
-            },
             sourceId: (id) => {
               if (typeof id !== 'string' || !id) return '-';
               return sourceCodeById.get(id) || id.split('/').at(-1) || id;
