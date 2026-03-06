@@ -16,6 +16,10 @@ import {
 } from 'lucide-react';
 import * as React from 'react';
 import { ZodEffects } from 'zod';
+import {
+  omitOptionalFieldsFromSchema,
+  reorderSchemaFields,
+} from '@/components/auto-table/form-schema-visibility';
 import { useAuth } from '@/components/auth-provider';
 import { AutoForm } from '@/components/ui/autoform';
 import { SubmitButton } from '@/components/ui/autoform/components/SubmitButton';
@@ -56,6 +60,8 @@ type AddRowDialogProps<T extends SchemaKeys> = Pick<
   'slug' | 'extender' | 'onCreate' | 'readOnly' | 'className'
 > & {
   schema: T;
+  hiddenOptionalFieldKeys?: string[];
+  orderedFieldKeys?: string[];
   children?: React.ReactNode;
   buttonLabel?: string | React.ReactNode;
   buttonIcon?: string | React.ReactNode;
@@ -66,6 +72,8 @@ export function AddRowDialog<T extends SchemaKeys>({
   slug,
   extender,
   onCreate,
+  hiddenOptionalFieldKeys = [],
+  orderedFieldKeys = [],
   readOnly = false,
   className,
   children,
@@ -99,6 +107,16 @@ export function AddRowDialog<T extends SchemaKeys>({
     return schema;
   }
   const finalSchema = getFinalSchema();
+  const formSchema = React.useMemo(() => {
+    const schemaWithoutHiddenOptionalFields = omitOptionalFieldsFromSchema(
+      finalSchema,
+      hiddenOptionalFieldKeys,
+    );
+    return reorderSchemaFields(
+      schemaWithoutHiddenOptionalFields,
+      orderedFieldKeys,
+    );
+  }, [finalSchema, hiddenOptionalFieldKeys, orderedFieldKeys]);
   const isBillSchema = Boolean(getSchemaBillConfig(finalSchema as never));
   const finalSchemaObject =
     finalSchema instanceof ZodEffects ? finalSchema.innerType() : finalSchema;
@@ -214,7 +232,7 @@ export function AddRowDialog<T extends SchemaKeys>({
               >
                 <AutoForm
                   values={formValues}
-                  schema={finalSchema}
+                  schema={formSchema}
                   onSubmit={(b) => {
                     const payload = finalSchemaObject.parse({
                       ...b,

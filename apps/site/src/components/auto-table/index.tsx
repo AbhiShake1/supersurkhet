@@ -58,6 +58,10 @@ import { parseSchema, type ZodObjectOrWrapped } from '../ui/autoform/zod';
 import { BadgeMarquee } from '../ui/badge-marquee';
 import { AutoTableActionBar } from './auto-table-action-bar';
 import { applyDerivedValuesToRow, getDeriveFn } from './derive-row';
+import {
+  getHiddenOptionalFieldKeys,
+  getOrderedSchemaFieldKeys,
+} from './form-schema-visibility';
 
 type AggregationType =
   | 'sum'
@@ -255,6 +259,19 @@ export function AutoTable<T extends SchemaKeys>({
         : 'default';
     return `autotable:column-visibility:${slugScope}:${schemaScope}:${tabScope}`;
   }, [currentTab, schemaName, slug]);
+  const columnOrderStorageKey = React.useMemo(() => {
+    const slugScope =
+      typeof slug === 'string' && slug.length > 0 ? slug : 'global';
+    const schemaScope =
+      typeof schemaName === 'string' && schemaName.length > 0
+        ? schemaName
+        : 'custom';
+    const tabScope =
+      typeof currentTab === 'string' && currentTab.length > 0
+        ? currentTab
+        : 'default';
+    return `autotable:column-order:${slugScope}:${schemaScope}:${tabScope}`;
+  }, [currentTab, schemaName, slug]);
   function getFiltered() {
     if (filters) {
       return applyFilters(dataWithDerived, filters);
@@ -328,7 +345,18 @@ export function AutoTable<T extends SchemaKeys>({
     shallow: false,
     clearOnDefault: true,
     columnVisibilityStorageKey,
+    columnOrderStorageKey,
   });
+  const columnVisibility = table.getState().columnVisibility;
+  const columnOrder = table.getState().columnOrder;
+  const hiddenOptionalFieldKeys = React.useMemo(
+    () => getHiddenOptionalFieldKeys(schema, columnVisibility),
+    [schema, columnVisibility],
+  );
+  const orderedFormFieldKeys = React.useMemo(
+    () => getOrderedSchemaFieldKeys(schema, columnOrder),
+    [schema, columnOrder],
+  );
 
   if (isLoading) return <SkeletonTableOneWrapper bodyClassName="px-0" />;
 
@@ -339,6 +367,8 @@ export function AutoTable<T extends SchemaKeys>({
           schema={schemaName}
           slug={slug}
           {...props}
+          hiddenOptionalFieldKeys={hiddenOptionalFieldKeys}
+          orderedFieldKeys={orderedFormFieldKeys}
           buttonLabel={`Add new ${title ?? ''}`}
         />
       )}
@@ -395,6 +425,8 @@ export function AutoTable<T extends SchemaKeys>({
           onOpenChange={() => setRowAction(null)}
           data={rowAction?.row.original}
           schema={schema}
+          hiddenOptionalFieldKeys={hiddenOptionalFieldKeys}
+          orderedFieldKeys={orderedFormFieldKeys}
           onSubmit={(data) => {
             if (data) {
               updateMutation.mutate({ id: rowAction?.row.id ?? '', ...data });
@@ -557,8 +589,7 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
         );
       },
       meta: {
-        // @ts-expect-error
-        label: field?._def?.description || key,
+        label: description || key,
         // @ts-expect-error
         variant: getFilterVariant(field),
         // @ts-expect-error

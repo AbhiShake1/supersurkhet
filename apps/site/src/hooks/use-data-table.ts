@@ -40,6 +40,13 @@ const ARRAY_SEPARATOR = ',';
 const DEBOUNCE_MS = 300;
 const THROTTLE_MS = 50;
 
+function areStringArraysEqual(left: string[], right: string[]) {
+  return (
+    left.length === right.length &&
+    left.every((value, index) => value === right[index])
+  );
+}
+
 function parseSortingFromUrl() {
   if (typeof window === 'undefined') return [];
   const rawSorting = new URL(window.location.href).searchParams.get('sort');
@@ -78,6 +85,7 @@ interface UseDataTableProps<TData>
   shallow?: boolean;
   startTransition?: React.TransitionStartFunction;
   columnVisibilityStorageKey?: string;
+  columnOrderStorageKey?: string;
 }
 
 export function useDataTable<TData>(props: UseDataTableProps<TData>) {
@@ -94,6 +102,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
     scroll = false,
     shallow = true,
     columnVisibilityStorageKey,
+    columnOrderStorageKey,
     startTransition,
     ...tableProps
   } = props;
@@ -124,6 +133,112 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>(
     initialState?.rowSelection ?? {},
   );
+  const allColumnIds = React.useMemo(
+    () => columns.map((column) => column.id).filter(Boolean) as string[],
+    [columns],
+  );
+
+  const sanitizeColumnOrder = React.useCallback(
+    (candidate: unknown, fallback: string[]) => {
+      const candidateIds = Array.isArray(candidate)
+        ? candidate.filter((id): id is string => typeof id === 'string')
+        : [];
+
+      const knownColumnIdSet = new Set(allColumnIds);
+      const normalizedOrder: string[] = [];
+
+      for (const id of candidateIds) {
+        if (!knownColumnIdSet.has(id) || normalizedOrder.includes(id)) continue;
+        normalizedOrder.push(id);
+      }
+
+      for (const id of fallback) {
+        if (!knownColumnIdSet.has(id) || normalizedOrder.includes(id)) continue;
+        normalizedOrder.push(id);
+      }
+
+      for (const id of allColumnIds) {
+        if (normalizedOrder.includes(id)) continue;
+        normalizedOrder.push(id);
+      }
+
+      return normalizedOrder;
+    },
+    [allColumnIds],
+  );
+
+  const [columnOrder, setColumnOrder] = React.useState<string[]>(() => {
+    const fallback = sanitizeColumnOrder(initialState?.columnOrder, allColumnIds);
+    if (typeof window === 'undefined' || !columnOrderStorageKey) {
+      return fallback;
+    }
+
+    try {
+      const stored = window.localStorage.getItem(columnOrderStorageKey);
+      if (!stored) return fallback;
+      return sanitizeColumnOrder(JSON.parse(stored), fallback);
+    } catch {
+      return fallback;
+    }
+  });
+
+  React.useEffect(() => {
+    const fallback = sanitizeColumnOrder(initialState?.columnOrder, allColumnIds);
+    setColumnOrder((currentOrder) => {
+      const nextOrder = sanitizeColumnOrder(currentOrder, fallback);
+      if (areStringArraysEqual(nextOrder, currentOrder)) {
+        return currentOrder;
+      }
+      return nextOrder;
+    });
+  }, [
+    allColumnIds,
+    initialState?.columnOrder,
+    sanitizeColumnOrder,
+  ]);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || !columnOrderStorageKey) return;
+    setColumnOrder((currentOrder) => {
+      let nextOrder = currentOrder;
+      try {
+        const fallback = sanitizeColumnOrder(
+          initialState?.columnOrder,
+          allColumnIds,
+        );
+        const stored = window.localStorage.getItem(columnOrderStorageKey);
+        nextOrder = stored
+          ? sanitizeColumnOrder(JSON.parse(stored), fallback)
+          : fallback;
+      } catch {
+        nextOrder = sanitizeColumnOrder(initialState?.columnOrder, allColumnIds);
+      }
+
+      if (areStringArraysEqual(nextOrder, currentOrder)) {
+        return currentOrder;
+      }
+      return nextOrder;
+    });
+  }, [
+    allColumnIds,
+    columnOrderStorageKey,
+    initialState?.columnOrder,
+    sanitizeColumnOrder,
+  ]);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || !columnOrderStorageKey) return;
+
+    try {
+      window.localStorage.setItem(
+        columnOrderStorageKey,
+        JSON.stringify(columnOrder),
+      );
+    } catch {
+      // Ignore storage write failures (private mode/quota exceeded)
+    }
+  }, [columnOrder, columnOrderStorageKey]);
+
   const defaultColumnVisibility = React.useRef<VisibilityState>(
     initialState?.columnVisibility ?? {},
   );
@@ -213,11 +328,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
     }
   };
 
-  const columnIds = React.useMemo(() => {
-    return new Set(
-      columns.map((column) => column.id).filter(Boolean) as string[],
-    );
-  }, [columns]);
+  const columnIds = React.useMemo(() => new Set(allColumnIds), [allColumnIds]);
 
   const defaultSorting = React.useMemo(() => {
     return parseSortingFromUrl();
@@ -338,6 +449,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
     state: {
       pagination,
       sorting,
+      columnOrder,
       columnVisibility,
       rowSelection,
       columnFilters,
@@ -350,6 +462,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
     onRowSelectionChange: setRowSelection,
     onPaginationChange,
     onSortingChange,
+    onColumnOrderChange: setColumnOrder,
     onColumnFiltersChange,
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),

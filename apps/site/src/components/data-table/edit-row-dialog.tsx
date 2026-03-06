@@ -1,6 +1,11 @@
+import * as React from 'react';
 import { Save } from 'lucide-react';
-import type { ZodObject } from 'zod';
+import {
+  omitOptionalFieldsFromSchema,
+  reorderSchemaFields,
+} from '@/components/auto-table/form-schema-visibility';
 import { AutoForm } from '@/components/ui/autoform';
+import type { ZodObjectOrWrapped } from '@/components/ui/autoform/zod';
 import { SubmitButton } from '@/components/ui/autoform/components/SubmitButton';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,19 +25,29 @@ interface EditRowDialogProps<T, S> {
   onOpenChange: (open: boolean) => void;
   data: T | null;
   schema: S;
+  hiddenOptionalFieldKeys?: string[];
+  orderedFieldKeys?: string[];
   onSubmit: (data: T) => void;
   showTrigger?: boolean;
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export function EditRowDialog<T, S extends ZodObject<any>>({
+export function EditRowDialog<T, S extends ZodObjectOrWrapped>({
   open,
   onOpenChange,
   data,
   schema,
+  hiddenOptionalFieldKeys = [],
+  orderedFieldKeys = [],
   onSubmit,
   showTrigger: _showTrigger = false,
 }: EditRowDialogProps<T, S>) {
+  const formSchema = React.useMemo(() => {
+    const schemaWithoutHiddenOptionalFields = omitOptionalFieldsFromSchema(
+      schema,
+      hiddenOptionalFieldKeys,
+    );
+    return reorderSchemaFields(schemaWithoutHiddenOptionalFields, orderedFieldKeys);
+  }, [schema, hiddenOptionalFieldKeys, orderedFieldKeys]);
   const isBillSchema = Boolean(getSchemaBillConfig(schema as never));
 
   return (
@@ -57,7 +72,7 @@ export function EditRowDialog<T, S extends ZodObject<any>>({
                 id: 'edit-row-form',
                 className: isBillSchema ? 'h-full min-h-0' : undefined,
               }}
-              schema={schema}
+              schema={formSchema}
               defaultValues={data || {}}
               onSubmit={(values, _form) => {
                 onSubmit(values as T);

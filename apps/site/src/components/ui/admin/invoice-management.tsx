@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import {
   Card,
@@ -23,10 +21,10 @@ import {
   HandCoins,
 } from 'lucide-react';
 import type { AdminComponent } from '.';
+import type { HydratedNestedSchemaType } from '@gta/react-hooks';
 import { api } from '@/lib/api';
 import _ from 'lodash';
 import { format } from 'date-fns';
-import type { Invoice } from '@/lib/schema';
 import { formatCurrency } from '@/lib/intl';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -42,6 +40,24 @@ interface InvoiceManagementProps {
   slug: string;
 }
 
+type HydratedInvoice = HydratedNestedSchemaType<'invoice'>;
+type HydratedParty = NonNullable<HydratedInvoice['partyId']>;
+
+function isHydratedParty(party: unknown): party is HydratedParty {
+  return (
+    typeof party === 'object' &&
+    party !== null &&
+    Boolean((party as HydratedParty)._?.soul)
+  );
+}
+
+function collectUniqueParties(invoices: HydratedInvoice[]) {
+  return _.uniqBy(
+    invoices.map((invoice) => invoice.partyId).filter(isHydratedParty),
+    (party) => party._?.soul,
+  );
+}
+
 const InvoiceManagement: AdminComponent = ({ slug }) => {
   return <_InvoiceManagement slug={slug} />;
 };
@@ -55,12 +71,6 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
     isLoading,
     error,
   } = api.invoice.useGet({
-    keys: [slug],
-  });
-  const { data: parties = [] } = api.party.useGet({
-    keys: [slug],
-  });
-  const { data: customers = [] } = api.customer.useGet({
     keys: [slug],
   });
   const totalPaidAmount = invoices.reduce(
@@ -97,12 +107,20 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
     (invoice) => invoice.type === 'purchase',
   );
   const saleInvoices = invoices.filter((invoice) => invoice.type === 'sale');
+  const parties = collectUniqueParties(purchaseInvoices);
+  const customers = collectUniqueParties(saleInvoices);
 
   // Group purchase invoices by party
-  const groupedPurchaseInvoices = _.groupBy(purchaseInvoices, 'partyId');
+  const groupedPurchaseInvoices = _.groupBy(
+    purchaseInvoices,
+    (invoice) => invoice.partyId?._?.soul ?? '',
+  );
 
   // Group sale invoices by customer
-  const groupedSaleInvoices = _.groupBy(saleInvoices, 'partyId');
+  const groupedSaleInvoices = _.groupBy(
+    saleInvoices,
+    (invoice) => invoice.partyId?._?.soul ?? '',
+  );
 
   // Filter parties based on search query
   const filteredParties = parties.filter((party) => {
@@ -119,6 +137,7 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
     if (!searchQuery) return true;
     return (
       customer.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customer.panNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       customer.phone?.toLowerCase().includes(searchQuery.toLowerCase())
     );
   });
@@ -171,11 +190,8 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
   const InvoiceCard = ({
     invoice,
   }: {
-    invoice: Invoice;
+    invoice: HydratedInvoice;
   }) => {
-    // Determine if this is a party or customer invoice
-    const party = parties.find((p) => p._?.soul === invoice.partyId);
-    const customer = customers.find((c) => c._?.soul === invoice.partyId);
     const totalAmount = getInvoiceTotalAmount(invoice);
     const paidAmount = getInvoicePaidAmount(invoice);
     const outstandingAmount = getInvoiceOutstandingAmount(invoice);
@@ -187,7 +203,7 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
         const bDate = b.paidAt ? new Date(b.paidAt).getTime() : 0;
         return bDate - aDate;
       });
-    const displayName = party?.name || customer?.name || 'Unknown party';
+    const displayName = invoice.partyId?.name || 'Unknown party';
     const issuedOn = invoice.issuedAt
       ? format(new Date(invoice.issuedAt), 'dd MMM yyyy')
       : 'N/A';

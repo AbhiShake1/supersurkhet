@@ -7,12 +7,19 @@ type InvoicePayment = {
   bankVoucherNumber?: string;
 };
 
+type InvoicePaymentLike = Pick<
+  Invoice,
+  'payments' | 'paidAmount' | 'issuedAt' | 'subTotal' | 'tax'
+>;
+
 function toSafeNumber(value: unknown) {
   const num = Number(value ?? 0);
   return Number.isFinite(num) ? num : 0;
 }
 
-export function getInvoicePayments(invoice: Invoice): InvoicePayment[] {
+export function getInvoicePayments<T extends InvoicePaymentLike>(
+  invoice: T,
+): InvoicePayment[] {
   if (!Array.isArray(invoice.payments) || !invoice.payments.length) {
     if (!invoice.paidAmount) return [];
     return [
@@ -31,21 +38,29 @@ export function getInvoicePayments(invoice: Invoice): InvoicePayment[] {
   }));
 }
 
-export function getInvoicePaidAmount(invoice: Invoice): number {
+export function getInvoicePaidAmount<T extends InvoicePaymentLike>(
+  invoice: T,
+): number {
   const payments = getInvoicePayments(invoice);
   if (!payments.length) return toSafeNumber(invoice.paidAmount);
   return payments.reduce((sum, payment) => sum + toSafeNumber(payment.paidAmount), 0);
 }
 
-export function getInvoiceTotalAmount(invoice: Invoice): number {
+export function getInvoiceTotalAmount<T extends InvoicePaymentLike>(
+  invoice: T,
+): number {
   return toSafeNumber(invoice.subTotal) + toSafeNumber(invoice.tax);
 }
 
-export function getInvoiceOutstandingAmount(invoice: Invoice): number {
+export function getInvoiceOutstandingAmount<T extends InvoicePaymentLike>(
+  invoice: T,
+): number {
   return getInvoiceTotalAmount(invoice) - getInvoicePaidAmount(invoice);
 }
 
-export function getInvoicePaymentProgress(invoice: Invoice): number {
+export function getInvoicePaymentProgress<T extends InvoicePaymentLike>(
+  invoice: T,
+): number {
   const total = getInvoiceTotalAmount(invoice);
   if (total <= 0) return 0;
   const paid = getInvoicePaidAmount(invoice);

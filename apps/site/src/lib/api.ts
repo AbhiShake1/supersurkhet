@@ -1,4 +1,3 @@
-import type { z } from 'zod';
 import {
   useCreate,
   useDelete,
@@ -15,8 +14,7 @@ import type { QueryOptions } from '@tanstack/react-query';
 
 const schema = transformSchema(appSchema);
 
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-function createApi<const TSchema extends z.ZodObject<any>>(schema: TSchema) {
+function createApi(schema: { shape: Record<string, unknown> }) {
   return (
     Object.keys(schema.shape)
       .map((k) => {
@@ -28,7 +26,11 @@ function createApi<const TSchema extends z.ZodObject<any>>(schema: TSchema) {
                 keys?: string[];
                 queryOptions?: QueryOptions;
               },
-            ) => useGet({ key, ...opts }, ...(opts?.keys ?? [])),
+            ) =>
+              useGet<typeof key>(
+                { key, ...opts },
+                ...(opts?.keys ?? []),
+              ),
             useUpdate: (opts?: UseUpdateOptionsShort) =>
               useUpdate({ ...opts, keys: [key, ...(opts?.keys ?? [])] }),
             useCreate: (opts?: UseCreateOptionsShort) =>

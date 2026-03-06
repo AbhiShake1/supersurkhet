@@ -1,5 +1,18 @@
 import { z } from 'zod';
-import type { NestedSchemaType, SchemaKeys } from '@/lib/gun/index';
+
+type AppSchemaShape = GTAAppConfig['schema']['shape'];
+type SchemaKeys = Extract<keyof AppSchemaShape, string>;
+type NestedSchema<K extends SchemaKeys> = AppSchemaShape[K];
+type NestedSchemaType<K extends SchemaKeys> = z.infer<NestedSchema<K>>;
+
+export type ReferencedSchemaMarker<K extends SchemaKeys> = {
+  readonly __schemaReferenceTable__: K;
+};
+
+export type ReferencedSchema<
+  T extends z.ZodTypeAny,
+  K extends SchemaKeys,
+> = T & ReferencedSchemaMarker<K>;
 
 type SchemaReferenceSourceConfigFor<K extends SchemaKeys> = {
   table: K;
@@ -30,6 +43,10 @@ type AnySchemaReferenceSourceConfig =
   SchemaReferenceSourceConfigFor<SchemaKeys>;
 
 type AnySchemaReferenceConfig = SchemaReferenceConfigFor<SchemaKeys>;
+type SchemaReferenceOptionsFor<K extends SchemaKeys> = Omit<
+  SchemaReferenceConfigFor<K>,
+  'table'
+>;
 
 function normalizeReferenceSource<K extends SchemaKeys>(
   source: SchemaReferenceSourceConfigFor<K>,
@@ -60,7 +77,7 @@ function normalizeReferenceConfig<K extends SchemaKeys>(
 ): SchemaReferenceConfigFor<K> {
   const normalizedConfig = normalizeReferenceSource(config);
   const normalizedFallbacks = normalizeReferenceFallbacks(
-    normalizedConfig as AnySchemaReferenceConfig,
+    normalizedConfig as unknown as AnySchemaReferenceConfig,
   );
 
   if (!normalizedFallbacks) return normalizedConfig;
@@ -106,7 +123,7 @@ const referenceRegistry = new WeakMap<z.ZodTypeAny, SchemaReferenceConfig>();
 
 function toSchemaReferenceConfig<K extends SchemaKeys>(
   table: K | SchemaReferenceConfigFor<K>,
-  options?: Omit<SchemaReferenceConfigFor<K>, 'table'>,
+  options?: SchemaReferenceOptionsFor<K>,
 ): SchemaReferenceConfig {
   if (typeof table === 'string') {
     return normalizeReferenceConfig({
@@ -161,23 +178,31 @@ function assertReferenceTarget(schema: z.ZodTypeAny) {
   );
 }
 
-type WithReferencesFn = <K extends SchemaKeys>(
-  table: K | SchemaReferenceConfigFor<K>,
-  options?: Omit<SchemaReferenceConfigFor<K>, 'table'>,
-) => unknown;
+type WithReferencesFn = {
+  <const K extends SchemaKeys>(
+    table: K,
+    options?: SchemaReferenceOptionsFor<NoInfer<K>>,
+  ): ReferencedSchema<z.ZodTypeAny, K>;
+  <const K extends SchemaKeys>(
+    config: SchemaReferenceConfigFor<NoInfer<K>>,
+  ): ReferencedSchema<z.ZodTypeAny, K>;
+};
 
 const baseTypePrototype = z.ZodType.prototype as z.ZodTypeAny & {
   references?: WithReferencesFn;
 };
 
 if (!baseTypePrototype.references) {
-  baseTypePrototype.references = function references<K extends SchemaKeys>(
+  baseTypePrototype.references = function references<const K extends SchemaKeys>(
     this: z.ZodTypeAny,
     table: K | SchemaReferenceConfigFor<K>,
-    options?: Omit<SchemaReferenceConfigFor<K>, 'table'>,
-  ) {
+    options?: SchemaReferenceOptionsFor<K>,
+  ): ReferencedSchema<typeof this, K> {
     assertReferenceTarget(this);
-    return setSchemaReference(this, toSchemaReferenceConfig(table, options));
+    return setSchemaReference(
+      this,
+      toSchemaReferenceConfig(table, options),
+    ) as ReferencedSchema<typeof this, K>;
   };
 }
 
@@ -203,14 +228,13 @@ export function getSchemaReferenceConfig(
 }
 
 declare module 'zod' {
-  interface ZodType<
-    Output = unknown,
-    Def extends z.ZodTypeDef = z.ZodTypeDef,
-    Input = Output,
-  > {
-    references<K extends SchemaKeys>(
-      table: K | SchemaReferenceConfigFor<K>,
-      options?: Omit<SchemaReferenceConfigFor<K>, 'table'>,
-    ): this;
+  interface ZodType {
+    references<const K extends SchemaKeys>(
+      table: K,
+      options?: SchemaReferenceOptionsFor<NoInfer<K>>,
+    ): ReferencedSchema<this, K>;
+    references<const K extends SchemaKeys>(
+      config: SchemaReferenceConfigFor<NoInfer<K>>,
+    ): ReferencedSchema<this, K>;
   }
 }

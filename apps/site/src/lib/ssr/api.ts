@@ -14,8 +14,15 @@ function createDb<const T extends z.AnyZodObject>(schema: T) {
         const key = k as SchemaKeys;
         return {
           [key]: {
-            get: (opts?: UseGetBuilder<typeof key> & { keys?: string[] }) =>
-              ssrGet({ key, ...opts }, ...(opts?.keys ?? [])),
+            get: (
+              opts?: UseGetBuilder<typeof key> & {
+                keys?: string[];
+              },
+            ) =>
+              ssrGet<typeof key>(
+                { key, ...opts },
+                ...(opts?.keys ?? []),
+              ),
             create: (...keys: string[]) => ssrCreate(key, ...keys),
             update: (...keys: string[]) => ssrUpdate(key, ...keys),
             remove: (...keys: string[]) => ssrDelete(key, ...keys),
