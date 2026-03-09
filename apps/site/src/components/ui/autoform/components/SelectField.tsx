@@ -68,6 +68,32 @@ function getLabelFromSource(
   }
 
   if ('displayKeys' in source && Array.isArray(source.displayKeys)) {
+    // Special handling for party/customer name with panNumber:
+    // If panNumber exists, show "name - panNumber"
+    // If panNumber doesn't exist, show only "name"
+    const name = row.name as string | undefined;
+    const panNumber = row.panNumber as string | undefined;
+    const hasName = name && name.trim().length > 0;
+    const hasPanNumber = panNumber && panNumber.trim().length > 0;
+
+    // Debug logging
+    console.log('[SelectField] getLabelFromSource:', {
+      name,
+      panNumber,
+      hasName,
+      hasPanNumber,
+      row,
+      displayKeys: source.displayKeys,
+    });
+
+    if (hasName) {
+      if (hasPanNumber) {
+        return `${name} - ${panNumber}`;
+      }
+      return name;
+    }
+
+    // Fallback: use generic displayKeys logic
     const values = source.displayKeys
       .map((key) => {
         const value = row[key as string];
