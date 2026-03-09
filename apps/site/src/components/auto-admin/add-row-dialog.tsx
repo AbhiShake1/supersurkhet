@@ -91,10 +91,25 @@ export function AddRowDialog<T extends SchemaKeys>({
   const createMutation = useCreate({
     keys: [schema, slug ?? ''],
     onSuccess(...args) {
+      console.log('Create successful, closing dialog');
       setDialogOpen(false);
       onCreate?.(...args);
     },
+    onError: (error) => {
+      console.error('Create failed:', error);
+    },
   });
+
+  const handleSubmit = (b: Record<string, unknown>) => {
+    console.log('Form submitted with values:', b);
+    const payload = finalSchemaObject.parse({
+      ...b,
+      created_by: user?._?.soul ?? 'anon',
+      timestamp: Date.now(),
+    }) as SchemaRecord;
+    console.log('Submitting payload:', payload);
+    createMutation.mutate(payload);
+  };
 
   const _schema = getNestedZodShape(schema, appSchema.schemaShape);
   const schemaWithOverrides = getSchema(_schema);
@@ -233,17 +248,17 @@ export function AddRowDialog<T extends SchemaKeys>({
                 <AutoForm
                   values={formValues}
                   schema={formSchema}
-                  onSubmit={(b) => {
-                    const payload = finalSchemaObject.parse({
-                      ...b,
-                      created_by: user?._?.soul ?? 'anon',
-                      timestamp: Date.now(),
-                    }) as SchemaRecord;
-                    createMutation.mutate(payload);
-                  }}
+                  onSubmit={handleSubmit}
                   formProps={{
                     id: 'auto-table-add-form',
                     className: isBillSchema ? 'h-full min-h-0' : undefined,
+                    noValidate: true,
+                    onKeyDown: (e) => {
+                      // Prevent form submission on Enter key
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                      }
+                    },
                   }}
                 />
               </div>
