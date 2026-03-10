@@ -213,11 +213,12 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
 
     products.forEach((product) => {
       if (product._?.soul) {
+        const openingStock = toFiniteNumber(product.openingStock);
         inventory.set(product._.soul, {
           product,
-          currentStock: toFiniteNumber(
-            aggregate.productTotalAvailable[product._.soul],
-          ),
+          currentStock:
+            openingStock +
+            toFiniteNumber(aggregate.productTotalAvailable[product._.soul]),
         });
       }
     });

@@ -607,7 +607,7 @@ function InventorySection({
                   </tr>
                 </thead>
                 <tbody>
-                  {data.currentInventory.slice(0, 10).map((item) => (
+                  {data.currentInventory.map((item) => (
                     <tr
                       key={item.product._?.soul || item.product.title}
                       className="border-b last:border-b-0"
