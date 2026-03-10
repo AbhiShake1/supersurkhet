@@ -171,6 +171,7 @@ function getRowLabel(
         const value = row[key as string];
         return value === null || value === undefined ? '' : String(value);
       })
+      .filter(Boolean)
       .join(source.separator ?? ' - ');
     const finalValue = `${joined}${source.suffix ?? ''}`.trim();
     return finalValue || fallback;
@@ -399,11 +400,10 @@ const RatingPreview: AutoPreviewComponent<number> = ({ value }) => {
           <Star
             // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
             key={i}
-            className={`h-4 w-4 ${
-              i < Math.floor(value)
-                ? 'fill-yellow-400 text-yellow-400'
-                : 'text-gray-300'
-            }`}
+            className={`h-4 w-4 ${i < Math.floor(value)
+              ? 'fill-yellow-400 text-yellow-400'
+              : 'text-gray-300'
+              }`}
           />
         ))}
       </div>
