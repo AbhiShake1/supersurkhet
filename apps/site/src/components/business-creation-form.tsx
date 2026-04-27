@@ -1695,7 +1695,7 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-[100] flex flex-col bg-background"
+                  className="fixed inset-0 z-100 flex flex-col bg-background"
                 >
                   <div className="flex h-16 items-center justify-between border-b px-4 shrink-0 bg-background/95 backdrop-blur">
                     <div className="flex items-center gap-3">
