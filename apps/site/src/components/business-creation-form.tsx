@@ -66,6 +66,7 @@ import {
   resolveProviderDefaultBaseUrl,
   resolveProviderSupportedAuthModes,
 } from '@/lib/ai/business-onboarding-models';
+import { testBoyaiConnection } from '@/server-functions/ai-proxy';
 import { api } from '@/lib/api';
 
 import { businessSchema } from '@/lib/schema';
@@ -106,11 +107,19 @@ interface BusinessCreationFormProps {
   setStep: (step: number) => void;
   createdBusiness: z.infer<typeof businessSchema> | undefined;
   isSubmitting: boolean;
+  saveProviderCredentialRef?: { current: (() => Promise<void>) | null };
 }
 
 interface StepTwoFormProps {
   form: UseFormReturn<BusinessCreationValues>;
+  saveProviderCredentialRef?: { current: (() => Promise<void>) | null };
 }
+
+type SavedCredentialSummary = {
+  provider: string;
+  model: string;
+  authMode: string;
+};
 
 interface StepThreeFormProps {
   form: UseFormReturn<BusinessCreationValues>;
@@ -355,6 +364,7 @@ export function BusinessCreationForm({
   setStep: _setStep,
   isSubmitting: _isSubmitting,
   createdBusiness,
+  saveProviderCredentialRef,
 }: BusinessCreationFormProps) {
   if (step === 4) {
     return (
@@ -445,7 +455,7 @@ export function BusinessCreationForm({
         </div>
       )}
 
-      {step === 2 && <BusinessOnboardingAssistantForm form={form} />}
+      {step === 2 && <BusinessOnboardingAssistantForm form={form} saveProviderCredentialRef={saveProviderCredentialRef} />}
 
       {step === 3 && (
         <div className="space-y-6 rounded-2xl border border-border/70 bg-background p-4 sm:p-5">
@@ -467,7 +477,7 @@ export function BusinessCreationForm({
   );
 }
 
-function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
+function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRef }: StepTwoFormProps) {
   const defaultModelOption = resolveAssistantModelOption(
     DEFAULT_BUSINESS_ONBOARDING_MODEL_ID,
   );
@@ -513,12 +523,15 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
   const [authSessionExpiresAt, setAuthSessionExpiresAt] = useState<
     number | null
   >(null);
+  const [isTestingModel, setIsTestingModel] = useState(false);
+  const [testResult, setTestResult] = useState<string | null>(null);
   const [oauthFlowState, setOauthFlowState] = useState<OauthFlowState>('idle');
   const [oauthFlowMessage, setOauthFlowMessage] = useState('');
   const [oauthAuthorizationUrl, setOauthAuthorizationUrl] = useState('');
   const [oauthVerificationCode, setOauthVerificationCode] = useState('');
   const [modelsDevCatalogByProviderId, setModelsDevCatalogByProviderId] =
     useState<Record<string, ModelsDevProviderRecord>>({});
+  const [savedCredentials, setSavedCredentials] = useState<SavedCredentialSummary[]>([]);
 
   const providerOptions = useMemo(
     () =>
@@ -751,6 +764,34 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     }
   }
 
+  async function testProviderCredential() {
+    const payload = buildProviderPayload();
+    const keyToTest = payload.apiKey || payload.oauthAccessToken;
+    if (!keyToTest) {
+      toast.error('Enter an API key or token before testing.');
+      return;
+    }
+    
+    setIsTestingModel(true);
+    setTestResult(null);
+    try {
+      const result = await (testBoyaiConnection as any)({
+        data: { apiKey: keyToTest }
+      });
+      if (result && result.success) {
+        setTestResult(result.text || 'Connection successful');
+        toast.success('Connection successful');
+      } else {
+        throw new Error('Model returned empty response.');
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Test failed.');
+      setTestResult(null);
+    } finally {
+      setIsTestingModel(false);
+    }
+  }
+
   async function saveProviderCredential() {
     const payload = buildProviderPayload();
 
@@ -799,6 +840,38 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     } finally {
       setIsSavingProviderCredential(false);
     }
+  }
+
+  async function saveProviderCredentialIfReady() {
+    const payload = buildProviderPayload();
+    if (payload.authMode === 'api-key' && !payload.apiKey) return;
+    if (payload.authMode === 'oauth-access-token' && !payload.oauthAccessToken) return;
+    await saveProviderCredential();
+  }
+
+  async function addAnotherCredential() {
+    await saveProviderCredential();
+    setSavedCredentials((prev) => [
+      ...prev,
+      {
+        provider: formatProviderLabel(selectedAssistantProviderId),
+        model: selectedAssistantModelId,
+        authMode: selectedAssistantAuthMode,
+      },
+    ]);
+    setAssistantStage('provider');
+    setAssistantPickedProvider(false);
+    setAssistantPickedModel(false);
+    setAssistantPickedAuth(false);
+    setAssistantPickedOauthMethod(false);
+    setAssistantSecretInput('');
+    setProviderApiKey('');
+    setProviderOauthAccessToken('');
+    setOauthFlowState('idle');
+    setOauthFlowMessage('');
+    setOauthAuthorizationUrl('');
+    setOauthVerificationCode('');
+    setProviderCredentialSavedAt(null);
   }
 
   async function refreshStoredProviderCredential(): Promise<boolean> {
@@ -1269,8 +1342,32 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     (assistantStage === 'oauth-method' && assistantPickedOauthMethod) ||
     (assistantStage === 'credential' && assistantSecretInput.trim().length > 0);
 
+  if (saveProviderCredentialRef) {
+    saveProviderCredentialRef.current = assistantStage === 'done'
+      ? saveProviderCredentialIfReady
+      : async () => {};
+  }
+
   return (
     <div className="space-y-4 rounded-xl border border-border/70 bg-background p-4">
+      {savedCredentials.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium text-muted-foreground">
+            Saved API keys ({savedCredentials.length})
+          </p>
+          {savedCredentials.map((cred, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-2 rounded-md border border-emerald-500/20 bg-emerald-500/5 px-3 py-1.5 text-xs text-emerald-700"
+            >
+              <Check className="h-3 w-3 shrink-0" />
+              <span>
+                {cred.provider} · {cred.model} · {cred.authMode}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
       <VercelV0Chat
         fitContainer
         className="h-[520px] max-w-none rounded-xl"
@@ -1388,10 +1485,22 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
             type="button"
             variant="outline"
             size="sm"
-            onClick={saveProviderCredential}
-            disabled={isSavingProviderCredential}
+            onClick={addAnotherCredential}
+            disabled={isSavingProviderCredential || isTestingModel}
           >
-            {isSavingProviderCredential ? 'Saving...' : 'Save credential'}
+            <Plus className="mr-1.5 h-3.5 w-3.5" />
+            {isSavingProviderCredential ? 'Saving...' : 'Add Another'}
+          </Button>
+        )}
+        {assistantStage === 'done' && (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={testProviderCredential}
+            disabled={isTestingModel || isSavingProviderCredential}
+          >
+            {isTestingModel ? 'Testing...' : 'Test Model'}
           </Button>
         )}
         {assistantStage === 'done' && canStartProviderOauth && (
@@ -1425,6 +1534,12 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
               Open Secure OAuth Page
             </a>
           ) : null}
+        </div>
+      )}
+
+      {testResult && (
+        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs text-emerald-600 mt-2">
+          Model response: {testResult}
         </div>
       )}
     </div>
