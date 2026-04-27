@@ -1342,6 +1342,8 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
     (assistantStage === 'oauth-method' && assistantPickedOauthMethod) ||
     (assistantStage === 'credential' && assistantSecretInput.trim().length > 0);
 
+  // Assign during render so the parent's handleReviewPlugins always calls
+  // the latest closure — avoids stale state from a useEffect dependency array.
   if (saveProviderCredentialRef) {
     saveProviderCredentialRef.current = assistantStage === 'done'
       ? saveProviderCredentialIfReady
