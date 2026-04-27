@@ -22,6 +22,7 @@ Enhance the SuperSurkhet platform by significantly improving UI/UX, data flow, a
 - Enhanced form components with better validation and error handling
 - Added customization support for menu items (spicy, vegetarian badges, etc.)
 - Improved responsive design and mobile-friendly layouts
+- **[2026-04-26] AI Setup wizard — multi-key backup support**: Removed the standalone "Save Credentials" button from `business-creation-form.tsx`. Replaced it with an "Add Another" button that saves the current provider/model/key, appends a green status pill to the saved-keys list, then resets the wizard back to the provider-selection stage so users can configure additional backup credentials. Clicking "Review Plugins" now auto-saves the last credential (if one was entered) before navigating to step 3. Changed files: `src/components/business-creation-form.tsx`, `src/components/create-business.tsx`.
 
 ## Current Plan
 1. [DONE] Analyze existing codebase structure and patterns
@@ -29,6 +30,16 @@ Enhance the SuperSurkhet platform by significantly improving UI/UX, data flow, a
 3. [DONE] Upgrade restaurant client page with improved cart functionality
 4. [DONE] Implement enhanced loading states and skeleton components
 5. [DONE] Add keyboard shortcuts and accessibility improvements
+6. [DONE] Multi-provider AI key backup in business creation wizard (Add Another + Review Plugins auto-save)
+7. [IN PROGRESS] Continue enhancing other business client pages (cinema, healthcare, etc.)
+8. [TODO] Implement advanced filtering and sorting in AutoTable components
+9. [TODO] Add real-time collaboration features using GunDB capabilities
+10. [TODO] Enhance form components with conditional fields and dependent validation
+11. [TODO] Implement comprehensive error handling and user feedback mechanisms
+12. [TODO] Optimize performance with better data fetching and caching strategies
+13. [TODO] Add comprehensive testing for all enhanced components
+
+---
 6. [IN PROGRESS] Continue enhancing other business client pages (cinema, healthcare, etc.)
 7. [TODO] Implement advanced filtering and sorting in AutoTable components
 8. [TODO] Add real-time collaboration features using GunDB capabilities
@@ -37,7 +48,7 @@ Enhance the SuperSurkhet platform by significantly improving UI/UX, data flow, a
 11. [TODO] Optimize performance with better data fetching and caching strategies
 12. [TODO] Add comprehensive testing for all enhanced components
 
----
+
 
 ## Summary Metadata
-**Update time**: 2025-10-05T11:03:28.156Z 
+**Update time**: 2026-04-26T00:00:00.000Z 
