@@ -13,6 +13,8 @@ import { Route as S3testRouteImport } from './routes/s3test'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as CreateBusinessRouteImport } from './routes/create-business'
+import { Route as BoyaiSettingsRouteImport } from './routes/boyai-settings'
+import { Route as BoyaiChatRouteImport } from './routes/boyai-chat'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as BusinessNameRouteImport } from './routes/$businessName'
@@ -61,6 +63,16 @@ const McpRoute = McpRouteImport.update({
 const CreateBusinessRoute = CreateBusinessRouteImport.update({
   id: '/create-business',
   path: '/create-business',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BoyaiSettingsRoute = BoyaiSettingsRouteImport.update({
+  id: '/boyai-settings',
+  path: '/boyai-settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BoyaiChatRoute = BoyaiChatRouteImport.update({
+  id: '/boyai-chat',
+  path: '/boyai-chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -223,6 +235,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$businessName': typeof BusinessNameRouteWithChildren
   '/admin': typeof AdminRoute
+  '/boyai-chat': typeof BoyaiChatRoute
+  '/boyai-settings': typeof BoyaiSettingsRoute
   '/create-business': typeof CreateBusinessRoute
   '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
@@ -256,6 +270,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/boyai-chat': typeof BoyaiChatRoute
+  '/boyai-settings': typeof BoyaiSettingsRoute
   '/create-business': typeof CreateBusinessRoute
   '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
@@ -292,6 +308,8 @@ export interface FileRoutesById {
   '/$businessName': typeof BusinessNameRouteWithChildren
   '/_auth': typeof AuthRouteWithChildren
   '/admin': typeof AdminRoute
+  '/boyai-chat': typeof BoyaiChatRoute
+  '/boyai-settings': typeof BoyaiSettingsRoute
   '/create-business': typeof CreateBusinessRoute
   '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
@@ -328,6 +346,8 @@ export interface FileRouteTypes {
     | '/'
     | '/$businessName'
     | '/admin'
+    | '/boyai-chat'
+    | '/boyai-settings'
     | '/create-business'
     | '/mcp'
     | '/privacy'
@@ -361,6 +381,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/boyai-chat'
+    | '/boyai-settings'
     | '/create-business'
     | '/mcp'
     | '/privacy'
@@ -396,6 +418,8 @@ export interface FileRouteTypes {
     | '/$businessName'
     | '/_auth'
     | '/admin'
+    | '/boyai-chat'
+    | '/boyai-settings'
     | '/create-business'
     | '/mcp'
     | '/privacy'
@@ -432,6 +456,8 @@ export interface RootRouteChildren {
   BusinessNameRoute: typeof BusinessNameRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
   AdminRoute: typeof AdminRoute
+  BoyaiChatRoute: typeof BoyaiChatRoute
+  BoyaiSettingsRoute: typeof BoyaiSettingsRoute
   CreateBusinessRoute: typeof CreateBusinessRoute
   McpRoute: typeof McpRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -479,6 +505,20 @@ declare module '@tanstack/react-router' {
       path: '/create-business'
       fullPath: '/create-business'
       preLoaderRoute: typeof CreateBusinessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/boyai-settings': {
+      id: '/boyai-settings'
+      path: '/boyai-settings'
+      fullPath: '/boyai-settings'
+      preLoaderRoute: typeof BoyaiSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/boyai-chat': {
+      id: '/boyai-chat'
+      path: '/boyai-chat'
+      fullPath: '/boyai-chat'
+      preLoaderRoute: typeof BoyaiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -758,6 +798,8 @@ const rootRouteChildren: RootRouteChildren = {
   BusinessNameRoute: BusinessNameRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
   AdminRoute: AdminRoute,
+  BoyaiChatRoute: BoyaiChatRoute,
+  BoyaiSettingsRoute: BoyaiSettingsRoute,
   CreateBusinessRoute: CreateBusinessRoute,
   McpRoute: McpRoute,
   PrivacyRoute: PrivacyRoute,

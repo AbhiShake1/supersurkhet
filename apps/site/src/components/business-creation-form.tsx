@@ -771,7 +771,7 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
       toast.error('Enter an API key or token before testing.');
       return;
     }
-    
+
     setIsTestingModel(true);
     setTestResult(null);
     try {
@@ -785,8 +785,10 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
         throw new Error('Model returned empty response.');
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Test failed.');
-      setTestResult(null);
+      const errorMsg = err instanceof Error ? err.message : 'Connection test failed';
+      console.error('Provider credential test failed:', err);
+      toast.error(errorMsg);
+      setTestResult(`Error: ${errorMsg}`);
     } finally {
       setIsTestingModel(false);
     }
@@ -1347,7 +1349,7 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
   if (saveProviderCredentialRef) {
     saveProviderCredentialRef.current = assistantStage === 'done'
       ? saveProviderCredentialIfReady
-      : async () => {};
+      : async () => { };
   }
 
   return (

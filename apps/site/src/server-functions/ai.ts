@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { getCookie, setCookie } from '@tanstack/react-start/server';
+import { getHeader as getVinxiHeader } from 'vinxi/http';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import {
@@ -124,11 +125,13 @@ export const getBusinessCreationAssistantTurn = createServerFn({
           )
         : null;
 
+    const rawApiKey = getVinxiHeader('X-Boyai-Key') || getVinxiHeader('x-boyai-key');
+
     let normalizedProvider =
-      !provider.apiKey && data.providerApiKey
+      !provider.apiKey && (data.providerApiKey || rawApiKey)
         ? {
             ...(providerFromStore ?? provider),
-            apiKey: data.providerApiKey.trim() || undefined,
+            apiKey: (rawApiKey || data.providerApiKey || '').trim() || undefined,
           }
         : (providerFromStore ?? provider);
 
