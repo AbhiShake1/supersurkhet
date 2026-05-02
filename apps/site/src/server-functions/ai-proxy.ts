@@ -1,8 +1,7 @@
-import { createServerFn } from '@tanstack/react-start';
-import { getHeader } from 'vinxi/http';
-import { z } from 'zod';
-import { generateText } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { createServerFn } from '@tanstack/react-start';
+import { generateText } from 'ai';
+import { z } from 'zod';
 
 /**
  * Executes a prompt against the user's BYO AI provider (Google Gemini).
@@ -11,19 +10,18 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
  * apiKey is required and validated by Zod before the handler runs.
  */
 export const executeBoyaiPrompt = createServerFn({ method: 'POST' })
-  .inputValidator(z.object({ prompt: z.string(), model: z.string().optional(), apiKey: z.string() }))
+  .inputValidator(
+    z.object({
+      prompt: z.string(),
+      model: z.string().optional(),
+      apiKey: z.string(),
+    }),
+  )
   .handler(async ({ data: { prompt, model, apiKey } }) => {
     // TanStack Start client proxy doesn't easily support custom HTTP headers.
     // We accept it via the secure encrypted POST payload instead.
-    const rawApiKey = apiKey || getHeader('X-Boyai-Key') || getHeader('x-boyai-key');
-
-    if (!rawApiKey) {
-      throw new Error('Unauthorized: Missing API key.');
-    }
-
-    // Initialize the provider with the user's BYO key
     const google = createGoogleGenerativeAI({
-      apiKey: rawApiKey,
+      apiKey,
     });
 
     try {
@@ -49,33 +47,45 @@ export const executeBoyaiPrompt = createServerFn({ method: 'POST' })
 export const testBoyaiConnection = createServerFn({ method: 'POST' })
   .inputValidator(z.object({ apiKey: z.string() }))
   .handler(async ({ data: { apiKey } }) => {
-    const rawApiKey = apiKey || getHeader('X-Boyai-Key') || getHeader('x-boyai-key');
-
-    if (!rawApiKey) {
-      throw new Error('Unauthorized: Missing API key.');
-    }
-
     try {
       // Use native fetch to bypass any @ai-sdk/google initialization errors
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${rawApiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: "Reply with exactly: Connection successful" }] }]
-        })
-      });
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [{ text: 'Reply with exactly: Connection successful' }],
+              },
+            ],
+          }),
+        },
+      );
 
-      const data = await res.json() as any;
+      const data = (await res.json()) as {
+        candidates?: { content: { parts: { text: string }[] } }[];
+        error?: { message: string };
+      };
 
       if (!res.ok) {
-        throw new Error(data.error?.message || 'Connection test failed. Please check your API key.');
+        throw new Error(
+          data.error?.message ||
+            'Connection test failed. Please check your API key.',
+        );
       }
 
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Connection successful';
+      const text =
+        data.candidates?.[0]?.content?.parts?.[0]?.text ||
+        'Connection successful';
       return { success: true, text };
     } catch (error) {
       console.error('AI Proxy Connection Test Error:', error);
-      throw new Error(error instanceof Error ? error.message : 'Connection test failed. Please check your API key.');
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : 'Connection test failed. Please check your API key.',
+      );
     }
-  }
-);
+  });
