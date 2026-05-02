@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { getCookie, setCookie } from '@tanstack/react-start/server';
-import { getHeader as getVinxiHeader } from 'vinxi/http';
 import { generateObject } from 'ai';
+import { getHeader as getVinxiHeader } from 'vinxi/http';
 import { z } from 'zod';
 import {
   DEFAULT_BUSINESS_ONBOARDING_MODEL_ID,
@@ -109,7 +109,12 @@ export const getBusinessCreationAssistantTurn = createServerFn({
     const providerStore = decryptProviderCredentialStore(
       getCookie(AI_PROVIDER_STORE_COOKIE_NAME),
     );
-    const storedCredential = providerStore[provider.providerId];
+    const listForProvider = providerStore[provider.providerId] ?? [];
+    const sortedForProvider =
+      listForProvider.length === 0
+        ? []
+        : [...listForProvider].sort((a, b) => b.updatedAt - a.updatedAt);
+    const storedCredential = sortedForProvider[0] ?? null;
     const providerFromStore: AssistantProviderConfig | null =
       storedCredential &&
       !provider.apiKey &&
@@ -125,13 +130,15 @@ export const getBusinessCreationAssistantTurn = createServerFn({
           )
         : null;
 
-    const rawApiKey = getVinxiHeader('X-Boyai-Key') || getVinxiHeader('x-boyai-key');
+    const rawApiKey =
+      getVinxiHeader('X-Boyai-Key') || getVinxiHeader('x-boyai-key');
 
     let normalizedProvider =
       !provider.apiKey && (data.providerApiKey || rawApiKey)
         ? {
             ...(providerFromStore ?? provider),
-            apiKey: (rawApiKey || data.providerApiKey || '').trim() || undefined,
+            apiKey:
+              (rawApiKey || data.providerApiKey || '').trim() || undefined,
           }
         : (providerFromStore ?? provider);
 
@@ -148,28 +155,38 @@ export const getBusinessCreationAssistantTurn = createServerFn({
       normalizedProvider = refreshedProvider.provider;
 
       if (refreshedProvider.refreshed && storedCredential) {
-        providerStore[storedCredential.providerId] = {
-          ...storedCredential,
-          oauthAccessToken: normalizedProvider.oauthAccessToken,
-          oauthRefreshToken: normalizedProvider.oauthRefreshToken,
-          oauthExpiresAt: normalizedProvider.oauthExpiresAt,
-          chatGptAccountId: normalizedProvider.chatGptAccountId,
-          baseURL: normalizedProvider.baseURL ?? storedCredential.baseURL,
-          headers: normalizedProvider.headers ?? storedCredential.headers,
-          updatedAt: nowInSeconds,
-        };
-
-        setCookie(
-          AI_PROVIDER_STORE_COOKIE_NAME,
-          encryptProviderCredentialStore(providerStore),
-          {
-            maxAge: 60 * 60 * 24 * 30,
-            httpOnly: true,
-            sameSite: 'lax',
-            path: '/',
-            secure: process.env.NODE_ENV === 'production',
-          },
+        const pid = storedCredential.providerId;
+        const arr = providerStore[pid] ?? [];
+        const idx = arr.findIndex(
+          (c) => c.credentialId === storedCredential.credentialId,
         );
+        if (idx >= 0) {
+          const next = [...arr];
+          next[idx] = {
+            ...storedCredential,
+            oauthAccessToken: normalizedProvider.oauthAccessToken,
+            oauthRefreshToken: normalizedProvider.oauthRefreshToken,
+            oauthExpiresAt: normalizedProvider.oauthExpiresAt,
+            chatGptAccountId: normalizedProvider.chatGptAccountId,
+            baseURL: normalizedProvider.baseURL ?? storedCredential.baseURL,
+            headers: normalizedProvider.headers ?? storedCredential.headers,
+            updatedAt: nowInSeconds,
+            savedAt: storedCredential.savedAt,
+            credentialId: storedCredential.credentialId,
+          };
+          providerStore[pid] = next;
+          setCookie(
+            AI_PROVIDER_STORE_COOKIE_NAME,
+            encryptProviderCredentialStore(providerStore),
+            {
+              maxAge: 60 * 60 * 24 * 30,
+              httpOnly: true,
+              sameSite: 'lax',
+              path: '/',
+              secure: process.env.NODE_ENV === 'production',
+            },
+          );
+        }
       }
 
       const model = createAssistantLanguageModel(normalizedProvider);
