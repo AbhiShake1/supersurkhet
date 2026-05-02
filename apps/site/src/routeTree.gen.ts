@@ -11,10 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as S3testRouteImport } from './routes/s3test'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as PlaygroundRouteImport } from './routes/playground'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as CreateBusinessRouteImport } from './routes/create-business'
 import { Route as BoyaiSettingsRouteImport } from './routes/boyai-settings'
-import { Route as BoyaiChatRouteImport } from './routes/boyai-chat'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as BusinessNameRouteImport } from './routes/$businessName'
@@ -55,6 +55,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlaygroundRoute = PlaygroundRouteImport.update({
+  id: '/playground',
+  path: '/playground',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
@@ -68,11 +73,6 @@ const CreateBusinessRoute = CreateBusinessRouteImport.update({
 const BoyaiSettingsRoute = BoyaiSettingsRouteImport.update({
   id: '/boyai-settings',
   path: '/boyai-settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BoyaiChatRoute = BoyaiChatRouteImport.update({
-  id: '/boyai-chat',
-  path: '/boyai-chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -235,10 +235,10 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$businessName': typeof BusinessNameRouteWithChildren
   '/admin': typeof AdminRoute
-  '/boyai-chat': typeof BoyaiChatRoute
   '/boyai-settings': typeof BoyaiSettingsRoute
   '/create-business': typeof CreateBusinessRoute
   '/mcp': typeof McpRoute
+  '/playground': typeof PlaygroundRoute
   '/privacy': typeof PrivacyRoute
   '/s3test': typeof S3testRoute
   '/auth': typeof AuthAuthRoute
@@ -270,10 +270,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/boyai-chat': typeof BoyaiChatRoute
   '/boyai-settings': typeof BoyaiSettingsRoute
   '/create-business': typeof CreateBusinessRoute
   '/mcp': typeof McpRoute
+  '/playground': typeof PlaygroundRoute
   '/privacy': typeof PrivacyRoute
   '/s3test': typeof S3testRoute
   '/auth': typeof AuthAuthRoute
@@ -308,10 +308,10 @@ export interface FileRoutesById {
   '/$businessName': typeof BusinessNameRouteWithChildren
   '/_auth': typeof AuthRouteWithChildren
   '/admin': typeof AdminRoute
-  '/boyai-chat': typeof BoyaiChatRoute
   '/boyai-settings': typeof BoyaiSettingsRoute
   '/create-business': typeof CreateBusinessRoute
   '/mcp': typeof McpRoute
+  '/playground': typeof PlaygroundRoute
   '/privacy': typeof PrivacyRoute
   '/s3test': typeof S3testRoute
   '/_auth/auth': typeof AuthAuthRoute
@@ -346,10 +346,10 @@ export interface FileRouteTypes {
     | '/'
     | '/$businessName'
     | '/admin'
-    | '/boyai-chat'
     | '/boyai-settings'
     | '/create-business'
     | '/mcp'
+    | '/playground'
     | '/privacy'
     | '/s3test'
     | '/auth'
@@ -381,10 +381,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
-    | '/boyai-chat'
     | '/boyai-settings'
     | '/create-business'
     | '/mcp'
+    | '/playground'
     | '/privacy'
     | '/s3test'
     | '/auth'
@@ -418,10 +418,10 @@ export interface FileRouteTypes {
     | '/$businessName'
     | '/_auth'
     | '/admin'
-    | '/boyai-chat'
     | '/boyai-settings'
     | '/create-business'
     | '/mcp'
+    | '/playground'
     | '/privacy'
     | '/s3test'
     | '/_auth/auth'
@@ -456,10 +456,10 @@ export interface RootRouteChildren {
   BusinessNameRoute: typeof BusinessNameRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
   AdminRoute: typeof AdminRoute
-  BoyaiChatRoute: typeof BoyaiChatRoute
   BoyaiSettingsRoute: typeof BoyaiSettingsRoute
   CreateBusinessRoute: typeof CreateBusinessRoute
   McpRoute: typeof McpRoute
+  PlaygroundRoute: typeof PlaygroundRoute
   PrivacyRoute: typeof PrivacyRoute
   S3testRoute: typeof S3testRoute
   BusinessChatRoute: typeof BusinessChatRoute
@@ -493,6 +493,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/playground': {
+      id: '/playground'
+      path: '/playground'
+      fullPath: '/playground'
+      preLoaderRoute: typeof PlaygroundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mcp': {
       id: '/mcp'
       path: '/mcp'
@@ -512,13 +519,6 @@ declare module '@tanstack/react-router' {
       path: '/boyai-settings'
       fullPath: '/boyai-settings'
       preLoaderRoute: typeof BoyaiSettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/boyai-chat': {
-      id: '/boyai-chat'
-      path: '/boyai-chat'
-      fullPath: '/boyai-chat'
-      preLoaderRoute: typeof BoyaiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -798,10 +798,10 @@ const rootRouteChildren: RootRouteChildren = {
   BusinessNameRoute: BusinessNameRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
   AdminRoute: AdminRoute,
-  BoyaiChatRoute: BoyaiChatRoute,
   BoyaiSettingsRoute: BoyaiSettingsRoute,
   CreateBusinessRoute: CreateBusinessRoute,
   McpRoute: McpRoute,
+  PlaygroundRoute: PlaygroundRoute,
   PrivacyRoute: PrivacyRoute,
   S3testRoute: S3testRoute,
   BusinessChatRoute: BusinessChatRoute,
