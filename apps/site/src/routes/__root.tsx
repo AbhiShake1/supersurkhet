@@ -19,7 +19,7 @@ import { gun } from '@/lib/gun';
 import { DismissableLayerBranch } from '@radix-ui/react-dismissable-layer';
 import { TooltipProvider } from '@radix-ui/react-tooltip';
 import { useEffect } from 'react';
-import { AuthProvider } from '@/components/auth-provider';
+import { AuthProvider, type AuthUser } from '@/components/auth-provider';
 import { ConfettiProvider } from '@/components/confetti-provider';
 import { LoginPromptProvider } from '@/components/login-prompt-provider';
 import {
@@ -119,7 +119,7 @@ async function getUserProfile() {
   });
 }
 
-async function getCurrentUser() {
+async function getCurrentUser(): Promise<AuthUser | null> {
   // const user = await recallUser();
   const userLocal = await getUser();
   gun.user().auth(userLocal);
