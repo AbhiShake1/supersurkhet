@@ -408,9 +408,9 @@ export function useBusinessOnboardingSession() {
           const refreshed = await fetch('/v1/auth/providers', { method: 'GET', credentials: 'include' });
           if (refreshed.ok) {
             const parsed = await refreshed.json();
-            const match = (parsed.data as Array<{ providerId?: string; updatedAt?: number }> | undefined)?.find(
-              (item) => item.providerId === session.selectedProviderId,
-            );
+            const rows = (parsed.data as Array<{ providerId?: string; updatedAt?: number }> | undefined) ?? [];
+            const matches = rows.filter((item) => item.providerId === session.selectedProviderId);
+            const match = [...matches].sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))[0];
             if (match) {
               dispatch((prev) =>
                 businessOnboardingSessionReducer(prev, { type: 'oauth_connected', at: Math.floor(Date.now() / 1000) }),
@@ -563,9 +563,9 @@ export function useBusinessOnboardingSession() {
         return;
       }
       const data = await res.json();
-      const match = (data.data as Array<{ providerId?: string; authMode?: string; updatedAt?: number }> | undefined)?.find(
-        (item) => item.providerId === session.selectedProviderId,
-      );
+      const rows = (data.data as Array<{ providerId?: string; authMode?: string; updatedAt?: number }> | undefined) ?? [];
+      const matches = rows.filter((item) => item.providerId === session.selectedProviderId);
+      const match = [...matches].sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))[0];
       if (match) {
         setValidationStatus({ isValidating: false, isValid: true, error: null });
         dispatch((prev) =>
