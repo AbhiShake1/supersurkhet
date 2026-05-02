@@ -148,7 +148,13 @@ export function BusinessOnboardingChat({
               {thread.map((message) => (
                 <Message key={message.id} from={message.role}>
                   <MessageContent>
-                    <MessageResponse>{message.content}</MessageResponse>
+                    {message.role === 'assistant' ? (
+                      <MessageResponse>{message.content}</MessageResponse>
+                    ) : (
+                      <span className="whitespace-pre-wrap">
+                        {message.content}
+                      </span>
+                    )}
                   </MessageContent>
                 </Message>
               ))}
