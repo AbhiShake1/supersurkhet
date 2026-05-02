@@ -1,24 +1,46 @@
-import React, { useState } from 'react';
-import { useAuth } from '@/components/auth-provider';
-import { gun } from '@/lib/gun';
-import SEA from 'gun/sea';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { executeBoyaiPrompt } from '@/server-functions/ai-proxy';
+import {
+  type ComponentRef,
+  type FormEvent,
+  useReducer,
+  useRef,
+  useState,
+} from 'react';
 import { toast } from 'sonner';
+import { MessageResponse } from '@/components/ai-elements/message';
+import { useAuth } from '@/components/auth-provider';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { gun } from '@/lib/gun';
+import {
+  decryptBoyaiLlmApiKey,
+  fetchEncryptedBoyaiLlmApiKey,
+} from '@/lib/gun/utils/boyaiLlmApiKey';
+import { getUnknownErrorMessage } from '@/lib/utils';
+import { executeBoyaiPrompt } from '@/server-functions/ai-proxy';
 
 export function BoyaiChat() {
   const { user } = useAuth();
-  const [prompt, setPrompt] = useState('');
-  const [messages, setMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([]);
+  const promptRef = useRef<ComponentRef<'input'>>(null);
+  const [, bumpInput] = useReducer((x: number) => x + 1, 0);
+  const [messages, setMessages] = useState<
+    { id: number; role: 'user' | 'ai'; text: string }[]
+  >([]);
   const [isLoading, setIsLoading] = useState(false);
+  const nextMessageIdRef = useRef(1);
 
-  const submitMessage = async () => {
-    if (!prompt.trim() || !user || isLoading) return;
+  const pushMessage = (entry: { role: 'user' | 'ai'; text: string }) => {
+    const id = nextMessageIdRef.current++;
+    setMessages((prev) => [...prev, { ...entry, id }]);
+  };
 
-    const userMessage = prompt.trim();
-    setPrompt('');
-    setMessages((prev) => [...prev, { role: 'user', text: userMessage }]);
+  const submitMessage = async (): Promise<void> => {
+    const promptValue = promptRef.current?.value ?? '';
+    if (!promptValue.trim() || !user || isLoading) return;
+
+    const userMessage = promptValue.trim();
+    if (promptRef.current) promptRef.current.value = '';
+    bumpInput();
+    pushMessage({ role: 'user', text: userMessage });
     setIsLoading(true);
 
     try {
@@ -28,64 +50,50 @@ export function BoyaiChat() {
         throw new Error('User SEA pair not available. Please login.');
       }
 
-      console.log("TEST_REGION - Reading from Path:", "user().get('boyai_config').get('llm_api_key')");
-      // Retrieve encrypted API key
-      const encryptedKey = await new Promise<string>((resolve, reject) => {
-        let isResolved = false;
-        
-        const timeout = setTimeout(() => {
-          if (!isResolved) {
-            isResolved = true;
-            reject(new Error('Timeout retrieving API Key. Please ensure you are logged in and have saved a key.'));
-          }
-        }, 5000);
+      console.log(
+        'TEST_REGION - Reading from Path:',
+        "user().get('boyai_config').get('llm_api_key')",
+      );
+      const encryptedKey = await fetchEncryptedBoyaiLlmApiKey();
 
-        gun.user().get('boyai_config').get('llm_api_key').once((data) => {
-          if (isResolved) return;
-          isResolved = true;
-          clearTimeout(timeout);
-          if (!data) reject(new Error('No API Key found. Please save it in settings first.'));
-          else resolve(data as string);
-        });
-      });
+      console.log(
+        'TEST_REGION - Fetched encrypted raw:',
+        typeof encryptedKey === 'string'
+          ? `${encryptedKey.substring(0, 50)}...`
+          : encryptedKey,
+      );
+      console.log('TEST_REGION - Decrypting with SEA Pub:', userSeaPair.pub);
 
-      console.log("TEST_REGION - Fetched encrypted raw:", typeof encryptedKey === 'string' ? encryptedKey.substring(0, 50) + '...' : encryptedKey);
-      console.log("TEST_REGION - Decrypting with SEA Pub:", userSeaPair.pub);
-
-      // Decrypt in memory
-      const rawKey = await SEA.decrypt(encryptedKey, userSeaPair);
-      if (rawKey === undefined || rawKey === null) {
-        throw new Error("DIAGNOSTIC_FAILURE: Decryption resulted in null. SEA pair mismatch or corrupted data.");
-      }
-      if (!rawKey) {
-        throw new Error('Failed to decrypt API key. Your session may be invalid.');
-      }
+      const rawKey = await decryptBoyaiLlmApiKey(encryptedKey, userSeaPair);
 
       const requestHeaders = { 'X-Boyai-Key': rawKey };
-      console.log("NETWORK_REGION - Sending Headers:", Object.keys(requestHeaders));
+      console.log(
+        'NETWORK_REGION - Sending Headers:',
+        Object.keys(requestHeaders),
+      );
 
-      // Execute server function directly passing apiKey
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await (executeBoyaiPrompt as any)({
-        data: { prompt: userMessage, apiKey: rawKey }
+      const result = await executeBoyaiPrompt({
+        data: { prompt: userMessage, apiKey: rawKey },
       });
 
-      setMessages((prev) => [...prev, { role: 'ai', text: result.text }]);
+      pushMessage({ role: 'ai', text: result.text });
     } catch (error) {
-      console.log("NETWORK_REGION - Diagnostic Server Error Caught:", error);
+      console.log('NETWORK_REGION - Diagnostic Server Error Caught:', error);
       console.error(error);
-      const errorMsg = error instanceof Error ? error.message : 'An error occurred';
+      const errorMsg = getUnknownErrorMessage(error);
       toast.error(errorMsg);
-      setMessages((prev) => [...prev, { role: 'ai', text: `Error: ${errorMsg}` }]);
+      pushMessage({ role: 'ai', text: `Error: ${errorMsg}` });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     submitMessage();
   };
+
+  const promptTrimmed = (promptRef.current?.value ?? '').trim();
 
   return (
     <div className="flex flex-col h-[500px] border rounded-xl bg-background max-w-2xl">
@@ -95,16 +103,24 @@ export function BoyaiChat() {
             Send a message to start chatting with your Bring Your Own AI.
           </div>
         ) : (
-          messages.map((msg, i) => (
+          messages.map((msg) => (
             <div
-              key={i}
+              key={msg.id}
               className={`p-3 rounded-lg max-w-[80%] ${
                 msg.role === 'user'
                   ? 'bg-primary text-primary-foreground ml-auto'
                   : 'bg-muted text-foreground mr-auto'
               }`}
             >
-              {msg.text}
+              {msg.role === 'user' ? (
+                <p className="whitespace-pre-wrap break-words text-left">
+                  {msg.text}
+                </p>
+              ) : (
+                <MessageResponse className="text-left">
+                  {msg.text}
+                </MessageResponse>
+              )}
             </div>
           ))
         )}
@@ -117,8 +133,8 @@ export function BoyaiChat() {
 
       <form onSubmit={handleSubmit} className="p-4 border-t flex gap-2">
         <Input
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
+          ref={promptRef}
+          onChange={() => bumpInput()}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
@@ -129,7 +145,7 @@ export function BoyaiChat() {
           disabled={isLoading || !user}
           className="flex-1"
         />
-        <Button type="submit" disabled={isLoading || !user || !prompt.trim()}>
+        <Button type="submit" disabled={isLoading || !user || !promptTrimmed}>
           Send
         </Button>
       </form>

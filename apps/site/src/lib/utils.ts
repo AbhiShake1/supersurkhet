@@ -6,6 +6,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export const getUnknownErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : 'An error occurred';
+
 export function isNonNullable<T>(v: T): v is NonNullable<T> {
   return Boolean(v);
 }
