@@ -48,9 +48,11 @@ During business creation, Step 2 guides users through an AI integration wizard t
    - **Add Another** — saves the current credential to the server then resets the wizard back to step 1 of the provider selection, allowing a new provider/model/key combination to be configured as a backup
    - **Test Model** — validates connectivity using `testBoyaiConnection`
 
+**Security note:** Credentials are encrypted with Gun SEA using the user's private key pair before being stored in GunDB. The plain text key does not persist after save — only the encrypted blob. **Test Model** reads the saved credential from GunDB and decrypts on demand (not from ephemeral form state).
+
 ### Multiple Backup Keys
 
-Users can add as many provider/model/key combinations as needed. Each saved entry is displayed as a green pill (`Provider · Model · AuthMode`) above the wizard. If the primary key expires mid-task, the platform falls back to the next available key automatically.
+Users can add as many provider/model/key combinations as needed. Each saved entry is displayed as a green pill (`Provider · Model · AuthMode`) above the wizard. If the primary key expires mid-task, the platform falls back to the next available key automatically. After a credential is saved, **Test Model** uses the GunDB-backed copy (decrypted in memory for the check), not whatever happens to be left in the form fields.
 
 ### Review Plugins (Step 2 → Step 3)
 
@@ -145,6 +147,7 @@ pnpm dev
 
 # Build for production
 pnpm build
+# Build is cross-platform (Windows, macOS, Linux) via cross-env and copyfiles — no platform-specific shell steps required.
 
 # Start production server
 pnpm start

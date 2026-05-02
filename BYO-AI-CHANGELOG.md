@@ -2,6 +2,29 @@
 
 This document outlines the architectural additions, file modifications, and bug fixes applied to the codebase after the last commit on the `migration/v2` branch to support the **Bring Your Own AI (BYO AI)** feature securely.
 
+## Latest session updates
+
+### Added
+
+* GunDB encrypted persistence for provider credentials after a successful POST to `/v1/auth/providers` (`business-creation-form.tsx` writes `boyai_config.llm_api_key` via SEA).
+* `apps/site/src/lib/gun/utils/boyaiLlmApiKey.ts` — helpers to read the encrypted key from Gun and decrypt with the user's SEA pair.
+* `routes/playground.tsx` — chat playground route (replaces removed `routes/boyai-chat.tsx`).
+* JSDoc on BYO AI server functions, Gun key utilities, and credential UI/helpers (`ai-proxy.ts`, `boyaiLlmApiKey.ts`, `manual-credential-panel.tsx`, `business-creation-form.tsx`, `boyai-settings.tsx`).
+
+### Fixed
+
+* **Test Model** for API-key mode reads the credential from GunDB (`fetchEncryptedBoyaiLlmApiKey` + `decryptBoyaiLlmApiKey`) instead of relying on in-form state alone, avoiding false “Enter an API key” errors after save clears input.
+* Removed `(testBoyaiConnection as any)` from `business-creation-form.tsx` and `boyai-settings.tsx`; calls use typed `{ data: { apiKey } }` payloads.
+* Replaced `navigate({ to: '/boyai-chat' as any })` with `navigate({ to: '/playground' })` in `boyai-settings.tsx`.
+* Cross-platform production build: `apps/site` `build` script uses `cross-env` for `NODE_OPTIONS` and `copyfiles` instead of Unix-only `cp` / shell-specific env syntax.
+
+### Refactored
+
+* Extracted `TestButtonContent` from nested ternary JSX in `manual-credential-panel.tsx`.
+* Removed `getHeader` / `X-Boyai-Key` fallback paths from both handlers in `ai-proxy.ts`; keys come only from Zod-validated JSON `apiKey`.
+* Dropped `rawApiKey` indirection — handlers use `apiKey` from the validated payload directly.
+* Route rename: deleted `apps/site/src/routes/boyai-chat.tsx`; playground lives under `/playground`.
+
 ## 1. New Core Infrastructure (Untracked Files)
 
 ### Server-Side Proxies (`apps/site/src/server-functions/ai-proxy.ts`)
@@ -15,7 +38,7 @@ This document outlines the architectural additions, file modifications, and bug 
 * Implements a strict pre-save gateway: It `await`s the `testBoyaiConnection` proxy. If the test fails, it halts execution and alerts the user.
 * If the test succeeds, it encrypts the raw API key using `SEA.encrypt` (AES-256) with the user's private GunDB key and stores the ciphertext in the decentralized graph (`gun.user().get('boyai_config')`).
 
-### Playground Interface (`apps/site/src/components/boyai-chat.tsx` & `routes/boyai-chat.tsx`)
+### Playground Interface (`apps/site/src/components/boyai-chat.tsx` & `routes/playground.tsx`)
 
 * A dedicated chat UI to test the stored BYO AI key.
 * Retrieves the encrypted key from GunDB, decrypts it in local memory, and passes the plain text key into the `executeBoyaiPrompt` payload.
