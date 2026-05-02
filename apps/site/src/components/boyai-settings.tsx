@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { gun } from '@/lib/gun';
 import SEA from 'gun/sea';
@@ -36,11 +36,8 @@ export function BoyaiSettings() {
 
     setIsSaving(true);
     try {
-      // Test the API key first
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const testResult = await (testBoyaiConnection as any)({
-        data: undefined,
-        headers: { 'X-Boyai-Key': apiKey }
+      const testResult = await testBoyaiConnection({
+        data: { apiKey },
       });
 
       if (!testResult?.success) {
@@ -70,7 +67,7 @@ export function BoyaiSettings() {
       setApiKey('');
       
       // Redirect to the chat playground to immediately test the AI model
-      navigate({ to: '/boyai-chat' as any });
+      navigate({ to: '/playground' });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error encrypting API key');
       console.error(err);
