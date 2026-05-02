@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { gun } from '@/lib/gun';
 import SEA from 'gun/sea';
@@ -14,6 +14,12 @@ export function BoyaiSettings() {
   const [apiKey, setApiKey] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
+  /**
+   * Saves the user's BYO AI API key.
+   * Encrypts with SEA using the user's private key pair,
+   * stores the encrypted blob in GunDB, then navigates to /playground.
+   * Plain text key is never persisted — only the encrypted blob.
+   */
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {

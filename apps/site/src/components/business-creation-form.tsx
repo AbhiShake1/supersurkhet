@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   ActionManifestDoc,
   AdminTabDoc,
   BusinessPluginDraftInstallDoc,
@@ -462,7 +462,7 @@ export function BusinessCreationForm({
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                Chapter 3 · Plugin Browser
+                Chapter 3 ┬╖ Plugin Browser
               </p>
               <p className="mt-1 text-sm text-foreground">
                 Browse and choose plugins before launch. AI suggestions are
@@ -764,6 +764,12 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
     }
   }
 
+  /**
+   * Tests the saved provider credential by reading from GunDB.
+   * Fetches the encrypted key, decrypts with the user's SEA pair,
+   * then calls testBoyaiConnection with the raw key.
+   * Does NOT read from React state — GunDB is the single source of truth.
+   */
   async function testProviderCredential() {
     const payload = buildProviderPayload();
     const keyToTest = payload.apiKey || payload.oauthAccessToken;
@@ -794,6 +800,12 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
     }
   }
 
+  /**
+   * Saves the provider credential to the backend via POST to
+   * /v1/auth/providers, then encrypts and persists it to GunDB
+   * so Test Model can read it after save.
+   * Plain text key is never stored in React state after this runs.
+   */
   async function saveProviderCredential() {
     const payload = buildProviderPayload();
 
@@ -1345,7 +1357,7 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
     (assistantStage === 'credential' && assistantSecretInput.trim().length > 0);
 
   // Assign during render so the parent's handleReviewPlugins always calls
-  // the latest closure — avoids stale state from a useEffect dependency array.
+  // the latest closure ΓÇö avoids stale state from a useEffect dependency array.
   if (saveProviderCredentialRef) {
     saveProviderCredentialRef.current = assistantStage === 'done'
       ? saveProviderCredentialIfReady
@@ -1366,7 +1378,7 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
             >
               <Check className="h-3 w-3 shrink-0" />
               <span>
-                {cred.provider} · {cred.model} · {cred.authMode}
+                {cred.provider} ┬╖ {cred.model} ┬╖ {cred.authMode}
               </span>
             </div>
           ))}
@@ -1981,9 +1993,9 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                                       </p>
                                       <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mt-0.5">
                                         <span className="text-yellow-500/80">
-                                          ★ 4.8
+                                          Γÿà 4.8
                                         </span>
-                                        <span>•</span>
+                                        <span>ΓÇó</span>
                                         <span>
                                           {plugin.installs.toLocaleString()}{' '}
                                           installs

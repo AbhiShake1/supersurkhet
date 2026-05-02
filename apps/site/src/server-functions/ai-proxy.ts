@@ -4,6 +4,12 @@ import { z } from 'zod';
 import { generateText } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 
+/**
+ * Executes a prompt against the user's BYO AI provider (Google Gemini).
+ * Accepts apiKey via POST body only — TanStack Start client proxy
+ * does not support custom HTTP headers.
+ * apiKey is required and validated by Zod before the handler runs.
+ */
 export const executeBoyaiPrompt = createServerFn({ method: 'POST' })
   .inputValidator(z.object({ prompt: z.string(), model: z.string().optional(), apiKey: z.string() }))
   .handler(async ({ data: { prompt, model, apiKey } }) => {
@@ -34,6 +40,12 @@ export const executeBoyaiPrompt = createServerFn({ method: 'POST' })
     }
   });
 
+/**
+ * Tests connectivity to the user's BYO AI provider.
+ * Sends a minimal prompt to verify the API key is valid.
+ * apiKey is required and validated by Zod before the handler runs.
+ * Returns { success: true, text } on success.
+ */
 export const testBoyaiConnection = createServerFn({ method: 'POST' })
   .inputValidator(z.object({ apiKey: z.string() }))
   .handler(async ({ data: { apiKey } }) => {
