@@ -111,10 +111,7 @@ vi.mock('@/components/ui/v0-ai-chat', () => ({
 // step 2), so we can safely pass an empty cast object.
 const mockForm = {} as UseFormReturn<BusinessCreationValues>;
 
-function renderStep2(
-  container: HTMLDivElement,
-  saveProviderCredentialRef?: { current: (() => Promise<void>) | null },
-): Root {
+function renderStep2(container: HTMLDivElement): Root {
   const root = createRoot(container);
   root.render(
     <BusinessCreationForm
@@ -123,7 +120,6 @@ function renderStep2(
       setStep={vi.fn()}
       createdBusiness={undefined}
       isSubmitting={false}
-      saveProviderCredentialRef={saveProviderCredentialRef}
     />,
   );
   return root;
@@ -264,27 +260,9 @@ describe('BusinessCreationForm step 2 — AI backup key flow', () => {
     });
   });
 
-  it('saveProviderCredentialRef is a no-op when wizard has not reached done stage', async () => {
-    const ref: { current: (() => Promise<void>) | null } = { current: null };
-    root = renderStep2(container, ref);
-    await flush();
-
-    // At provider stage the ref should exist but be a no-op
-    expect(ref.current).toBeTruthy();
-    await ref.current?.();
-
-    const fetchMock = vi.mocked(globalThis.fetch);
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it('saveProviderCredentialRef triggers fetch when wizard is done and key is present', async () => {
-    const ref: { current: (() => Promise<void>) | null } = { current: null };
-    root = renderStep2(container, ref);
+  it('POSTs provider credential when credential step submits (before done)', async () => {
+    root = renderStep2(container);
     await advanceWizardToDone();
-
-    expect(ref.current).toBeTruthy();
-    await ref.current?.();
-    await flush();
 
     const fetchMock = vi.mocked(globalThis.fetch);
     await waitFor(() => {
