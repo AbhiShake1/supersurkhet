@@ -10,6 +10,7 @@ import { nitro } from 'nitro/vite';
 import { zodTypegen } from './scripts/vite/zod-typegen';
 
 const config = defineConfig({
+  envDir: fileURLToPath(new URL('./src', import.meta.url)),
   test: {
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     exclude: ['tests/**'],
