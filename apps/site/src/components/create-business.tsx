@@ -135,12 +135,7 @@ export function CreateBusinessPageFlow() {
   const hasSelectedPlugins = selectedPluginReleaseIds.length > 0;
   const completionPercent = Math.round((step / 4) * 100);
   const pluginSyncDebounceRef = useRef<number | null>(null);
-  const saveProviderCredentialRef = useRef<(() => Promise<void>) | null>(null);
-
   const handleReviewPlugins = async () => {
-    if (saveProviderCredentialRef.current) {
-      await saveProviderCredentialRef.current();
-    }
     setStep(3);
   };
 
@@ -431,7 +426,6 @@ export function CreateBusinessPageFlow() {
                     setStep={setStep}
                     createdBusiness={createdBusiness}
                     isSubmitting={isPending}
-                    saveProviderCredentialRef={saveProviderCredentialRef}
                   />
                 </form>
               </Form>

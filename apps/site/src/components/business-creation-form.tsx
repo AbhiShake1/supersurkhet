@@ -1,4 +1,21 @@
-﻿import type {
+import { Link } from '@tanstack/react-router';
+import { AnimatePresence, motion } from 'framer-motion';
+import SEA from 'gun/sea';
+import {
+  Bot,
+  Check,
+  ChevronsUpDown,
+  Info,
+  Plus,
+  Rocket,
+  Search,
+  Sparkles,
+  X,
+} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { UseFormReturn } from 'react-hook-form';
+import { toast } from 'sonner';
+import type {
   ActionManifestDoc,
   AdminTabDoc,
   BusinessPluginDraftInstallDoc,
@@ -8,12 +25,12 @@
   FieldConfigIR,
   JsonValue,
   LifecycleHook,
+  PluginDraftDoc,
+  PluginDraftRevisionDoc,
   PluginProjectDoc,
   PluginProjectInviteDoc,
   PluginProjectMemberDoc,
   PluginProjectRole,
-  PluginDraftDoc,
-  PluginDraftRevisionDoc,
   PluginRecordDoc,
   PluginReleaseDoc,
   RefineIssueIR,
@@ -24,40 +41,16 @@
   WorkflowEdgeDoc,
   WorkflowNodeDoc,
 } from 'supersurkhet-sdk';
-import { Link } from '@tanstack/react-router';
-import {
-  Check,
-  ChevronsUpDown,
-  Plus,
-  Bot,
-  Info,
-  X,
-  Search,
-  Rocket,
-  Sparkles,
-} from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { z } from 'zod';
 import {
   PluginDetailsView,
   type PluginDetailView,
 } from '@/components/plugins/plugin-details-view';
-
-import type { UseFormReturn } from 'react-hook-form';
-import { toast } from 'sonner';
-import { z } from 'zod';
-import { buildPluginCatalog } from '@/lib/plugins/admin-plugin-catalog';
-import {
-  buildMarketplaceGroups,
-  buildPluginDetailView,
-  type PluginMarketItem,
-} from '@/lib/plugins/admin-plugin-market';
-import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
 import { PluginIcon } from '@/components/plugins/plugin-icon';
 import {
   type AssistantAuthMode,
-  type BusinessOnboardingModelOption,
   BUSINESS_ONBOARDING_MODEL_OPTIONS,
+  type BusinessOnboardingModelOption,
   type BusinessOnboardingProviderId,
   DEFAULT_BUSINESS_ONBOARDING_MODEL_ID,
   PROVIDER_SUPPORTED_AUTH_MODES,
@@ -66,11 +59,22 @@ import {
   resolveProviderDefaultBaseUrl,
   resolveProviderSupportedAuthModes,
 } from '@/lib/ai/business-onboarding-models';
-import { testBoyaiConnection } from '@/server-functions/ai-proxy';
 import { api } from '@/lib/api';
-
+import { gun } from '@/lib/gun';
+import {
+  decryptBoyaiLlmApiKey,
+  fetchEncryptedBoyaiLlmApiKey,
+} from '@/lib/gun/utils/boyaiLlmApiKey';
+import { buildPluginCatalog } from '@/lib/plugins/admin-plugin-catalog';
+import {
+  buildMarketplaceGroups,
+  buildPluginDetailView,
+  type PluginMarketItem,
+} from '@/lib/plugins/admin-plugin-market';
+import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
 import { businessSchema } from '@/lib/schema';
 import { cn } from '@/lib/utils';
+import { testBoyaiConnection } from '@/server-functions/ai-proxy';
 import { MapField } from './ui/autoform/components/MapField';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -107,12 +111,10 @@ interface BusinessCreationFormProps {
   setStep: (step: number) => void;
   createdBusiness: z.infer<typeof businessSchema> | undefined;
   isSubmitting: boolean;
-  saveProviderCredentialRef?: { current: (() => Promise<void>) | null };
 }
 
 interface StepTwoFormProps {
   form: UseFormReturn<BusinessCreationValues>;
-  saveProviderCredentialRef?: { current: (() => Promise<void>) | null };
 }
 
 type SavedCredentialSummary = {
@@ -364,7 +366,6 @@ export function BusinessCreationForm({
   setStep: _setStep,
   isSubmitting: _isSubmitting,
   createdBusiness,
-  saveProviderCredentialRef,
 }: BusinessCreationFormProps) {
   if (step === 4) {
     return (
@@ -455,14 +456,14 @@ export function BusinessCreationForm({
         </div>
       )}
 
-      {step === 2 && <BusinessOnboardingAssistantForm form={form} saveProviderCredentialRef={saveProviderCredentialRef} />}
+      {step === 2 && <BusinessOnboardingAssistantForm form={form} />}
 
       {step === 3 && (
         <div className="space-y-6 rounded-2xl border border-border/70 bg-background p-4 sm:p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                Chapter 3 ┬╖ Plugin Browser
+                Chapter 3 · Plugin Browser
               </p>
               <p className="mt-1 text-sm text-foreground">
                 Browse and choose plugins before launch. AI suggestions are
@@ -477,7 +478,7 @@ export function BusinessCreationForm({
   );
 }
 
-function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRef }: StepTwoFormProps) {
+function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
   const defaultModelOption = resolveAssistantModelOption(
     DEFAULT_BUSINESS_ONBOARDING_MODEL_ID,
   );
@@ -531,7 +532,9 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
   const [oauthVerificationCode, setOauthVerificationCode] = useState('');
   const [modelsDevCatalogByProviderId, setModelsDevCatalogByProviderId] =
     useState<Record<string, ModelsDevProviderRecord>>({});
-  const [savedCredentials, setSavedCredentials] = useState<SavedCredentialSummary[]>([]);
+  const [savedCredentials, setSavedCredentials] = useState<
+    SavedCredentialSummary[]
+  >([]);
 
   const providerOptions = useMemo(
     () =>
@@ -617,7 +620,8 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
   const [assistantPickedOauthMethod, setAssistantPickedOauthMethod] =
     useState(false);
   const recommendedProviderId = defaultModelOption.provider;
-  const recommendedModelId = providerModelOptions[0]?.id ?? selectedModelOption.id;
+  const recommendedModelId =
+    providerModelOptions[0]?.id ?? selectedModelOption.id;
   const recommendedAuthMode = resolveProviderDefaultAuthMode(
     selectedAssistantProviderId,
   );
@@ -642,6 +646,41 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
 
     void loadModelsDevCatalog();
 
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadSavedCredentialsFromSession() {
+      try {
+        const response = await fetch('/v1/auth/providers', {
+          method: 'GET',
+          credentials: 'include',
+        });
+        if (!response.ok) return;
+        const parsed = (await response.json()) as {
+          data?: Array<{
+            providerId?: string;
+            model?: string;
+            authMode?: string;
+          }>;
+        };
+        if (cancelled) return;
+        const rows = parsed.data ?? [];
+        setSavedCredentials(
+          rows.map((item) => ({
+            provider: item.providerId
+              ? formatProviderLabel(item.providerId)
+              : 'Unknown',
+            model: item.model ?? '',
+            authMode: item.authMode ?? '',
+          })),
+        );
+      } catch {}
+    }
+    void loadSavedCredentialsFromSession();
     return () => {
       cancelled = true;
     };
@@ -771,27 +810,65 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
    * Does NOT read from React state — GunDB is the single source of truth.
    */
   async function testProviderCredential() {
-    const payload = buildProviderPayload();
-    const keyToTest = payload.apiKey || payload.oauthAccessToken;
-    if (!keyToTest) {
-      toast.error('Enter an API key or token before testing.');
+    if (selectedAssistantAuthMode === 'oauth-access-token') {
+      const payload = buildProviderPayload();
+      const keyToTest = payload.oauthAccessToken;
+      if (!keyToTest) {
+        toast.error('Enter an API key or token before testing.');
+        return;
+      }
+
+      setIsTestingModel(true);
+      setTestResult(null);
+      try {
+        const result = await testBoyaiConnection({
+          data: { apiKey: keyToTest },
+        });
+        if (result?.success) {
+          setTestResult(result.text || 'Connection successful');
+          toast.success('Connection successful');
+        } else {
+          throw new Error('Model returned empty response.');
+        }
+      } catch (err) {
+        const errorMsg =
+          err instanceof Error ? err.message : 'Connection test failed';
+        console.error('Provider credential test failed:', err);
+        toast.error(errorMsg);
+        setTestResult(`Error: ${errorMsg}`);
+      } finally {
+        setIsTestingModel(false);
+      }
       return;
     }
 
-    setIsTestingModel(true);
-    setTestResult(null);
     try {
-      const result = await (testBoyaiConnection as any)({
-        data: { apiKey: keyToTest }
+      // @ts-expect-error - Gun internal type
+      const userSeaPair = gun.user()._.sea;
+      if (!userSeaPair) {
+        toast.error('User session invalid. Please log in again.');
+        return;
+      }
+
+      const encryptedKey = await fetchEncryptedBoyaiLlmApiKey();
+      const rawKey = await decryptBoyaiLlmApiKey(encryptedKey, userSeaPair);
+
+      setIsTestingModel(true);
+      setTestResult(null);
+
+      const result = await testBoyaiConnection({
+        data: { apiKey: rawKey },
       });
-      if (result && result.success) {
+
+      if (result?.success) {
         setTestResult(result.text || 'Connection successful');
         toast.success('Connection successful');
       } else {
         throw new Error('Model returned empty response.');
       }
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Connection test failed';
+      const errorMsg =
+        err instanceof Error ? err.message : 'Connection test failed';
       console.error('Provider credential test failed:', err);
       toast.error(errorMsg);
       setTestResult(`Error: ${errorMsg}`);
@@ -806,19 +883,22 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
    * so Test Model can read it after save.
    * Plain text key is never stored in React state after this runs.
    */
-  async function saveProviderCredential() {
-    const payload = buildProviderPayload();
+  async function saveProviderCredential(fieldOverrides?: {
+    apiKey?: string;
+    oauthAccessToken?: string;
+  }): Promise<boolean> {
+    const payload = { ...buildProviderPayload(), ...fieldOverrides };
 
-    if (payload.authMode === 'api-key' && !payload.apiKey) {
+    if (payload.authMode === 'api-key' && !payload.apiKey?.trim()) {
       toast.error('Enter an API key before saving.');
-      return;
+      return false;
     }
     if (
       payload.authMode === 'oauth-access-token' &&
-      !payload.oauthAccessToken
+      !payload.oauthAccessToken?.trim()
     ) {
       toast.error('Enter an OAuth access token before saving.');
-      return;
+      return false;
     }
 
     setIsSavingProviderCredential(true);
@@ -834,7 +914,35 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
 
       if (!response.ok) {
         toast.error(await readErrorMessage(response));
-        return;
+        return false;
+      }
+
+      const plainTextKey = payload.apiKey || payload.oauthAccessToken;
+
+      if (plainTextKey) {
+        // @ts-expect-error - Gun internal type
+        const userSeaPair = gun.user()._.sea;
+        if (!userSeaPair) {
+          throw new Error('Could not find user SEA pair for encryption');
+        }
+
+        const encrypted = await SEA.encrypt(plainTextKey, userSeaPair);
+
+        await new Promise((resolve, reject) => {
+          gun
+            .user()
+            .get('boyai_config')
+            .get('llm_api_key')
+            .put(encrypted, (ack) => {
+              // @ts-expect-error - Gun internal type
+              if (ack.err) {
+                // @ts-expect-error - Gun internal type
+                reject(new Error(String(ack.err)));
+              } else {
+                resolve(ack);
+              }
+            });
+        });
       }
 
       setProviderCredentialSavedAt(Date.now());
@@ -849,18 +957,13 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
       setOauthFlowState('connected');
       setOauthFlowMessage('Credential saved for selected provider.');
       toast.success('Provider credentials saved for this signed-in session.');
+      return true;
     } catch {
       toast.error('Failed to save provider credentials.');
+      return false;
     } finally {
       setIsSavingProviderCredential(false);
     }
-  }
-
-  async function saveProviderCredentialIfReady() {
-    const payload = buildProviderPayload();
-    if (payload.authMode === 'api-key' && !payload.apiKey) return;
-    if (payload.authMode === 'oauth-access-token' && !payload.oauthAccessToken) return;
-    await saveProviderCredential();
   }
 
   async function addAnotherCredential() {
@@ -904,9 +1007,12 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
           updatedAt?: number;
         }>;
       };
-      const match = parsed.data?.find(
+      const matches = (parsed.data ?? []).filter(
         (item) => item.providerId === selectedAssistantProviderId,
       );
+      const match = [...matches].sort(
+        (a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0),
+      )[0];
       if (!match) {
         setProviderCredentialSavedAt(null);
         return false;
@@ -1115,14 +1221,14 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
     const requestBody =
       hasInlineSecret || !hasStoredCredential
         ? {
-          provider: payload,
-          ttlSeconds: 3600,
-        }
+            provider: payload,
+            ttlSeconds: 3600,
+          }
         : {
-          providerId: payload.providerId,
-          model: payload.model,
-          ttlSeconds: 3600,
-        };
+            providerId: payload.providerId,
+            model: payload.model,
+            ttlSeconds: 3600,
+          };
 
     setIsCreatingAuthSession(true);
     try {
@@ -1246,7 +1352,10 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
     setOauthAuthorizationUrl('');
     setOauthVerificationCode('');
 
-    if (mode === 'oauth-access-token' && selectedProviderOauthMethods.length > 0) {
+    if (
+      mode === 'oauth-access-token' &&
+      selectedProviderOauthMethods.length > 0
+    ) {
       setAssistantStage('oauth-method');
       return;
     }
@@ -1263,15 +1372,22 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
     setAssistantStage('credential');
   }
 
-  function handleAssistantCredentialSubmit() {
+  async function handleAssistantCredentialSubmit() {
     const trimmed = assistantSecretInput.trim();
     if (!trimmed) return;
 
     if (selectedAssistantAuthMode === 'api-key') {
-      setProviderApiKey(trimmed);
+      const ok = await saveProviderCredential({ apiKey: trimmed });
+      if (!ok) return;
     } else if (selectedAssistantAuthMode === 'oauth-access-token') {
-      setProviderOauthAccessToken(trimmed);
+      const ok = await saveProviderCredential({
+        oauthAccessToken: trimmed,
+      });
+      if (!ok) return;
+    } else {
+      return;
     }
+
     setAssistantSecretInput('');
     setAssistantStage('done');
   }
@@ -1312,7 +1428,7 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
     }
   }
 
-  function handleAssistantForward() {
+  async function handleAssistantForward() {
     if (assistantStage === 'provider') {
       setAssistantStage('model');
       return;
@@ -1344,7 +1460,7 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
       return;
     }
     if (assistantStage === 'credential') {
-      handleAssistantCredentialSubmit();
+      await handleAssistantCredentialSubmit();
       return;
     }
   }
@@ -1356,17 +1472,9 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
     (assistantStage === 'oauth-method' && assistantPickedOauthMethod) ||
     (assistantStage === 'credential' && assistantSecretInput.trim().length > 0);
 
-  // Assign during render so the parent's handleReviewPlugins always calls
-  // the latest closure ΓÇö avoids stale state from a useEffect dependency array.
-  if (saveProviderCredentialRef) {
-    saveProviderCredentialRef.current = assistantStage === 'done'
-      ? saveProviderCredentialIfReady
-      : async () => { };
-  }
-
   return (
     <div className="space-y-4 rounded-xl border border-border/70 bg-background p-4">
-      {savedCredentials.length > 0 && (
+      {savedCredentials.length && (
         <div className="space-y-1.5">
           <p className="text-xs font-medium text-muted-foreground">
             Saved API keys ({savedCredentials.length})
@@ -1378,7 +1486,7 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
             >
               <Check className="h-3 w-3 shrink-0" />
               <span>
-                {cred.provider} ┬╖ {cred.model} ┬╖ {cred.authMode}
+                {cred.provider} · {cred.model} · {cred.authMode}
               </span>
             </div>
           ))}
@@ -1409,32 +1517,32 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
           options:
             assistantStage === 'provider'
               ? providerOptions.map((option) => ({
-                id: option.providerId,
-                label: option.label,
-                selected: option.providerId === selectedAssistantProviderId,
-                recommended: option.providerId === recommendedProviderId,
-              }))
+                  id: option.providerId,
+                  label: option.label,
+                  selected: option.providerId === selectedAssistantProviderId,
+                  recommended: option.providerId === recommendedProviderId,
+                }))
               : assistantStage === 'model'
                 ? providerModelOptions.slice(0, 12).map((option, index) => ({
-                  id: option.id,
-                  label: option.label,
-                  selected: option.id === selectedAssistantModelId,
-                  recommended: index === 0,
-                }))
+                    id: option.id,
+                    label: option.label,
+                    selected: option.id === selectedAssistantModelId,
+                    recommended: index === 0,
+                  }))
                 : assistantStage === 'auth'
                   ? stepTwoAuthModes.map((authMode) => ({
-                    id: authMode,
-                    label: authModeLabelById[authMode],
-                    selected: authMode === selectedAssistantAuthMode,
-                    recommended: false,
-                  }))
+                      id: authMode,
+                      label: authModeLabelById[authMode],
+                      selected: authMode === selectedAssistantAuthMode,
+                      recommended: false,
+                    }))
                   : assistantStage === 'oauth-method'
                     ? selectedProviderOauthMethods.map((method, index) => ({
-                      id: method.id,
-                      label: method.label,
-                      selected: method.id === resolvedProviderOauthMethodId,
-                      recommended: index === 0,
-                    }))
+                        id: method.id,
+                        label: method.label,
+                        selected: method.id === resolvedProviderOauthMethodId,
+                        recommended: index === 0,
+                      }))
                     : [],
           onSelectOption: (id) => {
             if (assistantStage === 'provider') {
@@ -1456,19 +1564,19 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
           input:
             assistantStage === 'credential'
               ? {
-                value: assistantSecretInput,
-                placeholder:
-                  selectedAssistantAuthMode === 'api-key'
-                    ? 'Paste API key'
-                    : 'Paste OAuth access token',
-                submitLabel: 'Submit',
-                maskedEchoLabel:
-                  selectedAssistantAuthMode === 'api-key'
-                    ? 'API key provided'
-                    : 'OAuth token provided',
-                onChange: setAssistantSecretInput,
-                onSubmit: handleAssistantCredentialSubmit,
-              }
+                  value: assistantSecretInput,
+                  placeholder:
+                    selectedAssistantAuthMode === 'api-key'
+                      ? 'Paste API key'
+                      : 'Paste OAuth access token',
+                  submitLabel: 'Submit',
+                  maskedEchoLabel:
+                    selectedAssistantAuthMode === 'api-key'
+                      ? 'API key provided'
+                      : 'OAuth token provided',
+                  onChange: setAssistantSecretInput,
+                  onSubmit: handleAssistantCredentialSubmit,
+                }
               : undefined,
           canGoBack: assistantStage !== 'provider',
           onBack: handleAssistantBack,
@@ -1484,9 +1592,9 @@ function BusinessOnboardingAssistantForm({ form: _form, saveProviderCredentialRe
                 : assistantStage === 'auth'
                   ? authModeLabelById[selectedAssistantAuthMode]
                   : assistantStage === 'oauth-method'
-                    ? selectedProviderOauthMethods.find(
-                      (method) => method.id === resolvedProviderOauthMethodId,
-                    )?.label ?? 'OAuth method selected'
+                    ? (selectedProviderOauthMethods.find(
+                        (method) => method.id === resolvedProviderOauthMethodId,
+                      )?.label ?? 'OAuth method selected')
                     : assistantStage === 'credential'
                       ? selectedAssistantAuthMode === 'api-key'
                         ? 'API key provided'
@@ -1583,9 +1691,9 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
           const releaseId = toReleaseId(release.pluginId, release.version);
           const docs = release.docs as
             | ({ title?: string; description?: string } & Record<
-              string,
-              unknown
-            >)
+                string,
+                unknown
+              >)
             | undefined;
           const searchText = [
             releaseId,
@@ -1667,8 +1775,8 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
           () =>
             selectedDetailsPluginId
               ? marketplace.all.find(
-                (p) => p.pluginId === selectedDetailsPluginId,
-              )
+                  (p) => p.pluginId === selectedDetailsPluginId,
+                )
               : null,
           [selectedDetailsPluginId, marketplace.all],
         );
@@ -1677,9 +1785,9 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
           () =>
             selectedPlugin
               ? (buildPluginDetailView(selectedPlugin, {
-                reviews: [],
-                userId: 'anon',
-              }) as unknown as PluginDetailView)
+                  reviews: [],
+                  userId: 'anon',
+                }) as unknown as PluginDetailView)
               : null,
           [selectedPlugin],
         );
@@ -1687,8 +1795,8 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
           () =>
             selectedPlugin
               ? marketplace.topInstalled.filter(
-                (candidate) => candidate.pluginId !== selectedPlugin.pluginId,
-              )
+                  (candidate) => candidate.pluginId !== selectedPlugin.pluginId,
+                )
               : [],
           [selectedPlugin, marketplace.topInstalled],
         );
@@ -1728,7 +1836,7 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                       plugin={selectedPlugin!}
                       details={selectedPluginDetails!}
                       businessName="new-business"
-                      onInstall={async () => {
+                      onInstall={async (): Promise<boolean> => {
                         const releaseId = toReleaseId(
                           selectedPlugin!.pluginId,
                           selectedPlugin!.latestRelease.version,
@@ -1737,6 +1845,7 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                           handleToggleSelection(releaseId);
                         }
                         setSelectedDetailsPluginId(null);
+                        return true;
                       }}
                       onUninstall={async () => {
                         const releaseId = toReleaseId(
@@ -1748,7 +1857,7 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                         }
                         setSelectedDetailsPluginId(null);
                       }}
-                      onSaveReview={async () => { }}
+                      onSaveReview={async () => {}}
                       onBack={() => setSelectedDetailsPluginId(null)}
                       similarPlugins={selectedPluginSimilar}
                       reviewGroups={[]}
@@ -1993,9 +2102,9 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                                       </p>
                                       <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mt-0.5">
                                         <span className="text-yellow-500/80">
-                                          Γÿà 4.8
+                                          ★ 4.8
                                         </span>
-                                        <span>ΓÇó</span>
+                                        <span>•</span>
                                         <span>
                                           {plugin.installs.toLocaleString()}{' '}
                                           installs

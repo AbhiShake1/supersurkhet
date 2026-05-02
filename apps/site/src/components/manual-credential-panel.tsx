@@ -1,4 +1,5 @@
-import { Check, Loader2, AlertCircle, Zap } from 'lucide-react';
+import { AlertCircle, Check, Loader2, Zap } from 'lucide-react';
+import { useId } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { AssistantAuthMode } from '@/lib/ai/business-onboarding-models';
@@ -38,6 +39,46 @@ const validationBadgeConfig = {
   },
 };
 
+interface TestButtonContentProps {
+  isTesting: boolean;
+  validationStatus: 'idle' | 'validating' | 'valid' | 'invalid';
+}
+
+/**
+ * Renders the content of the Test Model button.
+ * Uses early returns instead of nested ternary for readability.
+ * Internal to ManualCredentialPanel — not exported.
+ */
+function TestButtonContent({
+  isTesting,
+  validationStatus,
+}: TestButtonContentProps) {
+  if (isTesting) {
+    return (
+      <>
+        <Loader2 className="h-3 w-3 animate-spin" />
+        Testing...
+      </>
+    );
+  }
+
+  if (validationStatus === 'valid') {
+    return (
+      <>
+        <Check className="h-3 w-3" />
+        Connected
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Zap className="h-3 w-3" />
+      Test Model
+    </>
+  );
+}
+
 export function ManualCredentialPanel({
   authMode,
   apiKey,
@@ -52,6 +93,12 @@ export function ManualCredentialPanel({
   validationStatus,
   validationError,
 }: ManualCredentialPanelProps) {
+  const fieldId = useId();
+  const apiKeyInputId = `${fieldId}-api-key`;
+  const baseUrlInputId = `${fieldId}-base-url`;
+  const oauthTokenInputId = `${fieldId}-oauth-token`;
+  const awsRegionInputId = `${fieldId}-aws-region`;
+  const awsAccessKeyInputId = `${fieldId}-aws-access-key`;
   const badge = validationBadgeConfig[validationStatus];
 
   return (
@@ -67,10 +114,14 @@ export function ManualCredentialPanel({
       {authMode === 'api-key' && (
         <div className="space-y-2">
           <div>
-            <label className="mb-1 block text-[11px] text-muted-foreground">
+            <label
+              htmlFor={apiKeyInputId}
+              className="mb-1 block text-[11px] text-muted-foreground"
+            >
               API Key
             </label>
             <Input
+              id={apiKeyInputId}
               type="password"
               placeholder="sk-..."
               value={apiKey}
@@ -79,10 +130,14 @@ export function ManualCredentialPanel({
             />
           </div>
           <div>
-            <label className="mb-1 block text-[11px] text-muted-foreground">
+            <label
+              htmlFor={baseUrlInputId}
+              className="mb-1 block text-[11px] text-muted-foreground"
+            >
               Base URL (optional)
             </label>
             <Input
+              id={baseUrlInputId}
               placeholder="https://api.example.com/v1"
               value={baseUrl}
               onChange={(e) => onBaseUrlChange(e.target.value)}
@@ -94,10 +149,14 @@ export function ManualCredentialPanel({
 
       {authMode === 'oauth-access-token' && (
         <div>
-          <label className="mb-1 block text-[11px] text-muted-foreground">
+          <label
+            htmlFor={oauthTokenInputId}
+            className="mb-1 block text-[11px] text-muted-foreground"
+          >
             OAuth Access Token
           </label>
           <Input
+            id={oauthTokenInputId}
             type="password"
             placeholder="ya29...."
             value={apiKey}
@@ -110,10 +169,14 @@ export function ManualCredentialPanel({
       {authMode === 'aws-credential-chain' && (
         <div className="space-y-2">
           <div>
-            <label className="mb-1 block text-[11px] text-muted-foreground">
+            <label
+              htmlFor={awsRegionInputId}
+              className="mb-1 block text-[11px] text-muted-foreground"
+            >
               Region
             </label>
             <Input
+              id={awsRegionInputId}
               placeholder="us-east-1"
               value={baseUrl}
               onChange={(e) => onBaseUrlChange(e.target.value)}
@@ -121,10 +184,14 @@ export function ManualCredentialPanel({
             />
           </div>
           <div>
-            <label className="mb-1 block text-[11px] text-muted-foreground">
+            <label
+              htmlFor={awsAccessKeyInputId}
+              className="mb-1 block text-[11px] text-muted-foreground"
+            >
               Access Key ID
             </label>
             <Input
+              id={awsAccessKeyInputId}
               placeholder="AKIA..."
               value={apiKey}
               onChange={(e) => onApiKeyChange(e.target.value)}
@@ -173,26 +240,15 @@ export function ManualCredentialPanel({
             disabled={isTesting || isSaving}
             className={cn(
               'flex-1 h-7 text-xs gap-1.5',
-              validationStatus === 'valid' && 'bg-emerald-600 hover:bg-emerald-700',
+              validationStatus === 'valid' &&
+                'bg-emerald-600 hover:bg-emerald-700',
             )}
             variant={validationStatus === 'valid' ? 'default' : 'secondary'}
           >
-            {isTesting ? (
-              <>
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Testing...
-              </>
-            ) : validationStatus === 'valid' ? (
-              <>
-                <Check className="h-3 w-3" />
-                Connected
-              </>
-            ) : (
-              <>
-                <Zap className="h-3 w-3" />
-                Test Model
-              </>
-            )}
+            <TestButtonContent
+              isTesting={isTesting}
+              validationStatus={validationStatus}
+            />
           </Button>
         )}
       </div>
