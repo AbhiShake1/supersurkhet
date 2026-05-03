@@ -958,12 +958,12 @@ describe('provider auth api', () => {
       parsedCookie['ss-ai-provider-store'],
       secret,
     );
-    expect(refreshedStore.openai?.oauthAccessToken).toBe(
+    expect(refreshedStore.openai?.[0]?.oauthAccessToken).toBe(
       'refreshed-access-token',
     );
-    expect(refreshedStore.openai?.oauthRefreshToken).toBe(
+    expect(refreshedStore.openai?.[0]?.oauthRefreshToken).toBe(
       'rotated-refresh-token',
     );
-    expect(refreshedStore.openai?.oauthExpiresAt).toBe(11200);
+    expect(refreshedStore.openai?.[0]?.oauthExpiresAt).toBe(11200);
   });
 });

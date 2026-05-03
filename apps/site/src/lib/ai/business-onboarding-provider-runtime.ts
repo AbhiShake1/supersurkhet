@@ -183,7 +183,13 @@ export function createAssistantLanguageModel(
         headers: googleHeaders,
       });
 
-      return google(config.model);
+      // Google Generative AI requires specific model IDs. 
+      // Mapping common short names to their '-latest' or valid counterparts if needed.
+      let modelId = config.model;
+      if (modelId === 'gemini-1.5-pro') modelId = 'gemini-1.5-pro-latest';
+      else if (modelId === 'gemini-1.5-flash') modelId = 'gemini-1.5-flash-latest';
+
+      return google(modelId);
     }
 
     case 'bedrock':

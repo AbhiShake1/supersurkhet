@@ -135,6 +135,9 @@ export function CreateBusinessPageFlow() {
   const hasSelectedPlugins = selectedPluginReleaseIds.length > 0;
   const completionPercent = Math.round((step / 4) * 100);
   const pluginSyncDebounceRef = useRef<number | null>(null);
+  const handleReviewPlugins = async () => {
+    setStep(3);
+  };
 
   const handleNextStep1 = async () => {
     if (isLoading) {
@@ -475,7 +478,7 @@ export function CreateBusinessPageFlow() {
                 <Button
                   type="button"
                   size="lg"
-                  onClick={() => setStep(3)}
+                  onClick={handleReviewPlugins}
                   disabled={isPending}
                   className="min-w-[152px] rounded-r-xl transition-all duration-200"
                 >

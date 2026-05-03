@@ -139,16 +139,20 @@ describe('openai compatible api', () => {
     );
     const encryptedStore = encryptProviderCredentialStore(
       {
-        openai: {
-          providerId: 'openai',
-          model: 'gpt-5-mini',
-          authMode: 'oauth-access-token',
-          oauthAccessToken: 'expired-access-token',
-          oauthRefreshToken: 'stored-refresh-token',
-          oauthExpiresAt: 1900,
-          baseURL: 'https://chatgpt.com/backend-api/codex',
-          updatedAt: 1700,
-        },
+        openai: [
+          {
+            providerId: 'openai',
+            model: 'gpt-5-mini',
+            authMode: 'oauth-access-token',
+            oauthAccessToken: 'expired-access-token',
+            oauthRefreshToken: 'stored-refresh-token',
+            oauthExpiresAt: 1900,
+            baseURL: 'https://chatgpt.com/backend-api/codex',
+            updatedAt: 1700,
+            savedAt: 1700,
+            credentialId: 'compat-test-openai-1',
+          },
+        ],
       },
       secret,
     );
@@ -301,15 +305,19 @@ describe('openai compatible api', () => {
     );
     const encryptedStore = encryptProviderCredentialStore(
       {
-        google: {
-          providerId: 'google',
-          model: 'gemini-2.5-flash',
-          authMode: 'oauth-access-token',
-          oauthAccessToken: 'expired-google-access-token',
-          oauthRefreshToken: 'stored-google-refresh-token',
-          oauthExpiresAt: 1800,
-          updatedAt: 1650,
-        },
+        google: [
+          {
+            providerId: 'google',
+            model: 'gemini-2.5-flash',
+            authMode: 'oauth-access-token',
+            oauthAccessToken: 'expired-google-access-token',
+            oauthRefreshToken: 'stored-google-refresh-token',
+            oauthExpiresAt: 1800,
+            updatedAt: 1650,
+            savedAt: 1650,
+            credentialId: 'compat-test-google-1',
+          },
+        ],
       },
       secret,
     );

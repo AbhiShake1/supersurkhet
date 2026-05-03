@@ -36,8 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const { auth } = useRouteContext({ from: '__root__' });
   const [user, setUser] = useState<AuthUser>();
   const [_refreshState, setRefreshState] = useState(0);
-  const [authUser, setAuthUser] =
-    useState<Awaited<ReturnType<typeof auth.getCurrentUser>>>();
+  const [authUser, setAuthUser] = useState<AuthUser | null | undefined>();
   const [anonymousUserId, setAnonymousUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -89,17 +88,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     auth
       .getCurrentUser()
-      .then((_authUser) => {
-        setAuthUser(_authUser);
+      .then((resolvedUser: AuthUser | null) => {
+        setAuthUser(resolvedUser);
 
         // If we have an authenticated user, only subscribe to that user record.
-        if (_authUser) {
-          ref = getGunRef(mergeKeys('user'))
-            .get(_authUser.pub)
-            .open((data) => {
-              setUser({ ..._authUser, ...data });
-              setIsLoading(false);
-            });
+        if (resolvedUser) {
+          const pub = resolvedUser.pub;
+          if (pub) {
+            ref = getGunRef(mergeKeys('user'))
+              .get(pub)
+              .open((data) => {
+                setUser({ ...resolvedUser, ...data });
+                setIsLoading(false);
+              });
+          } else {
+            setIsLoading(false);
+          }
         } else {
           // If no authenticated user but we have an anonymous user ID
           if (anonymousUserId) {
