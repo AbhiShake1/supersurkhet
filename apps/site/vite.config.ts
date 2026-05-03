@@ -46,6 +46,18 @@ const config = defineConfig({
           },
         },
       },
+      rollupConfig: {
+        external: [
+          'shiki',
+          /^@shikijs\//,
+          'mermaid',
+          'maplibre-gl',
+          'blockly',
+          /^blockly\//,
+          '@streamdown/code',
+          '@streamdown/mermaid',
+        ],
+      },
     }),
     // this is the plugin that enables path aliases
     viteTsConfigPaths({
