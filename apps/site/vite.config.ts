@@ -37,7 +37,6 @@ const config = defineConfig({
           //     }
           //   ]
           // },
-          name: 'surkhet',
           compatibility_date: '2026-01-21',
           compatibility_flags: ['nodejs_compat'],
           keep_vars: true,
