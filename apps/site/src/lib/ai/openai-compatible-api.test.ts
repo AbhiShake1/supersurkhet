@@ -288,6 +288,15 @@ describe('openai compatible api', () => {
   });
 
   it('refreshes expired google oauth sessions and rotates auth session token', async () => {
+    const previousClientId = process.env.GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_ID;
+    const previousClientSecret =
+      process.env.GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_SECRET;
+
+    process.env.GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_ID = 'google-test-client-id';
+    process.env.GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_SECRET =
+      'google-test-client-secret';
+
+    try {
     const sessionToken = createAiAuthSessionToken(
       {
         providerId: 'google',
@@ -377,6 +386,18 @@ describe('openai compatible api', () => {
       );
     } finally {
       vi.unstubAllGlobals();
+    }
+    } finally {
+      if (typeof previousClientId === 'string') {
+        process.env.GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_ID = previousClientId;
+      } else {
+        delete process.env.GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_ID;
+      }
+      if (typeof previousClientSecret === 'string') {
+        process.env.GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_SECRET = previousClientSecret;
+      } else {
+        delete process.env.GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_SECRET;
+      }
     }
   });
 });
