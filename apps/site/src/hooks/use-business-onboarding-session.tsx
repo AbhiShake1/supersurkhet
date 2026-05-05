@@ -841,9 +841,7 @@ export function useBusinessOnboardingSession() {
         return null;
       }
 
-      // Pass the API key directly in the payload
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await (testBoyaiConnection as any)({
+      const result = await testBoyaiConnection({
         data: { apiKey: testKey },
       });
 
@@ -949,12 +947,15 @@ export function useBusinessOnboardingSession() {
                   .user()
                   .get('boyai_config')
                   .get('llm_api_key')
-                  .once((data: any) => {
+                  .once((data: unknown) => {
                     if (isResolved) return;
                     isResolved = true;
                     clearTimeout(timeout);
-                    if (data) resolve(data as string);
-                    else reject(new Error('not found'));
+                    if (typeof data === 'string' && data.length > 0) {
+                      resolve(data);
+                    } else {
+                      reject(new Error('not found'));
+                    }
                   });
               },
             );
@@ -1159,13 +1160,12 @@ export function BusinessOnboardingSessionProvider({
   );
 }
 
-/**
- * Use this instead of `useBusinessOnboardingSession()` in components
- * rendered inside `<BusinessOnboardingSessionProvider>`.
- * Falls back to creating its own instance if no provider is found.
- */
 export function useSharedBusinessOnboardingSession(): BusinessOnboardingSessionValue {
   const ctx = useContext(BusinessOnboardingSessionContext);
-  if (ctx) return ctx;
-  return useBusinessOnboardingSession();
+  if (!ctx) {
+    throw new Error(
+      'useSharedBusinessOnboardingSession must be used within BusinessOnboardingSessionProvider',
+    );
+  }
+  return ctx;
 }
