@@ -1,15 +1,15 @@
-import { defineConfig } from 'vitest/config';
+import { fileURLToPath, URL } from 'node:url';
+import tailwindcss from '@tailwindcss/vite';
 import { devtools } from '@tanstack/devtools-vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import viteReact from '@vitejs/plugin-react';
-import viteTsConfigPaths from 'vite-tsconfig-paths';
-import { fileURLToPath, URL } from 'node:url';
-
-import tailwindcss from '@tailwindcss/vite';
 import { nitro } from 'nitro/vite';
+import viteTsConfigPaths from 'vite-tsconfig-paths';
+import { defineConfig } from 'vitest/config';
 import { zodTypegen } from './scripts/vite/zod-typegen';
 
 const config = defineConfig({
+  envDir: fileURLToPath(new URL('./src', import.meta.url)),
   test: {
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     exclude: ['tests/**'],
@@ -18,6 +18,9 @@ const config = defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
+  },
+  build: {
+    reportCompressedSize: false,
   },
   plugins: [
     devtools(),
@@ -36,6 +39,7 @@ const config = defineConfig({
           //     }
           //   ]
           // },
+          name:'supersurkhet-apps-site',
           compatibility_date: '2026-01-21',
           compatibility_flags: ['nodejs_compat'],
           keep_vars: true,
@@ -44,6 +48,19 @@ const config = defineConfig({
             logs: { enabled: true },
           },
         },
+      },
+      rollupConfig: {
+        external: [
+          'shiki',
+          /^@shikijs\//,
+          '@streamdown/code',
+          '@streamdown/mermaid',
+          /^@streamdown\//,
+          'mermaid',
+          'maplibre-gl',
+          'blockly',
+          /^blockly\//,
+        ],
       },
     }),
     // this is the plugin that enables path aliases

@@ -540,117 +540,136 @@ describe('provider auth api', () => {
   });
 
   it('creates google antigravity oauth state and stores google credential on callback', async () => {
-    const authorizeResponse = await handleProviderOauthAuthorizeRequest(
-      new Request('http://localhost/v1/auth/providers/oauth/authorize', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          cookie: authCookie,
-        },
-        body: JSON.stringify({
-          providerId: 'google',
-          methodId: 'google-antigravity-oauth',
-          model: 'gemini-2.5-flash',
-          projectId: 'my-project',
+    const previousClientId = process.env.GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_ID;
+    const previousClientSecret = process.env.GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_SECRET;
+
+    process.env.GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_ID = 'google-test-client-id';
+    process.env.GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_SECRET = 'google-test-client-secret';
+
+    try {
+      const authorizeResponse = await handleProviderOauthAuthorizeRequest(
+        new Request('http://localhost/v1/auth/providers/oauth/authorize', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            cookie: authCookie,
+          },
+          body: JSON.stringify({
+            providerId: 'google',
+            methodId: 'google-antigravity-oauth',
+            model: 'gemini-2.5-flash',
+            projectId: 'my-project',
+          }),
         }),
-      }),
-      { secret, now: () => 2200 },
-    );
+        { secret, now: () => 2200 },
+      );
 
-    expect(authorizeResponse.status).toBe(200);
-    const authorizeJson = (await authorizeResponse.json()) as {
-      authorizationUrl: string;
-      method: string;
-    };
-    expect(authorizeJson.method).toBe('google-antigravity-oauth');
-    expect(authorizeJson.authorizationUrl).toContain(
-      'accounts.google.com/o/oauth2/v2/auth',
-    );
-    const authorizeUrl = new URL(authorizeJson.authorizationUrl);
-    const state = authorizeUrl.searchParams.get('state');
-    expect(state).toBeTruthy();
-    const oauthCookie = extractCookieValue(
-      authorizeResponse.headers.get('set-cookie'),
-    );
-
-    const callbackResponse = await handleProviderOauthCallbackRequest(
-      new Request('http://localhost/v1/auth/providers/oauth/callback', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          cookie: `${authCookie}; ${oauthCookie}`,
-        },
-        body: JSON.stringify({
-          code: 'google-oauth-code',
-          state,
-        }),
-      }),
-      {
-        secret,
-        now: () => 2205,
-        fetch: async (input) => {
-          const url = String(input);
-          if (url.includes('oauth2.googleapis.com/token')) {
-            return new Response(
-              JSON.stringify({
-                access_token: 'google-access-token',
-                refresh_token: 'google-refresh-token',
-                expires_in: 3600,
-              }),
-              {
-                status: 200,
-                headers: {
-                  'content-type': 'application/json',
-                },
-              },
-            );
-          }
-          if (url.includes('googleapis.com/oauth2/v1/userinfo')) {
-            return new Response(
-              JSON.stringify({
-                email: 'user@example.com',
-              }),
-              {
-                status: 200,
-                headers: {
-                  'content-type': 'application/json',
-                },
-              },
-            );
-          }
-          if (url.includes('v1internal:loadCodeAssist')) {
-            return new Response(
-              JSON.stringify({
-                cloudaicompanionProject: 'resolved-google-project',
-              }),
-              {
-                status: 200,
-                headers: {
-                  'content-type': 'application/json',
-                },
-              },
-            );
-          }
-          return new Response('unexpected', { status: 500 });
-        },
-      },
-    );
-
-    expect(callbackResponse.status).toBe(200);
-    const callbackJson = (await callbackResponse.json()) as {
-      providerId: string;
-      method: string;
-      data: {
-        providerId: string;
-        authMode: string;
-        hasOauthAccessToken: boolean;
+      expect(authorizeResponse.status).toBe(200);
+      const authorizeJson = (await authorizeResponse.json()) as {
+        authorizationUrl: string;
+        method: string;
       };
-    };
-    expect(callbackJson.providerId).toBe('google');
-    expect(callbackJson.method).toBe('google-antigravity-oauth');
-    expect(callbackJson.data.providerId).toBe('google');
-    expect(callbackJson.data.authMode).toBe('oauth-access-token');
-    expect(callbackJson.data.hasOauthAccessToken).toBe(true);
+      expect(authorizeJson.method).toBe('google-antigravity-oauth');
+      expect(authorizeJson.authorizationUrl).toContain(
+        'accounts.google.com/o/oauth2/v2/auth',
+      );
+      const authorizeUrl = new URL(authorizeJson.authorizationUrl);
+      const state = authorizeUrl.searchParams.get('state');
+      expect(state).toBeTruthy();
+      const oauthCookie = extractCookieValue(
+        authorizeResponse.headers.get('set-cookie'),
+      );
+
+      const callbackResponse = await handleProviderOauthCallbackRequest(
+        new Request('http://localhost/v1/auth/providers/oauth/callback', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            cookie: `${authCookie}; ${oauthCookie}`,
+          },
+          body: JSON.stringify({
+            code: 'google-oauth-code',
+            state,
+          }),
+        }),
+        {
+          secret,
+          now: () => 2205,
+          fetch: async (input) => {
+            const url = String(input);
+            if (url.includes('oauth2.googleapis.com/token')) {
+              return new Response(
+                JSON.stringify({
+                  access_token: 'google-access-token',
+                  refresh_token: 'google-refresh-token',
+                  expires_in: 3600,
+                }),
+                {
+                  status: 200,
+                  headers: {
+                    'content-type': 'application/json',
+                  },
+                },
+              );
+            }
+            if (url.includes('googleapis.com/oauth2/v1/userinfo')) {
+              return new Response(
+                JSON.stringify({
+                  email: 'user@example.com',
+                }),
+                {
+                  status: 200,
+                  headers: {
+                    'content-type': 'application/json',
+                  },
+                },
+              );
+            }
+            if (url.includes('v1internal:loadCodeAssist')) {
+              return new Response(
+                JSON.stringify({
+                  cloudaicompanionProject: 'resolved-google-project',
+                }),
+                {
+                  status: 200,
+                  headers: {
+                    'content-type': 'application/json',
+                  },
+                },
+              );
+            }
+            return new Response('unexpected', { status: 500 });
+          },
+        },
+      );
+
+      expect(callbackResponse.status).toBe(200);
+      const callbackJson = (await callbackResponse.json()) as {
+        providerId: string;
+        method: string;
+        data: {
+          providerId: string;
+          authMode: string;
+          hasOauthAccessToken: boolean;
+        };
+      };
+      expect(callbackJson.providerId).toBe('google');
+      expect(callbackJson.method).toBe('google-antigravity-oauth');
+      expect(callbackJson.data.providerId).toBe('google');
+      expect(callbackJson.data.authMode).toBe('oauth-access-token');
+      expect(callbackJson.data.hasOauthAccessToken).toBe(true);
+    } finally {
+      if (typeof previousClientId === 'string') {
+        process.env.GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_ID = previousClientId;
+      } else {
+        delete process.env.GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_ID;
+      }
+      if (typeof previousClientSecret === 'string') {
+        process.env.GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_SECRET = previousClientSecret;
+      } else {
+        delete process.env.GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_SECRET;
+      }
+    }
   });
 
   it('creates openrouter oauth state and stores openrouter credential on callback', async () => {
@@ -708,7 +727,7 @@ describe('provider auth api', () => {
           if (String(input).includes('/api/v1/auth/keys')) {
             return new Response(
               JSON.stringify({
-                key: 'sk-or-v1-test-openrouter-key',
+                key: 'test_openrouter_key',
               }),
               {
                 status: 200,
@@ -958,12 +977,12 @@ describe('provider auth api', () => {
       parsedCookie['ss-ai-provider-store'],
       secret,
     );
-    expect(refreshedStore.openai?.oauthAccessToken).toBe(
+    expect(refreshedStore.openai?.[0]?.oauthAccessToken).toBe(
       'refreshed-access-token',
     );
-    expect(refreshedStore.openai?.oauthRefreshToken).toBe(
+    expect(refreshedStore.openai?.[0]?.oauthRefreshToken).toBe(
       'rotated-refresh-token',
     );
-    expect(refreshedStore.openai?.oauthExpiresAt).toBe(11200);
+    expect(refreshedStore.openai?.[0]?.oauthExpiresAt).toBe(11200);
   });
 });

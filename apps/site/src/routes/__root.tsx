@@ -1,52 +1,49 @@
 import '@/lib/monkey-patches';
-import { VibeKanbanWebCompanion } from 'vibe-kanban-web-companion';
-import { Agentation } from 'agentation';
+import { DismissableLayerBranch } from '@radix-ui/react-dismissable-layer';
+import { TooltipProvider } from '@radix-ui/react-tooltip';
+import type { QueryClient } from '@tanstack/react-query';
 import {
+  createRootRouteWithContext,
   HeadContent,
   Outlet,
   Scripts,
-  createRootRouteWithContext,
 } from '@tanstack/react-router';
+import { Agentation } from 'agentation';
+import type { IGunUserInstance } from 'gun/types';
 import { NuqsAdapter } from 'nuqs/adapters/tanstack-router';
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
-import { TanStackDevtools } from '@tanstack/react-devtools';
-import TanStackQueryDevtools from '../integrations/tanstack-query/devtools';
-import appCss from '../styles.css?url';
-import { NotFound } from '@/components/ui/not-found';
-import { ErrorComponent } from '@/components/ui/error';
-import { Toaster } from '@/components/ui/sonner';
-import { gun } from '@/lib/gun';
-import { DismissableLayerBranch } from '@radix-ui/react-dismissable-layer';
-import { TooltipProvider } from '@radix-ui/react-tooltip';
 import { useEffect } from 'react';
-import { AuthProvider } from '@/components/auth-provider';
+import { VibeKanbanWebCompanion } from 'vibe-kanban-web-companion';
+import z from 'zod';
+import { AuthProvider, type AuthUser } from '@/components/auth-provider';
 import { ConfettiProvider } from '@/components/confetti-provider';
 import { LoginPromptProvider } from '@/components/login-prompt-provider';
-import {
-  GoogleLoginProvider,
-  OneTapLoginProvider,
-} from '@/integrations/google/google-login-provider';
-import { setGTADefaultOptions } from '@/lib/gun/options';
-import { appSchema, transformSchema } from '@/lib/schema';
+import { ErrorComponent } from '@/components/ui/error';
+import { NotFound } from '@/components/ui/not-found';
+import { Toaster } from '@/components/ui/sonner';
+import { UserLoading } from '@/components/ui/user-loading';
+import { DialogProvider, DrawerProvider } from '@/contexts/dialog-context';
+import { I18nProvider } from '@/contexts/i18n-context';
 // import { QRScannerButton } from "@/components/ui/qr-scanner-button";
 // import { toast } from "sonner";
 // import type { DataMatrixAction } from "@/lib/datamatrix";
 import {
-  getAppTheme,
   getAppDarkMode,
+  getAppTheme,
   getAppThemeData,
+  ThemeProvider as ThemeModeProvider,
 } from '@/contexts/theme-context';
-import { ThemeProvider as ThemeModeProvider } from '@/contexts/theme-context';
+import {
+  GoogleLoginProvider,
+  OneTapLoginProvider,
+} from '@/integrations/google/google-login-provider';
+import { gun } from '@/lib/gun';
+import { setGTADefaultOptions } from '@/lib/gun/options';
+import { getGunRef, mergeKeys } from '@/lib/gun/utils';
+import { appSchema, transformSchema } from '@/lib/schema';
 import { defaultPresets } from '@/lib/theme';
 import { migrateMarketplaceSeedReleases } from '@/server-functions/plugins';
 import { getUser, removeUser } from '@/server-functions/user';
-import type { IGunUserInstance } from 'gun/types';
-import z from 'zod';
-import { getGunRef, mergeKeys } from '@/lib/gun/utils';
-import { I18nProvider } from '@/contexts/i18n-context';
-import { DialogProvider, DrawerProvider } from '@/contexts/dialog-context';
-import type { QueryClient } from '@tanstack/react-query';
-import { UserLoading } from '@/components/ui/user-loading';
+import appCss from '../styles.css?url';
 
 setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
 
@@ -119,7 +116,7 @@ async function getUserProfile() {
   });
 }
 
-async function getCurrentUser() {
+async function getCurrentUser(): Promise<AuthUser | null> {
   // const user = await recallUser();
   const userLocal = await getUser();
   gun.user().auth(userLocal);
@@ -347,23 +344,6 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         <Toaster richColors />
         <Outlet />
         <VibeKanbanWebCompanion />
-        {
-          //<TanStackDevtools
-          //   config={{
-          //     position: 'bottom-right',
-          //     openHotkey: ['Shift', 'd'],
-          //     triggerHidden: true,
-          //     hideUntilHover: true,
-          //   }}
-          //   plugins={[
-          //     {
-          //       name: 'Tanstack Router',
-          //       render: <TanStackRouterDevtoolsPanel />,
-          //     },
-          //     TanStackQueryDevtools,
-          //   ]}
-          // />
-        }
       </RootDocument>
     );
   },
@@ -509,7 +489,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       lang="en"
       className={
         loaderData.savedDarkMode === undefined ||
-          loaderData.savedDarkMode === 'true'
+        loaderData.savedDarkMode === 'true'
           ? 'dark'
           : ''
       }
@@ -564,7 +544,7 @@ function AgentationBridge() {
     const isAgentationTarget = (target: EventTarget | null) =>
       target instanceof Element &&
       target.closest('[data-feedback-toolbar], [data-agentation-root]') !==
-      null;
+        null;
 
     const handleFocusIn = (event: FocusEvent) => {
       if (!isAgentationTarget(event.target)) return;

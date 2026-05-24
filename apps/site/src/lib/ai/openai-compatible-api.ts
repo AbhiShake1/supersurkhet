@@ -259,20 +259,42 @@ async function resolveSessionContextFromRequest(
     const store = readProviderCredentialStoreFromRequest(request, {
       secret: options.secret,
     });
-    const storedProvider = store[refreshed.provider.providerId];
-    if (storedProvider) {
-      store[storedProvider.providerId] =
-        updateStoredCredentialWithRefreshedOAuth({
+    const pid = refreshed.provider.providerId;
+    const list = store[pid] ?? [];
+    let matchIdx = -1;
+    if (
+      session.provider.authMode === 'oauth-access-token' &&
+      session.provider.oauthRefreshToken
+    ) {
+      matchIdx = list.findIndex(
+        (c) => c.oauthRefreshToken === session.provider.oauthRefreshToken,
+      );
+    } else if (
+      session.provider.authMode === 'api-key' &&
+      session.provider.apiKey
+    ) {
+      matchIdx = list.findIndex((c) => c.apiKey === session.provider.apiKey);
+    }
+    if (matchIdx < 0 && list.length === 1) {
+      matchIdx = 0;
+    }
+    if (matchIdx >= 0) {
+      const storedProvider = list[matchIdx];
+      if (storedProvider) {
+        const next = [...list];
+        next[matchIdx] = updateStoredCredentialWithRefreshedOAuth({
           stored: storedProvider,
           refreshedSession,
           nowInSeconds,
         });
-      responseHeaders.append(
-        'Set-Cookie',
-        buildProviderCredentialStoreSetCookie(store, {
-          secret: options.secret,
-        }),
-      );
+        store[pid] = next;
+        responseHeaders.append(
+          'Set-Cookie',
+          buildProviderCredentialStoreSetCookie(store, {
+            secret: options.secret,
+          }),
+        );
+      }
     }
 
     return {

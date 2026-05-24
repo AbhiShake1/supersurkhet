@@ -34,6 +34,32 @@ This isn't just imagination - it's the SuperSurkhet reality.
 - **Affordable Solutions**: Pre-built modules at a fraction of custom development costs
 - **Data Ownership**: Decentralized architecture ensures you retain control of your data
 
+## 🤖 AI Provider Setup (Business Onboarding — Step 2)
+
+During business creation, Step 2 guides users through an AI integration wizard that collects provider, model, and credentials.
+
+### Credential Configuration Flow
+
+1. **Provider** → choose from 60+ providers (OpenAI, Anthropic, Google, Groq, AWS Bedrock, etc.)
+2. **Model** → select from provider-specific model list (fetched live from models.dev)
+3. **Auth mode** → API key or OAuth access token
+4. **Credential** → paste the key / token
+5. At the `done` stage, two actions are available:
+   - **Add Another** — saves the current credential to the server then resets the wizard back to step 1 of the provider selection, allowing a new provider/model/key combination to be configured as a backup
+   - **Test Model** — validates connectivity using `testBoyaiConnection`
+
+**Security note:** Credentials are encrypted with Gun SEA using the user's private key pair before being stored in GunDB. The plain text key does not persist after save — only the encrypted blob. **Test Model** reads the saved credential from GunDB and decrypts on demand (not from ephemeral form state).
+
+### Multiple Backup Keys
+
+Users can add as many provider/model/key combinations as needed. Each saved entry is displayed as a green pill (`Provider · Model · AuthMode`) above the wizard. If the primary key expires mid-task, the platform falls back to the next available key automatically. After a credential is saved, **Test Model** uses the GunDB-backed copy (decrypted in memory for the check), not whatever happens to be left in the form fields.
+
+### Review Plugins (Step 2 → Step 3)
+
+Clicking **Review Plugins** automatically saves the last-configured credential (if one was entered and the wizard is in the `done` stage) before navigating to the plugin selection step. No explicit "Save Credentials" button is required.
+
+---
+
 ## 🏗️ Core Features
 
 ### Schema-Driven UI System
@@ -58,6 +84,7 @@ The technical heart of the platform enabling automatic generation of CRUD interf
 2. **Decentralized AI** - Device-local AI processing with graph network storage
 3. **Proprietary Compression** - Custom algorithms for blazingly fast data transfer
 4. **Instant Scale Architecture** - Supports thousands of billions of operations
+5. **Multi-Provider AI Key Backup** - Configure multiple AI provider/model/API key combinations during business onboarding. If a primary key expires mid-task, a backup key takes over automatically. Supports all major providers (OpenAI, Anthropic, Google, AWS Bedrock, Groq, Mistral, and 60+ more) with API key and OAuth auth modes.
 
 ### Integrated Services
 - **QR Code Ecosystem**: Universal entry point for all services with multi-step action execution
@@ -120,6 +147,7 @@ pnpm dev
 
 # Build for production
 pnpm build
+# Build is cross-platform (Windows, macOS, Linux) via cross-env and copyfiles — no platform-specific shell steps required.
 
 # Start production server
 pnpm start

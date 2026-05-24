@@ -18,9 +18,100 @@ export const AI_PROVIDER_OAUTH_STATE_COOKIE_NAME = 'ss-ai-provider-oauth-state';
 
 export type StoredProviderCredential = AssistantProviderConfig & {
   updatedAt: number;
+  savedAt: number;
+  credentialId: string;
 };
 
-export type ProviderCredentialStore = Record<string, StoredProviderCredential>;
+export type ProviderCredentialStore = Record<
+  string,
+  StoredProviderCredential[]
+>;
+
+function ensureStoredCredentialMetadata(
+  credential: AssistantProviderConfig & {
+    updatedAt: number;
+    credentialId?: string;
+    savedAt?: number;
+  },
+): StoredProviderCredential {
+  const credentialId =
+    typeof credential.credentialId === 'string' &&
+    credential.credentialId.length > 0
+      ? credential.credentialId
+      : nanoid(16);
+  const savedAt =
+    typeof credential.savedAt === 'number' &&
+    Number.isFinite(credential.savedAt)
+      ? credential.savedAt
+      : credential.updatedAt;
+  return { ...credential, credentialId, savedAt };
+}
+
+function normalizeDecryptedProviderStore(
+  raw: unknown,
+): ProviderCredentialStore {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return {};
+  }
+  const obj = raw as Record<string, unknown>;
+  const result: ProviderCredentialStore = {};
+  for (const [providerKey, value] of Object.entries(obj)) {
+    if (Array.isArray(value)) {
+      const list = value.filter(
+        (v): v is StoredProviderCredential =>
+          Boolean(v) &&
+          typeof v === 'object' &&
+          'providerId' in v &&
+          'updatedAt' in v,
+      );
+      result[providerKey] = list.map((v) =>
+        ensureStoredCredentialMetadata(
+          v as AssistantProviderConfig & {
+            updatedAt: number;
+            credentialId?: string;
+            savedAt?: number;
+          },
+        ),
+      );
+    } else if (
+      value &&
+      typeof value === 'object' &&
+      'providerId' in value &&
+      'updatedAt' in value
+    ) {
+      result[providerKey] = [
+        ensureStoredCredentialMetadata(
+          value as AssistantProviderConfig & {
+            updatedAt: number;
+            credentialId?: string;
+            savedAt?: number;
+          },
+        ),
+      ];
+    }
+  }
+  return result;
+}
+
+export function flattenProviderCredentialStore(
+  store: ProviderCredentialStore,
+): StoredProviderCredential[] {
+  return Object.values(store).flat();
+}
+
+export function appendStoredProviderCredential(
+  store: ProviderCredentialStore,
+  credential: AssistantProviderConfig & {
+    updatedAt: number;
+    credentialId?: string;
+    savedAt?: number;
+  },
+): void {
+  const pid = credential.providerId;
+  const withMeta = ensureStoredCredentialMetadata(credential);
+  const list = store[pid] ?? [];
+  store[pid] = [...list, withMeta];
+}
 
 export type AiAuthSessionPayload = {
   jti: string;
@@ -229,11 +320,8 @@ export function decryptProviderCredentialStore(
   secret?: string,
 ): ProviderCredentialStore {
   if (!encryptedStore || encryptedStore.trim().length === 0) return {};
-  const parsed = decryptPayload<ProviderCredentialStore>(
-    encryptedStore,
-    secret,
-  );
-  return parsed ?? {};
+  const parsed = decryptPayload<unknown>(encryptedStore, secret);
+  return normalizeDecryptedProviderStore(parsed);
 }
 
 export function readProviderCredentialStoreFromRequest(
@@ -287,6 +375,8 @@ export function sanitizeStoredProviderCredential(
     project: credential.project,
     headers: credential.headers,
     updatedAt: credential.updatedAt,
+    savedAt: credential.savedAt,
+    credentialId: credential.credentialId,
   };
 }
 

@@ -16,12 +16,10 @@ export const GOOGLE_OAUTH_USERINFO_ENDPOINT =
   'https://www.googleapis.com/oauth2/v1/userinfo?alt=json';
 
 export const GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_ID =
-  process.env.GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_ID ??
-  '1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com';
+  process.env.GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_ID ?? '';
 
 export const GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_SECRET =
-  process.env.GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_SECRET ??
-  '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';
+  process.env.GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_SECRET ?? '';
 
 const GOOGLE_ANTIGRAVITY_OAUTH_SCOPES = [
   'https://www.googleapis.com/auth/cloud-platform',
@@ -87,9 +85,18 @@ export type RefreshGoogleAccessTokenInput = {
 };
 
 export function resolveGoogleAntigravityClientConfig(): GoogleOauthClientConfig {
+  const clientId = process.env.GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_ID ?? '';
+  const clientSecret = process.env.GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_SECRET ?? '';
+
+  if (!clientId.trim()) {
+    throw new Error('Missing GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_ID.');
+  }
+  if (!clientSecret.trim()) {
+    throw new Error('Missing GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_SECRET.');
+  }
   return {
-    clientId: GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_ID,
-    clientSecret: GOOGLE_ANTIGRAVITY_OAUTH_CLIENT_SECRET,
+    clientId: clientId.trim(),
+    clientSecret: clientSecret.trim(),
   };
 }
 
@@ -232,7 +239,6 @@ export async function resolveGoogleAntigravityProjectId(
       );
       if (projectId) return projectId;
     } catch {
-      // Keep trying fallback endpoints.
     }
   }
 

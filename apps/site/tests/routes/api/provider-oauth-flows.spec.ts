@@ -68,7 +68,7 @@ test.describe("provider oauth e2e flows", () => {
       ) {
         await readJsonBody(request);
         respondJson(response, 200, {
-          key: "sk-or-v1-e2e-openrouter-key",
+          key: "test_openrouter_key",
         });
         return;
       }

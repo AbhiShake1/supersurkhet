@@ -7,6 +7,7 @@ import {
   decodeProviderOauthStateToken,
   decryptProviderCredentialStore,
   encryptProviderCredentialStore,
+  type ProviderCredentialStore,
 } from './provider-auth-store';
 
 const secret = 'test-secret-for-provider-store';
@@ -22,19 +23,40 @@ describe('provider auth store', () => {
   it('encrypts and decrypts provider credential state', () => {
     const encrypted = encryptProviderCredentialStore(
       {
-        openai: {
-          ...openAiProvider,
-          updatedAt: 1111,
-        },
+        openai: [
+          {
+            ...openAiProvider,
+            updatedAt: 1111,
+            savedAt: 1111,
+            credentialId: 'test-cred-1',
+          },
+        ],
       },
       secret,
     );
 
     const decrypted = decryptProviderCredentialStore(encrypted, secret);
 
-    expect(decrypted.openai?.providerId).toBe('openai');
-    expect(decrypted.openai?.apiKey).toBe('sk-test-key');
-    expect(decrypted.openai?.updatedAt).toBe(1111);
+    expect(decrypted.openai?.[0]?.providerId).toBe('openai');
+    expect(decrypted.openai?.[0]?.apiKey).toBe('sk-test-key');
+    expect(decrypted.openai?.[0]?.updatedAt).toBe(1111);
+    expect(decrypted.openai?.[0]?.credentialId).toBe('test-cred-1');
+  });
+
+  it('migrates legacy single-object store on decrypt', () => {
+    const legacy = {
+      openai: {
+        ...openAiProvider,
+        updatedAt: 3333,
+      },
+    } as unknown as ProviderCredentialStore;
+    const encrypted = encryptProviderCredentialStore(legacy, secret);
+    const decrypted = decryptProviderCredentialStore(encrypted, secret);
+    expect(decrypted.openai?.length).toBe(1);
+    expect(decrypted.openai?.[0]?.apiKey).toBe('sk-test-key');
+    expect(decrypted.openai?.[0]?.updatedAt).toBe(3333);
+    expect(decrypted.openai?.[0]?.credentialId.length).toBeGreaterThan(0);
+    expect(decrypted.openai?.[0]?.savedAt).toBe(3333);
   });
 
   it('returns null for tampered session token', () => {

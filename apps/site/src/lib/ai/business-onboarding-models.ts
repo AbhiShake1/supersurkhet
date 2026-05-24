@@ -16,12 +16,46 @@ export interface BusinessOnboardingModelOption {
 
 export const BUSINESS_ONBOARDING_MODEL_OPTIONS: readonly BusinessOnboardingModelOption[] =
   [
+    // Google Gemini models
     {
       id: 'gemini-2.5-flash',
       label: 'Gemini 2.5 Flash',
       provider: 'google',
       defaultAuthMode: 'api-key',
-      description: 'Fast default for onboarding conversations.',
+      description: 'Fast, cost-effective for most tasks.',
+    },
+    {
+      id: 'gemini-2.5-pro',
+      label: 'Gemini 2.5 Pro',
+      provider: 'google',
+      defaultAuthMode: 'api-key',
+      description: 'Strong reasoning and complex tasks.',
+    },
+    {
+      id: 'gemini-2.0-flash',
+      label: 'Gemini 2.0 Flash',
+      provider: 'google',
+      defaultAuthMode: 'api-key',
+    },
+    {
+      id: 'gemini-2.0-flash-lite',
+      label: 'Gemini 2.0 Flash Lite',
+      provider: 'google',
+      defaultAuthMode: 'api-key',
+      description: 'Lightweight, lowest latency.',
+    },
+    {
+      id: 'gemini-1.5-pro',
+      label: 'Gemini 1.5 Pro',
+      provider: 'google',
+      defaultAuthMode: 'api-key',
+      description: 'Large context window, complex reasoning.',
+    },
+    {
+      id: 'gemini-1.5-flash',
+      label: 'Gemini 1.5 Flash',
+      provider: 'google',
+      defaultAuthMode: 'api-key',
     },
     {
       id: 'gpt-5-mini',

@@ -39,12 +39,15 @@ import {
   exchangeOpenRouterAuthorizationCode,
 } from './openrouter-oauth';
 import {
+  appendStoredProviderCredential,
   buildProviderCredentialStoreSetCookie,
   buildProviderOauthStateClearCookie,
   buildProviderOauthStateSetCookie,
   createAiAuthSessionToken,
   decodeAiAuthSessionToken,
   extractBearerToken,
+  flattenProviderCredentialStore,
+  type ProviderCredentialStore,
   type ProviderOauthStatePayload,
   parseCookieHeader,
   readProviderCredentialStoreFromRequest,
@@ -88,6 +91,7 @@ const upsertProviderCredentialSchema = assistantProviderConfigSchema.extend({
 
 const createSessionBodySchema = z.object({
   providerId: assistantProviderIdSchema.optional(),
+  credentialId: z.string().trim().min(1).optional(),
   model: z.string().optional(),
   ttlSeconds: z.number().int().min(60).max(86400).optional(),
   provider: assistantProviderConfigSchema.optional(),
@@ -790,13 +794,25 @@ function oauthSuccessResponse(input: {
   providerId: string;
   methodId: string;
   oauthState: ProviderOauthStatePayload;
-  updatedCredential: StoredProviderCredential;
+  updatedCredential: AssistantProviderConfig & {
+    updatedAt: number;
+    credentialId?: string;
+    savedAt?: number;
+  };
   secret?: string;
-  store: Record<string, StoredProviderCredential>;
+  store: ProviderCredentialStore;
   title: string;
   message: string;
 }): Response {
-  input.store[input.updatedCredential.providerId] = input.updatedCredential;
+  appendStoredProviderCredential(input.store, input.updatedCredential);
+  const persistedList = input.store[input.updatedCredential.providerId] ?? [];
+  const persistedCredential =
+    persistedList.length > 0
+      ? persistedList[persistedList.length - 1]
+      : undefined;
+  if (!persistedCredential) {
+    return errorResponse(500, 'Failed to persist provider credential.');
+  }
   const cookies = [
     buildProviderCredentialStoreSetCookie(input.store, {
       secret: input.secret,
@@ -831,7 +847,7 @@ function oauthSuccessResponse(input: {
       object: 'provider_oauth_callback',
       providerId: input.providerId,
       method: input.methodId,
-      data: sanitizeStoredProviderCredential(input.updatedCredential),
+      data: sanitizeStoredProviderCredential(persistedCredential),
     },
     200,
     cookies,
@@ -1003,7 +1019,7 @@ export async function handleProviderOauthCallbackRequest(
       },
       model,
     );
-    const updated: StoredProviderCredential = {
+    const updated = {
       ...normalized,
       updatedAt: nowInSeconds,
     };
@@ -1077,7 +1093,7 @@ export async function handleProviderOauthCallbackRequest(
       },
       model,
     );
-    const updated: StoredProviderCredential = {
+    const updated = {
       ...normalized,
       updatedAt: nowInSeconds,
     };
@@ -1141,7 +1157,7 @@ export async function handleProviderOauthCallbackRequest(
       },
       model,
     );
-    const updated: StoredProviderCredential = {
+    const updated = {
       ...normalized,
       updatedAt: nowInSeconds,
     };
@@ -1199,7 +1215,7 @@ export async function handleProviderOauthCallbackRequest(
       },
       model,
     );
-    const updated: StoredProviderCredential = {
+    const updated = {
       ...normalized,
       updatedAt: nowInSeconds,
     };
@@ -1272,7 +1288,7 @@ export async function handleProviderOauthCallbackRequest(
       },
       model,
     );
-    const updated: StoredProviderCredential = {
+    const updated = {
       ...normalized,
       updatedAt: nowInSeconds,
     };
@@ -1312,7 +1328,7 @@ export async function handleProviderCredentialRequest(
   });
 
   if (method === 'GET') {
-    const data = Object.values(store)
+    const data = flattenProviderCredentialStore(store)
       .map((credential) => sanitizeStoredProviderCredential(credential))
       .sort((a, b) => b.updatedAt - a.updatedAt);
     return jsonResponse({ object: 'list', data });
@@ -1328,16 +1344,21 @@ export async function handleProviderCredentialRequest(
     }
 
     const normalized = normalizeAssistantProviderConfig(body, body.model);
-    const updated: StoredProviderCredential = {
+    const updated = {
       ...normalized,
       updatedAt: resolveNow(options),
     };
-    store[updated.providerId] = updated;
+    appendStoredProviderCredential(store, updated);
+    const list = store[updated.providerId] ?? [];
+    const persisted = list.length > 0 ? list[list.length - 1] : undefined;
+    if (!persisted) {
+      return errorResponse(500, 'Failed to persist provider credential.');
+    }
 
     return jsonResponse(
       {
         object: 'provider_credential',
-        data: sanitizeStoredProviderCredential(updated),
+        data: sanitizeStoredProviderCredential(persisted),
       },
       200,
       {
@@ -1355,8 +1376,19 @@ export async function handleProviderCredentialRequest(
       return errorResponse(400, 'Missing providerId query parameter.');
     }
 
-    const deleted = Boolean(store[providerId]);
-    if (deleted) {
+    const credentialId = url.searchParams.get('credentialId');
+    let deleted = false;
+    const list = store[providerId] ?? [];
+    if (credentialId) {
+      const filtered = list.filter((c) => c.credentialId !== credentialId);
+      deleted = filtered.length !== list.length;
+      if (filtered.length === 0) {
+        delete store[providerId];
+      } else {
+        store[providerId] = filtered;
+      }
+    } else {
+      deleted = list.length > 0;
       delete store[providerId];
     }
 
@@ -1408,7 +1440,10 @@ export async function handleAuthSessionRequest(
       );
     } else {
       if (!body.providerId) {
-        const firstStoredProvider = Object.values(store)[0];
+        const flat = flattenProviderCredentialStore(store).sort(
+          (a, b) => b.updatedAt - a.updatedAt,
+        );
+        const firstStoredProvider = flat[0];
         if (!firstStoredProvider) {
           return errorResponse(400, 'No stored provider credential found.');
         }
@@ -1418,7 +1453,17 @@ export async function handleAuthSessionRequest(
           model: body.model ?? firstStoredProvider.model,
         };
       } else {
-        const storedProvider = store[body.providerId];
+        const list = store[body.providerId] ?? [];
+        let storedProvider: StoredProviderCredential | null = null;
+        if (body.credentialId) {
+          storedProvider =
+            list.find((c) => c.credentialId === body.credentialId) ?? null;
+        } else if (list.length === 0) {
+          storedProvider = null;
+        } else {
+          const sorted = [...list].sort((a, b) => b.updatedAt - a.updatedAt);
+          storedProvider = sorted[0] ?? null;
+        }
         if (!storedProvider) {
           return errorResponse(
             404,
@@ -1447,19 +1492,29 @@ export async function handleAuthSessionRequest(
       providerConfig = refreshed.provider;
 
       if (refreshed.refreshed && storedProviderForUpdate) {
-        store[storedProviderForUpdate.providerId] = {
-          ...storedProviderForUpdate,
-          oauthAccessToken: refreshed.provider.oauthAccessToken,
-          oauthRefreshToken: refreshed.provider.oauthRefreshToken,
-          oauthExpiresAt: refreshed.provider.oauthExpiresAt,
-          chatGptAccountId: refreshed.provider.chatGptAccountId,
-          baseURL:
-            refreshed.provider.baseURL ?? storedProviderForUpdate.baseURL,
-          headers:
-            refreshed.provider.headers ?? storedProviderForUpdate.headers,
-          updatedAt: nowInSeconds,
-        };
-        shouldSetStoreCookie = true;
+        const pid = storedProviderForUpdate.providerId;
+        const list = store[pid] ?? [];
+        const cid = storedProviderForUpdate.credentialId;
+        const idx = list.findIndex((c) => c.credentialId === cid);
+        if (idx >= 0) {
+          const next = [...list];
+          next[idx] = {
+            ...storedProviderForUpdate,
+            oauthAccessToken: refreshed.provider.oauthAccessToken,
+            oauthRefreshToken: refreshed.provider.oauthRefreshToken,
+            oauthExpiresAt: refreshed.provider.oauthExpiresAt,
+            chatGptAccountId: refreshed.provider.chatGptAccountId,
+            baseURL:
+              refreshed.provider.baseURL ?? storedProviderForUpdate.baseURL,
+            headers:
+              refreshed.provider.headers ?? storedProviderForUpdate.headers,
+            updatedAt: nowInSeconds,
+            savedAt: storedProviderForUpdate.savedAt,
+            credentialId: storedProviderForUpdate.credentialId,
+          };
+          store[pid] = next;
+          shouldSetStoreCookie = true;
+        }
       }
     } catch (error) {
       const message =
