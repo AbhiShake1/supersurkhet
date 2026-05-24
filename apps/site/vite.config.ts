@@ -39,6 +39,7 @@ const config = defineConfig({
           //     }
           //   ]
           // },
+          name:'supersurkhet-apps-site',
           compatibility_date: '2026-01-21',
           compatibility_flags: ['nodejs_compat'],
           keep_vars: true,
